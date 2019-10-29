@@ -79,6 +79,7 @@ contains
   procedure, nopass, private                                          ::    ConstructAskeyScheme
   procedure, nopass, private                                          ::    ConstructWeinerScheme
   procedure, nopass, private                                          ::    ConstructAskeyNumericalScheme
+  procedure, nopass, private                                          ::    ConstructNumericalScheme
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run
   procedure, public                                                   ::    WriteOutput
@@ -159,7 +160,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    This%BasisScheme = 'weiner'
+    This%BasisScheme = 'askey'
     This%SectionChain = ''
 
     if (DebugLoc) call Logger%Exiting()
@@ -334,10 +335,14 @@ contains
         call This%ConstructWeinerScheme( SpaceInput, Basis, SpaceTransform )
       case('askey')
         call This%ConstructAskeyScheme( SpaceInput, Basis, SpaceTransform )
-      case('askeynumerical')
+      case('askey_numerical')
+        call Error%Raise( Line='Askey numerical scheme is not yet ready to be used (numerical orthopoly)', ProcName=ProcName )
         call This%ConstructAskeyNumericalScheme( SpaceInput, Basis, SpaceTransform )
+      case('numerical')
+        call Error%Raise( Line='Numerical scheme is not yet ready to be used (numerical orthopoly)', ProcName=ProcName )
+        call This%ConstructNumericalScheme( SpaceInput, Basis, SpaceTransform )
       case default
-        call Error%Raise( Line='Unrecognized orthogonal polynomial basis scheme', ProcName=ProcName )
+        call Error%Raise( Line='Unrecognized orthogonal polynomial basis scheme: ' // This%BasisScheme, ProcName=ProcName )
     end select
 
     call ModelTransform%Construct( SpaceTransform=SpaceTransform, Model=Model )
@@ -489,14 +494,14 @@ contains
             type is (DistUnif_Type)
               call Object2%Construct( A=-One, B=One)
             class default
-              call Error%Raise( Line='Something went wrong when cosntructing std normal distribution', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoLegendre_Type )
               call Object2%Construct( Normalization=2 )
             class default
-              call Error%Raise( Line='Something went wrong in constructing hermite', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
         type is ( DistGamma_Type )
@@ -509,14 +514,14 @@ contains
             type is (DistGamma_Type)
               call Object2%Construct( Alpha=Zero, Beta=One)
             class default
-              call Error%Raise( Line='Something went wrong when cosntructing std normal distribution', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoLaguerre_Type )
               call Object2%Construct( Normalization=2 )
             class default
-              call Error%Raise( Line='Something went wrong in constructing hermite', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
         class default
@@ -529,14 +534,14 @@ contains
             type is (DistNorm_Type)
               call Object2%Construct( Mu=Zero, Sigma=One)
             class default
-              call Error%Raise( Line='Something went wrong when cosntructing std normal distribution', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoHermite_Type )
               call Object2%Construct( Normalization=2 )
             class default
-              call Error%Raise( Line='Something went wrong in constructing hermite', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
       end select
@@ -558,7 +563,7 @@ contains
       type is (SpaceTransfCustom_Type)
         call Object%Construct( SpaceInput=SpaceInput, Distributions=DistProbVec )
       class default
-        call Error%Raise( Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName )
+        call Error%Raise( Line='Something went wrong', ProcName=ProcName )
     end select
 
     deallocate(DistProbVec, stat=StatLoc)
@@ -610,7 +615,7 @@ contains
       type is ( OrthoHermite_Type )
         call Object%Construct( Normalization=2 )
       class default
-        call Error%Raise( Line='Something went wrong in constructing hermite', ProcName=ProcName )
+        call Error%Raise( Line='Something went wrong', ProcName=ProcName )
     end select
 
     i = 1
@@ -624,7 +629,7 @@ contains
       type is (SpaceTransfStdNormal_Type)
         call Object%Construct( SpaceInput=SpaceInput )
       class default
-        call Error%Raise( Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName )
+        call Error%Raise( Line='Something went wrong', ProcName=ProcName )
     end select
 
     deallocate(OrthoPolyVec, stat=StatLoc)
@@ -647,7 +652,7 @@ contains
     logical, intent(in), optional                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ConstructAskeyScheme'
+    character(*), parameter                                           ::    ProcName='ConstructAskeyNumericalScheme'
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), allocatable                                 ::    DistProb
     type(DistProb_Vec_Type), allocatable, dimension(:)                ::    DistProbVec
@@ -660,8 +665,6 @@ contains
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
-    
-    call Error%Raise( Line='Askey numerical scheme is not yet ready to be used (numerical orthopoly)', ProcName=ProcName )
 
     NbDim = SpaceInput%GetNbDim()
 
@@ -690,14 +693,14 @@ contains
             type is (DistNorm_Type)
               call Object2%Construct( Mu=Zero, Sigma=One)
             class default
-              call Error%Raise( Line='Something went wrong when cosntructing std normal distribution', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoHermite_Type )
               call Object2%Construct( Normalization=2 )
             class default
-              call Error%Raise( Line='Something went wrong in constructing hermite', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
         type is ( DistUnif_Type )
@@ -710,14 +713,14 @@ contains
             type is (DistUnif_Type)
               call Object2%Construct( A=-One, B=One)
             class default
-              call Error%Raise( Line='Something went wrong when cosntructing std normal distribution', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoLegendre_Type )
               call Object2%Construct( Normalization=2 )
             class default
-              call Error%Raise( Line='Something went wrong in constructing hermite', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
         type is ( DistGamma_Type )
@@ -730,14 +733,14 @@ contains
             type is (DistGamma_Type)
               call Object2%Construct( Alpha=Zero, Beta=One)
             class default
-              call Error%Raise( Line='Something went wrong when cosntructing std normal distribution', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoLaguerre_Type )
               call Object2%Construct( Normalization=2 )
             class default
-              call Error%Raise( Line='Something went wrong in constructing hermite', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
         class default
@@ -750,7 +753,7 @@ contains
             type is ( OrthoNumerical_Type )
               call Object2%Construct( Weights=DistProb, Normalized=.true. )
             class default
-              call Error%Raise( Line='Something went wrong in constructing hermite', ProcName=ProcName )
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
       end select
@@ -764,6 +767,85 @@ contains
       deallocate(DistProb, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistProb', ProcName=ProcName, stat=StatLoc )
 
+    end do
+
+    call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
+
+    select type ( Object => SpaceTransform )
+      type is (SpaceTransfCustom_Type)
+        call Object%Construct( SpaceInput=SpaceInput, Distributions=DistProbVec )
+      class default
+        call Error%Raise( Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName )
+    end select
+
+    deallocate(DistProbVec, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistProbVec', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(OrthoPolyVec, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructNumericalScheme( SpaceInput, Basis, SpaceTransform, Debug )
+
+    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    type(OrthoMultiVar_Type), intent(out)                             ::    Basis
+    class(SpaceTransf_Type), allocatable, intent(out)                 ::    SpaceTransform
+    logical, intent(in), optional                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ConstructNumericalScheme'
+    integer                                                           ::    StatLoc=0
+    class(DistProb_Type), allocatable                                 ::    DistProb
+    type(DistProb_Vec_Type), allocatable, dimension(:)                ::    DistProbVec
+    class(DistProb_Type), pointer                                     ::    DistProbPointer
+    class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
+    type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    integer                                                           ::    NbDim=0
+    integer                                                           ::    i
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    NbDim = SpaceInput%GetNbDim()
+
+    allocate( SpaceTransfCustom_Type :: SpaceTransform, stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
+    
+    allocate(OrthoPolyVec(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
+
+    allocate(DistProbVec(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='DistProbVec', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, NbDim
+      DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
+      allocate(DistProb, source=DistProbPointer, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='DistProb', ProcName=ProcName, stat=StatLoc )
+      allocate( OrthoNumerical_Type :: OrthoPoly, stat=StatLoc )
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+
+      select type ( Object2 => OrthoPoly )
+        type is ( OrthoNumerical_Type )
+          call Object2%Construct( Weights=DistProb, Normalized=.true. )
+        class default
+          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+      end select
+
+      call DistProbVec(i)%Set( Object=DistProb )
+      call OrthoPolyVec(i)%Set( Object=OrthoPoly )
+
+      nullify(DistProbPointer)
+      deallocate(OrthoPoly, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+      deallocate(DistProb, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistProb', ProcName=ProcName, stat=StatLoc )
     end do
 
     call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
