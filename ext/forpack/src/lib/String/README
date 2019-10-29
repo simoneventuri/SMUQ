@@ -1,0 +1,79 @@
+
+    DESCRIPTION
+    ===========
+
+  This library defines a class called 'String_Type' for string manipulation.
+  The library is composed of 7 directories and 26 files.
+  It has the following structure:
+
+    String
+    ├── app
+    │   ├── CMakeLists.txt
+    │   └── Examples
+    │       ├── CMakeLists.txt
+    │       └── main.f90
+    ├── CMakeLists.txt
+    ├── config
+    │   ├── cmake
+    │   │   ├── add_sources.cmake
+    │   │   ├── EnsureOutOfSourceBuild.cmake
+    │   │   ├── FindpFUnit.cmake
+    │   │   ├── pFUnit_utils.cmake
+    │   │   ├── SetFortranFlags.cmake
+    │   │   ├── SetLocalBuild.cmake
+    │   │   └── Subproject.cmake
+    │   └── pkg
+    │       ├── config.cmake.in
+    │       └── config-version.cmake.in
+    ├── configure
+    ├── configure.in
+    ├── README
+    ├── src
+    │   ├── CMakeLists.txt
+    │   ├── multistring_class.f90
+    │   ├── string_class.f90
+    │   ├── string_library.f90
+    │   ├── string_subclass.f90
+    │   └── String_Module.f90
+    └── tests
+        ├── CMakeLists.txt
+        ├── test_string_assign.F90
+        ├── test_string_initialize.F90
+        └── test_string_reverse.F90
+
+
+    INSTALLATION AND COMPILATION
+    ============================
+
+  To build the library, edit the file 'configure.in' and execute the
+  bash script 'configure'.
+  The following variables need to be set in the 'configure.in' file:
+  1) Set the build type: 'Debug' or 'Release'
+  2) Set the parallel environment: 'Serial' or 'Coarray'
+  3) Set the Fortran compiler name and version
+  4) Set the library configuration name
+  5) Set the path of the build directory
+  7) Set the path of the installation directory
+  8) Set the path of pFUnit
+
+  The 'configure' script will do the following taks:
+  1) set the name and version of the library
+  2) load the user-defined variables from the 'configure.in' file
+  3) create a build directory and run 'cmake' inside
+  4) compile the library using 'make'
+  5) run the tests using 'ctest'
+
+
+    KATE BUILD PLUGIN
+    =================
+
+  Name:       ${LIBRARY_NAME}
+  Dir:        ${LIBRARY_BUILD_DIR}
+  Config:     cmake -DCMAKE_Fortran_COMPILER=${FORTRAN_COMPILER} ${LIBRARY_SOURCES_DIR}
+  Build:      make all
+  Install:    make install
+  Clean:      make clean
+  Reset:      cd ${LIBRARY_SOURCES_DIR} && rm -Rf ${LIBRARY_BUILD_DIR} && mkdir ${LIBRARY_BUILD_DIR}
+
+
+

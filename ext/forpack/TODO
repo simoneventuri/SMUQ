@@ -1,0 +1,48 @@
+ * Add to Convert_Ratio( i, N, Length=2*len(N)+1 )  ==  Convert_Ratio( i, N, MaxLength=.True. ) which set Length=2*len(N)+1
+ * Build shared libraries using something like:
+ * Add a procedure to extract a section object from the Input object w/o using Inoput%Section_Type
+ * USe the DateAndTime procedures in the Timer Library
+
+########################
+# Creating the library #
+########################
+
+include(add_sources)
+set_property( GLOBAL PROPERTY SRCS_LIST "" )
+add_subdirectory( src )
+get_property( SRCS GLOBAL PROPERTY SRCS_LIST )
+add_library( ${LIBRARY_NAME} STATIC ${SRCS} )
+# # ---------------------------------------------------
+# add_library( ${LIBRARY_NAME} STATIC ${SRCS} )
+# add_library( ${LIBRARY_NAME}-shared SHARED ${SRCS} )
+# set_target_properties( ${LIBRARY_NAME}        PROPERTIES OUTPUT_NAME ${LIBRARY_NAME} )
+# set_target_properties( ${LIBRARY_NAME}-shared PROPERTIES OUTPUT_NAME ${LIBRARY_NAME} )
+# # ---------------------------------------------------
+# # this is the "object library" target: compiles the sources only once
+# add_library( objlib OBJECT ${SRCS} )
+# # shared libraries need PIC
+# # set_property(TARGET ${objlib} PROPERTY POSITION_INDEPENDENT_CODE 1)
+# # actual shared and static libraries built from the same object files
+# add_library( ${LIBRARY_NAME}        SHARED $<TARGET_OBJECTS:objlib>)
+# add_library( ${LIBRARY_NAME}-shared STATIC $<TARGET_OBJECTS:objlib>)
+# set_target_properties( ${LIBRARY_NAME}        PROPERTIES OUTPUT_NAME ${LIBRARY_NAME} )
+# set_target_properties( ${LIBRARY_NAME}-shared PROPERTIES OUTPUT_NAME ${LIBRARY_NAME} )
+# # ---------------------------------------------------
+include_directories( ${CMAKE_Fortran_MODULE_DIRECTORY} )
+include( config/dependency.cmake OPTIONAL )
+
+
+* Add FORPACK to modulefile
+
+set_cmake_debug()
+LogMessage( "BUILD_STATIC_LIBRARY: ${BUILD_STATIC_LIBRARY}" )
+LogMessage( "BUILD_SHARED_LIBRARY: ${BUILD_SHARED_LIBRARY}" )
+LogMessage( "BUILD_EXAMPLES:       ${BUILD_EXAMPLES}"       )
+LogMessage( "BUILD_TESTS:          ${BUILD_TESTS}"          )
+unset_cmake_debug()
+
+
+* Add variable (Fortran compiler) to modulefile as for Spark
+
+* BUG:  Bug when using 2 local instance of a 'InputReader_Type' object and calling 'AddSection'.
+        In 'GetMaxLengthParameterName', the array 'This%Parameters' is not allocated and it should be.

@@ -1,0 +1,100 @@
+
+
+! Function Get_Date_Time() result(Time)
+!   real(8)                                                               ::  Time                    !< CPU time counter in seconds
+!   integer       ,dimension(8)                                           ::  Date_Time
+!   integer                                                               ::  Day              ! Julian Day for this date.
+!   integer                                                               ::  Seconds         ! Julian Seconds for this time.
+! !   call DATE_AND_TIME (VALUES=Date_Time)
+! !   Day = Julian_Day(Date_Time(1), Date_Time(2), Date_Time(3))    ! Calculate Julian day for this date.
+! !
+! !   ! Convert into a number of seconds.
+! !   Seconds = ((Day*24 + &         ! Days.
+! !             Date_Time(5))*60 + & ! Hours.
+! !             Date_Time(6))*60 + & ! Minutes.
+! !             Date_Time(7)         ! Seconds.
+! !   ! Add in milliseconds to get the final Wall Clock time.
+! !   Time = changetype(real,Seconds) + milli*Date_Time(8)   ! Milliseconds.
+! end function Get_Time
+
+
+
+
+
+
+
+!
+! Function GetCPUTime() result(Time)
+!   real(8)                                                               ::  Time                    !< CPU time counter in seconds
+!   call cpuTime(Time)
+! End Function
+!
+! Function Get_System_Time_Start() result(Time)
+!   real(8)                                                               ::  Time                            !< CPU time counter in seconds
+!   integer                                                               ::  iCount_Start                    ! Starting count
+!   call system_clock( count=iCount_Start )                                                                       ! Getting the starting count
+!   Time  =       int(iCount_Start)                                                                               ! Setting the starting count in the output variable
+! End Function
+!
+! Function Get_System_Time_Stop( iCount_Start ) result(Time)
+!   integer                                               ,intent(in)     ::  iCount_Start
+!   real(8)                                                               ::  Time                    !< CPU time counter in seconds
+!   integer                                                               ::  iCount_Current
+!   integer                                                               ::  Count_Rate
+!   integer                                                               ::  Count_Max
+!   integer                                                               ::  NCount
+!   call system_clock( count=iCount_Current, Count_Rate=Count_Rate, Count_Max=Count_Max )
+!   NCount        =       iCount_Current - iCount_Start
+!   if ( iCount_Current < iCount_Start ) NCount = NCount + Count_Max
+!   Time          =       real(NCount) / Count_Rate
+! End Function
+!
+! Function Get_Date_Time() result(Time)
+!   real(8)                                                               ::  Time                    !< CPU time counter in seconds
+!   integer       ,dimension(8)                                           ::  Date_Time
+!   integer                                                               ::  Day              ! Julian Day for this date.
+!   integer                                                               ::  Seconds         ! Julian Seconds for this time.
+! !   call DATE_AND_TIME (VALUES=Date_Time)
+! !   Day = Julian_Day(Date_Time(1), Date_Time(2), Date_Time(3))    ! Calculate Julian day for this date.
+! !
+! !   ! Convert into a number of seconds.
+! !   Seconds = ((Day*24 + &         ! Days.
+! !             Date_Time(5))*60 + & ! Hours.
+! !             Date_Time(6))*60 + & ! Minutes.
+! !             Date_Time(7)         ! Seconds.
+! !   ! Add in milliseconds to get the final Wall Clock time.
+! !   Time = changetype(real,Seconds) + milli*Date_Time(8)   ! Milliseconds.
+! end function Get_Time
+
+
+
+
+
+! Function Convert( Time ) result(String)
+! !   use String_Module              ,only:  RemoveSpace
+!   real(8)                       ,intent(in)     ::  Time
+!   character(:)  ,allocatable                    ::  String
+!   real(8)                                       ::  Time_s, Time_m, Time_h
+!   integer                                       ::  NChar
+!   real(8)       ,parameter                      ::  Seconds_per_Minute =       60.0_8
+!   real(8)       ,parameter                      ::  Minute_per_Hour    =       60.0_8
+!   real(8)       ,parameter                      ::  Seconds_per_Hour   =       Seconds_per_Minute * Minute_per_Hour
+!   if ( Time < Seconds_per_Minute ) then
+!     Time_h      =       0.0_8
+!     Time_m      =       0.0_8
+!     Time_s      =       Time
+!   else if ( Time < Seconds_per_Hour ) then
+!     Time_h      =       0.0_8
+!     Time_m      =       real( floor( Time/Seconds_per_Minute ) )
+!     Time_s      =       mod( Time, Seconds_per_Minute )
+!   else
+!     Time_h      =       real( floor( Time / Seconds_per_Hour))
+!     Time_m      =       real( floor(mod(Time,Seconds_per_Hour) / Seconds_per_Minute))
+!     Time_s      =       mod( mod(time,Seconds_per_Hour),Seconds_per_Minute)
+!   end if
+!   NChar         =       len( '000h00m00s' )
+!   allocate( character(NChar) :: String )
+!   write( String, "(i3,'h',i2,'m',i2,'s')" ) int(Time_h), int(Time_m), int(Time_s)
+! !   String        =       RemoveSpace( String )
+! End Function
+!

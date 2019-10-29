@@ -1,0 +1,122 @@
+start(bayesian_inference)
+
+  start(data)
+    source=computed
+
+    start(data)
+      nb_data=1
+      start(data1)
+        abscissa_name=abscissa
+        ordinate_name=ordinate
+        start(likelihood)
+          source=calibrated
+          start(source)
+            parameter=4
+          end(source)
+        end(likelihood)
+      end(data1)
+    end(data)
+
+  end(data)
+
+  start(grids)
+    source=data
+  end(grids)
+
+  start(plot)
+
+    start(abscissa)
+      min=-2.d0
+      max=2.d0
+    end(abscissa)
+
+    start(ordinate)
+      min=-1000.d0
+      max=1000.d0
+    end(ordinate)
+
+    start(histogram)
+      method=full
+      nb_bins=1000
+    end(histogram)
+  end(plot)
+
+  start(param_space)
+    nb_params=4
+    start(param1)
+      name=param1
+      data=2.d0
+      start(prior)
+        type=uni
+        min=-3.14159265359
+        max=3.14159265359
+      end(prior)
+      start(proposal)
+        type=nor
+        sd=0.2618
+      end(proposal)
+    end(param1)
+    start(param2)
+      name=param2
+      data=1.d0
+      start(prior)
+        type=uni
+        min=-3.14159265359
+        max=3.14159265359
+      end(prior)
+      start(proposal)
+        type=nor
+        sd=0.2618
+      end(proposal)
+    end(param2)
+    start(param3)
+      name=param3
+      data=-1.d0
+      start(prior)
+        type=uni
+        min=-3.14159265359
+        max=3.14159265359
+      end(prior)
+      start(proposal)
+        type=nor
+        sd=0.2618
+      end(proposal)
+    end(param3)
+    start(param4)
+      name=\sigma_{likelihood}
+      data=0.d0
+      scale=log
+      start(prior)
+        type=uni
+        min=1.d-5
+        max=2.d0
+        sd_normalized=false
+      end(prior)
+      start(proposal)
+        type=nor
+        sd=1.d-1
+      end(proposal)
+    end(param4)
+  
+    start(files)
+      nb_files=0
+    end(files)
+
+  end(param_space)
+
+  start(monte_carlo)
+    dirty_length=30000
+    nb_fprop_samples=1000
+    silent=false
+    generator=pseudo
+    seed=34
+    start(dram)
+      start(dr)
+        start(pid)
+          param_min=5.d-3
+        end(pid)
+      end(dr)
+    end(dram)
+  end(monte_carlo)
+
+end(bayesian_inference)

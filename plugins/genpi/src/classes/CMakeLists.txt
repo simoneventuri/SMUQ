@@ -1,0 +1,6 @@
+add_subdirectory ( mfile )
+add_subdirectory ( ofile )
+add_subdirectory ( mparamscalar )
+add_subdirectory ( mparamtable )
+add_subdirectory ( polycoeff )
+add_subdirectory ( modelext )

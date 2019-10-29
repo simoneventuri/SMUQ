@@ -1,0 +1,187 @@
+#%Module1.0###################################################################
+#
+# This modulefile setups the environment for the ${PROJECT_NAME} code.
+#
+##############################################################################
+
+# ============================
+# Loading required modulefiles
+# ============================
+foreach i { ${REQUIRED_MODULEFILES} } {
+  if ![ is-loaded '$i' ] {
+    module load $i
+  }
+}
+
+
+# ==============================
+# Setting warnings and conflicts
+# ==============================
+conflict ${LIBRARY_NAME}
+if {[file isdirectory "${PROJECT_INSTALL_DIR}"]} {} else {
+    puts stderr "[module-info name] reports '${PROJECT_INSTALL_DIR}' is not a directory"
+}
+
+
+# ====================
+# Setting help message
+# ====================
+proc ModulesHelp { } {
+  puts stderr "       _____          ____            _          "
+  puts stderr "      |  ___|__  _ __|  _ \\ __ _  ___| | __     "
+  puts stderr "      | |_ / _ \\| '__| |_) / _` |/ __| |/ /     "
+  puts stderr "      |  _| (_) | |  |  __/ (_| | (__|   <       "
+  puts stderr "      |_|  \\___/|_|  |_|   \\__,_|\\___|_|\\_\\ "
+  puts stderr "                                                 "
+  puts stderr " ================================================"
+  puts stderr "  ${PROJECT_ACRONYM_DEFINITION}"
+  puts stderr " ================================================"
+  puts stderr ""
+  puts stderr "This module loads the ${PROJECT_NAME} code version ${PROJECT_VERSION} with ${CMAKE_BUILD_TYPE} build"
+  puts stderr "using the ${CMAKE_Fortran_COMPILER_ID} Fortran compiler version ${CMAKE_Fortran_COMPILER_VERSION}."
+  puts stderr ""
+  puts stderr "  ====================="
+  puts stderr "  Environment Variables"
+  puts stderr "  ====================="
+  puts stderr ""
+  puts stderr "    Version parameters"
+  puts stderr "    ------------------"
+  puts stderr "\t* Project name                             ${PROJECT_NAME_UC}_PROJECT_NAME               ${PROJECT_NAME}"
+  puts stderr "\t* Version number                           ${PROJECT_NAME_UC}_VERSION                    ${PROJECT_VERSION}"
+  puts stderr "\t* Major version number                     ${PROJECT_NAME_UC}_VERSION_MAJOR              ${PROJECT_VERSION_MAJOR}"
+  puts stderr "\t* Minor version number                     ${PROJECT_NAME_UC}_VERSION_MINOR              ${PROJECT_VERSION_MINOR}"
+  puts stderr "\t* Patch version number                     ${PROJECT_NAME_UC}_VERSION_PATCH              ${PROJECT_VERSION_PATCH}"
+  puts stderr "\t* Git branch                               ${PROJECT_NAME_UC}_GIT_BRANCH                 ${GIT_BRANCH}"
+  puts stderr "\t* SHA-1 of the latest commit               ${PROJECT_NAME_UC}_GIT_SHA1                   ${GIT_SHA1}"
+  puts stderr "\t* Latest git version tag                   ${PROJECT_NAME_UC}_GIT_TAG                    ${GIT_TAG}"
+  puts stderr "\t* Full version                             ${PROJECT_NAME_UC}_FULL_VERSION               ${PROJECT_FULL_VERSION}"
+  puts stderr ""
+  puts stderr "    Directories parameters"
+  puts stderr "    ----------------------"
+  puts stderr "\t* Source directory                         ${PROJECT_NAME_UC}_SOURCE_DIR                 ${PROJECT_SOURCE_DIR}"
+  puts stderr "\t* Build directory                          ${PROJECT_NAME_UC}_BUILD_DIR                  ${CMAKE_BINARY_DIR}"
+  puts stderr "\t* Installation directory                   ${PROJECT_NAME_UC}_INSTALL_DIR                ${PROJECT_INSTALL_DIR}"
+  puts stderr "\t* Libraries directory                      ${PROJECT_NAME_UC}_LIBRARY_DIR                ${LIBRARY_INSTALL_DIR}"
+  puts stderr "\t* Fortran modules directory                ${PROJECT_NAME_UC}_MODULES_DIR                ${MODULES_INSTALL_DIR}"
+  puts stderr "\t* Include files directory                  ${PROJECT_NAME_UC}_INCLUDE_DIR                ${INCLUDE_INSTALL_DIR}"
+  puts stderr "\t* Cmake config. directory                  ${PROJECT_NAME_UC}_CMAKE_DIR                  ${CMAKE_INSTALL_DIR}"
+  puts stderr "\t* Executable directory                     ${PROJECT_NAME_UC}_EXECUTABLE_DIR             ${EXECUTABLE_INSTALL_DIR}"
+  puts stderr "\t* Script directory                         ${PROJECT_NAME_UC}_SCRIPT_DIR                 ${SCRIPT_INSTALL_DIR}"
+  puts stderr ""
+  puts stderr "    Build parameters"
+  puts stderr "    ----------------"
+  puts stderr "\t* Build type                               ${PROJECT_NAME_UC}_BUILD_TYPE                 ${CMAKE_BUILD_TYPE}"
+  puts stderr "\t* Build configuration                      ${PROJECT_NAME_UC}_BUILD_CONFIGURATION        ${PROJECT_BUILD_CONFIGURATION}"
+  puts stderr "\t* Build date                               ${PROJECT_NAME_UC}_BUILD_DATE                 ${BUILD_DATE}"
+  puts stderr "\t* Fortran compiler ID                      ${PROJECT_NAME_UC}_FORTRAN_COMPILER_ID        ${CMAKE_Fortran_COMPILER_ID}"
+  puts stderr "\t* Fortran compiler name                    ${PROJECT_NAME_UC}_FORTRAN_COMPILER_NAME      ${Fortran_COMPILER_NAME}"
+  puts stderr "\t* Fortran compiler version                 ${PROJECT_NAME_UC}_FORTRAN_COMPILER_VERSION   ${CMAKE_Fortran_COMPILER_VERSION}"
+  puts stderr "\t* Fortran compiler config                  ${PROJECT_NAME_UC}_FORTRAN_COMPILER_CONFIG    ${Fortran_COMPILER_CONFIG}"
+  puts stderr ""
+  puts stderr "    Parameters required to build ${PROJECT_NAME} applications"
+  puts stderr "    ---------------------------------------------------------"
+  puts stderr "\t* Fortran compiler name                    ${PROJECT_NAME_UC}_FORTRAN_COMPILER_NAME      ${Fortran_COMPILER_NAME}"
+  puts stderr "\t* Fortran flags for definitions            ${PROJECT_NAME_UC}_DEFINITION_FFLAGS          ${DEFINITION_FFLAGS}"
+  puts stderr "\t* Fortran flags for libraries to link      ${PROJECT_NAME_UC}_LIBRARIES_FFLAGS           ${LIBRARIES_FFLAGS}"
+  puts stderr "\t* Fortran flags for include directories    ${PROJECT_NAME_UC}_INCLUDE_DIR_FFLAGS         ${INCLUDE_DIR_FFLAGS}"
+  puts stderr "\t* Fortran flags for library directories    ${PROJECT_NAME_UC}_LIBRARY_DIR_FFLAGS         ${LIBRARY_DIR_FFLAGS}"
+  puts stderr ""
+  puts stderr ""
+  puts stderr "  =========================="
+  puts stderr "  Linking to other projects "
+  puts stderr "  =========================="
+  puts stderr ""
+  puts stderr "Applications or libraries may be built on top of '${PROJECT_NAME}' using several approaches."
+  puts stderr ""
+  puts stderr "    Build script"
+  puts stderr "    ------------"
+  puts stderr "  Using the build script '${PROJECT_NAME_LC}-build-app' is  the easiest and fastest way"
+  puts stderr "  to create applications using ${PROJECT_NAME}. To use this build script, do the following:"
+  puts stderr "\t* Step 1: Load a ${PROJECT_NAME} modulfile or source the environment variable script"
+  puts stderr "\t* Step 2: Run the build script using: ${PROJECT_NAME_LC}-build-app <list-source-files> \[options\]"
+  puts stderr "  The only mandatory argument to be passed to this script is the list of Fortran source files to be compiled."
+  puts stderr "  There are many available optional arguments to customize the build (executable name, Fortran flags, additional libraries)."
+  puts stderr "  All available are described using '${PROJECT_NAME_LC}-build-app -h'."
+  puts stderr ""
+  puts stderr "    Makefile projects"
+  puts stderr "    -----------------"
+  puts stderr "  For Makefile-based projects, use the following:"
+  puts stderr "\t* Compile step: \$${PROJECT_NAME_UC}_FORTRAN_COMPILER_NAME \[fortran-flags] \$${PROJECT_NAME_UC}_DEFINITION_FFLAGS \$${PROJECT_NAME_UC}_INCLUDE_DIR_FFLAGS -c \<fortran-file\>"
+  puts stderr "\t* Link step:    \$${PROJECT_NAME_UC}_FORTRAN_COMPILER_NAME \[fortran-flags] \$${PROJECT_NAME_UC}_LIBRARY_DIR_FFLAGS *.o \[-o executable-name\] \$${PROJECT_NAME_UC}_LIBRARIES_FFLAGS"
+  puts stderr ""
+  puts stderr "    Cmake projects"
+  puts stderr "    --------------"
+  puts stderr "  For cmake-based projects, a ${PROJECT_NAME} package configuration file is available."
+  puts stderr "  This package file can be used by the 'find_package' command to locate all the required ${PROJECT_NAME}-related parameters."
+  puts stderr "  The ${PROJECT_NAME} package defines the following cmake variables:"
+  puts stderr "\t* ${PROJECT_NAME_UC}_FOUND                   Indicator whether ${PROJECT_NAME} was found on the system."
+  puts stderr "\t* ${PROJECT_NAME_UC}_VERSION                 ${PROJECT_NAME} version in format 'Major.Minor.Release'."
+  puts stderr "\t* ${PROJECT_NAME_UC}_INCLUDE_DIR             Location of the ${PROJECT_NAME} include files."
+  puts stderr "\t* ${PROJECT_NAME_UC}_LIBRARY_DIR             Location of the ${PROJECT_NAME} libraries."
+  puts stderr "\t* ${PROJECT_NAME_UC}_MODULES_DIR             Location of the ${PROJECT_NAME} Fortran module files."
+  puts stderr "\t* ${PROJECT_NAME_UC}_DEFINITIONS             Required compiler definitions for ${PROJECT_NAME}"
+  puts stderr "\t* ${PROJECT_NAME_UC}_LIBRARIES               Required libraries for all requested bindings"
+  puts stderr "\t* ${PROJECT_NAME_UC}_FORTRAN_COMPILER_NAME   Name of the Fortran compiler used to compile ${PROJECT_NAME}."
+  puts stderr "  The basic steps required to use ${PROJECT_NAME} in a cmake project are:"
+  puts stderr "\t* Load the package configuration file:      find_package( ${PROJECT_NAME} CONFIG REQUIRED )"
+  puts stderr "\t* Set the ${PROJECT_NAME} Fortran compiler:         set( CMAKE_Fortran_COMPILER \$\{${PROJECT_NAME_UC}_FORTRAN_COMPILER_NAME\} )"
+  puts stderr "\t* Add the ${PROJECT_NAME} libraries directory:      link_directories ( \$\{${PROJECT_NAME_UC}_LIBRARY_DIR\} )"
+  puts stderr "\t* Add the ${PROJECT_NAME} include directory:        target_include_directories( <target-name> PUBLIC \$\{${PROJECT_NAME_UC}_INCLUDE_DIR\} )"
+  puts stderr "\t* Link a target to ${PROJECT_NAME} libraries:       target_link_libraries( <target-name> LINK_PUBLIC \$\{${PROJECT_NAME_UC}_LIBRARIES\} )"
+  puts stderr ""
+}
+
+
+# ==============================
+# Setting modulefile description
+# ==============================
+module-whatis "Name:        ${PROJECT_NAME}"
+module-whatis "Version:     ${PROJECT_VERSION}"
+module-whatis "Build type:  ${CMAKE_BUILD_TYPE}"
+module-whatis "Category:    Application/Library"
+module-whatis "Description: ${PROJECT_ACRONYM_DEFINITION}"
+
+
+# =============================
+# Setting environment variables
+# =============================
+setenv ${PROJECT_NAME_UC}_NAME                          ${PROJECT_NAME}
+setenv ${PROJECT_NAME_UC}_VERSION                       ${PROJECT_VERSION}
+setenv ${PROJECT_NAME_UC}_VERSION_MAJOR                 ${PROJECT_VERSION_MAJOR}
+setenv ${PROJECT_NAME_UC}_VERSION_MINOR                 ${PROJECT_VERSION_MINOR}
+setenv ${PROJECT_NAME_UC}_VERSION_PATCH                 ${PROJECT_VERSION_PATCH}
+setenv ${PROJECT_NAME_UC}_GIT_BRANCH                    ${GIT_BRANCH}
+setenv ${PROJECT_NAME_UC}_GIT_SHA1                      ${GIT_SHA1}
+setenv ${PROJECT_NAME_UC}_GIT_TAG                       ${GIT_TAG}
+setenv ${PROJECT_NAME_UC}_FULL_VERSION                  ${PROJECT_FULL_VERSION}
+
+setenv ${PROJECT_NAME_UC}_DIR                           ${PROJECT_INSTALL_DIR}
+setenv ${PROJECT_NAME_UC}_SOURCE_DIR                    ${PROJECT_SOURCE_DIR}
+setenv ${PROJECT_NAME_UC}_BUILD_DIR                     ${CMAKE_BINARY_DIR}
+setenv ${PROJECT_NAME_UC}_INSTALL_DIR                   ${PROJECT_INSTALL_DIR}
+setenv ${PROJECT_NAME_UC}_LIBRARY_DIR                   ${LIBRARY_INSTALL_DIR}
+setenv ${PROJECT_NAME_UC}_MODULES_DIR                   ${MODULES_INSTALL_DIR}
+setenv ${PROJECT_NAME_UC}_INCLUDE_DIR                   ${INCLUDE_INSTALL_DIR}
+setenv ${PROJECT_NAME_UC}_CMAKE_DIR                     ${CMAKE_INSTALL_DIR}
+setenv ${PROJECT_NAME_UC}_EXECUTABLE_DIR                ${EXECUTABLE_INSTALL_DIR}
+setenv ${PROJECT_NAME_UC}_SCRIPT_DIR                    ${SCRIPT_INSTALL_DIR}
+
+setenv ${PROJECT_NAME_UC}_BUILD_TYPE                    ${CMAKE_BUILD_TYPE}
+setenv ${PROJECT_NAME_UC}_BUILD_CONFIGURATION           ${PROJECT_BUILD_CONFIGURATION}
+setenv ${PROJECT_NAME_UC}_BUILD_DATE                    ${BUILD_DATE}
+setenv ${PROJECT_NAME_UC}_FORTRAN_COMPILER_ID           ${CMAKE_Fortran_COMPILER_ID}
+setenv ${PROJECT_NAME_UC}_FORTRAN_COMPILER_NAME         ${Fortran_COMPILER_NAME}
+setenv ${PROJECT_NAME_UC}_FORTRAN_COMPILER_VERSION      ${CMAKE_Fortran_COMPILER_VERSION}
+setenv ${PROJECT_NAME_UC}_FORTRAN_COMPILER_CONFIG       ${Fortran_COMPILER_CONFIG}
+
+setenv ${PROJECT_NAME_UC}_LIBRARIES_FFLAGS              "${LIBRARIES_FFLAGS}"
+setenv ${PROJECT_NAME_UC}_DEFINITION_FFLAGS             "${DEFINITION_FFLAGS}"
+setenv ${PROJECT_NAME_UC}_INCLUDE_DIR_FFLAGS            "${INCLUDE_DIR_FFLAGS}"
+setenv ${PROJECT_NAME_UC}_LIBRARY_DIR_FFLAGS            "${LIBRARY_DIR_FFLAGS}"
+setenv ${PROJECT_NAME_UC}_MODULEFILE                    ${LIBRARY_NAME}/${MODULEFILE_NAME}
+
+# ======================
+# Setting path variables
+# ======================
+prepend-path    PATH              ${EXECUTABLE_INSTALL_DIR}
+prepend-path    LD_LIBRARY_PATH   ${LIBRARY_INSTALL_DIR}

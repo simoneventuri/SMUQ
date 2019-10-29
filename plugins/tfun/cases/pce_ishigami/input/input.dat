@@ -1,0 +1,19 @@
+start(main)
+
+  start(function)
+    type = ishigami
+    start(type)
+      response_name = output
+      label = output
+      a = 1.0
+      b = 7.0
+      c = 0.1
+      start(parameters)
+        x1_dependency = p1
+        x2_dependency = p2
+        x3_dependency = p3
+      end(parameters)
+    end(type)
+  end(function)
+
+end(main)

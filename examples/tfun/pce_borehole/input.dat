@@ -1,0 +1,154 @@
+start(main)
+
+  start(parameter_space)
+    start(parameters)
+      start(parameter1)
+        name = radius of borehole
+        label = p1
+        distribution = normal
+        start(distribution)
+          mu = 0.10
+          sigma = 0.0161812
+          a = 0.05
+          b = 0.15
+        end(distribution)
+      end(parameter1)
+      start(parameter2)
+        name = radius of influence
+        label = p2
+        distribution = lognormal
+        start(distribution)
+          mu = 7.71
+          sigma = 1.0056
+          a = 4.60517
+          b = 10.81977
+        end(distribution)
+      end(parameter2)
+      start(parameter3)
+        name = transmissivity of upper aquifer
+        label = p3
+        distribution = uniform
+        start(distribution)
+          a = 63070.
+          b = 115600.0
+        end(distribution)
+      end(parameter3)
+      start(parameter4)
+        name = potentiometric head of upper aquifer
+        label = p4
+        distribution = uniform
+        start(distribution)
+          a = 990.0
+          b = 1110.0
+        end(distribution)
+      end(parameter4)
+      start(parameter5)
+        name = transmissivity of lower aquifer
+        label = p5
+        distribution = uniform
+        start(distribution)
+          a = 63.1
+          b = 116.0
+        end(distribution)
+      end(parameter5)
+      start(parameter6)
+        name = potentiometric head of lower aquifer
+        label = p6
+        distribution = uniform
+        start(distribution)
+          a = 700.0
+          b = 820.0
+        end(distribution)
+      end(parameter6)
+      start(parameter7)
+        name = length of borehole
+        label = p7
+        distribution = uniform
+        start(distribution)
+          a = 1120.0
+          b = 1680.0
+        end(distribution)
+      end(parameter7)
+      start(parameter8)
+        name = hydraulic conductivity of borehole
+        label = p8
+        distribution = uniform
+        start(distribution)
+          a = 9855.0
+          b = 12045.0
+        end(distribution)
+      end(parameter8)
+    end(parameters)
+  end(parameter_space)
+
+  start(responses)
+    start(response)
+      name=response1
+      label = output
+      start(abscissa)
+        source=internal
+        start(source)
+          abscissa=1.0
+        end(source)
+      end(abscissa)
+    end(response1)
+  end(responses)
+
+  start(analysis)
+    type=surrogate_modeling
+
+    start(type)
+      type=polychaos
+      start(type)
+        silent = false
+        basis_scheme = askey
+
+        start(index_scheme)
+          type = hyperbolic
+          start(type)
+            normq = 0.4
+            order=1
+            min_order=1
+            max_order=50
+          end(type)
+        end(index_scheme)
+
+        start(method)
+          type=sparse
+          start(type)
+            silent=false
+            stop_error=.001
+
+            start(sparse_solver)
+              type = omp
+              start(type)
+                type = subsetmcv
+                start(type)
+                  start(cross_validation)
+                    type = loo
+                    start(type)
+                    end(type)
+                  end(cross_validation)
+                end(type)
+              end(type)
+            end(sparse_solver)
+
+            start(sampler)
+              start(scheme)
+                type = lhs
+                start(type)
+                  nb_samples = 500
+                  max_nb_samples = 3200
+                end(type)
+              end(scheme)
+            end(sampler)
+
+          end(type)
+        end(method)
+
+      end(type)
+    end(type)
+
+  end(analysis)
+
+end(main)

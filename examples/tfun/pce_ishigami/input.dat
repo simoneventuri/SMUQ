@@ -1,0 +1,121 @@
+start(main)
+
+  start(plugin)
+    type = tfun
+    case_directory = /extcase
+  end(plugin)
+
+  start(parameter_space)
+    start(parameters)
+      start(parameter1)
+        name = parameter1
+        label = p1
+        start(distribution)
+          type=uniform
+          start(type)
+            a = -3.14159265359
+            b = 3.14159265359
+          end(type)
+        end(distribution)
+      end(parameter1)
+      start(parameter2)
+        name = parameter2
+        label = p2
+        start(distribution)
+          type=uniform
+          start(type)
+            a = -3.14159265359
+            b = 3.14159265359
+          end(type)
+        end(distribution)
+      end(parameter2)
+      start(parameter3)
+        name = parameter3
+        label = p3
+        start(distribution)
+          type=uniform
+          start(type)
+            a = -3.14159265359
+            b = 3.14159265359
+          end(type)
+        end(distribution)
+      end(parameter3)
+    end(parameters)
+  end(parameter_space)
+
+  start(responses)
+    start(response1)
+      name = response1
+      label = output
+      start(abscissa)
+        name=x
+        source=values
+        start(source)
+          source=internal
+          start(source)
+            values = 1.0
+          end(source)
+        end(source)
+      end(abscissa)
+    end(response1)
+
+  end(responses)
+  
+  start(analysis)
+    type=surrogate_modeling
+
+    start(type)
+      type=polychaos
+      start(type)
+        silent = false
+        basis_scheme = askey
+
+        start(index_scheme)
+          type = hyperbolic
+          start(type)
+            normq = 1
+            order=1
+            min_order=0
+            max_order=50
+          end(type)
+        end(index_scheme)
+
+        start(method)
+          type=sparse
+          start(type)
+            silent=false
+            stop_error=.0001
+
+            start(sparse_solver)
+              type = omp
+              start(type)
+                type = subsetmcv
+                start(type)
+                  start(cross_validation)
+                    type = loo
+                    start(type)
+                    end(type)
+                  end(cross_validation)
+                end(type)
+              end(type)
+            end(sparse_solver)
+
+            start(sampler)
+              start(scheme)
+                type = lhs
+                start(type)
+                  nb_samples = 200
+                  max_nb_samples = 1000
+                end(type)
+              end(scheme)
+            end(sampler)
+
+          end(type)
+        end(method)
+
+      end(type)
+    end(type)
+
+  end(analysis)
+
+end(main)

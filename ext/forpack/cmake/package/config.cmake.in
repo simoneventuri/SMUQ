@@ -1,0 +1,41 @@
+@PACKAGE_INIT@
+
+string ( TOLOWER @PROJECT_NAME@ PACKAGE_NAME_LC )
+string ( TOUPPER @PROJECT_NAME@ PACKAGE_NAME_UC )
+
+# Setting variables related to version
+set ( ${PACKAGE_NAME_UC}_VERSION                    "@PROJECT_VERSION@" )
+set ( ${PACKAGE_NAME_UC}_VERSION_MAJOR              "@PROJECT_VERSION_MAJOR@" )
+set ( ${PACKAGE_NAME_UC}_VERSION_MINOR              "@PROJECT_VERSION_MINOR@" )
+set ( ${PACKAGE_NAME_UC}_VERSION_PATCH              "@PROJECT_VERSION_PATCH@" )
+
+# Setting variables related to git repository
+set ( ${PACKAGE_NAME_UC}_GIT_BRANCH                 "@GIT_BRANCH@" )
+set ( ${PACKAGE_NAME_UC}_GIT_SHA1                   "@GIT_SHA1@" )
+set ( ${PACKAGE_NAME_UC}_GIT_TAG                    "@GIT_TAG@" )
+set ( ${PACKAGE_NAME_UC}_FULL_VERSION               "@PROJECT_FULL_VERSION@" )
+
+# Setting variables related to build
+set ( ${PACKAGE_NAME_UC}_BUILD_TYPE                 "@CMAKE_BUILD_TYPE@" )
+set ( ${PACKAGE_NAME_UC}_BUILD_CONFIGURATION        "@PROJECT_BUILD_CONFIGURATION@" )
+set ( ${PACKAGE_NAME_UC}_BUILD_DATE                 "@BUILD_DATE@" )
+
+# Setting variables related to Fortran compiler
+set ( ${PACKAGE_NAME_UC}_FORTRAN_COMPILER_ID        "@CMAKE_Fortran_COMPILER_ID@" )
+set ( ${PACKAGE_NAME_UC}_FORTRAN_COMPILER_NAME      "@Fortran_COMPILER_NAME@" )
+set ( ${PACKAGE_NAME_UC}_FORTRAN_COMPILER_VERSION   "@CMAKE_Fortran_COMPILER_VERSION@" )
+set ( ${PACKAGE_NAME_UC}_FORTRAN_COMPILER_CONFIG    "@Fortran_COMPILER_CONFIG@" )
+
+# Setting variables related to libraries and flags
+set ( ${PACKAGE_NAME_UC}_LIBRARY                    ${PACKAGE_NAME_LC} )
+set ( ${PACKAGE_NAME_UC}_LIBRARIES                  "@LIST_LIBRARIES_FFLAGS@" )
+set ( ${PACKAGE_NAME_UC}_DEFINITIONS                "@DEFINITION_FFLAGS@" )
+set ( ${PACKAGE_NAME_UC}_MODULEFILE                 "@MODULEFILE_FULLNAME@" )
+
+# Setting the names of the installation directories
+set_and_check( ${PACKAGE_NAME_UC}_LIBRARY_DIR     "@PACKAGE_LIBRARY_INSTALL_DIR@" )
+set_and_check( ${PACKAGE_NAME_UC}_MODULES_DIR     "@PACKAGE_MODULES_INSTALL_DIR@" )
+set_and_check( ${PACKAGE_NAME_UC}_INCLUDE_DIR     "@PACKAGE_INCLUDE_INSTALL_DIR@" )
+set_and_check( ${PACKAGE_NAME_UC}_CMAKE_DIR       "@PACKAGE_CMAKE_INSTALL_DIR@" )
+
+include("${CMAKE_CURRENT_LIST_DIR}/${PACKAGE_NAME_LC}-targets.cmake" )

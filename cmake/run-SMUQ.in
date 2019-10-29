@@ -1,0 +1,234 @@
+#!/bin/bash
+##--------------------------------------------------------------------------------------------------------------------------------
+##
+## Stochastic Modeling & Uncertainty Quantification (SMUQ)
+##
+## Copyright (C) 2016 Venturi, Simone & Rostkowski, Przemyslaw (University of Illinois at Urbana-Champaign)
+##
+## This program is free software; you can redistribute it and/or modify it under the terms of the Version 2.1 GNU Lesser General
+## Public License as published by the Free Software Foundation.
+##
+## This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free 
+## Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+##
+##--------------------------------------------------------------------------------------------------------------------------------
+
+#----------------------------------------------------- SCRIPT ARGUMENTS ----------------------------------------------------------
+for i in "$@"
+do
+case $i in
+    nprocesses=*)
+    NProcesses=${i#*=}
+    shift # past argument=value
+    ;;
+    case=*)
+    CASE_DIR="${i#*=}"
+    shift # past argument=value
+    ;;
+    restart )
+    RESTART_FLAG=true
+    shift # past argument=value
+    ;;
+    logterminal )
+    LOGTERMINAL_FLAG=true
+    shift # past argument=value
+    ;;
+    *)
+    echo " ERROR: Unrecognized option => Stopping" && echo " " && exit 1      # unknown option
+    ;;
+esac
+done
+#---------------------------------------------------------------------------------------------------------------------------------
+
+#---------------------------------------------------------- CHECKS ---------------------------------------------------------------
+if [[ -z "${NProcesses}" ]]; then
+  NProcesses=1
+fi
+  
+if [[ -z "${RESTART_FLAG}" ]]; then
+  RESTART_FLAG=false
+fi
+
+if [[ -z "${LOGTERMINAL_FLAG}" ]]; then
+  LOGTERMINAL_FLAG=false
+fi
+
+if [[ -n "${CASE_DIR}" ]]; then
+  [[ ! -e ${CASE_DIR} ]] && echo " ERROR: The case directory does not exist => Stopping" && echo " " && exit 1
+fi
+
+EXEC_PATH="@SMUQ_SOURCE_DIR@/@CMAKE_INSTALL_BINDIR@/smuqApp"
+if [[ -n "${EXEC_PATH_INPUT}" ]]; then
+  EXEC_PATH=${EXEC_PATH_INPUT}
+fi
+
+[[ -z "${EXEC_PATH}" ]] && echo " ERROR: Empty string executable location detected => Stopping" && echo " " && exit 1
+[[ ! -x "${EXEC_PATH}" ]] && echo " ERROR: The indicated executable is not usable => Stopping" && echo " " && exit 1
+#---------------------------------------------------------------------------------------------------------------------------------
+
+#---------------------------------------------------- DEFINING FUNCTIONS ---------------------------------------------------------
+
+function DefinePaths() {
+  echo " "
+  RUN_DIR=$(pwd)
+  CASE_DIR_DEF="${RUN_DIR}/case"
+  if [[ -z "${CASE_DIR}" ]]; then
+    CASE_DIR=${CASE_DIR_DEF}
+    [[ ! -e ${CASE_DIR} ]] && echo " ERROR: The case directory was not specified and is not in the run directory"                 \
+                                                                                              " => Stopping" && echo " " && exit 1
+  fi
+  OUTPUT_DIR="${RUN_DIR}/output"
+  RESTART_DIR="${RUN_DIR}/restart"
+  LOG_DIR="${RUN_DIR}/log"
+  TMP_DIR="${RUN_DIR}/TMP"
+}
+
+
+function PrintLogo() {
+  echo "                                                                                                                         "
+  echo "========================================================================================================================="
+  echo "                               __________                          _______                                               "
+  echo "                              )             /|    /| |          | !       \                                              "             
+  echo "                             /             / |   / | |          | !        \                                             "
+  echo "                            /             /  |  /  | |          | !         \                                            "
+  echo "                           (_________    /   | /   | |          | !          \                                           "
+  echo "                                     )  /    |/    | |          | !           \                                          "
+  echo "                                    /  /           | |          | !            \                                         "
+  echo "                                   /  /            | |          | !        \    \                                        "
+  echo "                         _________/  /             | l__________| l_________\___!                                        "
+  echo "                                                                             \                                           "
+  echo "========================================================================================================================="
+}
+
+
+function PrintVariables() {
+  echo " "
+  echo " Build Configuration         =  @CMAKE_BUILD_TYPE@"
+  echo " Executable Path             = " ${EXEC_PATH}
+  echo " Working Directory           = " ${RUN_DIR}
+  echo " Case Source                 = " ${CASE_DIR}
+  echo " Output Directory            = " ${OUTPUT_DIR}
+  echo " Restart Directory           = " ${RESTART_DIR}
+  echo " Log Directory               = " ${LOG_DIR}
+  echo " Temporary Working Directory = " ${TMP_DIR}
+  echo " "
+  echo "-------------------------------------------------------------------------------------------------------------------------"
+}
+
+function PrepareDirectories() {
+  if [ "${CASE_DIR_DEF}" != "${CASE_DIR}" ]; then
+      rm -rf ${CASE_DIR_DEF} || true
+      mkdir -p ${CASE_DIR_DEF}
+      cp -rf ${CASE_DIR}/* ${CASE_DIR_DEF}/
+  fi
+
+  rm -rf ${LOG_DIR} || true
+  mkdir -p ${LOG_DIR}
+
+  rm -rf ${OUTPUT_DIR} || true
+  mkdir -p ${OUTPUT_DIR}
+
+  rm -rf ${RESTART_DIR} || true
+  mkdir -p ${RESTART_DIR}
+
+  rm -rf ${TMP_DIR} || true 
+  mkdir -p ${TMP_DIR}
+           
+  if [[ ${NProcesses} -gt 1 ]]; then     
+    iProcess=1
+    while [ ${iProcess} -le ${NProcesses} ]; do   
+      mkdir ${LOG_DIR}/${iProcess}
+      mkdir ${TMP_DIR}/${iProcess} 
+      mkdir ${OUTPUT_DIR}/${iProcess}
+      mkdir ${RESTART_DIR}/${iProcess}
+      if [[ "${RESTART_FLAG}" == "true" ]]; then
+        cp -rf ${CASE_DIR_DEF}/${iProcess} ${TMP_DIR}/${iProcess} 
+      else
+        cp -rf ${CASE_DIR_DEF}/* ${TMP_DIR}/${iProcess} 
+      fi
+      iProcess=$((iProcess+1))
+    done           
+  else
+    cp -rf ${CASE_DIR_DEF}/* ${TMP_DIR}/
+  fi                                            
+}
+
+function Run() {
+  if [[ ${NProcesses} -gt 1 ]]; then     
+    iProcess=1
+    while [ ${iProcess} -le ${NProcesses} ]; do
+      if [[ "${LOGTERMINAL_FLAG}" == "true" ]]; then
+        eval "${EXEC_PATH}      iprocess=${iProcess}                           \
+                                nbprocesses=${NProcesses}                      \
+                                rundir=${RUN_DIR}                              \
+                                logdir=${LOG_DIR}/${iProcess}                  \
+                                casedir=${TMP_DIR}/${iProcess}                 \
+                                outputdir=${OUTPUT_DIR}/${iProcess}            \
+                                restartdir=${RESTART_DIR}/${iProcess}          \
+                                2>&1 | tee ${LOG_DIR}/terminal_log.dat" &
+      else
+        eval "${EXEC_PATH}      iprocess=${iProcess}                           \
+                                nbprocesses=${NProcesses}                      \
+                                rundir=${RUN_DIR}                              \
+                                logdir=${LOG_DIR}/${iProcess}                  \
+                                casedir=${TMP_DIR}/${iProcess}                 \
+                                outputdir=${OUTPUT_DIR}/${iProcess}            \
+                                restartdir=${RESTART_DIR}/${iProcess}" &
+      fi
+      iProcess=$((iProcess+1))
+    done
+  else
+    if [[ "${LOGTERMINAL_FLAG}" == "true" ]]; then
+      eval "${EXEC_PATH}      iprocess=1                                       \
+                              nbprocesses=1                                    \
+                              rundir=${RUN_DIR}                                \
+                              logdir=${LOG_DIR}                                \
+                              casedir=${TMP_DIR}                               \
+                              outputdir=${OUTPUT_DIR}                          \
+                              restartdir=${RESTART_DIR}                        \
+                              2>&1 | tee ${LOG_DIR}/terminal_log.dat" &
+    else
+      eval "${EXEC_PATH}      iprocess=1                                       \
+                              nbprocesses=1                                    \
+                              rundir=${RUN_DIR}                                \
+                              logdir=${LOG_DIR}                                \
+                              casedir=${TMP_DIR}                               \
+                              outputdir=${OUTPUT_DIR}                          \
+                              restartdir=${RESTART_DIR}" &
+    fi
+  fi
+  wait
+}
+
+function DeleteTmp() {
+  rm -rf ${TMP_DIR} || true;
+}
+
+#---------------------------------------------------------------------------------------------------------------------------------
+
+
+
+#-------------------------------------------------------- MAIN STRUCTURE ---------------------------------------------------------
+DefinePaths
+
+PrintLogo
+
+PrintVariables
+
+echo "[Main]: Calling PrepareDirectories"
+PrepareDirectories
+echo " "
+
+echo "[Main]: Calling Run"
+Run
+echo " "
+
+echo "[Main]: Calling DeleteTmp"
+#DeleteTmp
+echo " "
+
+exit 0
+#---------------------------------------------------------------------------------------------------------------------------------

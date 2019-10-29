@@ -1,0 +1,9 @@
+add_sources(
+  EnvironmentVariable_Module.F90
+  EnvironmentVariable_SubModule.F90
+  EnvVar_Class.F90
+  EnvVar_SubClass.F90
+  EnvironmentVariable_Class.F90
+  EnvironmentVariable_SubClass.F90
+  EnvironmentVariable_Library.F90
+)

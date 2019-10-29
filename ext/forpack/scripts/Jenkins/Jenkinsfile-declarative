@@ -1,0 +1,84 @@
+pipeline {
+
+    environment {
+        FOO = "BAR"
+    }
+
+    agent any
+    stages {
+
+        stage('Definition') {
+            steps {
+              echo 'Definition'
+              sh "echo ${params.region}"
+              echo "FOO     $FOO"
+
+              echo "flag: ${params.userFlag}"
+              env.CodeName              = Var.toLowerCase()
+              env.InstallScript         = "${CodeName}-install"
+              env.ScriptDirectory       = "${env.WORKSPACE}/${CodeName}/scripts/Installation"
+            }
+        }
+
+        stage('Printing') {
+            steps {
+              echo 'User variables'
+              echo "-> CodeName                    ${env.CodeName}"
+              echo "-> InstallScript               ${env.InstallScript}"
+              echo "-> ScriptDirectory             ${env.ScriptDirectory}"
+              echo 'Jenkins variables'
+              echo "-> BUILD_NUMBER                ${env.BUILD_NUMBER}"
+              echo "-> BUILD_ID                    ${env.BUILD_ID}"
+              echo "-> BUILD_DISPLAY_NAME          ${env.BUILD_DISPLAY_NAME}"
+              echo "-> JOB_NAME                    ${env.JOB_NAME}"
+              echo "-> BUILD_TAG                   ${env.BUILD_TAG}"
+              echo "-> EXECUTOR_NUMBER             ${env.EXECUTOR_NUMBER}"
+              echo "-> NODE_NAME                   ${env.NODE_NAME}"
+              echo "-> NODE_LABELS                 ${env.NODE_LABELS}"
+              echo "-> WORKSPACE                   ${env.WORKSPACE}"
+              echo "-> JENKINS_HOME                ${env.JENKINS_HOME}"
+              echo "-> JENKINS_URL                 ${env.JENKINS_URL}"
+              echo "-> BUILD_URL                   ${env.BUILD_URL}"
+              echo "-> JOB_URL                     ${env.JOB_URL}"
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+              echo 'Checkout stage'
+              checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${env.CodeName}"]], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '329afd48-21cf-4f96-b205-35259f8f5262', url: '/home/blopez/Codes/FORPACK/forpack']]])
+            }
+        }
+
+        stage('Build') {
+            steps {
+              echo 'Build stage'
+              sh '''
+                module() {
+                  eval `/usr/local/Modules/3.2.10/bin/modulecmd bash $*`
+                }
+                module unuse /home/libo/LIBRARIES/modules/Modules/
+                module use --append /home/libo/MODULES/APPLICATIONS
+                module use --append /home/libo/MODULES/LIBRARIES
+                module use --append /home/libo/MODULES/CFD
+                module avail
+                module load cmake/3.10.2
+                module load intel/18.0.0
+                module load pfunit/3.1.1-release-intel-18.0.0
+                module list
+                echo "ScriptDirectory     ${ScriptDirectory}"
+                echo "InstallScript       ${InstallScript}"
+                echo "build_type         ${build_type}"
+
+                cp ${ScriptDirectory}/${InstallScript} .
+                ./${InstallScript} \
+                  -u=${build_type}  \
+                  -f="ifort" \
+                  -t
+                echo "NameVersionConfig     ${NameVersionConfig}"
+              '''
+            }
+        }
+
+    }
+}

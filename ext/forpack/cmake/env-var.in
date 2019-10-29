@@ -1,0 +1,75 @@
+#! /bin/bash
+###############################################################################
+#
+# ${PROJECT_NAME} environment variables
+#
+###############################################################################
+# This file has been automatically generated during the build process.
+# It will be overwritten during the next build.
+# If edited, please save with a different file name to conserve the changes.
+# The environment variables contained in this script are the same than the ones
+# in the modulfile '${LIBRARY_NAME}/${MODULEFILE_NAME}'.
+# Although the modulefile approach is recommented, this script is provided as
+# an alternative to modulefiles to load environment variables and paths.
+# To use this script, just source it using:
+#       source ${SCRIPT_INSTALL_DIR}/${ENVVAR_SCRIPT_NAME}
+###############################################################################
+set -e
+
+# Define a set of stylistic functions... no harm to make things pretty
+Bold()          { echo -e "\e[1m$1\e[0m"; }
+Red()           { echo -e "\e[31m$1\e[0m"; }
+BoldRed()       { echo -e "\e[31m$(Bold $1)\e[0m"; }
+
+echo "Loading ${PROJECT_NAME} environment variables and paths: $(BoldRed ${PROJECT_BUILD_CONFIGURATION})"
+
+# =============================
+# Setting environment variables
+# =============================
+
+# Version parameters
+# ------------------
+export ${PROJECT_NAME_UC}_PROJECT_NAME="${PROJECT_NAME}"
+export ${PROJECT_NAME_UC}_VERSION="${PROJECT_VERSION}"
+export ${PROJECT_NAME_UC}_VERSION_MAJOR="${PROJECT_VERSION_MAJOR}"
+export ${PROJECT_NAME_UC}_VERSION_MINOR="${PROJECT_VERSION_MINOR}"
+export ${PROJECT_NAME_UC}_VERSION_PATCH="${PROJECT_VERSION_PATCH}"
+export ${PROJECT_NAME_UC}_GIT_BRANCH="${GIT_BRANCH}"
+export ${PROJECT_NAME_UC}_GIT_SHA1="${GIT_SHA1}"
+export ${PROJECT_NAME_UC}_GIT_TAG="${GIT_TAG}"
+export ${PROJECT_NAME_UC}_FULL_VERSION="${PROJECT_FULL_VERSION}"
+
+# Directories parameters
+# ----------------------
+export ${PROJECT_NAME_UC}_DIR="${PROJECT_INSTALL_DIR}"
+export ${PROJECT_NAME_UC}_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+export ${PROJECT_NAME_UC}_BUILD_DIR="${CMAKE_BINARY_DIR}"
+export ${PROJECT_NAME_UC}_INSTALL_DIR="${PROJECT_INSTALL_DIR}"
+export ${PROJECT_NAME_UC}_LIBRARY_DIR="${LIBRARY_INSTALL_DIR}"
+export ${PROJECT_NAME_UC}_MODULES_DIR="${MODULES_INSTALL_DIR}"
+export ${PROJECT_NAME_UC}_CMAKE_DIR="${CMAKE_INSTALL_DIR}"
+export ${PROJECT_NAME_UC}_EXECUTABLE_DIR="${EXECUTABLE_INSTALL_DIR}"
+
+# Build parameters
+# ----------------
+export ${PROJECT_NAME_UC}_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
+export ${PROJECT_NAME_UC}_BUILD_CONFIGURATION="${PROJECT_BUILD_CONFIGURATION}"
+export ${PROJECT_NAME_UC}_BUILD_DATE="${BUILD_DATE}"
+export ${PROJECT_NAME_UC}_FORTRAN_COMPILER_ID="${CMAKE_Fortran_COMPILER_ID}"
+export ${PROJECT_NAME_UC}_FORTRAN_COMPILER_NAME="${Fortran_COMPILER_NAME}"
+export ${PROJECT_NAME_UC}_FORTRAN_COMPILER_VERSION="${CMAKE_Fortran_COMPILER_VERSION}"
+export ${PROJECT_NAME_UC}_FORTRAN_COMPILER_CONFIG="${Fortran_COMPILER_CONFIG}"
+
+export ${PROJECT_NAME_UC}_LIBRARIES="${LIBRARIES_FFLAGS}"
+export ${PROJECT_NAME_UC}_DEFINITIONS="${DEFINITION_FFLAGS}"
+export ${PROJECT_NAME_UC}_INCLUDE_DIR_FFLAGS="${INCLUDE_DIR_FFLAGS}"
+export ${PROJECT_NAME_UC}_LIBRARY_DIR_FFLAGS="${LIBRARY_DIR_FFLAGS}"
+export ${PROJECT_NAME_UC}_REQUIRED_MODULEFILES="${REQUIRED_MODULEFILES}"
+export ${PROJECT_NAME_UC}_MODULEFILE_NAME="${MODULEFILE_NAME}"
+export ${PROJECT_NAME_UC}_MODULEFILE_FULLNAME="${MODULEFILE_FULLNAME}"
+
+# ======================
+# Setting path variables
+# ======================
+export PATH=$PATH:$${PROJECT_NAME_UC}_EXECUTABLE_DIR
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$${PROJECT_NAME_UC}_LIBRARY_DIR
