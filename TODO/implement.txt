@@ -1,6 +1,4 @@
  - implement reading a probability distribution from file
- - debug numerical orthogonal polynomial class
-    -- try copying down distribution parameters to local variables instead of directly referencing class variables
  - add in ability to compute sobol indices as part of polynomial chaos surrogate modeling output
  - add in option to record history of sobol indices for polynomial chaos surrogate modeling and to have it as output
  - implement nataf transform so that the space sampler is able to sample correlated spaces other than multivariate normal

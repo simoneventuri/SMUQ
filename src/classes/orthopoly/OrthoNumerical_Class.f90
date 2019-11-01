@@ -38,7 +38,7 @@ private
 public                                                                ::    OrthoNumerical_Type
 
 type, extends(OrthoPoly_Type)                                         ::    OrthoNumerical_Type
-  class(DistProb_Type), pointer                                       ::    Weights=>null()
+  class(DistProb_Type), allocatable                                   ::    Weights
   real(rkp), allocatable, dimension(:)                                ::    Alpha
   real(rkp), allocatable, dimension(:)                                ::    Beta
   real(rkp), allocatable, dimension(:)                                ::    NFactor
@@ -123,7 +123,7 @@ contains
     if ( allocated(This%NFactor) ) deallocate(This%NFactor, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%NFactor', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Weights) ) deallocate( This%Weights, stat=StatLoc )
+    if ( allocated(This%Weights) ) deallocate( This%Weights, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Weights', ProcName=ProcName, stat=StatLoc )
 
     This%Order = -1
@@ -190,7 +190,7 @@ contains
 
     SectionName = 'weights'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call DistProb_Factory%ConstructPointer( Object=This%Weights, Input=InputSection, Prefix=PrefixLoc )
+    call DistProb_Factory%Construct( Object=This%Weights, Input=InputSection, Prefix=PrefixLoc )
 
     ParameterName = 'normalized'
     call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -738,10 +738,11 @@ contains
 
         if ( RHS%Constructed ) then
           LHS%Normalized = RHS%Normalized
+          LHS%Order = RHS%Order
           allocate(LHS%Weights, source=RHS%Weights, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Weights', ProcName=ProcName, stat=StatLoc )
 
-          if ( RHS%Order > 0 ) then
+          if ( RHS%Order > -1 ) then
             allocate( LHS%Alpha, source=RHS%Alpha, stat=StatLoc )
             if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Alpha', ProcName=ProcName, stat=StatLoc )
             allocate( LHS%Beta, source=RHS%Beta, stat=StatLoc )
@@ -783,7 +784,7 @@ contains
     if ( allocated(This%NFactor) ) deallocate(This%NFactor, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%NFactor', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Weights) ) deallocate( This%Weights, stat=StatLoc )
+    if ( allocated(This%Weights) ) deallocate( This%Weights, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Weights', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
