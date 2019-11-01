@@ -616,7 +616,7 @@ contains
 
     i = 1
     do i = 1, Bottom
-      BinomialCoeff_I_I = (Top + 1 - i) / i
+      BinomialCoeff_I_I = BinomialCoeff_I_I * (Top + 1 - i) / i
     end do
 
     if (DebugLoc) call Logger%Exiting()
@@ -646,7 +646,7 @@ contains
 
     i = 1
     do i = 1, Bottom
-      BinomialCoeff_I8_I8 = (Top + 1 - i) / i
+      BinomialCoeff_I8_I8 = BinomialCoeff_I8_I8 * (Top + 1 - i) / i
     end do
 
     if (DebugLoc) call Logger%Exiting()
@@ -678,7 +678,7 @@ contains
     i = 1
     do i = 1, Bottom
       i_rkp = real(i,rkp)
-      BinomialCoeff_R_rkp_I_ikp = (Top + One - i_rkp) / i_rkp
+      BinomialCoeff_R_rkp_I_ikp = BinomialCoeff_R_rkp_I_ikp * (Top + One - i_rkp) / i_rkp
     end do
 
     if (DebugLoc) call Logger%Exiting()
@@ -710,7 +710,7 @@ contains
     i = 1
     do i = 1, Bottom
       i_rkp = real(i,rkp)
-      BinomialCoeff_R_rkp_I = (Top + One - i_rkp) / i_rkp
+      BinomialCoeff_R_rkp_I = BinomialCoeff_R_rkp_I * (Top + One - i_rkp) / i_rkp
     end do
 
     if (DebugLoc) call Logger%Exiting()

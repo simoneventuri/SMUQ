@@ -24,6 +24,7 @@ use Error_Class                                                   ,only:  Error
 use OrthoPoly_class
 use ComputingRoutines_Module
 use Parameters_Library
+use StringRoutines_Module
 
 implicit none
 
@@ -33,7 +34,6 @@ public                                                                ::    Orth
 
 type, extends(OrthoPoly_Type)                                         ::    OrthoLaguerre_Type
   real(rkp)                                                           ::    A=Zero
-  integer                                                             ::    Normalization=0
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -45,7 +45,6 @@ contains
   procedure, public                                                   ::    Eval_N
   procedure, public                                                   ::    Eval_MN
   procedure, nopass, public                                           ::    NFactor
-  procedure, private                                                  ::    SetA
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -54,7 +53,7 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This, Debug )
     class(OrthoLaguerre_Type), intent(inout)                          ::    This
     logical, optional ,intent(in)                                     ::    Debug
@@ -75,9 +74,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This, Debug )
 
     class(OrthoLaguerre_Type), intent(inout)                          ::    This
@@ -99,9 +98,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults(This, Debug)
 
     class(OrthoLaguerre_Type), intent(inout)                          ::    This
@@ -116,14 +115,13 @@ contains
 
     This%A = 0
     This%Normalized = .false.
-    This%Normalization = 0
 
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix, Debug )
 
     use String_Library
@@ -138,7 +136,7 @@ contains
     real(rkp)                                                         ::    VarR0D
     logical                                                           ::    Found
     character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    VarC0D
+    logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
@@ -154,39 +152,28 @@ contains
 
     ParameterName = 'alpha'
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) call This%SetA( VarR0D )
-
-    ParameterName = 'normalization'
-    call Input%GetValue( value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) then
-      select case (LowerCase(VarC0D))
-        case ('none')
-          This%Normalization = 0
-          This%Normalized = .false.
-        case ('standard')
-          This%Normalization = 1
-          This%Normalized = .true.
-        case ('gamma')
-          This%Normalization = 2
-          This%Normalized = .true.
-        case default
-          call Error%Raise( Line='Unrecognized normalization option', ProcName=ProcName )
-      end select
+      if ( VarR0D < Zero ) call Error%Raise( Line='Alpha setting below minimum of 1', ProcName=ProcName )
+      This%A = VarR0D - One
     end if
+
+    ParameterName = 'normalized'
+    call Input%GetValue( value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%Normalized = VarL0D
 
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase1( This, Alpha, Normalization, Debug )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructCase1( This, Alpha, Normalized, Debug )
     
     class(OrthoLaguerre_Type), intent(inout)                          ::    This
     real(rkp), optional, intent(in)                                   ::    Alpha
-    integer, optional, intent(in)                                     ::    Normalization
+    logical, optional, intent(in)                                     ::    Normalized
     logical, optional ,intent(in)                                     ::    Debug 
 
     logical                                                           ::    DebugLoc
@@ -199,22 +186,21 @@ contains
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
-    if ( present(Alpha) ) call This%SetA(Alpha)
-
-    if ( present(Normalization) ) then
-      if ( Normalization > 2 .or. Normalization < 0 ) call Error%Raise( Line='Invalid normalization option', ProcName=ProcName )
-      This%Normalization = Normalization
-      if ( Normalization /= 0 ) This%Normalized=.true.
+    if ( present(Alpha) ) then
+      if ( Alpha < Zero ) call Error%Raise( Line='Alpha setting below minimum of 1', ProcName=ProcName )
+      This%A = Alpha - One
     end if
+
+    if ( present(Normalized) ) This%Normalized = Normalized
 
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput( This, MainSectionName, Prefix, Directory, Debug )
 
     use StringRoutines_Module
@@ -247,33 +233,25 @@ contains
 
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )    
-    call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%A + One ) )
+    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    select case (This%Normalization)
-      case(0)
-        call GetInput%AddParameter( Name='normalization', Value='none' )
-      case(1)
-        call GetInput%AddParameter( Name='normalization', Value='standard' )
-      case(2)
-        call GetInput%AddParameter( Name='normalization', Value='gamma' )
-      case default
-        call Error%Raise( Line='Unrecognized normalization option', ProcName=ProcName )
-    end select
+    call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%A + One ) )
+    call GetInput%AddParameter( Name='normalized', Value=ConvertToString(Value=This%Normalized) )
 
     if (DebugLoc) call Logger%Exiting()
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Eval_N( This, Order, X, Debug )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Eval_N( This, Order, X, Normalized, Debug )
 
     real(rkp)                                                         ::    Eval_N
 
     class(OrthoLaguerre_Type), intent(inout)                          ::    This
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    Order
+    logical, optional, intent(in)                                     ::    Normalized
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -283,12 +261,16 @@ contains
     real(rkp)                                                         ::    valnp1
     real(rkp)                                                         ::    nt
     integer                                                           ::    i
+    logical                                                           ::    NormalizedLoc
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    NormalizedLoc = This%Normalized
+    if ( present(Normalized) ) NormalizedLoc = Normalized
 
     if ( X < Zero ) call Error%Raise( Line='X argument below allowable minimum of 0', ProcName=ProcName )
 
@@ -311,15 +293,15 @@ contains
       Eval_N = valnp1
     end if
 
-    if ( This%Normalized ) Eval_N = Eval_N / This%NFactor( Order=Order, A=This%A, Normalization=This%Normalization )
+    if ( NormalizedLoc ) Eval_N = Eval_N / This%NFactor( Order=Order, A=This%A )
 
     if (DebugLoc) call Logger%Exiting()
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Eval_MN( This, MinOrder, MaxOrder, X, Debug)
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Eval_MN( This, MinOrder, MaxOrder, X, Normalized, Debug)
 
     real(rkp), dimension(:), allocatable                              ::    Eval_MN
 
@@ -327,6 +309,7 @@ contains
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    MinOrder
     integer, intent(in)                                               ::    MaxOrder
+    logical, optional, intent(in)                                     ::    Normalized
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -337,12 +320,16 @@ contains
     real(rkp)                                                         ::    nt
     integer                                                           ::    i, i_offset, ii
     integer                                                           ::    StatLoc=0
+    logical                                                           ::    NormalizedLoc
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    NormalizedLoc = This%Normalized
+    if ( present(Normalized) ) NormalizedLoc = Normalized
 
     if ( X < Zero ) call Error%Raise( Line='X argument below allowable minimum of 0', ProcName=ProcName )
 
@@ -357,11 +344,11 @@ contains
     else
       i_offset = 0
       if ( MinOrder == -1 )  then
-        Eval_MN(1) = This%Eval( Order=-1, X=X )
-        Eval_MN(2) = This%Eval( Order=0, X=X )
+        Eval_MN(1) = This%Eval( Order=-1, X=X, Normalized=NormalizedLoc )
+        Eval_MN(2) = This%Eval( Order=0, X=X, Normalized=NormalizedLoc )
         i_offset = 2
       elseif (MinOrder == 0) then
-        Eval_MN(1) = This%Eval( Order=0, X=X )
+        Eval_MN(1) = This%Eval( Order=0, X=X, Normalized=NormalizedLoc )
         i_offset = 1
       end if
       i = 1
@@ -375,8 +362,7 @@ contains
         valnp0 = valnp1
         if ( i >= MinOrder ) then
           Eval_MN(i+i_offset-ii) = valnp1
-          if ( This%Normalized ) Eval_MN(i+i_offset-ii) = Eval_MN(i+i_offset-ii) /                                                &
-                                                               This%NFactor( Order=i, A=This%A, Normalization=This%Normalization )
+          if ( NormalizedLoc ) Eval_MN(i+i_offset-ii) = Eval_MN(i+i_offset-ii) / This%NFactor( Order=i, A=This%A )
         else
           ii = ii + 1
         end if
@@ -387,16 +373,15 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function NFactor( Order, A, Normalization, Debug )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function NFactor( Order, A, Debug )
 
     real(rkp)                                                         ::    NFactor
 
     integer, intent(in)                                               ::    Order
     real(rkp), intent(in)                                             ::    A
-    integer, intent(in)                                               ::    Normalization
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -406,46 +391,18 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    select case (Normalization)
-      case (0)
-        NFactor = One
-      case (1)
-
-      case (2)
-        NFactor = sqrt( BinomialCoeff( real(Order,rkp) + A, Order ) )
-      case default
-        call Error%Raise( Line='Invalid normalization option', ProcName=ProcName )
-    end select
+    if ( Order > 0 ) then
+      NFactor = dsqrt( BinomialCoeff( real(Order,rkp) + A, Order ) )
+    else
+      NFactor = One
+    end if
 
     if (DebugLoc) call Logger%Exiting()
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetA( This, Alpha, Debug )
-
-    class(OrthoLaguerre_Type), intent(inout)                          ::    This
-    real(rkp), intent(in)                                             ::    Alpha
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='SetA'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( Alpha < Zero ) call Error%Raise( Line='Alpha setting below minimum of 1', ProcName=ProcName )
-
-    This%A = Alpha - One
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy( LHS, RHS )
 
     class(OrthoLaguerre_Type), intent(out)                            ::    LHS
@@ -467,7 +424,6 @@ contains
         if ( RHS%Constructed ) then
           LHS%A = RHS%A
           LHS%Normalized = RHS%Normalized
-          LHS%Normalization = RHS%Normalization
         end if
 
       class default
@@ -478,9 +434,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Finalizer( This )
 
     type(OrthoLaguerre_Type), intent(inout)                           ::    This
@@ -495,6 +451,6 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

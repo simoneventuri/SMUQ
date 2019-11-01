@@ -43,6 +43,7 @@ use SpaceParam_Class                                              ,only:    Spac
 use SpaceTransf_Class                                             ,only:    SpaceTransf_Type
 use SpaceTransf_Factory_Class                                     ,only:    SpaceTransf_Factory
 use SpaceTransfCustom_Class                                       ,only:    SpaceTransfCustom_Type
+use SpaceTransfNone_Class                                         ,only:    SpaceTransfNone_Type
 use SpaceTransfStdNormal_Class                                    ,only:    SpaceTransfStdNormal_Type
 use Model_Class                                                   ,only:    Model_Type
 use ModelTransform_Class                                          ,only:    ModelTransform_Type
@@ -79,6 +80,7 @@ contains
   procedure, nopass, private                                          ::    ConstructAskeyScheme
   procedure, nopass, private                                          ::    ConstructWeinerScheme
   procedure, nopass, private                                          ::    ConstructAskeyNumericalScheme
+  procedure, nopass, private                                          ::    ConstructAskeyNumericalExtendedScheme
   procedure, nopass, private                                          ::    ConstructNumericalScheme
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run
@@ -336,10 +338,10 @@ contains
       case('askey')
         call This%ConstructAskeyScheme( SpaceInput, Basis, SpaceTransform )
       case('askey_numerical')
-        call Error%Raise( Line='Askey numerical scheme is not yet ready to be used (numerical orthopoly)', ProcName=ProcName )
         call This%ConstructAskeyNumericalScheme( SpaceInput, Basis, SpaceTransform )
+      case('askey_numerical_extended')
+        call This%ConstructAskeyNumericalExtendedScheme( SpaceInput, Basis, SpaceTransform )
       case('numerical')
-        call Error%Raise( Line='Numerical scheme is not yet ready to be used (numerical orthopoly)', ProcName=ProcName )
         call This%ConstructNumericalScheme( SpaceInput, Basis, SpaceTransform )
       case default
         call Error%Raise( Line='Unrecognized orthogonal polynomial basis scheme: ' // This%BasisScheme, ProcName=ProcName )
@@ -499,12 +501,12 @@ contains
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoLegendre_Type )
-              call Object2%Construct( Normalization=2 )
+              call Object2%Construct( Normalized=.true. )
             class default
               call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
 
-        type is ( DistGamma_Type )
+        class is ( DistGamma_Type )
           allocate(DistGamma_Type :: DistProb, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='DistProb', ProcName=ProcName, stat=StatLoc )
           allocate( OrthoLaguerre_Type :: OrthoPoly, stat=StatLoc )
@@ -519,7 +521,7 @@ contains
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoLaguerre_Type )
-              call Object2%Construct( Normalization=2 )
+              call Object2%Construct( Normalized=.true. )
             class default
               call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
@@ -539,7 +541,7 @@ contains
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoHermite_Type )
-              call Object2%Construct( Normalization=2 )
+              call Object2%Construct( Normalized=.true. )
             class default
               call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
@@ -613,7 +615,7 @@ contains
 
     select type ( Object => OrthoPoly )
       type is ( OrthoHermite_Type )
-        call Object%Construct( Normalization=2 )
+        call Object%Construct( Normalized=.true. )
       class default
         call Error%Raise( Line='Something went wrong', ProcName=ProcName )
     end select
@@ -698,7 +700,7 @@ contains
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoHermite_Type )
-              call Object2%Construct( Normalization=2 )
+              call Object2%Construct( Normalized=.true. )
             class default
               call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
@@ -718,7 +720,7 @@ contains
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoLegendre_Type )
-              call Object2%Construct( Normalization=2 )
+              call Object2%Construct( Normalized=.true. )
             class default
               call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
@@ -738,7 +740,7 @@ contains
 
           select type ( Object2 => OrthoPoly )
             type is ( OrthoLaguerre_Type )
-              call Object2%Construct( Normalization=2 )
+              call Object2%Construct( Normalized=.true. )
             class default
               call Error%Raise( Line='Something went wrong', ProcName=ProcName )
           end select
@@ -790,7 +792,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructNumericalScheme( SpaceInput, Basis, SpaceTransform, Debug )
+  subroutine ConstructAskeyNumericalExtendedScheme( SpaceInput, Basis, SpaceTransform, Debug )
 
     type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
@@ -798,10 +800,8 @@ contains
     logical, intent(in), optional                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ConstructNumericalScheme'
+    character(*), parameter                                           ::    ProcName='ConstructAskeyNumericalExtendedScheme'
     integer                                                           ::    StatLoc=0
-    class(DistProb_Type), allocatable                                 ::    DistProb
-    type(DistProb_Vec_Type), allocatable, dimension(:)                ::    DistProbVec
     class(DistProb_Type), pointer                                     ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
     type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
@@ -814,51 +814,182 @@ contains
 
     NbDim = SpaceInput%GetNbDim()
 
-    allocate( SpaceTransfCustom_Type :: SpaceTransform, stat=StatLoc )
+    allocate( SpaceTransfNone_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
     
     allocate(OrthoPolyVec(NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
 
-    allocate(DistProbVec(NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='DistProbVec', ProcName=ProcName, stat=StatLoc )
-
     i = 1
     do i = 1, NbDim
-      DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
-      allocate(DistProb, source=DistProbPointer, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='DistProb', ProcName=ProcName, stat=StatLoc )
-      allocate( OrthoNumerical_Type :: OrthoPoly, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
 
-      select type ( Object2 => OrthoPoly )
-        type is ( OrthoNumerical_Type )
-          call Object2%Construct( Weights=DistProb, Normalized=.true. )
+      DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
+
+      select type ( Object => DistProbPointer )
+
+        type is (DistNorm_Type)
+          if ( (Object%GetMu() == Zero .and. Object%GetSigma() == One) .and.                                                      &
+                                               ( (.not. Object%IsTruncatedLeft()) .and. (.not. Object%IsTruncatedRight()) ) ) then
+            allocate( OrthoHermite_Type :: OrthoPoly, stat=StatLoc )
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+            select type ( Object2 => OrthoPoly )
+              type is ( OrthoHermite_Type )
+                call Object2%Construct( Normalized=.true. )
+              class default
+                call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+            end select
+          else
+            allocate( OrthoNumerical_Type :: OrthoPoly, stat=StatLoc )
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+            select type ( Object2 => OrthoPoly )
+              type is ( OrthoNumerical_Type )
+                call Object2%Construct( Weights=DistProbPointer, Normalized=.true. )
+              class default
+                call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+            end select
+          end if
+
+        type is ( DistUnif_Type )
+
+          if ( Object%GetA() == -One .and. Object%GetB() == One ) then
+            allocate( OrthoLegendre_Type :: OrthoPoly, stat=StatLoc )
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+            select type ( Object2 => OrthoPoly )
+              type is ( OrthoLegendre_Type )
+                call Object2%Construct( Normalized=.true. )
+              class default
+                call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+            end select
+          else
+            allocate( OrthoNumerical_Type :: OrthoPoly, stat=StatLoc )
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+            select type ( Object2 => OrthoPoly )
+              type is ( OrthoNumerical_Type )
+                call Object2%Construct( Weights=DistProbPointer, Normalized=.true. )
+              class default
+                call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+            end select
+          end if
+
+        type is ( DistGamma_Type )
+          if ( ( Object%GetA() == tiny(One) .and. ( .not. Object%IsTruncatedRight()) ) .and. Object%GetBeta()==One ) then
+            allocate( OrthoLaguerre_Type :: OrthoPoly, stat=StatLoc )
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+            select type ( Object2 => OrthoPoly )
+              type is ( OrthoLaguerre_Type )
+                call Object2%Construct( Normalized=.true., Alpha=Object%GetAlpha() )
+              class default
+                call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+            end select
+          else
+            allocate( OrthoNumerical_Type :: OrthoPoly, stat=StatLoc )
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+            select type ( Object2 => OrthoPoly )
+              type is ( OrthoNumerical_Type )
+                call Object2%Construct( Weights=DistProbPointer, Normalized=.true. )
+              class default
+                call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+            end select
+          end if
+
         class default
-          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+          allocate( OrthoNumerical_Type :: OrthoPoly, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+
+          select type ( Object2 => OrthoPoly )
+            type is ( OrthoNumerical_Type )
+              call Object2%Construct( Weights=DistProbPointer, Normalized=.true. )
+            class default
+              call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+          end select
+
       end select
 
-      call DistProbVec(i)%Set( Object=DistProb )
       call OrthoPolyVec(i)%Set( Object=OrthoPoly )
 
       nullify(DistProbPointer)
+
       deallocate(OrthoPoly, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
-      deallocate(DistProb, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistProb', ProcName=ProcName, stat=StatLoc )
+
     end do
 
     call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
 
     select type ( Object => SpaceTransform )
-      type is (SpaceTransfCustom_Type)
-        call Object%Construct( SpaceInput=SpaceInput, Distributions=DistProbVec )
+      type is (SpaceTransfNone_Type)
+        call Object%Construct( SpaceInput=SpaceInput )
       class default
         call Error%Raise( Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName )
     end select
 
-    deallocate(DistProbVec, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistProbVec', ProcName=ProcName, stat=StatLoc )
+    deallocate(OrthoPolyVec, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructNumericalScheme( SpaceInput, Basis, SpaceTransform, Debug )
+
+    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    type(OrthoMultiVar_Type), intent(out)                             ::    Basis
+    class(SpaceTransf_Type), allocatable, intent(out)                 ::    SpaceTransform
+    logical, intent(in), optional                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ConstructNumericalScheme'
+    integer                                                           ::    StatLoc=0
+    class(DistProb_Type), allocatable                                 ::    DistProb
+    class(DistProb_Type), pointer                                     ::    DistProbPointer
+    class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
+    type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    integer                                                           ::    NbDim=0
+    integer                                                           ::    i
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    NbDim = SpaceInput%GetNbDim()
+    
+    allocate( SpaceTransfNone_Type :: SpaceTransform, stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
+
+    allocate(OrthoPolyVec(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, NbDim
+      DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
+
+      allocate( OrthoNumerical_Type :: OrthoPoly, stat=StatLoc )
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+
+      select type ( Object2 => OrthoPoly )
+        type is ( OrthoNumerical_Type )
+          call Object2%Construct( Weights=DistProbPointer, Normalized=.true. )
+        class default
+          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+      end select
+
+      call OrthoPolyVec(i)%Set( Object=OrthoPoly )
+
+      deallocate(OrthoPoly, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+
+    end do
+
+    call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
+
+    select type ( Object => SpaceTransform )
+      type is (SpaceTransfNone_Type)
+        call Object%Construct( SpaceInput=SpaceInput )
+      class default
+        call Error%Raise( Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName )
+    end select
 
     deallocate(OrthoPolyVec, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc )

@@ -31,6 +31,10 @@ use Model_Class                                                   ,only:    Mode
 use ModelExtTemplate_Class                                        ,only:    ModelExtTemplate_Type
 use ModelExt_Factory_Class                                        ,only:    ModelExt_Factory
 use Output_Class                                                  ,only:    Output_Type
+use OrthoNumerical_Class                                          ,only:    OrthoNumerical_Type
+use OrthoLegendre_Class                                           ,only:    OrthoLegendre_Type
+use OrthoHermite_Class                                            ,only:    OrthoHermite_Type
+use OrthoLaguerre_Class                                           ,only:    OrthoLaguerre_Type
 
 implicit none
 
@@ -51,226 +55,266 @@ contains
     character(*), parameter                                           ::    ProcName='Test'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    OutputDirectory
-    class(ModelExtTemplate_Type), allocatable                         ::    Model
-    type(Response_Type), allocatable, dimension(:)                    ::    Response
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    type(SampleLHS_Type)                                              ::    Sampler
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    ParameterName
-    integer, allocatable, dimension(:)                                ::    Procs
-    integer                                                           ::    NbProcs
+    type(OrthoNumerical_Type)                                         ::    OrthoNumerical
+    type(OrthoLegendre_Type)                                          ::    OrthoLegendre
+    type(OrthoLaguerre_Type)                                          ::    OrthoLaguerre
+    type(OrthoHermite_Type)                                           ::    OrthoHermite
+    type(DistUnif_Type)                                               ::    DistUnif
     type(DistNorm_Type)                                               ::    DistNorm
-    integer                                                           ::    i   
-    integer                                                           ::    ii
-    integer                                                           ::    iii
-    integer                                                           ::    iv
-    type(SMUQFile_Type)                                               ::    ParamFile
-    type(SMUQFile_Type)                                               ::    PosteriorFile
-    type(SMUQFile_Type)                                               ::    OutputFile
-    integer                                                           ::    NbParams
-    integer                                                           ::    NbSamples
-    integer                                                           ::    NbProp
-    integer                                                           ::    NbResponses
-    real(rkp), allocatable, dimension(:,:)                            ::    ParamChain
-    real(rkp), allocatable, dimension(:,:)                            ::    ParamChainTemp
-    character(:), allocatable                                         ::    FileName
-    type(InputDet_Type)                                               ::    InputDet
-    type(String_Type), allocatable, dimension(:)                      ::    Labels
-    type(output_Type), allocatable, dimension(:)                      ::    Output
-    real(rkp), allocatable, dimension(:,:)                            ::    OutputTemp
-    integer, allocatable, dimension(:)                                ::    NbYBins
-    real(rkp), allocatable, dimension(:,:)                            ::    YBinsRange
-    real(rkp), allocatable, dimension(:)                              ::    EpsSamples
-    integer, allocatable, dimension(:)                                ::    BinCounts
-    type(List2DAllocInt_Type), allocatable, dimension(:)              ::    ResponseBinCounts
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
-    integer, allocatable, dimension(:,:)                              ::    VarI2D
-    type(List1DAllocReal_Type), allocatable, dimension(:)             ::    BinEdges
-    real(rkp)                                                         ::    dx
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
-    type(ModelInterface_Type)                                         ::    ModelInterface
-    real(rkp)                                                         ::    SigmaLoc
-    integer                                                           ::    MaxPosteriorIndex
-    real(rkp)                                                         ::    MaxPosterior
-    real(rkp), allocatable, dimension(:)                              ::    MaxPosteriorParam
+    type(DistGamma_Type)                                              ::    DistGamma
+    integer                                                           ::    i
+    real(rkp)                                                         ::    a1, a2, a3, a4
 
-    PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    call DistUnif%Construct( A=-One, B=One )
+    call DistNorm%Construct( Mu=Zero, Sigma=One )
+    call DistGamma%Construct( Alpha=One, Beta=One )
 
-    NbSamples = 0
-    NbParams = 0
-    NbProp = 200
+    call OrthoNumerical%Construct( Weights=DistGamma, Normalized=.true. )
 
-    SectionName = 'analysis'
-    ParameterName = 'chains'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-    Procs = ConvertToIntegers(String=VarC0D)
-    NbProcs = size(Procs)
-
-    ParameterName = 'labels'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-    call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-    NbParams = size(VarC1D)
-    allocate(Labels(NbParams), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
-    i = 1
-    do i = 1, size(VarC1D)
-      Labels(i) = trim(adjustl(VarC1D(i)))
-    end do
-
-    SectionName = 'plugin'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call ModelExt_Factory%Construct( Object=Model, Input=InputSection, Prefix=PrefixLoc )
-    nullify ( InputSection )
-
-    SectionName = "responses"
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    NbResponses = InputSection%GetNumberofSubSections()
-    if ( NbResponses < 1 ) call Error%Raise( Line='Number of specified responses below minimum of 1', ProcName=ProcName )
-    allocate( Response(NbResponses), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Responses', ProcName=ProcName, stat=StatLoc )
-
-    allocate(NbYBins(NbResponses), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='NbYBins', ProcName=ProcName, stat=StatLoc )
-    NbYBins = 501
-
-    allocate(YBinsRange(2,NbResponses), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='YBinsRange', ProcName=ProcName, stat=StatLoc )
-    YBinsRange = Zero
-    YBinsRange(1,:) = 200
-    YBinsRange(2,:) = 1700
-
-    allocate(ResponseBinCounts(NbResponses), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='ResponseBinCounts', ProcName=ProcName, stat=StatLoc )
-
-    allocate(BinEdges(NbResponses), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='BinEdges', ProcName=ProcName, stat=StatLoc )
+    call OrthoLegendre%Construct( Normalized=.true. )
+    call OrthoHermite%Construct( Normalized=.true. )
+    call OrthoLaguerre%Construct( Normalized=.true., Alpha=DistGamma%GetAlpha() )
 
     i = 1
-    do i = 1, NbResponses
-      SubSectionName = SectionName // ">response" // ConvertToString( Value=i )
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call Response(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
-      nullify ( InputSection )
-
-      allocate(VarI2D(NbYBins(i),size(Response(i)%GetAbscissaPointer())), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-      VarI2D = 0
-      call ResponseBinCounts(i)%Set(Values=VarI2D)
-      deallocate(VarI2D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
-
-      allocate(VarR1D(NbYBins(i)+1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-      VarR1D = Zero
-      dx = (YBinsRange(2,i) - YBinsRange(1,i)) / (real(NbYBins(i),rkp)-One)
-      VarR1D(1) = YBinsRange(1,i)-dx/2.0
-      ii = 2
-      do ii = 2, NbYBins(i)+1
-        VarR1D(ii) = VarR1D(ii-1) + dx
-      end do
-      call BinEdges(i)%Set(Values=VarR1D)
-      deallocate(VarR1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-
-    end do
-
-    call ModelInterface%Construct( Model=Model, Response=Response )
-
-    call Sampler%Construct( NbSamples=NbProp )
-
-    i = 1
-    do i = 1, NbProcs
-      FileName = '/samples/output/' // ConvertToString(Value=i) // '/' // 'parameter_chain.dat'
-      call ParamFile%Construct( File=FileName, Prefix=PrefixLoc )
-      call ParamFile%Open()
-      NbSamples = NbSamples + ParamFile%GetNbLines()
-      call ParamFile%Close()
-    end do
-
-    allocate(ParamChain(NbParams,NbSamples), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='ParamChain', ProcName=ProcName, stat=StatLoc )
-    ParamChain = Zero
-
-    MaxPosterior = Zero
-    ii = 0
-
-    i = 1
-    do i = 1, NbProcs
-      FileName = '/samples/output/' // ConvertToString(Value=i) // '/' // 'parameter_chain.dat'
-      call ParamFile%Construct( File=FileName, Prefix=PrefixLoc )
-      call ImportArray( File=ParamFile, Array=ParamChainTemp, Mandatory=.true. )
-      if ( NbParams /= size(ParamChainTemp,1) ) call Error%Raise( Line='Mismatch in number of parameters', ProcName=ProcName )
-      ParamChain(:,ii+1:ii+size(ParamChainTemp,2)) = ParamChainTemp
-      ii = ii + size(ParamChainTemp,2)
-
-      FileName = '/samples/output/' // ConvertToString(Value=i) // '/' // 'posterior_chain.dat'
-      call PosteriorFile%Construct( File=FileName, Prefix=PrefixLoc )
-      call ImportArray( File=PosteriorFile, Array=VarR1D, Mandatory=.true. )
-      MaxPosteriorIndex = maxloc(VarR1D,1)
-      if ( VarR1D(MaxPosteriorIndex) > MaxPosterior ) then
-        MaxPosterior = VarR1D(MaxPosteriorIndex)
-        MaxPosteriorParam = ParamChainTemp(:,MaxPosteriorIndex)
-      end if
-    end do
-
-    i = 1
-    do i = 1, NbSamples
-      write(*,*) i
-      call InputDet%Construct( Input=ParamChain(:,i), Labels=Labels )
-      call ModelInterface%Run( Input=InputDet, Output=Output, Stat=StatLoc )
-      do ii = 1, NbResponses
-        call InputDet%GetValue( Value=SigmaLoc, Label='sigma_' // ConvertToString(ii) )
-        call DistNorm%Construct( Mu=Zero, Sigma=SigmaLoc )
-        iii = 1
-        do iii = 1, size(Output(ii)%Ordinate%Val,1)
-          EpsSamples = Sampler%Draw()
-          iv = 1
-          do iv = 1, size(EpsSamples,1)
-            EpsSamples(iv) = dexp(DistNorm%InvCDF(P=EpsSamples(iv))) * Output(ii)%Ordinate%Val(iii,1)
-          end do
-          call Bin( Values=EpsSamples, BinEdges=BinEdges(ii)%Values, BinCounts=BinCounts )
-          ResponseBinCounts(ii)%Values(:,iii) = ResponseBinCounts(ii)%Values(:,iii) + BinCounts
-        end do
-      end do
-    end do
-
-    call InputDet%Construct( Input=MaxPosteriorParam, Labels=Labels )
-    call ModelInterface%Run( Input=InputDet, Output=Output, Stat=StatLoc )
-
-    do i = 1, NbResponses
-      OutputDirectory = ProgramDefs%GetOutputDir() // '/response' // ConvertToString(i)
-      call MakeDirectory( Path=OutputDirectory, Options='-p' )
-
-      FileName = '/bin_counts.dat'
-      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
-      call ExportArray( Array=ResponseBinCounts(i)%Values, File=OutputFile, RowMajor=.true. )
-
-      FileName = '/bin_edges.dat'
-      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
-      call ExportArray( Array=BinEdges(i)%Values, File=OutputFile )
-
-      FileName = '/data.dat'
-      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
-      call ExportArray( Array=Response(i)%GetData(), File=OutputFile, RowMajor=.true. )
-
-      FileName = '/abscissa.dat'
-      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
-      call ExportArray( Array=Response(i)%GetAbscissa(), File=OutputFile )
-
-      FileName = '/max_posterior.dat'
-      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
-      call ExportArray( Array=Output(i)%GetOrdinate(), File=OutputFile, RowMajor=.true. )
-
-      FileName = '/max_posterior_param.dat'
-      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
-      call ExportArray( Array=MaxPosteriorParam, File=OutputFile )
+    do i = 0, 100
+      a1 = OrthoNumerical%Eval(Order=i, X=real(0.5,rkp))
+      a2 = OrthoLaguerre%Eval(Order=i, X=real(0.5,rkp))
+      write(*,*) i, a1, a2
     end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
+
+
+!  !!------------------------------------------------------------------------------------------------------------------------------
+!  subroutine Test( Input, Prefix )
+
+!    class(InputSection_Type), intent(in)                              ::    Input
+!    character(*), optional, intent(in)                                ::    Prefix
+
+!    character(*), parameter                                           ::    ProcName='Test'
+!    integer                                                           ::    StatLoc=0
+!    character(:), allocatable                                         ::    PrefixLoc
+!    character(:), allocatable                                         ::    OutputDirectory
+!    class(ModelExtTemplate_Type), allocatable                         ::    Model
+!    type(Response_Type), allocatable, dimension(:)                    ::    Response
+!    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+!    type(SampleLHS_Type)                                              ::    Sampler
+!    character(:), allocatable                                         ::    SectionName
+!    character(:), allocatable                                         ::    SubSectionName
+!    character(:), allocatable                                         ::    ParameterName
+!    integer, allocatable, dimension(:)                                ::    Procs
+!    integer                                                           ::    NbProcs
+!    type(DistNorm_Type)                                               ::    DistNorm
+!    integer                                                           ::    i   
+!    integer                                                           ::    ii
+!    integer                                                           ::    iii
+!    integer                                                           ::    iv
+!    type(SMUQFile_Type)                                               ::    ParamFile
+!    type(SMUQFile_Type)                                               ::    PosteriorFile
+!    type(SMUQFile_Type)                                               ::    OutputFile
+!    integer                                                           ::    NbParams
+!    integer                                                           ::    NbSamples
+!    integer                                                           ::    NbProp
+!    integer                                                           ::    NbResponses
+!    real(rkp), allocatable, dimension(:,:)                            ::    ParamChain
+!    real(rkp), allocatable, dimension(:,:)                            ::    ParamChainTemp
+!    character(:), allocatable                                         ::    FileName
+!    type(InputDet_Type)                                               ::    InputDet
+!    type(String_Type), allocatable, dimension(:)                      ::    Labels
+!    type(output_Type), allocatable, dimension(:)                      ::    Output
+!    real(rkp), allocatable, dimension(:,:)                            ::    OutputTemp
+!    integer, allocatable, dimension(:)                                ::    NbYBins
+!    real(rkp), allocatable, dimension(:,:)                            ::    YBinsRange
+!    real(rkp), allocatable, dimension(:)                              ::    EpsSamples
+!    integer, allocatable, dimension(:)                                ::    BinCounts
+!    type(List2DAllocInt_Type), allocatable, dimension(:)              ::    ResponseBinCounts
+!    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+!    integer, allocatable, dimension(:,:)                              ::    VarI2D
+!    type(List1DAllocReal_Type), allocatable, dimension(:)             ::    BinEdges
+!    real(rkp)                                                         ::    dx
+!    character(:), allocatable                                         ::    VarC0D
+!    character(:), allocatable, dimension(:)                           ::    VarC1D
+!    type(ModelInterface_Type)                                         ::    ModelInterface
+!    real(rkp)                                                         ::    SigmaLoc
+!    integer                                                           ::    MaxPosteriorIndex
+!    real(rkp)                                                         ::    MaxPosterior
+!    real(rkp), allocatable, dimension(:)                              ::    MaxPosteriorParam
+
+!    PrefixLoc = ''
+!    if ( present(Prefix) ) PrefixLoc = Prefix
+
+!    NbSamples = 0
+!    NbParams = 0
+!    NbProp = 200
+
+!    SectionName = 'analysis'
+!    ParameterName = 'chains'
+!    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+!    Procs = ConvertToIntegers(String=VarC0D)
+!    NbProcs = size(Procs)
+
+!    ParameterName = 'labels'
+!    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+!    call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
+!    NbParams = size(VarC1D)
+!    allocate(Labels(NbParams), stat=StatLoc)
+!    if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
+!    i = 1
+!    do i = 1, size(VarC1D)
+!      Labels(i) = trim(adjustl(VarC1D(i)))
+!    end do
+
+!    SectionName = 'plugin'
+!    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+!    call ModelExt_Factory%Construct( Object=Model, Input=InputSection, Prefix=PrefixLoc )
+!    nullify ( InputSection )
+
+!    SectionName = "responses"
+!    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+!    NbResponses = InputSection%GetNumberofSubSections()
+!    if ( NbResponses < 1 ) call Error%Raise( Line='Number of specified responses below minimum of 1', ProcName=ProcName )
+!    allocate( Response(NbResponses), stat=StatLoc )
+!    if ( StatLoc /= 0 ) call Error%Allocate( Name='Responses', ProcName=ProcName, stat=StatLoc )
+
+!    allocate(NbYBins(NbResponses), stat=StatLoc)
+!    if ( StatLoc /= 0 ) call Error%Allocate( Name='NbYBins', ProcName=ProcName, stat=StatLoc )
+!    NbYBins = 501
+
+!    allocate(YBinsRange(2,NbResponses), stat=StatLoc)
+!    if ( StatLoc /= 0 ) call Error%Allocate( Name='YBinsRange', ProcName=ProcName, stat=StatLoc )
+!    YBinsRange = Zero
+!    YBinsRange(1,:) = 200
+!    YBinsRange(2,:) = 1700
+
+!    allocate(ResponseBinCounts(NbResponses), stat=StatLoc)
+!    if ( StatLoc /= 0 ) call Error%Allocate( Name='ResponseBinCounts', ProcName=ProcName, stat=StatLoc )
+
+!    allocate(BinEdges(NbResponses), stat=StatLoc)
+!    if ( StatLoc /= 0 ) call Error%Allocate( Name='BinEdges', ProcName=ProcName, stat=StatLoc )
+
+!    i = 1
+!    do i = 1, NbResponses
+!      SubSectionName = SectionName // ">response" // ConvertToString( Value=i )
+!      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+!      call Response(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
+!      nullify ( InputSection )
+
+!      allocate(VarI2D(NbYBins(i),size(Response(i)%GetAbscissaPointer())), stat=StatLoc)
+!      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+!      VarI2D = 0
+!      call ResponseBinCounts(i)%Set(Values=VarI2D)
+!      deallocate(VarI2D, stat=StatLoc)
+!      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
+
+!      allocate(VarR1D(NbYBins(i)+1), stat=StatLoc)
+!      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+!      VarR1D = Zero
+!      dx = (YBinsRange(2,i) - YBinsRange(1,i)) / (real(NbYBins(i),rkp)-One)
+!      VarR1D(1) = YBinsRange(1,i)-dx/2.0
+!      ii = 2
+!      do ii = 2, NbYBins(i)+1
+!        VarR1D(ii) = VarR1D(ii-1) + dx
+!      end do
+!      call BinEdges(i)%Set(Values=VarR1D)
+!      deallocate(VarR1D, stat=StatLoc)
+!      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+!    end do
+
+!    call ModelInterface%Construct( Model=Model, Response=Response )
+
+!    call Sampler%Construct( NbSamples=NbProp )
+
+!    i = 1
+!    do i = 1, NbProcs
+!      FileName = '/samples/output/' // ConvertToString(Value=i) // '/' // 'parameter_chain.dat'
+!      call ParamFile%Construct( File=FileName, Prefix=PrefixLoc )
+!      call ParamFile%Open()
+!      NbSamples = NbSamples + ParamFile%GetNbLines()
+!      call ParamFile%Close()
+!    end do
+
+!    allocate(ParamChain(NbParams,NbSamples), stat=StatLoc)
+!    if ( StatLoc /= 0 ) call Error%Allocate( Name='ParamChain', ProcName=ProcName, stat=StatLoc )
+!    ParamChain = Zero
+
+!    MaxPosterior = Zero
+!    ii = 0
+
+!    i = 1
+!    do i = 1, NbProcs
+!      FileName = '/samples/output/' // ConvertToString(Value=i) // '/' // 'parameter_chain.dat'
+!      call ParamFile%Construct( File=FileName, Prefix=PrefixLoc )
+!      call ImportArray( File=ParamFile, Array=ParamChainTemp, Mandatory=.true. )
+!      if ( NbParams /= size(ParamChainTemp,1) ) call Error%Raise( Line='Mismatch in number of parameters', ProcName=ProcName )
+!      ParamChain(:,ii+1:ii+size(ParamChainTemp,2)) = ParamChainTemp
+!      ii = ii + size(ParamChainTemp,2)
+
+!      FileName = '/samples/output/' // ConvertToString(Value=i) // '/' // 'posterior_chain.dat'
+!      call PosteriorFile%Construct( File=FileName, Prefix=PrefixLoc )
+!      call ImportArray( File=PosteriorFile, Array=VarR1D, Mandatory=.true. )
+!      MaxPosteriorIndex = maxloc(VarR1D,1)
+!      if ( VarR1D(MaxPosteriorIndex) > MaxPosterior ) then
+!        MaxPosterior = VarR1D(MaxPosteriorIndex)
+!        MaxPosteriorParam = ParamChainTemp(:,MaxPosteriorIndex)
+!      end if
+!    end do
+
+!    i = 1
+!    do i = 1, NbSamples
+!      write(*,*) i
+!      call InputDet%Construct( Input=ParamChain(:,i), Labels=Labels )
+!      call ModelInterface%Run( Input=InputDet, Output=Output, Stat=StatLoc )
+!      do ii = 1, NbResponses
+!        call InputDet%GetValue( Value=SigmaLoc, Label='sigma_' // ConvertToString(ii) )
+!        call DistNorm%Construct( Mu=Zero, Sigma=SigmaLoc )
+!        iii = 1
+!        do iii = 1, size(Output(ii)%Ordinate%Val,1)
+!          EpsSamples = Sampler%Draw()
+!          iv = 1
+!          do iv = 1, size(EpsSamples,1)
+!            EpsSamples(iv) = dexp(DistNorm%InvCDF(P=EpsSamples(iv))) * Output(ii)%Ordinate%Val(iii,1)
+!          end do
+!          call Bin( Values=EpsSamples, BinEdges=BinEdges(ii)%Values, BinCounts=BinCounts )
+!          ResponseBinCounts(ii)%Values(:,iii) = ResponseBinCounts(ii)%Values(:,iii) + BinCounts
+!        end do
+!      end do
+!    end do
+
+!    call InputDet%Construct( Input=MaxPosteriorParam, Labels=Labels )
+!    call ModelInterface%Run( Input=InputDet, Output=Output, Stat=StatLoc )
+
+!    do i = 1, NbResponses
+!      OutputDirectory = ProgramDefs%GetOutputDir() // '/response' // ConvertToString(i)
+!      call MakeDirectory( Path=OutputDirectory, Options='-p' )
+
+!      FileName = '/bin_counts.dat'
+!      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
+!      call ExportArray( Array=ResponseBinCounts(i)%Values, File=OutputFile, RowMajor=.true. )
+
+!      FileName = '/bin_edges.dat'
+!      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
+!      call ExportArray( Array=BinEdges(i)%Values, File=OutputFile )
+
+!      FileName = '/data.dat'
+!      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
+!      call ExportArray( Array=Response(i)%GetData(), File=OutputFile, RowMajor=.true. )
+
+!      FileName = '/abscissa.dat'
+!      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
+!      call ExportArray( Array=Response(i)%GetAbscissa(), File=OutputFile )
+
+!      FileName = '/max_posterior.dat'
+!      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
+!      call ExportArray( Array=Output(i)%GetOrdinate(), File=OutputFile, RowMajor=.true. )
+
+!      FileName = '/max_posterior_param.dat'
+!      call OutputFile%Construct( File=FileName, Prefix=OutputDirectory )
+!      call ExportArray( Array=MaxPosteriorParam, File=OutputFile )
+!    end do
+
+!  end subroutine
+!  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

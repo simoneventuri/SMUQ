@@ -25,7 +25,6 @@ use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use StringRoutines_Module
 use CommandRoutines_Module
-use MCMCSamplingTarget_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SpaceParam_Class                                              ,only:    SpaceParam_Type
@@ -36,7 +35,7 @@ use ModelInterface_Class                                          ,only:    Mode
 use Response_Class                                                ,only:    Response_Type
 use Restart_Class                                                 ,only:    RestartUtility
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
-use MCMCMethod_Class                                              ,only:    MCMCMethod_Type
+use MCMCMethod_Class
 use MCMCMethod_Factory_Class                                      ,only:    MCMCMethod_Factory
 use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
 use LikelihoodGauss_Class                                         ,only:    LikelihoodGauss_Type

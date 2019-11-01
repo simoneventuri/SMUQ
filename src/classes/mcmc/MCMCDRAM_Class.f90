@@ -20,7 +20,6 @@ module MCMCDRAM_Class
 
 use Input_Library
 use Parameters_Library
-use MCMCSamplingTarget_Module
 use CommandRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
@@ -35,7 +34,7 @@ use RandPseudo_Class                                              ,only:    Rand
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistNorm_Class                                                ,only:    DistNorm_Type
 use InputDet_Class                                                ,only:    InputDet_Type
-use MCMCMethod_Class                                              ,only:    MCMCMethod_Type
+use MCMCMethod_Class
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SpaceInput_Class                                              ,only:    SpaceInput_Type
 use Restart_Class                                                 ,only:    RestartUtility
@@ -84,12 +83,6 @@ contains
   procedure, public                                                   ::    WriteOutput
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
-end type
-
-type                                                                  ::    AdaptiveMethod_Type
-
-contains
-
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
