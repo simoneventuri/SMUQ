@@ -1,0 +1,968 @@
+! -*-f90-*-
+!!--------------------------------------------------------------------------------------------------------------------------------
+!!
+!! Stochastic Modeling & Uncertainty Quantification (SMUQ)
+!!
+!! Copyright (C) 2016 Venturi, Simone & Rostkowski, Przemyslaw (University of Illinois at Urbana-Champaign)
+!!
+!! This program is free software; you can redistribute it and/or modify it under the terms of the Version 2.1 GNU Lesser General
+!! Public License as published by the Free Software Foundation.
+!!
+!! This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+!! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+!!
+!! You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free 
+!! Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+!!
+!!--------------------------------------------------------------------------------------------------------------------------------
+! defined using shape and rate form
+module DistGamma_Class
+
+use CDF_Library
+use Prob_Library
+use Input_Library
+use Parameters_Library
+use ComputingRoutines_Module
+use StatisticsRoutines_Module
+use Logger_Class                                                  ,only:    Logger
+use Error_Class                                                   ,only:    Error
+use DistProb_Class                                                ,only:    DistProb_Type
+use InputDet_Class                                                ,only:    InputDet_Type
+use SampleLHS_Class                                               ,only:    SampleLHS_Type
+
+implicit none
+
+private
+
+public                                                                ::    DistGamma_Type
+
+type, extends(DistProb_Type)                                          ::    DistGamma_Type
+  real(rkp)                                                           ::    Alpha=One
+  real(rkp)                                                           ::    Beta=One
+  character(:), allocatable                                           ::    AlphaDependency
+  character(:), allocatable                                           ::    BetaDependency
+  character(:), allocatable                                           ::    ADependency
+  character(:), allocatable                                           ::    BDependency
+contains
+  procedure, public                                                   ::    Initialize
+  procedure, public                                                   ::    Reset
+  procedure, public                                                   ::    SetDefaults
+  generic, public                                                     ::    Construct               =>    ConstructCase1
+  procedure, private                                                  ::    ConstructInput
+  procedure, private                                                  ::    ConstructCase1
+  procedure, private                                                  ::    HierConstructCase1
+  procedure, public                                                   ::    GetInput
+  procedure, private                                                  ::    PDF_R0D
+  procedure, nopass, public                                           ::    ComputePDF
+  procedure, public                                                   ::    CDF
+  procedure, nopass, public                                           ::    ComputeCDF
+  procedure, public                                                   ::    InvCDF
+  procedure, nopass, public                                           ::    ComputeInvCDF
+  procedure, public                                                   ::    GetAlpha
+  procedure, public                                                   ::    GetBeta
+  procedure, public                                                   ::    GetMean
+  procedure, public                                                   ::    GetVariance
+  procedure, private                                                  ::    ComputeMoment1
+  procedure, private                                                  ::    ComputeMoment2
+  procedure, public                                                   ::    Copy
+  final                                                               ::    Finalizer     
+end type
+
+logical   ,parameter                                                  ::    DebugGlobal = .false.
+
+contains
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Initialize( This, Debug )
+
+    class(DistGamma_Type), intent(inout)                              ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='Initialize'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Initialized ) then
+      This%Name = 'gamma'
+      This%Initialized = .true.
+      call This%SetDefaults()
+    end if
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Reset( This, Debug )
+
+    class(DistGamma_Type), intent(inout)                              ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='Reset'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    This%Initialized = .false.
+    This%Constructed = .false.
+
+    call This%Initialize()
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine SetDefaults( This, Debug )
+
+    class(DistGamma_Type), intent(inout)                              ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='SetDefaults'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    This%A = tiny(One)
+    This%B = One
+    This%Alpha = One
+    This%Beta = One
+    This%TruncatedRight = .false.
+    This%TruncatedLeft = .true.
+    This%AlphaDependency=''
+    This%BetaDependency=''
+    This%ADependency=''
+    This%BDependency=''
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructInput( This, Input, Prefix, Debug )
+
+    class(DistGamma_Type), intent(inout)                              ::    This
+    type(InputSection_Type), intent(in)                               ::    Input
+    character(*), optional, intent(in)                                ::    Prefix
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ProcessInput'
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    ParameterName
+    logical                                                           ::    Found
+    real(rkp)                                                         ::    VarR0D
+    character(:), allocatable                                         ::    VarC0D
+    logical                                                           ::    VarL0D
+    character(:), allocatable                                         ::    PrefixLoc
+    logical                                                           ::    MandatoryLoc
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( This%Constructed ) call This%Reset()
+    if ( .not. This%Initialized ) call This%Initialize()
+    
+    PrefixLoc = ''
+    if ( present(Prefix) ) PrefixLoc = Prefix
+
+    MandatoryLoc = .true.
+    ParameterName = 'alpha_dependency'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%AlphaDependency = VarC0D
+    MandatoryLoc = .not. Found
+    ParameterName = 'alpha'
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
+    if ( Found ) This%Alpha = VarR0D
+
+    MandatoryLoc = .true.
+    ParameterName = 'beta_dependency'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%BetaDependency = VarC0D
+    MandatoryLoc = .not. Found
+    ParameterName = 'beta'
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
+    if ( Found ) This%Beta = VarR0D
+
+    ParameterName = 'a_dependency'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%ADependency = VarC0D
+    ParameterName = 'a'
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) then
+      This%A = VarR0D
+      This%TruncatedLeft = .true.
+    end if
+
+    ParameterName = 'b_dependency'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%BDependency = VarC0D
+    ParameterName = 'b'
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) then
+      This%B = VarR0D
+      This%TruncatedRight = .true.
+    end if
+
+    if ( VarR0D <= Zero ) call Error%Raise( "Alpha parameter at or below zero" )
+    if ( VarR0D <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
+    if ( This%TruncatedLeft ) then
+      if ( This%A <= Zero ) call Error%Raise( Line='Lower limit specified to be below minimum of 0', ProcName=ProcName )
+    end if
+    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
+      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    end if
+
+    This%Constructed = .true.
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructCase1( This, Alpha, Beta, A, B, Debug )
+    
+    class(DistGamma_Type), intent(inout)                              ::    This
+    real(rkp), intent(in)                                             ::    Alpha
+    real(rkp), intent(in)                                             ::    Beta
+    real(rkp), optional, intent(in)                                   ::    A
+    real(rkp), optional, intent(in)                                   ::    B
+    logical, optional ,intent(in)                                     ::    Debug 
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ConstructCase1'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( This%Constructed ) call This%Reset()
+    if ( .not. This%Initialized ) call This%Initialize()
+
+    if ( Alpha <= Zero ) call Error%Raise( "Alpha parameter at or below zero" )
+    This%Alpha = Alpha
+
+    if ( Beta <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
+    This%Beta = Beta
+
+    if ( present(A) ) then
+      This%A = A
+      This%TruncatedLeft = .true.
+    end if
+
+    if ( present(B) ) then
+      This%B = B
+      This%TruncatedRight = .true.
+    end if
+
+    This%Constructed = .true.
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine HierConstructCase1( This, Input, Prefix, Debug )
+
+    class(DistGamma_Type), intent(inout)                              ::    This
+    type(InputDet_Type), intent(in)                                   ::    Input
+    character(*), optional, intent(in)                                ::    Prefix
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='HierConstructCase1'
+    integer                                                           ::    StatLoc=0
+    real(rkp)                                                         ::    VarR0D       
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    if ( len_trim(This%AlphaDependency) /= 0 ) call Input%GetValue( Value=This%Alpha, Label=This%AlphaDependency )
+
+    if ( len_trim(This%BetaDependency) /= 0 ) call Input%GetValue( Value=This%Beta, Label=This%BetaDependency )
+
+    if ( len_trim(This%ADependency) /= 0 ) then
+      call Input%GetValue( Value=This%A, Label=This%ADependency )
+      This%TruncatedLeft = .true.
+    end if
+    
+    if ( len_trim(This%BDependency) /= 0 ) then
+      call Input%GetValue( Value=This%B, Label=This%BDependency )
+      This%TruncatedRight = .true.
+    end if
+
+    if ( VarR0D <= Zero ) call Error%Raise( "Alpha parameter at or below zero" )
+    if ( VarR0D <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
+    if ( This%TruncatedLeft ) then
+      if ( This%A <= Zero ) call Error%Raise( Line='Lower limit specified to be below minimum of 0', ProcName=ProcName )
+    end if
+    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
+      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    end if
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+
+    use StringRoutines_Module
+
+    type(InputSection_Type)                                           ::    GetInput
+
+    class(DistGamma_Type), intent(in)                                 ::    This
+    character(*), intent(in)                                          ::    MainSectionName
+    character(*), optional, intent(in)                                ::    Prefix
+    character(*), optional, intent(in)                                ::    Directory
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetInput'
+    character(:), allocatable                                         ::    PrefixLoc
+    character(:), allocatable                                         ::    DirectoryLoc
+    character(:), allocatable                                         ::    DirectorySub
+    logical                                                           ::    ExternalFlag=.false.
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    DirectoryLoc = ''
+    PrefixLoc = ''
+    if ( present(Directory) ) DirectoryLoc = Directory
+    if ( present(Prefix) ) PrefixLoc = Prefix
+    DirectorySub = DirectoryLoc
+
+    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+
+    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%Alpha ) )
+    call GetInput%AddParameter( Name='beta', Value=ConvertToString( Value=This%Beta ) )
+    if ( This%TruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
+    if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
+    if ( len_trim(This%AlphaDependency) /= 0 ) call GetInput%AddParameter( Name='alpha_dependency', Value=This%AlphaDependency )
+    if ( len_trim(This%BetaDependency) /= 0 ) call GetInput%AddParameter( Name='beta_dependency', Value=This%BetaDependency )
+    if ( len_trim(This%ADependency) /= 0 ) call GetInput%AddParameter( Name='a_dependency', Value=This%ADependency )
+    if ( len_trim(This%BDependency) /= 0 ) call GetInput%AddParameter( Name='b_dependency', Value=This%BDependency )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function PDF_R0D( This, X, Debug )
+
+    real(rkp)                                                         ::    PDF_R0D
+
+    class(DistGamma_Type), intent(in)                                 ::    This
+    real(rkp), intent(in)                                             ::    X
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='PDF_R0D'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
+      PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
+    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
+      PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
+    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
+      PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
+    else
+      PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta )
+    end if
+      
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+!  !!------------------------------------------------------------------------------------------------------------------------------
+!  function PDF_R2D( This, NbNodes, Debug )
+
+!    real(rkp), allocatable, dimension(:,:)                            ::    PDF_R2D
+
+!    class(DistGamma_Type), intent(in)                                 ::    This
+!    integer, intent(in)                                               ::    NbNodes
+!    logical, optional ,intent(in)                                     ::    Debug
+
+!    logical                                                           ::    DebugLoc
+!    character(*), parameter                                           ::    ProcName='PDF_R2D'
+!    real(rkp)                                                         ::    BinMass
+!    real(8)                                                           ::    CDFLeft
+!    real(8)                                                           ::    CDFRight
+!    real(8)                                                           ::    k
+!    real(8)                                                           ::    theta
+!    real(8)                                                           ::    A_8
+!    real(8)                                                           ::    B_8
+!    real(8)                                                           ::    VarR0D
+!    integer                                                           ::    i
+!    integer                                                           ::    StatLoc=0
+
+!    DebugLoc = DebugGlobal
+!    if ( present(Debug) ) DebugLoc = Debug
+!    if (DebugLoc) call Logger%Entering( ProcName )
+
+!    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+!    if ( NbNodes < 3 ) call Error%Raise( Line='Specified number of points lower than minimum of 3', ProcName=ProcName )
+
+!    BinMass = One / real(NbNodes-1,rkp)
+
+!    allocate(PDF_R2D(NbNodes,2), stat=StatLoc )
+!    if ( StatLoc /= 0 ) call Error%Allocate( Name='PDF_R2D', ProcName=ProcName, stat=StatLoc )
+
+!    k = real(This%Alpha,8)
+!    theta = real(One/This%Beta,8)
+
+!    if ( This%TruncatedLeft ) then
+!      A_8 = This%A
+!      call gamma_cdf( A_8, real(0,8), theta, k, CDFLeft )
+!    else
+!      A_8 = 1.E-8
+!      CDFLeft = This%CDF( X=real(A_8,rkp) )
+!    end if
+
+!    if ( This%TruncatedRight ) then
+!      B_8 = This%B
+!      call gamma_cdf( B_8, real(0,8), theta, k, CDFRight )
+!    else
+!      CDFRight = One - real(1.E-6,8)
+!      B_8 = This%InvCDF( P=CDFRight )
+!    end if
+
+!    PDF_R2D(1,1) = A_8
+!    call gamma_pdf( A_8, real(0,8), theta, k, VarR0D )
+!    PDF_R2D(1,2) = VarR0D / ( CDFRight - CDFLeft )
+
+!    i = 2
+!    do i = 2, NbNodes-1
+!      PDF_R2D(i,1) = This%InvCDF( real((i-1),rkp)*BinMass )
+!      PDF_R2D(i,2) = This%PDF( PDF_R2D(i,1) )
+!    end do
+
+!    PDF_R2D(NbNodes,1) = B_8
+!    call gamma_pdf( B_8, real(0,8), theta, k, VarR0D )
+!    PDF_R2D(NbNodes,2) = VarR0D / ( CDFRight - CDFLeft )
+
+!    if (DebugLoc) call Logger%Exiting()
+
+!  end function
+!  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function ComputePDF( X, Alpha, Beta, A, B, Debug )
+
+    real(rkp)                                                         ::    ComputePDF
+
+    real(rkp), intent(in)                                             ::    X
+    real(rkp), intent(in)                                             ::    Alpha
+    real(rkp), intent(in)                                             ::    Beta
+    real(rkp), optional, intent(in)                                   ::    A
+    real(rkp), optional, intent(in)                                   ::    B
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ComputePDF'
+    real(8)                                                           ::    CDFLeft
+    real(8)                                                           ::    CDFRight
+    real(8)                                                           ::    k
+    real(8)                                                           ::    theta
+    real(8)                                                           ::    VarR0D
+    logical                                                           ::    TripFlag
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    TripFlag = .false.
+
+    if ( present(A) ) then
+      if (X < A) then
+        ComputePDF = Zero
+        TripFlag=.true.
+      end if
+    end if
+
+    if ( present(B) ) then
+      if (X > B) then
+        ComputePDF = Zero
+        TripFlag=.true.
+      end if
+    end if
+
+    if ( .not. TripFlag ) then
+      k = real(Alpha,8)
+      theta = real(One/Beta,8)
+      CDFLeft = 0.
+      if ( present(A) ) call gamma_cdf( real(A,8), real(0,8), theta, k, CDFLeft )
+      CDFRight = 1.
+      if ( present(B) ) call gamma_cdf( real(B,8), real(0,8), theta, k, CDFRight )
+      call gamma_pdf( real(X,8), real(0,8), theta, k, VarR0D )
+      ComputePDF = real(VarR0D / ( CDFRight - CDFLeft ),rkp) 
+    end if
+      
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function CDF( This, X, Debug )
+
+    real(rkp)                                                         ::    CDF
+
+    class(DistGamma_Type), intent(in)                                 ::    This
+    real(rkp), intent(in)                                             ::    X
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='CDF'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
+      CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
+    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
+      CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
+    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
+      CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
+    else
+      CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta )
+    end if
+      
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function ComputeCDF( X, Alpha, Beta, A, B, Debug )
+
+    real(rkp)                                                         ::    ComputeCDF
+
+    real(rkp), intent(in)                                             ::    X
+    real(rkp), intent(in)                                             ::    Alpha
+    real(rkp), intent(in)                                             ::    Beta
+    real(rkp), intent(in), optional                                   ::    A
+    real(rkp), intent(in), optional                                   ::    B
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ComputeCDF'
+    real(8)                                                           ::    CDFLeft
+    real(8)                                                           ::    CDFRight
+    real(8)                                                           ::    k
+    real(8)                                                           ::    theta
+    real(8)                                                           ::    VarR0D
+    logical                                                           ::    TripFlag
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( X < Zero ) call Error%Raise( Line='Gamma distribution is defined on the positive part of the line', ProcName=ProcName)
+
+    TripFlag = .false.
+
+    if ( present(A) ) then
+      if (X < A) then
+        ComputeCDF = Zero
+        TripFlag=.true.
+      end if
+    end if
+
+    if ( present(B) ) then
+      if (X > B) then
+        ComputeCDF = One
+        TripFlag=.true.
+      end if
+    end if
+
+    if ( .not. TripFlag ) then
+      k = real(Alpha,8)
+      theta = real(One/Beta,8)
+      CDFLeft = 0.
+      if ( present(A) ) call gamma_cdf( real(A,8), real(0,8), theta, k, CDFLeft )
+      CDFRight = 1.
+      if ( present(B) ) call gamma_cdf( real(B,8), real(0,8), theta, k, CDFRight )
+      call gamma_cdf( real(X,8), real(0,8), theta, k, VarR0D )
+      ComputeCDF = real(( VarR0D - CDFLeft ) / ( CDFRight - CDFLeft ),rkp)
+    end if 
+      
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function InvCDF( This, P, Debug )
+
+    real(rkp)                                                         ::    InvCDF
+
+    class(DistGamma_Type), intent(in)                                 ::    This
+    real(rkp), intent(in)                                             ::    P
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='InvCDF'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
+      InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
+    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
+      InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
+    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
+      InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
+    else
+      InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta )
+    end if
+      
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function ComputeInvCDF( P, Alpha, Beta, A, B, Debug )
+
+    use CDF_Library
+    use StringRoutines_Module
+
+    real(rkp)                                                         ::    ComputeInvCDF
+
+    real(rkp), intent(in)                                             ::    p
+    real(rkp), intent(in)                                             ::    Alpha
+    real(rkp), intent(in)                                             ::    Beta
+    real(rkp), intent(in), optional                                   ::    A
+    real(rkp), intent(in), optional                                   ::    B
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ComputeInvCDF'
+    real(8)                                                           ::    CDFLeft
+    real(8)                                                           ::    CDFRight
+    real(8)                                                           ::    k
+    real(8)                                                           ::    theta
+    real(8)                                                           ::    VarR0D
+    real(8)                                                           ::    PLoc
+    real(8)                                                           ::    QLoc
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
+    if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
+
+    k = real(Alpha,8)
+    theta = real(One/Beta,8)
+
+    CDFLeft = 0.
+    if ( present(A) ) call gamma_cdf( real(A,8), real(0,8), theta, k, CDFLeft )
+    CDFRight = 1.
+    if ( present(B) ) call gamma_cdf( real(B,8), real(0,8), theta, k, CDFRight )
+
+    PLoc = CDFLeft+real(P,8)*(CDFRight-CDFLeft)
+    QLoc = real(1,8) - PLoc
+
+    call gamma_inc_inv ( k, VarR0D, real(-1.,8), PLoc, QLoc, StatLoc )
+
+    if ( StatLoc < 0 ) call Error%Raise( Line='Something went wrong with gamma_inc_inv where stat=' //                            &
+                                                                                 ConvertToString( StatLoc ), ProcName=ProcName )
+
+    ComputeInvCDF = real(VarR0D,rkp) / Beta
+      
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetAlpha( This, Debug )
+
+    real(rkp)                                                         ::    GetAlpha
+
+    class(DistGamma_Type), intent(in)                                 ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetAlpha'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    GetAlpha = This%Alpha
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetBeta( This, Debug )
+
+    real(rkp)                                                         ::    GetBeta
+
+    class(DistGamma_Type), intent(in)                                 ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetBeta'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    GetBeta = This%Beta
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetMean( This, Debug )
+
+    real(rkp)                                                         ::    GetMean
+
+    class(DistGamma_Type), intent(in)                                 ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetMean'
+    integer                                                           ::    StatLoc=0
+    type(SampleLHS_Type)                                              ::    Sampler 
+    real(rkp), allocatable, dimension(:)                              ::    Samples   
+    integer                                                           ::    i 
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( This%TruncatedRight .or. This%A>tiny(One) ) then
+      allocate(Samples(1000), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='Samples', ProcName=ProcName, stat=StatLoc )
+      call Sampler%Construct( NbSamples=1000 )
+      Samples = Sampler%Draw()
+
+      i = 1
+      do i = 1, size(Samples,1)
+        Samples(i) = This%InvCDF(P=Samples(i))
+      end do
+
+      GetMean = ComputeMean( Values=Samples )
+      deallocate(Samples, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='Samples', ProcName=ProcName, stat=StatLoc )
+    else
+      GetMean = This%Alpha / This%Beta
+    end if
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetVariance( This, Debug )
+
+    real(rkp)                                                         ::    GetVariance
+
+    class(DistGamma_Type), intent(in)                                 ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetVariance'
+    integer                                                           ::    StatLoc=0
+    type(SampleLHS_Type)                                              ::    Sampler 
+    real(rkp), allocatable, dimension(:)                              ::    Samples   
+    integer                                                           ::    i 
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( This%TruncatedRight .or. This%A>tiny(One) ) then
+      allocate(Samples(1000), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='Samples', ProcName=ProcName, stat=StatLoc )
+      call Sampler%Construct( NbSamples=1000 )
+      Samples = Sampler%Draw()
+      i = 1
+      do i = 1, size(Samples,1)
+        Samples(i) = This%InvCDF(P=Samples(i))
+      end do
+      GetVariance = ComputeSampleVar( Values=Samples )
+      deallocate(Samples, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='Samples', ProcName=ProcName, stat=StatLoc )
+    else
+      GetVariance = This%Alpha / This%Beta**2
+    end if
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function ComputeMoment1( This, Debug )
+
+    real(rkp)                                                         ::    ComputeMoment1
+
+    class(DistGamma_Type), intent(in)                                 ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ComputeMoment1'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( This%TruncatedRight .or. This%A>tiny(One) ) then
+      ComputeMoment1 = This%GetMean()
+    else
+      ComputeMoment1 = This%Alpha / This%Beta
+    end if
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function ComputeMoment2( This, Debug )
+
+    real(rkp)                                                         ::    ComputeMoment2
+
+    class(DistGamma_Type), intent(in)                                 ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetVariance'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( This%TruncatedRight .or. This%A>tiny(One) ) then
+      ComputeMoment2 = This%GetVariance() + This%GetMean()**2
+    else
+      ComputeMoment2 = This%Alpha*(This%Alpha+One)/This%Beta**2
+    end if
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Copy( LHS, RHS )
+
+    class(DistGamma_Type), intent(out)                                ::    LHS
+    class(DistProb_Type), intent(in)                                  ::    RHS
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='Copy'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    select type (RHS)
+  
+      type is (DistGamma_Type)
+        call LHS%Reset()
+        LHS%Initialized = RHS%Initialized
+        LHS%Constructed = RHS%Constructed
+
+        if ( RHS%Constructed ) then
+          LHS%A = RHS%A
+          LHS%B = RHS%B
+          LHS%Alpha = RHS%Alpha
+          LHS%Beta = RHS%Beta
+          LHS%TruncatedLeft = RHS%TruncatedLeft
+          LHS%TruncatedRight = RHS%TruncatedRight
+          LHS%AlphaDependency = RHS%AlphaDependency
+          LHS%BetaDependency = RHS%BetaDependency
+          LHS%ADependency = RHS%ADependency
+          LHS%BDependency = RHS%BDependency
+        end if
+      
+      class default
+        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+
+    end select
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Finalizer( This )
+
+    type(DistGamma_Type), intent(inout)                               ::    This
+
+    character(*), parameter                                           ::    ProcName='Finalizer'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+end module

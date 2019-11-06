@@ -189,6 +189,30 @@ add_dependencies( smuqApp odepack odepackExt )
 target_link_libraries( smuqApp odepack )
 
 ######################################################
+# Linking Brent to smuqApp #
+######################################################
+ExternalProject_Add( brentExt
+                     SOURCE_DIR ${SMUQ_SOURCE_DIR}/ext/brent
+                     BINARY_DIR ${SMUQ_BINARY_DIR}/ext/brent
+                     INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/brent
+                     CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+)
+
+add_library( brent STATIC IMPORTED GLOBAL )
+
+set_property( TARGET brent 
+              PROPERTY IMPORTED_LOCATION "${SMUQ_BINARY_DIR}/ext_install/brent/lib/libbrent.a"
+)
+
+target_include_directories( smuqApp 
+                            PRIVATE "${SMUQ_BINARY_DIR}/ext_install/brent/include"
+)
+
+add_dependencies( smuqApp brent brentExt )
+
+target_link_libraries( smuqApp brent )
+
+######################################################
 # Linking FORPACK to smuqApp #
 ######################################################
 ExternalProject_Add( forpackExt

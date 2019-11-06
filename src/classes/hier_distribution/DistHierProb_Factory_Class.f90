@@ -16,31 +16,30 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module DistProb_Factory_Class
+module HierDistProb_Factory_Class
 
-use DistProb_Class                                                ,only:    DistProb_Type
-use DistUnif_Class                                                ,only:    DistUnif_Type
-use DistLogUnif_Class                                             ,only:    DistLogUnif_Type
-use DistLog10Unif_Class                                           ,only:    DistLog10Unif_Type
-use DistNorm_Class                                                ,only:    DistNorm_Type
-use DistLogNorm_Class                                             ,only:    DistLogNorm_Type
-use DistLog10Norm_Class                                           ,only:    DistLog10Norm_Type
-use DistGamma_Class                                               ,only:    DistGamma_Type
-use DistLogistic_Class                                            ,only:    DistLogistic_Type
-use DistKernel_Class                                              ,only:    DistKernel_Type
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use HierDistProb_Class                                            ,only:    HierDistProb_Type
+use HierDistUnif_Class                                            ,only:    HierDistUnif_Type
+use HierDistLogUnif_Class                                         ,only:    HierDistLogUnif_Type
+use HierDistLog10Unif_Class                                       ,only:    HierDistLog10Unif_Type
+use HierDistNorm_Class                                            ,only:    HierDistNorm_Type
+use HierDistLogNorm_Class                                         ,only:    HierDistLogNorm_Type
+use HierDistLog10Norm_Class                                       ,only:    HierDistLog10Norm_Type
+use HierDistGamma_Class                                           ,only:    HierDistGamma_Type
+use HierDistLogistic_Class                                        ,only:    HierDistLogistic_Type
 
 implicit none
 
 private
 
-public                                                                ::    DistProb_Factory
-public                                                                ::    DistProb_Factory_Type
+public                                                                ::    HierDistProb_Factory
+public                                                                ::    HierDistProb_Factory_Type
 
-type                                                                  ::    DistProb_Factory_Type
+type                                                                  ::    HierDistProb_Factory_Type
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D,          &
                                                                                                           Construct_Input
@@ -54,7 +53,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 End Type
 
-type(DistProb_Factory_Type)                                           ::    DistProb_Factory
+type(HierDistProb_Factory_Type)                                       ::    HierDistProb_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -62,7 +61,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_C0D( Object, DesiredType, Debug )
 
-    class(DistProb_Type), allocatable, intent(inout)                  ::    Object                                             
+    class(HierDistProb_Type), allocatable, intent(inout)              ::    Object                                             
     character(*), intent(in)                                          ::    DesiredType
     logical, optional, intent(in)                                     ::    Debug                                               
 
@@ -78,31 +77,28 @@ contains
     select case ( LowerCase(DesiredType) )
 
       case('uniform')
-        allocate( DistUnif_Type :: Object )
+        allocate( HierDistUnif_Type :: Object )
 
       case('loguniform')
-        allocate( DistLogUnif_Type :: Object )
+        allocate( HierDistLogUnif_Type :: Object )
 
       case('log10uniform')
-        allocate( DistLog10Unif_Type :: Object )
+        allocate( HierDistLog10Unif_Type :: Object )
 
       case('normal')
-        allocate( DistNorm_Type :: Object )
+        allocate( HierDistNorm_Type :: Object )
 
       case('lognormal')
-        allocate( DistLogNorm_Type :: Object )
+        allocate( HierDistLogNorm_Type :: Object )
 
       case('log10normal')
-        allocate( DistLog10Norm_Type :: Object )
+        allocate( HierDistLog10Norm_Type :: Object )
 
       case('gamma')
-        allocate( DistGamma_Type :: Object )
+        allocate( HierDistGamma_Type :: Object )
 
       case('logistic')
-        allocate( DistLogistic_Type :: Object )
-
-      case('kernel')
-        allocate( DistKernel_Type :: Object )
+        allocate( HierDistLogistic_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -121,8 +117,8 @@ contains
     
     use Input_Library
 
-    class(DistProb_Factory_Type), intent(in)                          ::    This
-    class(DistProb_Type), allocatable, intent(inout)                  ::    Object
+    class(HierDistProb_Factory_Type), intent(in)                      ::    This
+    class(HierDistProb_Type), allocatable, intent(inout)              ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    Debug
@@ -160,7 +156,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructPointer_C0D( Object, DesiredType, Debug )
 
-    class(DistProb_Type), pointer, intent(inout)                      ::    Object                                             
+    class(HierDistProb_Type), pointer, intent(inout)                  ::    Object                                             
     character(*), intent(in)                                          ::    DesiredType
     logical, optional, intent(in)                                     ::    Debug                                               
 
@@ -176,31 +172,28 @@ contains
     select case ( LowerCase(DesiredType) )
 
       case('uniform')
-        allocate( DistUnif_Type :: Object )
+        allocate( HierDistUnif_Type :: Object )
 
       case('loguniform')
-        allocate( DistLogUnif_Type :: Object )
+        allocate( HierDistLogUnif_Type :: Object )
 
       case('log10uniform')
-        allocate( DistLog10Unif_Type :: Object )
+        allocate( HierDistLog10Unif_Type :: Object )
 
       case('normal')
-        allocate( DistNorm_Type :: Object )
+        allocate( HierDistNorm_Type :: Object )
 
       case('lognormal')
-        allocate( DistLogNorm_Type :: Object )
+        allocate( HierDistLogNorm_Type :: Object )
 
       case('log10normal')
-        allocate( DistLog10Norm_Type :: Object )
+        allocate( HierDistLog10Norm_Type :: Object )
 
       case('gamma')
-        allocate( DistGamma_Type :: Object )
+        allocate( HierDistGamma_Type :: Object )
 
       case('logistic')
-        allocate( DistLogistic_Type :: Object )
-
-      case('kernel')
-        allocate( DistKernel_Type :: Object )
+        allocate( HierDistLogistic_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -219,8 +212,8 @@ contains
     
     use Input_Library
 
-    class(DistProb_Factory_Type), intent(in)                          ::    This
-    class(DistProb_Type), pointer, intent(inout)                      ::    Object
+    class(HierDistProb_Factory_Type), intent(in)                      ::    This
+    class(HierDistProb_Type), pointer, intent(inout)                  ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    Debug
@@ -260,7 +253,7 @@ contains
 
     character(:), allocatable                                         ::    GetOption
 
-    class(DistProb_Type), intent(in)                                  ::    Object                                             
+    class(HierDistProb_Type), intent(in)                                  ::    Object                                             
     logical, optional, intent(in)                                     ::    Debug                                               
 
     logical                                                           ::    DebugLoc
@@ -272,32 +265,29 @@ contains
 
     select type (Object)
 
-     type is (DistUnif_Type)
+     type is (HierDistUnif_Type)
         GetOption = 'uniform'
 
-     type is (DistLogUnif_Type)
+     type is (HierDistLogUnif_Type)
         GetOption = 'loguniform'
 
-     type is (DistLog10Unif_Type)
+     type is (HierDistLog10Unif_Type)
         GetOption = 'log10uniform'
 
-      type is (DistNorm_Type)
+      type is (HierDistNorm_Type)
         GetOption = 'normal'
 
-      type is (DistLogNorm_Type)
+      type is (HierDistLogNorm_Type)
         GetOption = 'lognormal'
 
-      type is (DistLog10Norm_Type)
+      type is (HierDistLog10Norm_Type)
         GetOption = 'log10normal'
 
-      type is (DistGamma_Type)
+      type is (HierDistGamma_Type)
         GetOption = 'gamma'
 
-      type is (DistLogistic_Type)
+      type is (HierDistLogistic_Type)
         GetOption = 'logistic'
-
-      type is (DistKernel_Type)
-        GetOption = 'kernel'
 
       class default
         call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )
@@ -316,8 +306,8 @@ contains
 
     type(InputSection_Type)                                           ::    GetObjectInput
 
-    class(DistProb_Factory_Type), intent(in)                          ::    This
-    class(DistProb_Type), intent(in)                                  ::    Object
+    class(HierDistProb_Factory_Type), intent(in)                      ::    This
+    class(HierDistProb_Type), intent(in)                              ::    Object
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
