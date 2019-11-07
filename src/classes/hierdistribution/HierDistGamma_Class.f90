@@ -1,0 +1,406 @@
+! -*-f90-*-
+!!--------------------------------------------------------------------------------------------------------------------------------
+!!
+!! Stochastic Modeling & Uncertainty Quantification (SMUQ)
+!!
+!! Copyright (C) 2016 Venturi, Simone & Rostkowski, Przemyslaw (University of Illinois at Urbana-Champaign)
+!!
+!! This program is free software; you can redistribute it and/or modify it under the terms of the Version 2.1 GNU Lesser General
+!! Public License as published by the Free Software Foundation.
+!!
+!! This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+!! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+!!
+!! You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free 
+!! Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+!!
+!!--------------------------------------------------------------------------------------------------------------------------------
+! defined using shape and rate form
+module HierDistGamma_Class
+
+use Input_Library
+use Parameters_Library
+use ComputingRoutines_Module
+use StatisticsRoutines_Module
+use Logger_Class                                                  ,only:    Logger
+use Error_Class                                                   ,only:    Error
+use HierDistProb_Class                                            ,only:    HierDistProb_Type
+use InputDet_Class                                                ,only:    InputDet_Type
+use DistGamma_Class                                               ,only:    DistGamma_Type
+use DistProb_Class                                                ,only:    DistProb_Type
+
+implicit none
+
+private
+
+public                                                                ::    HierDistGamma_Type
+
+type, extends(HierDistProb_Type)                                      ::    HierDistGamma_Type
+  real(rkp)                                                           ::    Alpha=One
+  real(rkp)                                                           ::    Beta=One
+  character(:), allocatable                                           ::    AlphaDependency
+  character(:), allocatable                                           ::    BetaDependency
+contains
+  procedure, public                                                   ::    Initialize
+  procedure, public                                                   ::    Reset
+  procedure, public                                                   ::    SetDefaults
+  procedure, private                                                  ::    ConstructInput
+  procedure, public                                                   ::    GetInput
+  procedure, public                                                   ::    Generate
+  procedure, private                                                  ::    GenerateDistribution
+  procedure, public                                                   ::    Copy
+  final                                                               ::    Finalizer     
+end type
+
+logical   ,parameter                                                  ::    DebugGlobal = .false.
+
+contains
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Initialize( This, Debug )
+
+    class(HierDistGamma_Type), intent(inout)                          ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='Initialize'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Initialized ) then
+      This%Name = 'hiererchical_gamma'
+      This%Initialized = .true.
+      call This%SetDefaults()
+    end if
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Reset( This, Debug )
+
+    class(HierDistGamma_Type), intent(inout)                          ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='Reset'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    This%Initialized = .false.
+    This%Constructed = .false.
+
+    call This%Initialize()
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine SetDefaults( This, Debug )
+
+    class(HierDistGamma_Type), intent(inout)                          ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='SetDefaults'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    This%A = tiny(One)
+    This%B = One
+    This%Alpha = One
+    This%Beta = One
+    This%TruncatedRight = .false.
+    This%TruncatedLeft = .true.
+    This%AlphaDependency=''
+    This%BetaDependency=''
+    This%ADependency=''
+    This%BDependency=''
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructInput( This, Input, Prefix, Debug )
+
+    class(HierDistGamma_Type), intent(inout)                          ::    This
+    type(InputSection_Type), intent(in)                               ::    Input
+    character(*), optional, intent(in)                                ::    Prefix
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ProcessInput'
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    ParameterName
+    logical                                                           ::    Found
+    real(rkp)                                                         ::    VarR0D
+    character(:), allocatable                                         ::    VarC0D
+    logical                                                           ::    VarL0D
+    character(:), allocatable                                         ::    PrefixLoc
+    logical                                                           ::    MandatoryLoc
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( This%Constructed ) call This%Reset()
+    if ( .not. This%Initialized ) call This%Initialize()
+    
+    PrefixLoc = ''
+    if ( present(Prefix) ) PrefixLoc = Prefix
+
+    MandatoryLoc = .true.
+    ParameterName = 'alpha_dependency'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%AlphaDependency = VarC0D
+    MandatoryLoc = .not. Found
+    ParameterName = 'alpha'
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
+    if ( Found ) This%Alpha = VarR0D
+
+    MandatoryLoc = .true.
+    ParameterName = 'beta_dependency'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%BetaDependency = VarC0D
+    MandatoryLoc = .not. Found
+    ParameterName = 'beta'
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
+    if ( Found ) This%Beta = VarR0D
+
+    ParameterName = 'a_dependency'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%ADependency = VarC0D
+    ParameterName = 'a'
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%A = VarR0D
+
+    ParameterName = 'b_dependency'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) then
+      This%BDependency = VarC0D
+      This%TruncatedRight = .true.
+    end if
+    ParameterName = 'b'
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) then
+      This%B = VarR0D
+      This%TruncatedRight = .true.
+    end if
+
+    This%Constructed = .true.
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+
+    use StringRoutines_Module
+
+    type(InputSection_Type)                                           ::    GetInput
+
+    class(HierDistGamma_Type), intent(in)                             ::    This
+    character(*), intent(in)                                          ::    MainSectionName
+    character(*), optional, intent(in)                                ::    Prefix
+    character(*), optional, intent(in)                                ::    Directory
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetInput'
+    character(:), allocatable                                         ::    PrefixLoc
+    character(:), allocatable                                         ::    DirectoryLoc
+    character(:), allocatable                                         ::    DirectorySub
+    logical                                                           ::    ExternalFlag=.false.
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    DirectoryLoc = ''
+    PrefixLoc = ''
+    if ( present(Directory) ) DirectoryLoc = Directory
+    if ( present(Prefix) ) PrefixLoc = Prefix
+    DirectorySub = DirectoryLoc
+
+    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+
+    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%Alpha ) )
+    call GetInput%AddParameter( Name='beta', Value=ConvertToString( Value=This%Beta ) )
+    call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
+    if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
+    if ( len_trim(This%AlphaDependency) /= 0 ) call GetInput%AddParameter( Name='alpha_dependency', Value=This%AlphaDependency )
+    if ( len_trim(This%BetaDependency) /= 0 ) call GetInput%AddParameter( Name='beta_dependency', Value=This%BetaDependency )
+    if ( len_trim(This%ADependency) /= 0 ) call GetInput%AddParameter( Name='a_dependency', Value=This%ADependency )
+    if ( len_trim(This%BDependency) /= 0 ) call GetInput%AddParameter( Name='b_dependency', Value=This%BDependency )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Generate( This, Input, Distribution, Debug )
+
+    class(HierDistGamma_Type), intent(in)                             ::    This
+    type(InputDet_Type), intent(in)                                   ::    Input
+    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='Generate'
+    integer                                                           ::    StatLoc=0
+    real(rkp)                                                         ::    Alpha
+    real(rkp)                                                         ::    Beta
+    real(rkp)                                                         ::    A
+    real(rkp)                                                         ::    B
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    B = Zero
+
+    Alpha = This%Alpha
+    if ( len_trim(This%AlphaDependency) /= 0 ) call Input%GetValue( Value=Alpha, Label=This%AlphaDependency )
+
+    Beta = This%Beta
+    if ( len_trim(This%BetaDependency) /= 0 ) call Input%GetValue( Value=Beta, Label=This%BetaDependency )
+
+    A = This%A
+    if ( len_trim(This%ADependency) /= 0 ) call Input%GetValue( Value=A, Label=This%ADependency )
+    
+    if ( This%TruncatedRight ) then
+      if ( len_trim(This%BDependency) /= 0 ) then
+        call Input%GetValue( Value=B, Label=This%BDependency )
+      else
+        B = This%B
+      end if
+    end if
+
+    call This%GenerateDistribution( Alpha=Alpha, Beta=Beta, A=A, B=B, Distribution=Distribution )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine GenerateDistribution( This, Alpha, Beta, A, B, Distribution, Debug )
+
+    class(HierDistGamma_Type), intent(in)                             ::    This
+    real(rkp), intent(in)                                             ::    Alpha
+    real(rkp), intent(in)                                             ::    Beta
+    real(rkp), intent(in)                                             ::    A
+    real(rkp), intent(in)                                             ::    B
+    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GenerateDistribution'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    allocate( DistGamma_Type :: Distribution )
+
+    select type ( Distribution )
+      type is ( DistGamma_Type ) 
+        if ( This%TruncatedLeft .and. This%TruncatedRight ) then
+          call Distribution%Construct( Alpha=Alpha, Beta=Beta, A=A, B=B )
+        else
+          call Distribution%Construct( Alpha=Alpha, Beta=Beta, A=A )
+        end if
+      class default
+        call Error%Raise( "Something went wrong", ProcName=ProcName )
+    end select
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Copy( LHS, RHS )
+
+    class(HierDistGamma_Type), intent(out)                            ::    LHS
+    class(HierDistProb_Type), intent(in)                              ::    RHS
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='Copy'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    select type (RHS)
+  
+      type is (HierDistGamma_Type)
+        call LHS%Reset()
+        LHS%Initialized = RHS%Initialized
+        LHS%Constructed = RHS%Constructed
+
+        if ( RHS%Constructed ) then
+          LHS%A = RHS%A
+          LHS%B = RHS%B
+          LHS%Alpha = RHS%Alpha
+          LHS%Beta = RHS%Beta
+          LHS%TruncatedLeft = RHS%TruncatedLeft
+          LHS%TruncatedRight = RHS%TruncatedRight
+          LHS%AlphaDependency = RHS%AlphaDependency
+          LHS%BetaDependency = RHS%BetaDependency
+          LHS%ADependency = RHS%ADependency
+          LHS%BDependency = RHS%BDependency
+        end if
+      
+      class default
+        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+
+    end select
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Finalizer( This )
+
+    type(HierDistGamma_Type), intent(inout)                           ::    This
+
+    character(*), parameter                                           ::    ProcName='Finalizer'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+end module

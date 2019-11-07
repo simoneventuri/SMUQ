@@ -39,10 +39,6 @@ public                                                                ::    Dist
 type, extends(DistProb_Type)                                          ::    DistGamma_Type
   real(rkp)                                                           ::    Alpha=One
   real(rkp)                                                           ::    Beta=One
-  character(:), allocatable                                           ::    AlphaDependency
-  character(:), allocatable                                           ::    BetaDependency
-  character(:), allocatable                                           ::    ADependency
-  character(:), allocatable                                           ::    BDependency
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -50,7 +46,6 @@ contains
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
-  procedure, private                                                  ::    HierConstructCase1
   procedure, public                                                   ::    GetInput
   procedure, private                                                  ::    PDF_R0D
   procedure, nopass, public                                           ::    ComputePDF
@@ -139,10 +134,6 @@ contains
     This%Beta = One
     This%TruncatedRight = .false.
     This%TruncatedLeft = .true.
-    This%AlphaDependency=''
-    This%BetaDependency=''
-    This%ADependency=''
-    This%BDependency=''
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -166,7 +157,6 @@ contains
     character(:), allocatable                                         ::    VarC0D
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    PrefixLoc
-    logical                                                           ::    MandatoryLoc
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -178,37 +168,18 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    MandatoryLoc = .true.
-    ParameterName = 'alpha_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%AlphaDependency = VarC0D
-    MandatoryLoc = .not. Found
     ParameterName = 'alpha'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Alpha = VarR0D
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Alpha = VarR0D
 
-    MandatoryLoc = .true.
-    ParameterName = 'beta_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%BetaDependency = VarC0D
-    MandatoryLoc = .not. Found
     ParameterName = 'beta'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Beta = VarR0D
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Beta = VarR0D
 
-    ParameterName = 'a_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%ADependency = VarC0D
     ParameterName = 'a'
     call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
-      This%A = VarR0D
-      This%TruncatedLeft = .true.
-    end if
+    if ( Found ) This%A = VarR0D
 
-    ParameterName = 'b_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%BDependency = VarC0D
     ParameterName = 'b'
     call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) then
@@ -260,7 +231,6 @@ contains
 
     if ( present(A) ) then
       This%A = A
-      This%TruncatedLeft = .true.
     end if
 
     if ( present(B) ) then
@@ -269,53 +239,6 @@ contains
     end if
 
     This%Constructed = .true.
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine HierConstructCase1( This, Input, Prefix, Debug )
-
-    class(DistGamma_Type), intent(inout)                              ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='HierConstructCase1'
-    integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    VarR0D       
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
-
-    if ( len_trim(This%AlphaDependency) /= 0 ) call Input%GetValue( Value=This%Alpha, Label=This%AlphaDependency )
-
-    if ( len_trim(This%BetaDependency) /= 0 ) call Input%GetValue( Value=This%Beta, Label=This%BetaDependency )
-
-    if ( len_trim(This%ADependency) /= 0 ) then
-      call Input%GetValue( Value=This%A, Label=This%ADependency )
-      This%TruncatedLeft = .true.
-    end if
-    
-    if ( len_trim(This%BDependency) /= 0 ) then
-      call Input%GetValue( Value=This%B, Label=This%BDependency )
-      This%TruncatedRight = .true.
-    end if
-
-    if ( VarR0D <= Zero ) call Error%Raise( "Alpha parameter at or below zero" )
-    if ( VarR0D <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
-    if ( This%TruncatedLeft ) then
-      if ( This%A <= Zero ) call Error%Raise( Line='Lower limit specified to be below minimum of 0', ProcName=ProcName )
-    end if
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
-    end if
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -359,12 +282,8 @@ contains
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
     call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%Alpha ) )
     call GetInput%AddParameter( Name='beta', Value=ConvertToString( Value=This%Beta ) )
-    if ( This%TruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
+    call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
     if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
-    if ( len_trim(This%AlphaDependency) /= 0 ) call GetInput%AddParameter( Name='alpha_dependency', Value=This%AlphaDependency )
-    if ( len_trim(This%BetaDependency) /= 0 ) call GetInput%AddParameter( Name='beta_dependency', Value=This%BetaDependency )
-    if ( len_trim(This%ADependency) /= 0 ) call GetInput%AddParameter( Name='a_dependency', Value=This%ADependency )
-    if ( len_trim(This%BDependency) /= 0 ) call GetInput%AddParameter( Name='b_dependency', Value=This%BDependency )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -932,10 +851,6 @@ contains
           LHS%Beta = RHS%Beta
           LHS%TruncatedLeft = RHS%TruncatedLeft
           LHS%TruncatedRight = RHS%TruncatedRight
-          LHS%AlphaDependency = RHS%AlphaDependency
-          LHS%BetaDependency = RHS%BetaDependency
-          LHS%ADependency = RHS%ADependency
-          LHS%BDependency = RHS%BDependency
         end if
       
       class default

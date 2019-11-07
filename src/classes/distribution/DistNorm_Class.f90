@@ -36,10 +36,6 @@ public                                                                ::    Dist
 type, extends(DistProb_Type)                                          ::    DistNorm_Type
   real(rkp)                                                           ::    Mu=Zero
   real(rkp)                                                           ::    Sigma=One
-  character(:), allocatable                                           ::    MuDependency
-  character(:), allocatable                                           ::    SigmaDependency
-  character(:), allocatable                                           ::    ADependency
-  character(:), allocatable                                           ::    BDependency
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -47,7 +43,6 @@ contains
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
-  procedure, private                                                  ::    HierConstructCase1
   procedure, public                                                   ::    GetInput
   procedure, private                                                  ::    PDF_R0D
   procedure, nopass, public                                           ::    ComputePDF
@@ -137,10 +132,6 @@ contains
     This%Sigma = One
     This%TruncatedRight = .false.
     This%TruncatedLeft = .false.
-    This%MuDependency=''
-    This%SigmaDependency=''
-    This%ADependency=''
-    This%BDependency=''
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -164,7 +155,6 @@ contains
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    VarC0D
     character(:), allocatable                                         ::    PrefixLoc
-    logical                                                           ::    MandatoryLoc
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -176,27 +166,14 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    MandatoryLoc = .true.
-    ParameterName = 'mu_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%MuDependency = VarC0D
-    MandatoryLoc = .not. Found
     ParameterName = 'mu'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Mu = VarR0D
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true., Found=Found )
+    This%Mu = VarR0D
 
-    MandatoryLoc = .true.
-    ParameterName = 'sigma_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%SigmaDependency = VarC0D
-    MandatoryLoc = .not. Found
     ParameterName = 'sigma'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Sigma = VarR0D
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true., Found=Found )
+    This%Sigma = VarR0D
 
-    ParameterName = 'a_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%ADependency = VarC0D
     ParameterName = 'a'
     call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) then
@@ -204,9 +181,6 @@ contains
       This%TruncatedLeft = .true.
     end if
 
-    ParameterName = 'b_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%BDependency = VarC0D
     ParameterName = 'b'
     call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) then
@@ -275,50 +249,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine HierConstructCase1( This, Input, Prefix, Debug )
-
-    class(DistNorm_Type), intent(inout)                               ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='HierConstructCase1'
-    integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    VarR0D       
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
-
-    if ( len_trim(This%MuDependency) /= 0 ) call Input%GetValue( Value=This%Mu, Label=This%MuDependency )
-
-    if ( len_trim(This%SigmaDependency) /= 0 ) call Input%GetValue( Value=This%Sigma, Label=This%SigmaDependency )
-
-    if ( len_trim(This%ADependency) /= 0 ) then
-      call Input%GetValue( Value=This%A, Label=This%ADependency )
-      This%TruncatedLeft = .true.
-    end if
-    
-    if ( len_trim(This%BDependency) /= 0 ) then
-      call Input%GetValue( Value=This%B, Label=This%BDependency )
-      This%TruncatedRight = .true.
-    end if
-
-    if ( This%Sigma < Zero ) call Error%Raise( Line='Standard deviation specified to be below minimum of 0', ProcName=ProcName )
-
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
-    end if
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput( This, MainSectionName, Prefix, Directory, Debug )
 
     use StringRoutines_Module
@@ -357,10 +287,6 @@ contains
     call GetInput%AddParameter( Name='sigma', Value=ConvertToString( Value=This%Sigma ) )
     if ( This%TruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
     if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
-    if ( len_trim(This%MuDependency) /= 0 ) call GetInput%AddParameter( Name='mu_dependency', Value=This%MuDependency )
-    if ( len_trim(This%SigmaDependency) /= 0 ) call GetInput%AddParameter( Name='sigma_dependency', Value=This%SigmaDependency )
-    if ( len_trim(This%ADependency) /= 0 ) call GetInput%AddParameter( Name='a_dependency', Value=This%ADependency )
-    if ( len_trim(This%BDependency) /= 0 ) call GetInput%AddParameter( Name='b_dependency', Value=This%BDependency )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -1008,10 +934,6 @@ contains
           LHS%Sigma = RHS%Sigma
           LHS%TruncatedLeft = RHS%TruncatedLeft
           LHS%TruncatedRight = RHS%TruncatedRight
-          LHS%MuDependency = RHS%MuDependency
-          LHS%SigmaDependency = RHS%SigmaDependency
-          LHS%ADependency = RHS%ADependency
-          LHS%BDependency = RHS%BDependency
         end if
 
       class default

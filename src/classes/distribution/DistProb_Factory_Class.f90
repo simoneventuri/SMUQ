@@ -27,7 +27,7 @@ use DistLogNorm_Class                                             ,only:    Dist
 use DistLog10Norm_Class                                           ,only:    DistLog10Norm_Type
 use DistGamma_Class                                               ,only:    DistGamma_Type
 use DistLogistic_Class                                            ,only:    DistLogistic_Type
-use DistKernel_Class                                              ,only:    DistKernel_Type
+!use DistKernel_Class                                              ,only:    DistKernel_Type
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
@@ -101,8 +101,8 @@ contains
       case('logistic')
         allocate( DistLogistic_Type :: Object )
 
-      case('kernel')
-        allocate( DistKernel_Type :: Object )
+!      case('kernel')
+!        allocate( DistKernel_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -199,8 +199,8 @@ contains
       case('logistic')
         allocate( DistLogistic_Type :: Object )
 
-      case('kernel')
-        allocate( DistKernel_Type :: Object )
+!      case('kernel')
+!        allocate( DistKernel_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -296,8 +296,8 @@ contains
       type is (DistLogistic_Type)
         GetOption = 'logistic'
 
-      type is (DistKernel_Type)
-        GetOption = 'kernel'
+!      type is (DistKernel_Type)
+!        GetOption = 'kernel'
 
       class default
         call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )

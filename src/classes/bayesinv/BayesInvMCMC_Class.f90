@@ -47,6 +47,8 @@ use BayesInvMethod_Class                                          ,only:    Baye
 use InputDet_Class                                                ,only:    InputDet_Type
 use InputStoch_Class                                              ,only:    InputStoch_Type
 use Model_Class                                                   ,only:    Model_Type
+use SpaceParam_Class                                              ,only:    SpaceParam_Type
+use SpaceHierParam_Class                                          ,only:    SpaceHierParam_Type
 
 implicit none
 
@@ -58,7 +60,7 @@ type, extends(BayesInvMethod_Type)                                    ::    Baye
   logical                                                             ::    Silent=.false.
   class(LikelihoodFunction_Type), allocatable                         ::    LikelihoodFunction
   class(MCMCMethod_Type), allocatable                                 ::    MCMC
-  type(SpaceParam_Type)                                               ::    HierarchicalSpace
+  type(SpaceHierParam_Type)                                           ::    HierarchicalSpace
   type(SpaceSampler_Type)                                             ::    HierarchicalSampler
   logical                                                             ::    Hierarchical
 contains
@@ -316,6 +318,7 @@ contains
     type(Output_Type), allocatable, dimension(:)                      ::    Output
     real(rkp), allocatable, dimension(:,:)                            ::    HierSamples
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    type(SpaceParam_Type)                                             ::    SpaceParamRealization
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -490,17 +493,13 @@ contains
         MiscValues(1) = Prior
 
         if ( Prior > Zero ) then
-          i = 1
-          do i = 1, This%HierarchicalSpace%GetNbDim()
-            DistProb => This%HierarchicalSpace%GetDistributionPointer( Num=i )
-            call DistProb%Construct( Input=Input )
-          end do
-          nullify( DistProb )
 
-          HierSamples = This%HierarchicalSampler%Draw( SpaceInput=This%HierarchicalSpace )
+          call This%HierarchicalSpace%Generate( Input=Input, SpaceParam=SpaceParamRealization )
+
+          HierSamples = This%HierarchicalSampler%Draw( SpaceInput=SpaceParamRealization )
 
           if ( allocated(VarR2D) ) then
-            if ( size(VarR2D,1) /= This%HierarchicalSpace%GetNbDim()+SpaceInput%GetNbDim() .or.                                   &
+            if ( size(VarR2D,1) /= SpaceParamRealization%GetNbDim()+SpaceInput%GetNbDim() .or.                                   &
                                                                                       size(VarR2D,2) /= size(HierSamples,2) ) then
               deallocate(VarR2D, stat=StatLoc)
               if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
@@ -508,7 +507,7 @@ contains
           end if
 
           if ( .not. allocated(VarR2D) ) then
-            allocate(VarR2D(This%HierarchicalSpace%GetNbDim()+SpaceInput%GetNbDim(),size(HierSamples,2)), stat=StatLoc)
+            allocate(VarR2D(SpaceParamRealization%GetNbDim()+SpaceInput%GetNbDim(),size(HierSamples,2)), stat=StatLoc)
             if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
           end if
 

@@ -47,12 +47,10 @@ contains
   procedure, public                                                   ::    IsTruncatedRight
   generic, public                                                     ::    PDF                     =>    PDF_R0D
   generic, public                                                     ::    assignment(=)           =>    Copy
-  generic, public                                                     ::    Construct               =>    ConstructInput,         &
-                                                                                                          HierConstructCase1
+  generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(Initialize_DistProb), deferred, public                    ::    Initialize
   procedure(Reset_DistProb), deferred, public                         ::    Reset
   procedure(ConstructInput_DistProb), deferred, private               ::    ConstructInput
-  procedure(HierConstructCase1_DistProb), deferred, private           ::    HierConstructCase1
   procedure(GetInput_DistProb), deferred, public                      ::    GetInput
   procedure(CDF_DistProb), deferred, public                           ::    CDF
   procedure(InvCDF_DistProb), deferred, public                        ::    InvCDF
@@ -97,17 +95,6 @@ abstract interface
     import                                                            ::    InputSection_Type
     class(DistProb_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine HierConstructCase1_DistProb( This, Input, Prefix, Debug )
-    import                                                            ::    DistProb_Type
-    import                                                            ::    InputDet_Type
-    class(DistProb_Type), intent(inout)                               ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional ,intent(in)                                     ::    Debug
   end subroutine

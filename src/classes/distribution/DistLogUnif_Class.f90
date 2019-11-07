@@ -61,13 +61,11 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if (DebugLoc) call Logger%Write( "Initializing DistLogUnif object" )
     if ( .not. This%Initialized ) then
       This%Name = 'loguniform'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
-    if (DebugLoc) call Logger%Write( "Initialization Successful" )
 
     if (DebugLoc) call Logger%Exiting()
 

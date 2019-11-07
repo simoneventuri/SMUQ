@@ -16,49 +16,50 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module HierDistNorm_Class
+module HierDistLogistic_Class
 
-use Prob_Library
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use DistNorm_Class                                                ,only:    DistNorm_Type
+use StatisticsRoutines_Module
+use HierDistProb_Class                                            ,only:    HierDistProb_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use InputDet_Class                                                ,only:    InputDet_Type
+use DistLogistic_Class                                            ,only:    DistLogistic_Type
+use DistProb_Class                                                ,only:    DistProb_Type
 
 implicit none
 
 private
 
-public                                                                ::    HierDistNorm_Type
+public                                                                ::    HierDistLogistic_Type
 
-type, extends(HierDistProb_Type)                                      ::    HierDistNorm_Type
+type, extends(HierDistProb_Type)                                      ::    HierDistLogistic_Type
   real(rkp)                                                           ::    Mu=Zero
-  real(rkp)                                                           ::    Sigma=One
+  real(rkp)                                                           ::    S=One
   character(:), allocatable                                           ::    MuDependency
-  character(:), allocatable                                           ::    SigmaDependency
-  character(:), allocatable                                           ::    ADependency
-  character(:), allocatable                                           ::    BDependency
+  character(:), allocatable                                           ::    SDependency
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
-  procedure, private                                                  ::    Generate
   procedure, public                                                   ::    GetInput
+  procedure, public                                                   ::    Generate
+  procedure, private                                                  ::    GenerateDistribution
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer     
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
-real(rkp), parameter                                                  ::    dlogof2pi=dlog(Two*pi)
+
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This, Debug )
 
-    class(HierDistNorm_Type), intent(inout)                           ::    This
+    class(HierDistLogistic_Type), intent(inout)                       ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -69,7 +70,7 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
-      This%Name = 'hiererchical_normal'
+      This%Name = 'hierarchical_logistic'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -82,7 +83,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This, Debug )
 
-    class(HierDistNorm_Type), intent(inout)                           ::    This
+    class(HierDistLogistic_Type), intent(inout)                       ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -106,7 +107,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This, Debug )
 
-    class(HierDistNorm_Type), intent(inout)                           ::    This
+    class(HierDistLogistic_Type), intent(inout)                       ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -116,16 +117,16 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    This%A = One
+    This%A = tiny(One)
     This%B = One
     This%Mu = Zero
-    This%Sigma = One
-    This%MuDependency=''
-    This%SigmaDependency=''
-    This%ADependency=''
-    This%BDependency=''
+    This%S = One
     This%TruncatedRight = .false.
     This%TruncatedLeft = .false.
+    This%MuDependency=''
+    This%SDependency=''
+    This%ADependency=''
+    This%BDependency=''
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -135,7 +136,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix, Debug )
 
-    class(HierDistNorm_Type), intent(inout)                           ::    This
+    class(HierDistLogistic_Type), intent(inout)                       ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional ,intent(in)                                     ::    Debug
@@ -146,8 +147,8 @@ contains
     character(:), allocatable                                         ::    ParameterName
     logical                                                           ::    Found
     real(rkp)                                                         ::    VarR0D
-    logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    VarC0D
+    logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    PrefixLoc
     logical                                                           ::    MandatoryLoc
 
@@ -171,13 +172,13 @@ contains
     if ( Found ) This%Mu = VarR0D
 
     MandatoryLoc = .true.
-    ParameterName = 'sigma_dependency'
+    ParameterName = 's_dependency'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%SigmaDependency = VarC0D
+    if ( Found ) This%SDependency = VarC0D
     MandatoryLoc = .not. Found
-    ParameterName = 'sigma'
+    ParameterName = 's'
     call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Sigma = VarR0D
+    if ( Found ) This%S = VarR0D
 
     ParameterName = 'a_dependency'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -215,18 +216,19 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Generate( This, Input, Distribution, Debug )
 
-    class(HierDistNorm_Type), intent(in)                              ::    This
+    class(HierDistLogistic_Type), intent(in)                          ::    This
     type(InputDet_Type), intent(in)                                   ::    Input
-    class(DistNorm_Type), intent(out)                                 ::    Distribution
+    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Generate'
     integer                                                           ::    StatLoc=0
+    real(rkp)                                                         ::    VarR0D     
     real(rkp)                                                         ::    Mu
-    real(rkp)                                                         ::    Sigma
-    real(rkp)                                                         ::    A
-    real(rkp)                                                         ::    B       
+    real(rkp)                                                         ::    S  
+    real(rkp)                                                         ::    A  
+    real(rkp)                                                         ::    B  
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -240,13 +242,12 @@ contains
     Mu = This%Mu
     if ( len_trim(This%MuDependency) /= 0 ) call Input%GetValue( Value=Mu, Label=This%MuDependency )
 
-    Sigma = This%Sigma
-    if ( len_trim(This%SigmaDependency) /= 0 ) call Input%GetValue( Value=Sigma, Label=This%SigmaDependency )
+    S = This%S
+    if ( len_trim(This%SDependency) /= 0 ) call Input%GetValue( Value=S, Label=This%SDependency )
 
     if ( This%TruncatedLeft ) then
       if ( len_trim(This%ADependency) /= 0 ) then
         call Input%GetValue( Value=A, Label=This%ADependency )
-        This%TruncatedLeft = .true.
       else
         A = This%A
       end if
@@ -255,21 +256,55 @@ contains
     if ( This%TruncatedRight ) then
       if ( len_trim(This%BDependency) /= 0 ) then
         call Input%GetValue( Value=B, Label=This%BDependency )
-        This%TruncatedRight = .true.
       else
         B = This%B
       end if
     end if
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      call Distribution%Construct( Mu=Mu, Sigma=Sigma, A=A, B=B )
-    elseif ( This%TruncatedLeft ) then
-      call Distribution%Construct( Mu=Mu, Sigma=Sigma, A=A )
-    elseif ( This%TruncatedRight ) then
-      call Distribution%Construct( Mu=Mu, Sigma=Sigma, B=B )
-    else
-      call Distribution%Construct( Mu=Mu, Sigma=Sigma )
-    end if
+    call This%GenerateDistribution( Mu=Mu, S=S, A=A, B=B, Distribution=Distribution )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine GenerateDistribution( This, Mu, S, A, B, Distribution, Debug )
+
+    class(HierDistLogistic_Type), intent(in)                          ::    This
+    real(rkp), intent(in)                                             ::    Mu
+    real(rkp), intent(in)                                             ::    S
+    real(rkp), intent(in)                                             ::    A
+    real(rkp), intent(in)                                             ::    B
+    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GenerateDistribution'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    allocate( DistLogistic_Type :: Distribution )
+
+    select type ( Distribution )
+      type is ( DistLogistic_Type ) 
+        if ( This%TruncatedLeft .and. This%TruncatedRight ) then
+          call Distribution%Construct( Mu=Mu, S=S, A=A, B=B )
+        elseif ( This%TruncatedLeft ) then
+          call Distribution%Construct( Mu=Mu, S=S, A=A )
+        elseif ( This%TruncatedRight ) then
+          call Distribution%Construct( Mu=Mu, S=S, B=B )
+        else
+          call Distribution%Construct( Mu=Mu, S=S )
+        end if
+      class default
+        call Error%Raise( "Something went wrong", ProcName=ProcName )
+    end select
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -283,7 +318,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(HierDistNorm_Type), intent(in)                              ::    This
+    class(HierDistLogistic_Type), intent(in)                          ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -312,11 +347,11 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
     call GetInput%AddParameter( Name='mu', Value=ConvertToString( Value=This%Mu ) )
-    call GetInput%AddParameter( Name='sigma', Value=ConvertToString( Value=This%Sigma ) )
+    call GetInput%AddParameter( Name='s', Value=ConvertToString( Value=This%S ) )
     if ( This%TruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
     if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
     if ( len_trim(This%MuDependency) /= 0 ) call GetInput%AddParameter( Name='mu_dependency', Value=This%MuDependency )
-    if ( len_trim(This%SigmaDependency) /= 0 ) call GetInput%AddParameter( Name='sigma_dependency', Value=This%SigmaDependency )
+    if ( len_trim(This%SDependency) /= 0 ) call GetInput%AddParameter( Name='s_dependency', Value=This%SDependency )
     if ( len_trim(This%ADependency) /= 0 ) call GetInput%AddParameter( Name='a_dependency', Value=This%ADependency )
     if ( len_trim(This%BDependency) /= 0 ) call GetInput%AddParameter( Name='b_dependency', Value=This%BDependency )
 
@@ -328,8 +363,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy( LHS, RHS )
 
-    class(HierDistNorm_Type), intent(out)                             ::    LHS
-    class(DistProb_Type), intent(in)                                  ::    RHS
+    class(HierDistLogistic_Type), intent(out)                         ::    LHS
+    class(HierDistProb_Type), intent(in)                              ::    RHS
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
@@ -340,7 +375,7 @@ contains
 
     select type (RHS)
   
-      type is (HierDistNorm_Type)
+      type is (HierDistLogistic_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -349,11 +384,11 @@ contains
           LHS%A = RHS%A
           LHS%B = RHS%B
           LHS%Mu = RHS%Mu
-          LHS%Sigma = RHS%Sigma
+          LHS%S = RHS%S
           LHS%TruncatedLeft = RHS%TruncatedLeft
           LHS%TruncatedRight = RHS%TruncatedRight
           LHS%MuDependency = RHS%MuDependency
-          LHS%SigmaDependency = RHS%SigmaDependency
+          LHS%SDependency = RHS%SDependency
           LHS%ADependency = RHS%ADependency
           LHS%BDependency = RHS%BDependency
         end if
@@ -371,7 +406,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Finalizer( This )
 
-    type(HierDistNorm_Type), intent(inout)                            ::    This
+    type(HierDistLogistic_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     logical                                                           ::    DebugLoc

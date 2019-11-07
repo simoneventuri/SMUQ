@@ -10,6 +10,6 @@ add_target_sources ( smuqApp
   DistLogUnif_Class.f90 
   DistLog10Unif_Class.f90
   DistLogistic_Class.f90
-  DistKernel_Class.f90
+#  DistKernel_Class.f90
   MultiVarDistNorm_Class.f90
 )

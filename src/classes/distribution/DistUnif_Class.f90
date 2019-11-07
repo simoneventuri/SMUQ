@@ -33,8 +33,7 @@ private
 public                                                                ::    DistUnif_Type
 
 type, extends(DistProb_Type)                                          ::    DistUnif_Type
-  character(:), allocatable                                           ::    ADependency
-  character(:), allocatable                                           ::    BDependency
+
 contains
   private
   procedure, public                                                   ::    Initialize
@@ -43,7 +42,6 @@ contains
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
-  procedure, private                                                  ::    HierConstructCase1
   procedure, public                                                   ::    GetInput
   procedure, private                                                  ::    PDF_R0D
   procedure, nopass, public                                           ::    ComputePDF
@@ -128,8 +126,6 @@ contains
     This%B = One
     This%TruncatedLeft=.true.
     This%TruncatedRight=.true.
-    This%ADependency=''
-    This%BDependency=''
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -152,7 +148,6 @@ contains
     character(:), allocatable                                         ::    VarC0D
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
-    logical                                                           ::    MandatoryLoc
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -167,23 +162,13 @@ contains
     This%TruncatedLeft=.true.
     This%TruncatedRight=.true.
 
-    MandatoryLoc = .true.
-    ParameterName = 'a_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%ADependency = VarC0D
-    MandatoryLoc = .not. Found
     ParameterName = 'a'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%A = VarR0D
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%A = VarR0D
 
-    MandatoryLoc = .true.
-    ParameterName = 'b_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%BDependency = VarC0D
-    MandatoryLoc = .not. Found
     ParameterName = 'b'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%B = VarR0D
+    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%B = VarR0D
 
     if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
 
@@ -229,36 +214,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine HierConstructCase1( This, Input, Prefix, Debug )
-
-    class(DistUnif_Type), intent(inout)                               ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='HierConstructCase1'
-    integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    VarR0D       
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
-
-    if ( len_trim(This%ADependency) /= 0 ) call Input%GetValue( Value=This%A, Label=This%ADependency )
-
-    if ( len_trim(This%BDependency) /= 0 ) call Input%GetValue( Value=This%B, Label=This%BDependency )
-
-    if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput( This, MainSectionName, Prefix, Directory, Debug )
 
     use StringRoutines_Module
@@ -296,8 +251,6 @@ contains
 
     call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
     call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
-    if ( len_trim(This%ADependency) /= 0 ) call GetInput%AddParameter( Name='a_dependency', Value=This%ADependency )
-    if ( len_trim(This%BDependency) /= 0 ) call GetInput%AddParameter( Name='b_dependency', Value=This%BDependency )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -626,8 +579,6 @@ contains
           LHS%B = RHS%B
           LHS%TruncatedLeft=RHS%TruncatedLeft
           LHS%TruncatedRight=RHS%TruncatedRight
-          LHS%ADependency = RHS%ADependency
-          LHS%BDependency = RHS%BDependency
         end if
 
       class default

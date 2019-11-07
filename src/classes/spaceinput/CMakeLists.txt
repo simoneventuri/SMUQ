@@ -7,4 +7,5 @@ add_target_sources ( smuqApp
   SpaceTransfStdNormal_Class.f90
   SpaceTransfCustom_Class.f90
   SpaceSampler_Class.f90
+  SpaceHierParam_Class.f90
  )

@@ -23,7 +23,7 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use InputDet_Class                                                ,only:    InputDet_Type
-use DistProb_Class                                                ,only:    DistProb
+use DistProb_Class                                                ,only:    DistProb_Type
 
 implicit none
 
@@ -35,6 +35,8 @@ type, abstract                                                        ::    Hier
   character(:), allocatable                                           ::    Name
   real(rkp)                                                           ::    A=One
   real(rkp)                                                           ::    B=One
+  character(:), allocatable                                           ::    ADependency
+  character(:), allocatable                                           ::    BDependency
   logical                                                             ::    TruncatedLeft=.false.
   logical                                                             ::    TruncatedRight=.false.
   logical                                                             ::    Initialized=.false.
@@ -49,7 +51,7 @@ contains
   procedure(SetDefaults_HierDistProb), deferred, public               ::    SetDefaults
   procedure(ConstructInput_HierDistProb), deferred, private           ::    ConstructInput
   procedure(GetInput_HierDistProb), deferred, public                  ::    GetInput
-  procedure(Generate_HierDistProb), deferred, private                 ::    Generate
+  procedure(Generate_HierDistProb), deferred, public                  ::    Generate
   procedure(Copy_HierDistProb), deferred, public                      ::    Copy
 end type
 
@@ -97,9 +99,9 @@ abstract interface
     import                                                            ::    HierDistProb_Type
     import                                                            ::    DistProb_Type
     import                                                            ::    InputDet_Type
-    class(HierDistProb_Type), intent(inout)                           ::    This
+    class(HierDistProb_Type), intent(in)                              ::    This
     type(InputDet_Type), intent(in)                                   ::    Input
-    class(DistProb_Type), intent(out)                                 ::    Distribution
+    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
     logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
