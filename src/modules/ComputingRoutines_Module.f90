@@ -32,6 +32,7 @@ public                                                                ::    LinS
 public                                                                ::    Log10Space
 public                                                                ::    LogSpace
 public                                                                ::    Interpolate
+public                                                                ::    DoubleFactorial
 public                                                                ::    Factorial
 public                                                                ::    SQRTFactorial
 public                                                                ::    BinomialCoeff
@@ -564,7 +565,7 @@ contains
     if ( N >= 1 ) then
       Ni = N
       do
-        DoubleFactorial = DoubleFactorial * Ni
+        DoubleFactorial_I = DoubleFactorial_I * Ni
         Ni = Ni - 2
         if ( Ni <= 0 ) exit
       end do

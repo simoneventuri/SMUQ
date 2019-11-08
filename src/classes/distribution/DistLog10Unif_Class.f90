@@ -78,7 +78,7 @@ contains
 
     real(rkp)                                                         ::    GetA
 
-    class(DistLog10Norm_Type), intent(in)                             ::    This
+    class(DistLog10Unif_Type), intent(in)                             ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -102,7 +102,7 @@ contains
 
     real(rkp)                                                         ::    GetB
 
-    class(DistLog10Norm_Type), intent(in)                             ::    This
+    class(DistLog10Unif_Type), intent(in)                             ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc

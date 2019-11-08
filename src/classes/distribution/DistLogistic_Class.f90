@@ -191,8 +191,6 @@ contains
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
     end if
 
-    call This%AdditionalConstruction()
-
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
@@ -240,8 +238,6 @@ contains
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
     end if
-
-    call This%AdditionalConstruction()
 
     This%Constructed = .true.
 
@@ -518,6 +514,7 @@ contains
     real(rkp)                                                         ::    CDFLeft
     real(rkp)                                                         ::    CDFRight
     real(rkp)                                                         ::    PLoc
+    logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -526,14 +523,36 @@ contains
     if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
     if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
 
-    CDFLeft = 0.
-    if ( present(A) ) CDFLeft = This%ComputeCDF ( X=A, Mu=Mu, S=S )
-    CDFRight = 1.
-    if ( present(B) ) CDFRight = This%ComputeCDF ( X=B, Mu=Mu, S=S )
+    TripFlag = .false.
 
-    PLoc = CDFLeft+P*(CDFRight-CDFLeft)
+    if ( P == Zero ) then
+      if ( present(A) ) then
+        ComputeInvCDF = A
+      else
+        ComputeInvCDF = -huge(One)
+      end if
+      TripFlag=.true.
+    end if
 
-    ComputeInvCDF = Mu + S * dlog(PLoc/(1-PLoc))
+    if ( P == One ) then
+      if ( present(B) ) then
+        ComputeInvCDF = B
+      else
+        ComputeInvCDF = huge(One)
+      end if
+      TripFlag=.true.
+    end if
+
+    if ( .not. TripFlag ) then
+      CDFLeft = 0.
+      if ( present(A) ) CDFLeft = This%ComputeCDF ( X=A, Mu=Mu, S=S )
+      CDFRight = 1.
+      if ( present(B) ) CDFRight = This%ComputeCDF ( X=B, Mu=Mu, S=S )
+
+      PLoc = CDFLeft+P*(CDFRight-CDFLeft)
+
+      ComputeInvCDF = Mu + S * dlog(PLoc/(1-PLoc))
+    end if
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -593,7 +612,7 @@ contains
 
     real(rkp)                                                         ::    GetMoment
 
-    class(DistLog10Norm_Type), intent(in)                             ::    This
+    class(DistLogistic_Type), intent(in)                              ::    This
     integer, intent(in)                                               ::    Moment
     logical, optional ,intent(in)                                     ::    Debug
 

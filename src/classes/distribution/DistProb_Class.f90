@@ -20,6 +20,8 @@ module DistProb_Class
 
 use Input_Library
 use Parameters_Library
+use StringRoutines_Module
+use QuadPack_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use InputDet_Class                                                ,only:    InputDet_Type
@@ -40,13 +42,14 @@ type, abstract                                                        ::    Dist
   logical                                                             ::    TruncatedRight=.false.
 contains
   private
-  procedure, private                                                  ::    AdditionalConstruction
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    GetA
   procedure, public                                                   ::    GetB
   procedure, public                                                   ::    IsTruncatedLeft
   procedure, public                                                   ::    IsTruncatedRight
   procedure, public                                                   ::    GetMoment
+  procedure, public                                                   ::    GetMean
+  procedure, public                                                   ::    GetVariance
   procedure, public                                                   ::    ComputeMomentNumerical
   generic, public                                                     ::    PDF                     =>    PDF_R0D
   generic, public                                                     ::    assignment(=)           =>    Copy
@@ -58,8 +61,6 @@ contains
   procedure(CDF_DistProb), deferred, public                           ::    CDF
   procedure(InvCDF_DistProb), deferred, public                        ::    InvCDF
   procedure(PDF_R0D_DistProb), deferred, private                      ::    PDF_R0D
-  procedure(GetMean_DistProb), deferred, public                       ::    GetMean
-  procedure(GetVariance_DistProb), deferred, public                   ::    GetVariance
   procedure(SetDefaults_DistProb), deferred, public                   ::    SetDefaults
   procedure(Copy_DistProb), deferred, public                          ::    Copy
 end type
@@ -167,24 +168,6 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AdditionalConstruction( This, Debug )
-    
-    class(DistProb_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug 
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetName( This, Debug )
@@ -312,7 +295,7 @@ contains
 
     real(rkp)                                                         ::    GetMean
 
-    class(DistLogNorm_Type), intent(in)                               ::    This
+    class(DistProb_Type), intent(in)                                  ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -336,7 +319,7 @@ contains
 
     real(rkp)                                                         ::    GetVariance
 
-    class(DistLogNorm_Type), intent(in)                               ::    This
+    class(DistProb_Type), intent(in)                                  ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -391,7 +374,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function ComputeMomentNumerical( This, Moment, Debug )
 
-    logical                                                           ::    ComputeMomentNumerical
+    real(rkp)                                                         ::    ComputeMomentNumerical
 
     class(DistProb_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Moment
@@ -399,6 +382,7 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeMomentNumerical'
+    integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    NumericalMoment
     procedure(MomentIntegrand), pointer                               ::    PIntegrand=>null()
     real(8)                                                           ::    Num
@@ -477,7 +461,7 @@ contains
 
         real(8), intent(in)                                               ::    X
 
-        Integrand1 = X**Moment * This%PDF( X=X )
+        Integrand = X**Moment * This%PDF( X=X )
 
       end function
 

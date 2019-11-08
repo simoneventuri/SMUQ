@@ -44,7 +44,7 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  procedure, private                                                  ::    CheckTruncation
+  procedure, private                                                  ::    AdditionalConstruction
   procedure, private                                                  ::    PDF_R0D
   procedure, nopass, public                                           ::    ComputeNormalPDF
   procedure, public                                                   ::    CDF
@@ -292,6 +292,24 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine AdditionalConstruction( This, Debug )
+    
+    class(DistNorm_Type), intent(inout)                               ::    This
+    logical, optional ,intent(in)                                     ::    Debug 
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ConstructCase1'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -592,6 +610,7 @@ contains
     real(8)                                                           ::    PLoc
     real(8)                                                           ::    Mu_8
     real(8)                                                           ::    Sigma_8
+    logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -599,6 +618,8 @@ contains
 
     if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
     if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
+
+    TripFlag = .false.
 
     if ( P == Zero ) then
       if ( present(A) ) then
@@ -690,7 +711,7 @@ contains
 
     real(rkp)                                                         ::    GetMoment
 
-    class(DistProb_Type), intent(in)                                  ::    This
+    class(DistNorm_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Moment
     logical, optional ,intent(in)                                     ::    Debug
 

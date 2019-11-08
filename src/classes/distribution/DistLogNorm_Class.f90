@@ -21,6 +21,7 @@ module DistLogNorm_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
+use DistProb_Class                                                ,only:    DistProb_Type
 use DistNorm_Class                                                ,only:  DistNorm_Type
 use Logger_Class                                                  ,only:  Logger
 use Error_Class                                                   ,only:  Error
@@ -351,6 +352,7 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='InvCDF'
+    logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -390,7 +392,7 @@ contains
 
     real(rkp)                                                         ::    GetMoment
 
-    class(DistProb_Type), intent(in)                                  ::    This
+    class(DistLogNorm_Type), intent(in)                               ::    This
     integer, intent(in)                                               ::    Moment
     logical, optional ,intent(in)                                     ::    Debug
 
@@ -426,16 +428,16 @@ contains
         a0 = ( This%A - This%Mu ) / This%Sigma
         am0 = real(Moment,rkp)*This%Sigma-a0
         CDF_a0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=a0 )
-        CDF_am0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=am0 )
+        CDF_ma0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=am0 )
       end if
       if ( This%TruncatedRight ) then
         b0 = ( This%B - This%Mu ) / This%Sigma
         bm0 = real(Moment,rkp)*This%Sigma-b0
         CDF_b0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=b0 )
-        CDF_bm0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=bm0 )
+        CDF_mb0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=bm0 )
       end if
 
-      GetMoment = dexp( real(Moment,rkp)*This%Mu + real(Moment,rkp)**2*This%Sigma**2/Two ) * (CDF_am0-CDF_bm0) / (CDF_b0-CDF_a0)
+      GetMoment = dexp( real(Moment,rkp)*This%Mu + real(Moment,rkp)**2*This%Sigma**2/Two ) * (CDF_ma0-CDF_mb0) / (CDF_b0-CDF_a0)
 
     end if
 
@@ -471,7 +473,7 @@ contains
           LHS%Sigma = RHS%Sigma
           LHS%TruncatedLeft = RHS%TruncatedLeft
           LHS%TruncatedRight = RHS%TruncatedRight
-          LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedRight
+          LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedLeft
         end if
 
       class default

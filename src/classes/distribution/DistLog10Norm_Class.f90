@@ -22,6 +22,7 @@ use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
 use StatisticsRoutines_Module
+use DistProb_Class                                                ,only:    DistProb_Type
 use DistNorm_Class                                                ,only:    DistNorm_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -443,7 +444,7 @@ contains
           LHS%Sigma = RHS%Sigma
           LHS%TruncatedLeft = RHS%TruncatedLeft
           LHS%TruncatedRight = RHS%TruncatedRight
-          LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedRight
+          LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedLeft
         end if
 
       class default

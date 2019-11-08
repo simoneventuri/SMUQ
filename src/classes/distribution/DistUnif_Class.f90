@@ -169,8 +169,6 @@ contains
 
     if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
 
-    call This%AdditionalConstruction()
-
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
@@ -204,8 +202,6 @@ contains
     This%B = B
 
     if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
-
-    call This%AdditionalConstruction()
 
     This%Constructed = .true.
 

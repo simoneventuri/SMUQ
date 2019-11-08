@@ -194,8 +194,6 @@ contains
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
     end if
 
-    call This%AdditionalConstruction()
-
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
@@ -238,8 +236,6 @@ contains
       This%TruncatedRight = .true.
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
     end if
-
-    call This%AdditionalConstruction()
 
     This%Constructed = .true.
 
@@ -723,7 +719,7 @@ contains
 
     real(rkp)                                                         ::    GetMoment
 
-    class(DistLog10Norm_Type), intent(in)                             ::    This
+    class(DistGamma_Type), intent(in)                                 ::    This
     integer, intent(in)                                               ::    Moment
     logical, optional ,intent(in)                                     ::    Debug
 
@@ -740,7 +736,7 @@ contains
     if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
 
     if ( Moment > 0 ) then
-      if ( .not. ( ( This%A > tiny(One) ) .or. This%TruncatedRight ) then
+      if ( .not. ( This%DoubleTruncatedLeft .or. This%TruncatedRight ) ) then
         GetMoment = One
         i = 1
         do i = 1, Moment
@@ -785,7 +781,7 @@ contains
           LHS%Beta = RHS%Beta
           LHS%TruncatedLeft = RHS%TruncatedLeft
           LHS%TruncatedRight = RHS%TruncatedRight
-          LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedRight
+          LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedLeft
         end if
       
       class default
