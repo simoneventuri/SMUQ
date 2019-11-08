@@ -39,6 +39,7 @@ public                                                                ::    Dist
 type, extends(DistProb_Type)                                          ::    DistGamma_Type
   real(rkp)                                                           ::    Alpha=One
   real(rkp)                                                           ::    Beta=One
+  logical                                                             ::    DoubleTruncatedLeft
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -125,12 +126,13 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    This%A = tiny(One)
+    This%A = Zero
     This%B = One
     This%Alpha = One
     This%Beta = One
     This%TruncatedRight = .false.
     This%TruncatedLeft = .true.
+    This%DoubleTruncatedLeft = .false.
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -176,6 +178,7 @@ contains
     ParameterName = 'a'
     call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%A = VarR0D
+    if ( This%A > Zero ) This%DoubleTruncatedLeft = .true.
 
     ParameterName = 'b'
     call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -186,12 +189,12 @@ contains
 
     if ( VarR0D <= Zero ) call Error%Raise( "Alpha parameter at or below zero" )
     if ( VarR0D <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
-    if ( This%TruncatedLeft ) then
-      if ( This%A <= Zero ) call Error%Raise( Line='Lower limit specified to be below minimum of 0', ProcName=ProcName )
-    end if
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
+    if ( This%A < Zero ) call Error%Raise( Line='Lower limit specified to be below minimum of 0', ProcName=ProcName )
+    if ( This%TruncatedRight ) then
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
     end if
+
+    call This%AdditionalConstruction()
 
     This%Constructed = .true.
 
@@ -226,14 +229,17 @@ contains
     if ( Beta <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
     This%Beta = Beta
 
-    if ( present(A) ) then
-      This%A = A
-    end if
+    if ( present(A) ) This%A = A
+    if ( This%A > Zero ) This%DoubleTruncatedLeft = .true.
+    if ( This%A < Zero ) call Error%Raise( Line='Lower limit specified to be below minimum of 0', ProcName=ProcName )
 
     if ( present(B) ) then
       This%B = B
       This%TruncatedRight = .true.
+      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
     end if
+
+    call This%AdditionalConstruction()
 
     This%Constructed = .true.
 
@@ -279,7 +285,7 @@ contains
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
     call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%Alpha ) )
     call GetInput%AddParameter( Name='beta', Value=ConvertToString( Value=This%Beta ) )
-    call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
+    if ( This%DoubleTruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
     if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
 
     if (DebugLoc) call Logger%Exiting()
@@ -305,11 +311,11 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
+    if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
       PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
+    else if ( This%DoubleTruncatedLeft ) then
       PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
+    else if ( This%TruncatedRight ) then
       PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
     else
       PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta )
@@ -394,6 +400,7 @@ contains
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  ! Assumes that A will not be passed unless it is above 0.0 and that all parameters are valid
   function ComputePDF( X, Alpha, Beta, A, B, Debug )
 
     real(rkp)                                                         ::    ComputePDF
@@ -412,6 +419,8 @@ contains
     real(8)                                                           ::    k
     real(8)                                                           ::    theta
     real(8)                                                           ::    VarR0D
+    real(8)                                                           ::    ALoc
+    real(8)                                                           ::    BLoc
     logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
@@ -421,9 +430,14 @@ contains
     TripFlag = .false.
 
     if ( present(A) ) then
-      if (X < A) then
+      if (X < A ) then
         ComputePDF = Zero
         TripFlag=.true.
+      end if
+    else
+      if ( X <= Zero ) then
+        ComputePDF = Zero
+        TripFlag = .true.
       end if
     end if
 
@@ -468,11 +482,11 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
+    if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
       CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
+    else if ( This%DoubleTruncatedLeft ) then
       CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
+    else if ( This%TruncatedRight ) then
       CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
     else
       CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta )
@@ -484,6 +498,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  ! Assumes that A will not be passed unless it is above 0.0 and that all parameters are valid
   function ComputeCDF( X, Alpha, Beta, A, B, Debug )
 
     real(rkp)                                                         ::    ComputeCDF
@@ -516,6 +531,11 @@ contains
       if (X < A) then
         ComputeCDF = Zero
         TripFlag=.true.
+      end if
+    else
+      if ( X <= Zero ) then
+        ComputeCDF = Zero
+        TripFlag = .true.
       end if
     end if
 
@@ -560,11 +580,11 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
+    if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
       InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
+    else if ( This%DoubleTruncatedLeft ) then
       InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
+    else if ( This%TruncatedRight ) then
       InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
     else
       InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta )
@@ -576,6 +596,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  ! Assumes that A will not be passed unless it is above 0.0 and that all parameters are valid
   function ComputeInvCDF( P, Alpha, Beta, A, B, Debug )
 
     use CDF_Library
@@ -600,6 +621,7 @@ contains
     real(8)                                                           ::    PLoc
     real(8)                                                           ::    QLoc
     integer                                                           ::    StatLoc=0
+    logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -608,24 +630,41 @@ contains
     if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
     if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
 
-    k = real(Alpha,8)
-    theta = real(One/Beta,8)
+    TripFlag = .false.
 
-    CDFLeft = 0.
-    if ( present(A) ) call gamma_cdf( real(A,8), real(0,8), theta, k, CDFLeft )
-    CDFRight = 1.
-    if ( present(B) ) call gamma_cdf( real(B,8), real(0,8), theta, k, CDFRight )
+    if ( P == Zero ) then
+      if ( present(A) ) then
+        ComputeInvCDF = A
+      else
+        ComputeInvCDF = tiny(One)
+      end if
+      TripFlag=.true.
+    end if
 
-    PLoc = CDFLeft+real(P,8)*(CDFRight-CDFLeft)
-    QLoc = real(1,8) - PLoc
+    if ( P == One ) then
+      if ( present(B) ) then
+        ComputeInvCDF = B
+      else
+        ComputeInvCDF = huge(One)
+      end if
+      TripFlag=.true.
+    end if
 
-    call gamma_inc_inv ( k, VarR0D, real(-1.,8), PLoc, QLoc, StatLoc )
+    if ( .not. TripFlag ) then
+      k = real(Alpha,8)
+      theta = real(One/Beta,8)
+      CDFLeft = 0.
+      if ( present(A) ) call gamma_cdf( real(A,8), real(0,8), theta, k, CDFLeft )
+      CDFRight = 1.
+      if ( present(B) ) call gamma_cdf( real(B,8), real(0,8), theta, k, CDFRight )
+      PLoc = CDFLeft+real(P,8)*(CDFRight-CDFLeft)
+      QLoc = real(1,8) - PLoc
+      call gamma_inc_inv ( k, VarR0D, real(-1.,8), PLoc, QLoc, StatLoc )
+      if ( StatLoc < 0 ) call Error%Raise( Line='Something went wrong with gamma_inc_inv where stat=' //                          &
+                                                                                   ConvertToString( StatLoc ), ProcName=ProcName )
+      ComputeInvCDF = real(VarR0D,rkp) / Beta
+    end if
 
-    if ( StatLoc < 0 ) call Error%Raise( Line='Something went wrong with gamma_inc_inv where stat=' //                            &
-                                                                                 ConvertToString( StatLoc ), ProcName=ProcName )
-
-    ComputeInvCDF = real(VarR0D,rkp) / Beta
-      
     if (DebugLoc) call Logger%Exiting()
 
   end function
@@ -719,7 +758,6 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy( LHS, RHS )
 
@@ -747,6 +785,7 @@ contains
           LHS%Beta = RHS%Beta
           LHS%TruncatedLeft = RHS%TruncatedLeft
           LHS%TruncatedRight = RHS%TruncatedRight
+          LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedRight
         end if
       
       class default

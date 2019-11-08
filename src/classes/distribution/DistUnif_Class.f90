@@ -44,11 +44,11 @@ contains
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
   procedure, private                                                  ::    PDF_R0D
-  procedure, nopass, public                                           ::    ComputePDF
+  procedure, nopass, public                                           ::    ComputeUnifPDF
   procedure, public                                                   ::    CDF
-  procedure, nopass, public                                           ::    ComputeCDF
+  procedure, nopass, public                                           ::    ComputeUnifCDF
   procedure, public                                                   ::    InvCDF
-  procedure, nopass, public                                           ::    ComputeInvCDF
+  procedure, nopass, public                                           ::    ComputeUnifInvCDF
   procedure, public                                                   ::    GetMoment
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer     
@@ -169,6 +169,8 @@ contains
 
     if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
 
+    call This%AdditionalConstruction()
+
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
@@ -202,6 +204,8 @@ contains
     This%B = B
 
     if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+
+    call This%AdditionalConstruction()
 
     This%Constructed = .true.
 
@@ -272,7 +276,7 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    PDF_R0D = This%ComputePDF( X, This%A, This%B )
+    PDF_R0D = This%ComputeUnifPDF( X, This%A, This%B )
       
     if (DebugLoc) call Logger%Exiting()
 
@@ -318,9 +322,9 @@ contains
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF( X, A, B, Debug )
+  function ComputeUnifPDF( X, A, B, Debug )
 
-    real(rkp)                                                         ::    ComputePDF
+    real(rkp)                                                         ::    ComputeUnifPDF
 
     real(rkp), intent(in)                                             ::    X
     real(rkp), intent(in)                                             ::    A
@@ -328,16 +332,16 @@ contains
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputePDF'
+    character(*), parameter                                           ::    ProcName='ComputeUnifPDF'
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( X < A .or. X > B) then
-      ComputePDF = Zero
+      ComputeUnifPDF = Zero
     else
-      ComputePDF = One/(B-A)
+      ComputeUnifPDF = One/(B-A)
     end if
       
     if (DebugLoc) call Logger%Exiting()
@@ -363,7 +367,7 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    CDF = ComputeCDF( X, This%A, This%B )
+    CDF = ComputeUnifCDF( X, This%A, This%B )
       
     if (DebugLoc) call Logger%Exiting()
 
@@ -371,9 +375,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeCDF( X, A, B, Debug )
+  function ComputeUnifCDF( X, A, B, Debug )
 
-    real(rkp)                                                         ::    ComputeCDF
+    real(rkp)                                                         ::    ComputeUnifCDF
 
     real(rkp), intent(in)                                             ::    X
     real(rkp), intent(in)                                             ::    A
@@ -381,18 +385,18 @@ contains
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputeCDF'
+    character(*), parameter                                           ::    ProcName='ComputeUnifCDF'
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( X < A ) then
-      ComputeCDF = Zero
+      ComputeUnifCDF = Zero
     elseif ( X > B ) then
-      ComputeCDF = One
+      ComputeUnifCDF = One
     else
-      ComputeCDF = (X-A) / (B-A)
+      ComputeUnifCDF = (X-A) / (B-A)
     end if      
 
     if (DebugLoc) call Logger%Exiting()
@@ -418,7 +422,7 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    InvCDF = ComputeInvCDF( P, This%A, This%B )
+    InvCDF = ComputeUnifInvCDF( P, This%A, This%B )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -426,9 +430,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeInvCDF( P, A, B, Debug )
+  function ComputeUnifInvCDF( P, A, B, Debug )
 
-    real(rkp)                                                         ::    ComputeInvCDF
+    real(rkp)                                                         ::    ComputeUnifInvCDF
 
     real(rkp), intent(in)                                             ::    P
     real(rkp), intent(in), optional                                   ::    A
@@ -436,7 +440,7 @@ contains
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputeInvCDF'
+    character(*), parameter                                           ::    ProcName='ComputeUnifInvCDF'
     real(rkp)                                                         ::    CDFLeft
     real(rkp)                                                         ::    CDFRight
     real(rkp)                                                         ::    VarR0D
@@ -448,7 +452,7 @@ contains
     if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
     if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
 
-    ComputeInvCDF = A + P*(B-A)
+    ComputeUnifInvCDF = A + P*(B-A)
 
     if (DebugLoc) call Logger%Exiting()
 

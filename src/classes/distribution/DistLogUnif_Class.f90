@@ -34,8 +34,9 @@ public                                                                ::    Dist
 type, extends(DistUnif_Type)                                          ::    DistLogUnif_Type
 contains
   procedure, public                                                   ::    Initialize
+  procedure, public                                                   ::    GetA
+  procedure, public                                                   ::    GetB
   procedure, private                                                  ::    PDF_R0D
-  procedure, nopass, public                                           ::    ComputePDF
   procedure, public                                                   ::    CDF
   procedure, public                                                   ::    InvCDF
   procedure, public                                                   ::    GetMoment
@@ -70,6 +71,54 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  function GetA( This, Debug )
+
+    real(rkp)                                                         ::    GetA
+
+    class(DistLogNorm_Type), intent(in)                               ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetA'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    GetA = dexp(This%A)
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetB( This, Debug )
+
+    real(rkp)                                                         ::    GetB
+
+    class(DistLogNorm_Type), intent(in)                               ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetB'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    GetB = dexp(This%B)
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   function PDF_R0D( This, X, Debug )
 
     real(rkp)                                                         ::    PDF_R0D
@@ -80,6 +129,7 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF_R0D'
+    logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -87,7 +137,17 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    PDF_R0D = This%ComputePDF( dlog(X), This%A, This%B )
+    TripFlag = .false.
+
+    if ( X <= Zero ) then
+      PDF_R0D = Zero
+      TripFlag = .true.
+    end if
+
+    if ( .not. TripFlag ) then
+      PDF_R0D = This%ComputeUnifPDF( dlog(X), This%A, This%B )
+      PDF_R0D = One/X * PDF_R0D
+    end if
       
     if (DebugLoc) call Logger%Exiting()
 
@@ -138,35 +198,6 @@ contains
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF( X, A, B, Debug )
-
-    real(rkp)                                                         ::    ComputePDF
-
-    real(rkp), intent(in)                                             ::    X
-    real(rkp), intent(in)                                             ::    A
-    real(rkp), intent(in)                                             ::    B
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputePDF'
-
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( X < A .or. X > B ) then
-      ComputePDF = Zero
-    else
-      ComputePDF = One / ( dexp(X)*(B-A) )
-    end if
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   function CDF( This, X, Debug )
 
     real(rkp)                                                         ::    CDF
@@ -177,6 +208,7 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='CDF'
+    logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -184,8 +216,17 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    CDF = This%ComputeCDF( dlog(X), This%A, This%B )
-      
+    TripFlag = .false.
+
+    if ( X <= Zero ) then
+      CDF = Zero
+      TripFlag = .true.
+    end if
+
+    if ( .not. TripFlag ) then
+      CDF = This%ComputeUnifCDF( dlog(X), This%A, This%B )
+    end if
+
     if (DebugLoc) call Logger%Exiting()
 
   end function
@@ -209,7 +250,7 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    InvCDF = This%ComputeInvCDF( P, This%A, This%B )
+    InvCDF = This%ComputeUnifInvCDF( P, This%A, This%B )
     InvCDF = dexp(InvCDF)
 
     if (DebugLoc) call Logger%Exiting()

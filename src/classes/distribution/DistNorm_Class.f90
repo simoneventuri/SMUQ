@@ -44,12 +44,13 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
+  procedure, private                                                  ::    CheckTruncation
   procedure, private                                                  ::    PDF_R0D
-  procedure, nopass, public                                           ::    ComputePDF
+  procedure, nopass, public                                           ::    ComputeNormalPDF
   procedure, public                                                   ::    CDF
-  procedure, nopass, public                                           ::    ComputeCDF
+  procedure, nopass, public                                           ::    ComputeNormalCDF
   procedure, public                                                   ::    InvCDF
-  procedure, nopass, public                                           ::    ComputeInvCDF
+  procedure, nopass, public                                           ::    ComputeNormalInvCDF
   procedure, public                                                   ::    GetMu
   procedure, public                                                   ::    GetSigma
   procedure, public                                                   ::    GetMoment
@@ -190,6 +191,8 @@ contains
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
     end if
 
+    call This%AdditionalConstruction()
+
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
@@ -236,6 +239,8 @@ contains
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
     end if
+
+    call This%AdditionalConstruction()
 
     This%Constructed = .true.
 
@@ -308,13 +313,13 @@ contains
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     if ( This%TruncatedRight .and. This%TruncatedLeft ) then
-      PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
-      PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
-      PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+      PDF_R0D = This%ComputeNormalPDF( X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
+    else if ( This%TruncatedLeft ) then
+      PDF_R0D = This%ComputeNormalPDF( X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
+    else if ( This%TruncatedRight ) then
+      PDF_R0D = This%ComputeNormalPDF( X=X, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
     else
-      PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, Sigma=This%Sigma )
+      PDF_R0D = This%ComputeNormalPDF( X=X, Mu=This%Mu, Sigma=This%Sigma )
     end if
 
     if (DebugLoc) call Logger%Exiting()
@@ -396,9 +401,9 @@ contains
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF( X, Mu, Sigma, A, B, Debug )
+  function ComputeNormalPDF( X, Mu, Sigma, A, B, Debug )
 
-    real(rkp)                                                         ::    ComputePDF
+    real(rkp)                                                         ::    ComputeNormalPDF
 
     real(rkp), intent(in)                                             ::    X
     real(rkp), intent(in)                                             ::    Mu
@@ -408,7 +413,7 @@ contains
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputePDF'
+    character(*), parameter                                           ::    ProcName='ComputeNormalPDF'
     real(rkp)                                                         ::    CDFLeft
     real(rkp)                                                         ::    CDFRight
     real(rkp)                                                         ::    VarR0D
@@ -422,14 +427,14 @@ contains
 
     if ( present(A) ) then
       if (X < A) then
-        ComputePDF = Zero
+        ComputeNormalPDF = Zero
         TripFlag=.true.
       end if
     end if
 
     if ( present(B) ) then
       if (X > B) then
-        ComputePDF = Zero
+        ComputeNormalPDF = Zero
         TripFlag=.true.
       end if
     end if
@@ -440,7 +445,7 @@ contains
       CDFRight = One
       if ( present(B) ) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
       VarR0D = dexp( -( 0.5*dlogof2pi + dlog(Sigma) ) - 0.5*((X-Mu)/Sigma)**2 )
-      ComputePDF = VarR0D / ( CDFRight - CDFLeft )
+      ComputeNormalPDF = VarR0D / ( CDFRight - CDFLeft )
     end if
 
     if (DebugLoc) call Logger%Exiting()
@@ -467,13 +472,13 @@ contains
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     if ( This%TruncatedRight .and. This%TruncatedLeft ) then
-      CDF = This%ComputeCDF( X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
-      CDF = This%ComputeCDF( X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
-      CDF = This%ComputeCDF( X=X, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+      CDF = This%ComputeNormalCDF( X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
+    else if ( This%TruncatedLeft ) then
+      CDF = This%ComputeNormalCDF( X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
+    else if ( This%TruncatedRight ) then
+      CDF = This%ComputeNormalCDF( X=X, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
     else
-      CDF = This%ComputeCDF( X=X, Mu=This%Mu, Sigma=This%Sigma )
+      CDF = This%ComputeNormalCDF( X=X, Mu=This%Mu, Sigma=This%Sigma )
     end if
       
     if (DebugLoc) call Logger%Exiting()
@@ -482,9 +487,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeCDF( X, Mu, Sigma, A, B, Debug )
+  function ComputeNormalCDF( X, Mu, Sigma, A, B, Debug )
 
-    real(rkp)                                                         ::    ComputeCDF
+    real(rkp)                                                         ::    ComputeNormalCDF
 
     real(rkp), intent(in)                                             ::    X
     real(rkp), intent(in)                                             ::    Mu
@@ -494,7 +499,7 @@ contains
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputeCDF'
+    character(*), parameter                                           ::    ProcName='ComputeNormalCDF'
     real(rkp)                                                         ::    CDFLeft
     real(rkp)                                                         ::    CDFRight
     real(rkp)                                                         ::    VarR0D
@@ -508,14 +513,14 @@ contains
 
     if ( present(A) ) then
       if (X < A) then
-        ComputeCDF = Zero
+        ComputeNormalCDF = Zero
         TripFlag=.true.
       end if
     end if
 
     if ( present(B) ) then
       if (X > B) then
-        ComputeCDF = One
+        ComputeNormalCDF = One
         TripFlag=.true.
       end if
     end if
@@ -526,7 +531,7 @@ contains
       CDFRight = One
       if ( present(B) ) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
       VarR0D = 0.5*(One+erf((X-Mu)/(Sigma*dsqrt(Two))))
-      ComputeCDF = ( VarR0D - CDFLeft ) / ( CDFRight - CDFLeft )
+      ComputeNormalCDF = ( VarR0D - CDFLeft ) / ( CDFRight - CDFLeft )
     end if
 
     if (DebugLoc) call Logger%Exiting()
@@ -553,13 +558,13 @@ contains
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     if ( This%TruncatedRight .and. This%TruncatedLeft ) then
-      InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
-      InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
-      InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+      InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
+    else if ( This%TruncatedLeft ) then
+      InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
+    else if ( This%TruncatedRight ) then
+      InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
     else
-      InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma )
+      InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma )
     end if
       
     if (DebugLoc) call Logger%Exiting()
@@ -568,9 +573,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeInvCDF( P, Mu, Sigma, A, B, Debug )
+  function ComputeNormalInvCDF( P, Mu, Sigma, A, B, Debug )
 
-    real(rkp)                                                         ::    ComputeInvCDF
+    real(rkp)                                                         ::    ComputeNormalInvCDF
 
     real(rkp), intent(in)                                             ::    p
     real(rkp), intent(in)                                             ::    Mu
@@ -580,7 +585,7 @@ contains
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputeInvCDF'
+    character(*), parameter                                           ::    ProcName='ComputeNormalInvCDF'
     real(rkp)                                                         ::    CDFLeft
     real(rkp)                                                         ::    CDFRight
     real(8)                                                           ::    VarR0D
@@ -595,18 +600,35 @@ contains
     if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
     if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
 
-    CDFLeft = 0.0
-    if ( present(A) ) CDFLeft = 0.5*(One+erf((A-Mu)/(Sigma*dsqrt(Two))))
-    CDFRight = 1.0
-    if ( present(B) ) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
+    if ( P == Zero ) then
+      if ( present(A) ) then
+        ComputeNormalInvCDF = A
+      else
+        ComputeNormalInvCDF = -huge(One)
+      end if
+      TripFlag=.true.
+    end if
 
-    PLoc = real(CDFLeft+P*(CDFRight-CDFLeft),8)
+    if ( P == One ) then
+      if ( present(B) ) then
+        ComputeNormalInvCDF = B
+      else
+        ComputeNormalInvCDF = huge(One)
+      end if
+      TripFlag=.true.
+    end if
 
-    Mu_8 = real(Mu,8)
-    Sigma_8 = real(Sigma,8)
-    call normal_cdf_inv ( PLoc, Mu_8, Sigma_8, VarR0D )
-
-    ComputeInvCDF = VarR0D
+    if ( .not. TripFlag ) then
+      CDFLeft = 0.0
+      if ( present(A) ) CDFLeft = 0.5*(One+erf((A-Mu)/(Sigma*dsqrt(Two))))
+      CDFRight = 1.0
+      if ( present(B) ) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
+      PLoc = real(CDFLeft+P*(CDFRight-CDFLeft),8)
+      Mu_8 = real(Mu,8)
+      Sigma_8 = real(Sigma,8)
+      call normal_cdf_inv ( PLoc, Mu_8, Sigma_8, VarR0D )
+      ComputeNormalInvCDF = VarR0D
+    end if
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -708,12 +730,12 @@ contains
       CDF_A = Zero
       CDF_B = One
       if ( This%TruncatedLeft ) then
-        PDF_A = This%ComputePDF( X=This%A, Mu=Zero, Sigma=One )
-        CDF_A = This%ComputePDF( X=This%A, Mu=Zero, Sigma=One )
+        PDF_A = This%ComputeNormalPDF( X=This%A, Mu=Zero, Sigma=One )
+        CDF_A = This%ComputeNormalPDF( X=This%A, Mu=Zero, Sigma=One )
       end if
       if ( This%TruncatedRight ) then
-        PDF_B = This%ComputePDF( X=This%B, Mu=Zero, Sigma=One )
-        CDF_B = This%ComputePDF( X=This%B, Mu=Zero, Sigma=One )
+        PDF_B = This%ComputeNormalPDF( X=This%B, Mu=Zero, Sigma=One )
+        CDF_B = This%ComputeNormalPDF( X=This%B, Mu=Zero, Sigma=One )
       end if
       GetMoment = Zero
       L = One

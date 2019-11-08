@@ -34,18 +34,21 @@ private
 public                                                                ::    DistLog10Norm_Type
 
 type, extends(DistNorm_Type)                                          ::    DistLog10Norm_Type
+  logical                                                             ::    DoubleTruncatedLeft
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    SetDefaults
+  procedure, private                                                  ::    AdditionalConstruction
+  procedure, public                                                   ::    GetA
+  procedure, public                                                   ::    GetB
   procedure, private                                                  ::    PDF_R0D
-  procedure, nopass, public                                           ::    ComputePDF
   procedure, public                                                   ::    CDF
   procedure, public                                                   ::    InvCDF
   procedure, public                                                   ::    GetMoment
+  procedure, public                                                   ::    Copy
 end type
 
-real(rkp), parameter                                                  ::    dlogof2pi=dlog(Two*pi)
-real(rkp), parameter                                                  ::    dlogdlogof10=dlog(dlog(Ten))    
+real(rkp), parameter                                                  ::    dlogof10=dlog(Ten)
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -63,15 +66,11 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if (DebugLoc) call Logger%Write( "Initializing DistLog10Norm object" )
-
     if ( .not. This%Initialized ) then
       This%Name = 'log10normal'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
-
-    if (DebugLoc) call Logger%Write( "Initialization Successful" )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -97,10 +96,85 @@ contains
     This%Sigma = One
     This%TruncatedRight = .false.
     This%TruncatedLeft = .true.
+    This%DoubleTruncatedLeft = .false.
 
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine AdditionalConstruction( This, Debug )
+    
+    class(DistLog10Norm_Type), intent(inout)                          ::    This
+    logical, optional ,intent(in)                                     ::    Debug 
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ConstructCase1'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( This%A > -huge(One) ) This%DoubleTruncatedLeft = .true.
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetA( This, Debug )
+
+    real(rkp)                                                         ::    GetA
+
+    class(DistLog10Norm_Type), intent(in)                             ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetA'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( This%DoubleTruncatedLeft ) then
+      GetA = Ten**(This%A)
+    else
+      GetA = Zero
+    end if
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetB( This, Debug )
+
+    real(rkp)                                                         ::    GetB
+
+    class(DistLog10Norm_Type), intent(in)                             ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetB'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( .not. This%TruncatedRight ) call Error%Raise( Line='Distribution was never right truncated', ProcName=ProcName )
+
+    GetB = Ten**(This%B)
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -114,6 +188,7 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF_R0D'
+    logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -121,14 +196,24 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
-      PDF_R0D = This%ComputePDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
-      PDF_R0D = This%ComputePDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
-      PDF_R0D = This%ComputePDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B )
-    else
-      PDF_R0D = This%ComputePDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma )
+    TripFlag = .false.
+
+    if ( X <= Zero ) then
+      PDF_R0D = Zero
+      TripFlag = .true.
+    end if
+
+    if ( .not. TripFlag ) then
+      if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
+        PDF_R0D = This%ComputeNormalPDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
+      else if ( This%DoubleTruncatedLeft ) then
+        PDF_R0D = This%ComputeNormalPDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A )
+      else if ( This%TruncatedRight ) then
+        PDF_R0D = This%ComputeNormalPDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+      else
+        PDF_R0D = This%ComputeNormalPDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma )
+      end if
+      PDF_R0D = One/(X*dlogof10) * PDF_R0D
     end if
       
     if (DebugLoc) call Logger%Exiting()
@@ -212,59 +297,6 @@ contains
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF( X, Mu, Sigma, A, B, Debug )
-
-    real(rkp)                                                         ::    ComputePDF
-
-    real(rkp), intent(in)                                             ::    X
-    real(rkp), intent(in)                                             ::    Mu
-    real(rkp), intent(in)                                             ::    Sigma
-    real(rkp), intent(in), optional                                   ::    A
-    real(rkp), intent(in), optional                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputePDF'
-    real(rkp)                                                         ::    CDFLeft
-    real(rkp)                                                         ::    CDFRight
-    real(rkp)                                                         ::    VarR0D
-    logical                                                           ::    TripFlag
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    TripFlag = .false.
-
-    if ( present(A) ) then
-      if (X < A) then
-        ComputePDF = Zero
-        TripFlag=.true.
-      end if
-    end if
-
-    if ( present(B) ) then
-      if (X > B) then
-        ComputePDF = Zero
-        TripFlag=.true.
-      end if
-    end if
-
-    if ( .not. TripFlag ) then
-      CDFLeft = Zero
-      if ( present(A) ) CDFLeft = 0.5*(One+erf((A-Mu)/(Sigma*dsqrt(Two))))
-      CDFRight = One
-      if ( present(B) ) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
-      VarR0D = dexp( -( dlogdlogof10 + 0.5*dlogof2pi + dlog(Sigma) + dlog(Ten**X) ) - 0.5*((X-Mu)/Sigma)**2 )
-      ComputePDF = VarR0D / ( CDFRight - CDFLeft )
-    end if
-      
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   function CDF( This, X, Debug )
 
     real(rkp)                                                         ::    CDF
@@ -275,6 +307,7 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='CDF'
+    logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -282,14 +315,23 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
-      CDF = This%ComputeCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
-      CDF = This%ComputeCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
-      CDF = This%ComputeCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B )
-    else
-      CDF = This%ComputeCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma )
+    TripFlag = .false.
+
+    if ( X <= Zero ) then
+      CDF = Zero
+      TripFlag = .true.
+    end if
+  
+    if ( .not. TripFlag ) then
+      if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
+        CDF = This%ComputeNormalCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
+      else if ( This%DoubleTruncatedLeft ) then
+        CDF = This%ComputeNormalCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A )
+      else if ( This%TruncatedRight ) then
+        CDF = This%ComputeNormalCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+      else
+        CDF = This%ComputeNormalCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma )
+      end if
     end if
       
     if (DebugLoc) call Logger%Exiting()
@@ -308,6 +350,7 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='InvCDF'
+    logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -315,17 +358,27 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
-      InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
-      InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
-      InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
-    else
-      InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma )
+    TripFlag = .false.
+
+    if ( P == Zero ) then
+      if ( .not. This%DoubleTruncatedLeft ) then
+        InvCDF = tiny(One)
+        TripFlag = .true.
+      end if
     end if
-      
-    InvCDF = Ten**InvCDF
+
+    if ( .not. TripFlag ) then
+      if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
+        InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
+      else if ( This%DoubleTruncatedLeft ) then
+        InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
+      else if ( This%TruncatedRight ) then
+        InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+      else
+        InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma )
+      end if
+      InvCDF = Ten**InvCDF
+    end if
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -361,6 +414,46 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Copy( LHS, RHS )
+
+    class(DistLog10Norm_Type), intent(out)                            ::    LHS
+    class(DistProb_Type), intent(in)                                  ::    RHS
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='Copy'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    select type (RHS)
+  
+      type is (DistLog10Norm_Type)
+        call LHS%Reset()
+        LHS%Initialized = RHS%Initialized
+        LHS%Constructed = RHS%Constructed
+
+        if ( RHS%Constructed ) then
+          LHS%A = RHS%A
+          LHS%B = RHS%B
+          LHS%Mu = RHS%Mu
+          LHS%Sigma = RHS%Sigma
+          LHS%TruncatedLeft = RHS%TruncatedLeft
+          LHS%TruncatedRight = RHS%TruncatedRight
+          LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedRight
+        end if
+
+      class default
+        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+
+    end select
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

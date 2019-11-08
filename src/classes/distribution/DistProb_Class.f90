@@ -40,6 +40,7 @@ type, abstract                                                        ::    Dist
   logical                                                             ::    TruncatedRight=.false.
 contains
   private
+  procedure, private                                                  ::    AdditionalConstruction
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    GetA
   procedure, public                                                   ::    GetB
@@ -149,26 +150,6 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMean_DistProb(This, Debug )
-    use                                                               ::    Parameters_Library
-    import                                                            ::    DistProb_Type
-    real(rkp)                                                         ::    GetMean_DistProb
-    class(DistProb_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVariance_DistProb(This, Debug )
-    use                                                               ::    Parameters_Library
-    import                                                            ::    DistProb_Type
-    real(rkp)                                                         ::    GetVariance_DistProb
-    class(DistProb_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy_DistProb( LHS, RHS )
     import                                                            ::    DistProb_Type
     class(DistProb_Type), intent(out)                                 ::    LHS
@@ -186,6 +167,24 @@ abstract interface
 end interface
 
 contains
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine AdditionalConstruction( This, Debug )
+    
+    class(DistProb_Type), intent(inout)                               ::    This
+    logical, optional ,intent(in)                                     ::    Debug 
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ConstructCase1'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetName( This, Debug )

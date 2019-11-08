@@ -191,6 +191,8 @@ contains
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
     end if
 
+    call This%AdditionalConstruction()
+
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
@@ -238,6 +240,8 @@ contains
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
     end if
+
+    call This%AdditionalConstruction()
 
     This%Constructed = .true.
 
@@ -311,9 +315,9 @@ contains
 
     if ( This%TruncatedRight .and. This%TruncatedLeft ) then
       PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, S=This%S, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
+    else if ( This%TruncatedLeft  ) then
       PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, S=This%S, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
+    else if ( This%TruncatedRight  ) then
       PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, S=This%S, B=This%B )
     else
       PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, S=This%S )
@@ -397,9 +401,9 @@ contains
 
     if ( This%TruncatedRight .and. This%TruncatedLeft ) then
       CDF = This%ComputeCDF( X=X, Mu=This%Mu, S=This%S, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
+    else if ( This%TruncatedLeft ) then
       CDF = This%ComputeCDF( X=X, Mu=This%Mu, S=This%S, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
+    else if ( This%TruncatedRight ) then
       CDF = This%ComputeCDF( X=X, Mu=This%Mu, S=This%S, B=This%B )
     else
       CDF = This%ComputeCDF( X=X, Mu=This%Mu, S=This%S )
@@ -483,9 +487,9 @@ contains
 
     if ( This%TruncatedRight .and. This%TruncatedLeft ) then
       InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, S=This%S, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft .and. .not. This%TruncatedRight ) then
+    else if ( This%TruncatedLeft ) then
       InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, S=This%S, A=This%A )
-    else if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) then
+    else if ( This%TruncatedRight ) then
       InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, S=This%S, B=This%B )
     else
       InvCDF = This%ComputeInvCDF( P=P, Mu=This%Mu, S=This%S )
