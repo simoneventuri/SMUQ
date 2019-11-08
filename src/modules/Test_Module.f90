@@ -19,6 +19,14 @@ use DistLogUnif_Class                                             ,only:    Dist
 use DistLog10Unif_Class                                           ,only:    DistLog10Unif_Type
 use DistLogistic_Class                                            ,only:    DistLogistic_Type
 use DistGamma_Class                                               ,only:    DistGamma_Type
+use HierDistNorm_Class                                            ,only:    HierDistNorm_Type
+use HierDistLogNorm_Class                                         ,only:    HierDistLogNorm_Type
+use HierDistLog10Norm_Class                                       ,only:    HierDistLog10Norm_Type
+use HierDistUnif_Class                                            ,only:    HierDistUnif_Type
+use HierDistLogUnif_Class                                         ,only:    HierDistLogUnif_Type
+use HierDistLog10Unif_Class                                       ,only:    HierDistLog10Unif_Type
+use HierDistLogistic_Class                                        ,only:    HierDistLogistic_Type
+use HierDistGamma_Class                                           ,only:    HierDistGamma_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use Response_Class                                                ,only:    Response_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
@@ -55,32 +63,31 @@ contains
     character(*), parameter                                           ::    ProcName='Test'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
-    type(OrthoNumerical_Type)                                         ::    OrthoNumerical
-    type(OrthoLegendre_Type)                                          ::    OrthoLegendre
-    type(OrthoLaguerre_Type)                                          ::    OrthoLaguerre
-    type(OrthoHermite_Type)                                           ::    OrthoHermite
     type(DistUnif_Type)                                               ::    DistUnif
+    type(DistLogUnif_Type)                                            ::    DistLogUnif
+    type(DistLog10Unif_Type)                                          ::    DistLog10Unif
     type(DistNorm_Type)                                               ::    DistNorm
+    type(DistLogNorm_Type)                                            ::    DistLogNorm
+    type(DistLog10Norm_Type)                                          ::    DistLog10Norm
     type(DistGamma_Type)                                              ::    DistGamma
-    integer                                                           ::    i
-    real(rkp)                                                         ::    a1, a2, a3, a4
+    type(DistLogistic_Type)                                           ::    DistLogistic
+    type(HierDistUnif_Type)                                           ::    HierDistUnif
+    type(HierDistLogUnif_Type)                                        ::    HierDistLogUnif
+    type(HierDistLog10Unif_Type)                                      ::    HierDistLog10Unif
+    type(HierDistNorm_Type)                                           ::    HierDistNorm
+    type(HierDistLogNorm_Type)                                        ::    HierDistLogNorm
+    type(HierDistLog10Norm_Type)                                      ::    HierDistLog10Norm
+    type(HierDistGamma_Type)                                          ::    HierDistGamma
+    type(HierDistLogistic_Type)                                       ::    HierDistLogistic
 
     call DistUnif%Construct( A=-One, B=One )
+    call DistLogUnif%Construct( A=-One, B=One )
+    call DistLog10Unif%Construct( A=-One, B=One )
     call DistNorm%Construct( Mu=Zero, Sigma=One )
+    call DistLogNorm%Construct( Mu=Zero, Sigma=One )
+    call DistLog10Norm%Construct( Mu=Zero, Sigma=One )
     call DistGamma%Construct( Alpha=One, Beta=One )
-
-    call OrthoNumerical%Construct( Weights=DistGamma, Normalized=.true. )
-
-    call OrthoLegendre%Construct( Normalized=.true. )
-    call OrthoHermite%Construct( Normalized=.true. )
-    call OrthoLaguerre%Construct( Normalized=.true., Alpha=DistGamma%GetAlpha() )
-
-    i = 1
-    do i = 0, 100
-      a1 = OrthoNumerical%Eval(Order=i, X=real(0.5,rkp))
-      a2 = OrthoLaguerre%Eval(Order=i, X=real(0.5,rkp))
-      write(*,*) i, a1, a2
-    end do
+    call DistLogistic%Construct( Mu=One, S=One )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

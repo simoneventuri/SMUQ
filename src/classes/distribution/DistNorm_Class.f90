@@ -50,13 +50,9 @@ contains
   procedure, nopass, public                                           ::    ComputeCDF
   procedure, public                                                   ::    InvCDF
   procedure, nopass, public                                           ::    ComputeInvCDF
-  procedure, public                                                   ::    GetMean
-  procedure, public                                                   ::    GetVariance
-  procedure, private                                                  ::    ComputeMoment1
-  procedure, private                                                  ::    ComputeMoment2
   procedure, public                                                   ::    GetMu
   procedure, public                                                   ::    GetSigma
-  procedure, nopass, private                                          ::    ComputePhi
+  procedure, public                                                   ::    GetMoment
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer     
 end type
@@ -666,20 +662,27 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMean( This, Debug )
+  ! Based on formulas given in :
+  ! https://people.sc.fsu.edu/~%20jburkardt/presentations/truncated_normal.pdf
+  function GetMoment( This, Moment, Debug )
 
-    real(rkp)                                                         ::    GetMean
+    real(rkp)                                                         ::    GetMoment
 
-    class(DistNorm_Type), intent(in)                                  ::    This
+    class(DistProb_Type), intent(in)                                  ::    This
+    integer, intent(in)                                               ::    Moment
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetMean'
-    real(rkp)                                                         ::    Phia
-    real(rkp)                                                         ::    Phib
-    real(rkp)                                                         ::    Za
-    real(rkp)                                                         ::    Zb
-    real(rkp)                                                         ::    K
+    character(*), parameter                                           ::    ProcName='GetMoment'
+    integer                                                           ::    i
+    integer                                                           ::    imax
+    real(rkp)                                                         ::    L
+    real(rkp)                                                         ::    Lim1
+    real(rkp)                                                         ::    Lim2
+    real(rkp)                                                         ::    PDF_A
+    real(rkp)                                                         ::    PDF_B
+    real(rkp)                                                         ::    CDF_A
+    real(rkp)                                                         ::    CDF_B
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -687,221 +690,51 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      Za = (This%A-This%Mu)/This%Sigma
-      Zb = (This%B-This%Mu)/This%Sigma
-      Phia = This%ComputePhi( X=Za )
-      Phib = This%ComputePhi( X=Zb )
-      K = This%ComputeCDF( X=This%B, Mu=This%Mu, Sigma=This%Sigma ) - This%ComputeCDF( X=This%A, Mu=This%Mu, Sigma=This%Sigma )
-    elseif ( This%TruncatedLeft ) then
-      Za = (This%A-This%Mu)/This%Sigma
-      Zb = Zero
-      Phia = This%ComputePhi( X=Za )
-      Phib = Zero
-      K = One - This%ComputeCDF( X=This%A, Mu=This%Mu, Sigma=This%Sigma )
-    elseif ( This%TruncatedRight ) then
-      Za = Zero
-      Zb = (This%B-This%Mu)/This%Sigma
-      Phia = Zero
-      Phib = This%ComputePhi( X=Zb )
-      K = This%ComputeCDF( X=This%B, Mu=This%Mu, Sigma=This%Sigma )
+    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
+
+    if ( Moment == 0 ) then
+      GetMoment = One
+    elseif ( .not. ( This%TruncatedLeft .or. This%TruncatedRight ) ) then
+      GetMoment = Zero
+      i = 0
+      imax = floor(real(Moment,rkp)/Two) 
+      do i = 0, imax
+        GetMoment = GetMoment + real(BinomialCoeff( Top=Moment , Bottom=2*i ),rkp) * real(DoubleFactorial( N=2*i-1 ),rkp) *       &
+                                                                                         This%Sigma**(2*i) * This%Mu**(Moment-2*i)
+      end do
     else
-      Za = Zero
-      Zb = Zero
-      Phia = Zero
-      Phib = Zero
-      K = One
+      PDF_A = Zero
+      PDF_B = Zero
+      CDF_A = Zero
+      CDF_B = One
+      if ( This%TruncatedLeft ) then
+        PDF_A = This%ComputePDF( X=This%A, Mu=Zero, Sigma=One )
+        CDF_A = This%ComputePDF( X=This%A, Mu=Zero, Sigma=One )
+      end if
+      if ( This%TruncatedRight ) then
+        PDF_B = This%ComputePDF( X=This%B, Mu=Zero, Sigma=One )
+        CDF_B = This%ComputePDF( X=This%B, Mu=Zero, Sigma=One )
+      end if
+      GetMoment = Zero
+      L = One
+      Lim1 = One
+      Lim2 = One
+      i = 0
+      do i = 0, Moment
+        if ( i > 1 ) then
+          L = (This%B**(i-1)*PDF_B - This%A**(i-1)*PDF_A)/(CDF_B - CDF_A) + real(i-1,rkp)*Lim2
+        elseif ( i == 1 ) then
+          L = (PDF_B - PDF_A)/(CDF_B - CDF_A)
+        else
+          L = One
+        end if
+        GetMoment = GetMoment + real(BinomialCoeff( Top=Moment, Bottom=i ),rkp) * This%Sigma**i * This%Mu**(Moment-i) * L
+        Lim2 = Lim1
+        Lim1 = L
+      end do
+
     end if
 
-    GetMean = This%Mu + This%Sigma*( (Phia - Phib) / K )
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVariance( This, Debug )
-
-    real(rkp)                                                         ::    GetVariance
-
-    class(DistNorm_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetVariance'
-    real(rkp)                                                         ::    Phia
-    real(rkp)                                                         ::    Phib
-    real(rkp)                                                         ::    Za
-    real(rkp)                                                         ::    Zb
-    real(rkp)                                                         ::    K
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      Za = (This%A-This%Mu)/This%Sigma
-      Zb = (This%B-This%Mu)/This%Sigma
-      Phia = This%ComputePhi( X=Za )
-      Phib = This%ComputePhi( X=Zb )
-      K = This%ComputeCDF( X=This%B, Mu=This%Mu, Sigma=This%Sigma ) - This%ComputeCDF( X=This%A, Mu=This%Mu, Sigma=This%Sigma )
-    elseif ( This%TruncatedLeft ) then
-      Za = (This%A-This%Mu)/This%Sigma
-      Zb = Zero
-      Phia = This%ComputePhi( X=Za )
-      Phib = Zero
-      K = One - This%ComputeCDF( X=This%A, Mu=This%Mu, Sigma=This%Sigma )
-    elseif ( This%TruncatedRight ) then
-      Za = Zero
-      Zb = (This%B-This%Mu)/This%Sigma
-      Phia = Zero
-      Phib = This%ComputePhi( X=Zb )
-      K = This%ComputeCDF( X=This%B, Mu=This%Mu, Sigma=This%Sigma )
-    else
-      Za = Zero
-      Zb = Zero
-      Phia = Zero
-      Phib = Zero
-      K = One
-    end if
-
-    GetVariance = This%Sigma**2 * ( One + (Za*Phia-Zb*Phib)/K - ((Phia-Phib)/K)**2 )
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMoment1( This, Debug )
-
-    real(rkp)                                                         ::    ComputeMoment1
-
-    class(DistNorm_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputeMoment1'
-    real(rkp)                                                         ::    Phia
-    real(rkp)                                                         ::    Phib
-    real(rkp)                                                         ::    Za
-    real(rkp)                                                         ::    Zb
-    real(rkp)                                                         ::    K
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      Za = (This%A-This%Mu)/This%Sigma
-      Zb = (This%B-This%Mu)/This%Sigma
-      Phia = This%ComputePhi( X=Za )
-      Phib = This%ComputePhi( X=Zb )
-      K = This%ComputeCDF( X=This%B, Mu=This%Mu, Sigma=This%Sigma ) - This%ComputeCDF( X=This%A, Mu=This%Mu, Sigma=This%Sigma )
-    elseif ( This%TruncatedLeft ) then
-      Za = (This%A-This%Mu)/This%Sigma
-      Zb = Zero
-      Phia = This%ComputePhi( X=Za )
-      Phib = Zero
-      K = One - This%ComputeCDF( X=This%A, Mu=This%Mu, Sigma=This%Sigma )
-    elseif ( This%TruncatedRight ) then
-      Za = Zero
-      Zb = (This%B-This%Mu)/This%Sigma
-      Phia = Zero
-      Phib = This%ComputePhi( X=Zb )
-      K = This%ComputeCDF( X=This%B, Mu=This%Mu, Sigma=This%Sigma )
-    else
-      Za = Zero
-      Zb = Zero
-      Phia = Zero
-      Phib = Zero
-      K = One
-    end if
-
-    ComputeMoment1 = This%Mu + This%Sigma*( (Phia - Phib) / K )
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMoment2( This, Debug )
-
-    real(rkp)                                                         ::    ComputeMoment2
-
-    class(DistNorm_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetVariance'
-    real(rkp)                                                         ::    Phia
-    real(rkp)                                                         ::    Phib
-    real(rkp)                                                         ::    Za
-    real(rkp)                                                         ::    Zb
-    real(rkp)                                                         ::    K
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      Za = (This%A-This%Mu)/This%Sigma
-      Zb = (This%B-This%Mu)/This%Sigma
-      Phia = This%ComputePhi( X=Za )
-      Phib = This%ComputePhi( X=Zb )
-      K = This%ComputeCDF( X=This%B, Mu=This%Mu, Sigma=This%Sigma ) - This%ComputeCDF( X=This%A, Mu=This%Mu, Sigma=This%Sigma )
-    elseif ( This%TruncatedLeft ) then
-      Za = (This%A-This%Mu)/This%Sigma
-      Zb = Zero
-      Phia = This%ComputePhi( X=Za )
-      Phib = Zero
-      K = One - This%ComputeCDF( X=This%A, Mu=This%Mu, Sigma=This%Sigma )
-    elseif ( This%TruncatedRight ) then
-      Za = Zero
-      Zb = (This%B-This%Mu)/This%Sigma
-      Phia = Zero
-      Phib = This%ComputePhi( X=Zb )
-      K = This%ComputeCDF( X=This%B, Mu=This%Mu, Sigma=This%Sigma )
-    else
-      Za = Zero
-      Zb = Zero
-      Phia = Zero
-      Phib = Zero
-      K = One
-    end if
-
-    ComputeMoment2 = This%Mu**2 + Two*This%Mu*This%Sigma*(Phia-Phib)/K + This%Sigma**2 + This%Sigma**2*(Za*Phia-Zb*Phib)/K
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePhi( X, Debug )
-
-    real(rkp)                                                         ::    ComputePhi
-
-    real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputePhi'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    ComputePhi = One/dsqrt(Two*pi)*dexp(-0.5*X**2)
-      
     if (DebugLoc) call Logger%Exiting()
 
   end function

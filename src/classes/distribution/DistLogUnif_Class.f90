@@ -38,10 +38,7 @@ contains
   procedure, nopass, public                                           ::    ComputePDF
   procedure, public                                                   ::    CDF
   procedure, public                                                   ::    InvCDF
-  procedure, public                                                   ::    GetMean
-  procedure, public                                                   ::    GetVariance
-  procedure, private                                                  ::    ComputeMoment1
-  procedure, private                                                  ::    ComputeMoment2
+  procedure, public                                                   ::    GetMoment
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -221,39 +218,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMean( This, Debug )
+  function GetMoment( This, Moment, Debug )
 
-    real(rkp)                                                         ::    GetMean
+    real(rkp)                                                         ::    GetMoment
 
     class(DistLogUnif_Type), intent(in)                               ::    This
+    integer, intent(in)                                               ::    Moment
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetMean'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetMean = (dexp(This%B)-dexp(This%A)) / (This%B - This%A )
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVariance( This, Debug )
-
-    real(rkp)                                                         ::    GetVariance
-
-    class(DistLogUnif_Type), intent(in)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetVariance'
+    character(*), parameter                                           ::    ProcName='GetMoment'
     real(rkp)                                                         ::    eA
     real(rkp)                                                         ::    eB
 
@@ -263,72 +237,19 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    eA = dexp(This%A)
-    eB = dexp(This%B)
+    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
 
-    GetVariance = ((This%B-This%A)*(eB**2-eA**2)-Two*(eB-eA)**2) / (Two*(This%B-This%A)**2)
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMoment1( This, Debug )
-
-    real(rkp)                                                         ::    ComputeMoment1
-
-    class(DistLogUnif_Type), intent(in)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputeMoment1'
-    real(rkp)                                                         ::    eA
-    real(rkp)                                                         ::    eB
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    eA = dexp(This%A)
-    eB = dexp(This%B)
-
-    ComputeMoment1 = (eB-eA)/(This%B-This%A)
+    if ( Moment > 0 ) then
+      eA = dexp(This%A)
+      eB = dexp(This%B)
+      GetMoment = (eB**Moment - eA**Moment) / (real(Moment,rkp)*(This%B-This%A))
+    else
+      GetMoment = One
+    end if
 
     if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMoment2( This, Debug )
-
-    real(rkp)                                                         ::    ComputeMoment2
-
-    class(DistLogUnif_Type), intent(in)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetVariance'
-    real(rkp)                                                         ::    eA
-    real(rkp)                                                         ::    eB
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    eA = dexp(This%A)
-    eB = dexp(This%B)
-
-    ComputeMoment2 = (eB**2-eA**2) / (Two*(This%B-This%A))
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-end module DistLogUnif_Class
+end module

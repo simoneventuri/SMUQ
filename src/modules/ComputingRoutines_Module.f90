@@ -62,6 +62,10 @@ interface Factorial
   module procedure                                                    ::    Factorial_R
 end interface
 
+interface DoubleFactorial
+  module procedure                                                    ::    DoubleFactorial_I
+end interface
+
 interface SQRTFactorial
   module procedure                                                    ::    SQRTFactorial_I8
   module procedure                                                    ::    SQRTFactorial_I
@@ -532,6 +536,39 @@ contains
     if ( N < Zero ) call Error%Raise( Line="Unable to compute the factorial given an integer less than 0" )
 
     Factorial_R = gamma(N + One)
+
+    if (DebugLoc) call Logger%Exiting
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function DoubleFactorial_I( N, Debug )
+
+    integer                                                           ::    DoubleFactorial_I
+    integer, intent(in)                                               ::    N
+    logical, optional ,intent(in)                                     ::    Debug
+
+    character(*), parameter                                           ::    ProcName='DoubleFactorial_I'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    Ni
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( N < -1 ) call Error%Raise( Line="Unable to compute the factorial given an integer less than 0" )
+
+    DoubleFactorial_I = 1
+
+    if ( N >= 1 ) then
+      Ni = N
+      do
+        DoubleFactorial = DoubleFactorial * Ni
+        Ni = Ni - 2
+        if ( Ni <= 0 ) exit
+      end do
+    end if
 
     if (DebugLoc) call Logger%Exiting
 

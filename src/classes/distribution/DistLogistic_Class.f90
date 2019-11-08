@@ -53,10 +53,7 @@ contains
   procedure, public                                                   ::    ComputeInvCDF
   procedure, public                                                   ::    GetMu
   procedure, public                                                   ::    GetS
-  procedure, public                                                   ::    GetMean
-  procedure, public                                                   ::    GetVariance
-  procedure, private                                                  ::    ComputeMoment1
-  procedure, private                                                  ::    ComputeMoment2
+  procedure, public                                                   ::    GetMoment
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer     
 end type
@@ -588,19 +585,17 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMean( This, Debug )
+  function GetMoment( This, Moment, Debug )
 
-    real(rkp)                                                         ::    GetMean
+    real(rkp)                                                         ::    GetMoment
 
-    class(DistLogistic_Type), intent(in)                              ::    This
+    class(DistLog10Norm_Type), intent(in)                             ::    This
+    integer, intent(in)                                               ::    Moment
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetMean'
-    integer                                                           ::    StatLoc=0
-    type(SampleLHS_Type)                                              ::    Sampler 
-    real(rkp), allocatable, dimension(:)                              ::    Samples   
-    integer                                                           ::    i 
+    character(*), parameter                                           ::    ProcName='GetMoment'
+    integer                                                           ::    i
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -608,120 +603,12 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedRight .or. This%A>tiny(One) ) then
-      allocate(Samples(1000), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Samples', ProcName=ProcName, stat=StatLoc )
-      call Sampler%Construct( NbSamples=1000 )
-      Samples = Sampler%Draw()
+    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
 
-      i = 1
-      do i = 1, size(Samples,1)
-        Samples(i) = This%InvCDF(P=Samples(i))
-      end do
-
-      GetMean = ComputeMean( Values=Samples )
-      deallocate(Samples, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='Samples', ProcName=ProcName, stat=StatLoc )
+    if ( Moment > 0 ) then
+      GetMoment = This%ComputeMomentNumerical( Moment=Moment )
     else
-      GetMean = This%Mu
-    end if
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVariance( This, Debug )
-
-    real(rkp)                                                         ::    GetVariance
-
-    class(DistLogistic_Type), intent(in)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetVariance'
-    integer                                                           ::    StatLoc=0
-    type(SampleLHS_Type)                                              ::    Sampler 
-    real(rkp), allocatable, dimension(:)                              ::    Samples   
-    integer                                                           ::    i 
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    if ( This%TruncatedRight .or. This%A>tiny(One) ) then
-      allocate(Samples(1000), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Samples', ProcName=ProcName, stat=StatLoc )
-      call Sampler%Construct( NbSamples=1000 )
-      Samples = Sampler%Draw()
-      i = 1
-      do i = 1, size(Samples,1)
-        Samples(i) = This%InvCDF(P=Samples(i))
-      end do
-      GetVariance = ComputeSampleVar( Values=Samples )
-      deallocate(Samples, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='Samples', ProcName=ProcName, stat=StatLoc )
-    else
-      GetVariance = This%S**2*pi**2/Three
-    end if
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMoment1( This, Debug )
-
-    real(rkp)                                                         ::    ComputeMoment1
-
-    class(DistLogistic_Type), intent(in)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputeMoment1'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    if ( This%TruncatedRight .or. This%A>tiny(One) ) then
-      ComputeMoment1 = This%GetMean()
-    else
-      ComputeMoment1 = This%Mu
-    end if
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMoment2( This, Debug )
-
-    real(rkp)                                                         ::    ComputeMoment2
-
-    class(DistLogistic_Type), intent(in)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetVariance'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    if ( This%TruncatedRight .or. This%A>tiny(One) ) then
-      ComputeMoment2 = This%GetVariance() + This%GetMean()**2
-    else
-      ComputeMoment2 = This%S**2*pi**2/Three + This%Mu**2
+      GetMoment = One
     end if
 
     if (DebugLoc) call Logger%Exiting()

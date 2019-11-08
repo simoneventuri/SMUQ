@@ -222,6 +222,10 @@ contains
       if ( size(This%NFactor) /= This%Order ) call Error%Raise( "Order and number of normalization factors do not match" )
     end if
 
+    ParameterName = 'precompute_order'
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) call This%IncreaseOrder( Order=VarI0D )
+
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
@@ -695,6 +699,7 @@ contains
       function Integrand1( X )  
         
         real(8)                                                           ::    Integrand1
+
         real(8), intent(in)                                               ::    X
 
         Integrand1 = X * This%Eval( Order=i, X=X, Normalized=.false. )**2 * This%Weights%PDF( X=X )
@@ -706,6 +711,7 @@ contains
       function Integrand2( X )  
         
         real(8)                                                           ::    Integrand2
+
         real(8), intent(in)                                               ::    X
 
         Integrand2 = This%Eval( Order=i, X=X, Normalized=.false. )**2 * This%Weights%PDF( X=X )

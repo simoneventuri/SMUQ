@@ -39,10 +39,7 @@ contains
   procedure, nopass, public                                           ::    ComputePDF
   procedure, public                                                   ::    CDF
   procedure, public                                                   ::    InvCDF
-  procedure, public                                                   ::    GetMean
-  procedure, public                                                   ::    GetVariance
-  procedure, private                                                  ::    ComputeMoment1
-  procedure, private                                                  ::    ComputeMoment2
+  procedure, public                                                   ::    GetMoment
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -332,72 +329,25 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMean( This, Debug )
+  function GetMoment( This, Moment, Debug )
 
-    real(rkp)                                                         ::    GetMean
+    real(rkp)                                                         ::    GetMoment
 
-    class(DistLogNorm_Type), intent(in)                               ::    This
+    class(DistProb_Type), intent(in)                                  ::    This
+    integer, intent(in)                                               ::    Moment
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetMean'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetMean = This%ComputeMoment1()
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVariance( This, Debug )
-
-    real(rkp)                                                         ::    GetVariance
-
-    class(DistLogNorm_Type), intent(in)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetVariance'
-    real(rkp)                                                         ::    Ex
-    real(rkp)                                                         ::    Ex2
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetVariance = This%ComputeMoment2() - (This%ComputeMoment1())**2
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMoment1( This, Debug )
-
-    real(rkp)                                                         ::    ComputeMoment1
-
-    class(DistLogNorm_Type), intent(in)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputeMoment1'
-    real(rkp)                                                         ::    Mup
-    real(rkp)                                                         ::    eA
+    character(*), parameter                                           ::    ProcName='GetMoment'
     logical                                                           ::    eAg0
-    real(rkp)                                                         ::    Pma
-    real(rkp)                                                         ::    Pmb
-    real(rkp)                                                         ::    Pa
-    real(rkp)                                                         ::    Pb
+    real(rkp)                                                         ::    CDF_ma0
+    real(rkp)                                                         ::    CDF_mb0
+    real(rkp)                                                         ::    CDF_a0
+    real(rkp)                                                         ::    CDF_b0
+    real(rkp)                                                         ::    a0
+    real(rkp)                                                         ::    b0
+    real(rkp)                                                         ::    am0
+    real(rkp)                                                         ::    bm0
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -405,92 +355,36 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    Mup = This%Mu + This%Sigma**2
-    eA = dexp(This%A)
+    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
+
     eAg0 = .false.
-    if ( eA > tiny(One) ) eAg0  = .true.
+    if ( This%A > -huge(One) ) eAg0  = .true.
 
-    if ( eAg0 .and. This%TruncatedRight ) then
-      Pa = This%ComputeCDF(X=This%A, Mu=This%Mu, Sigma=This%Sigma)
-      Pb = This%ComputeCDF(X=This%A, Mu=This%Mu, Sigma=This%Sigma)
-      Pma = This%ComputeCDF(X=This%A, Mu=Mup, Sigma=This%Sigma)
-      Pmb = This%ComputeCDF(X=This%B, Mu=Mup, Sigma=This%Sigma)
-    elseif ( eAg0 ) then
-      Pa = This%ComputeCDF(X=This%A, Mu=This%Mu, Sigma=This%Sigma)
-      Pb = One
-      Pma = This%ComputeCDF(X=This%A, Mu=Mup, Sigma=This%Sigma)
-      Pmb = One
-    elseif ( This%TruncatedRight ) then
-      Pa = Zero
-      Pb = This%ComputeCDF(X=This%A, Mu=This%Mu, Sigma=This%Sigma)
-      Pma = Zero
-      Pmb = This%ComputeCDF(X=This%B, Mu=Mup, Sigma=This%Sigma)
+    if ( Moment == 0 ) then
+      GetMoment = One
+    elseif ( .not. ( eAg0 .or. This%TruncatedRight ) ) then
+      GetMoment = dexp( real(Moment,rkp)*This%Mu + real(Moment,rkp)**2*This%Sigma**2/Two )
     else
-      Pa = Zero
-      Pb = One
-      Pma = Zero
-      Pmb = One
+      CDF_a0 = Zero
+      CDF_b0 = One
+      CDF_ma0 = One
+      CDF_mb0 = Zero
+      if ( eAg0 ) then
+        a0 = ( This%A - This%Mu ) / This%Sigma
+        am0 = real(Moment,rkp)*This%Sigma-a0
+        CDF_a0 = This%ComputeCDF( Mu=Zero, Sigma=One, X=a0 )
+        CDF_am0 = This%ComputeCDF( Mu=Zero, Sigma=One, X=am0 )
+      end if
+      if ( This%TruncatedRight ) then
+        b0 = ( This%B - This%Mu ) / This%Sigma
+        bm0 = real(Moment,rkp)*This%Sigma-b0
+        CDF_b0 = This%ComputeCDF( Mu=Zero, Sigma=One, X=b0 )
+        CDF_bm0 = This%ComputeCDF( Mu=Zero, Sigma=One, X=bm0 )
+      end if
+
+      GetMoment = dexp( real(Moment,rkp)*This%Mu + real(Moment,rkp)**2*This%Sigma**2/Two ) * (CDF_am0-CDF_bm0) / (CDF_b0-CDF_a0)
+
     end if
-
-    ComputeMoment1 = dexp((Two*This%Mu+This%Sigma**2)/Two) * (Pmb-Pma) / (Pb-Pa)
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMoment2( This, Debug )
-
-    real(rkp)                                                         ::    ComputeMoment2
-
-    class(DistLogNorm_Type), intent(in)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ComputeMoment2'
-    real(rkp)                                                         ::    Mup
-    real(rkp)                                                         ::    eA
-    logical                                                           ::    eAg0
-    real(rkp)                                                         ::    Pma
-    real(rkp)                                                         ::    Pmb
-    real(rkp)                                                         ::    Pa
-    real(rkp)                                                         ::    Pb
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    Mup = This%Mu + Two*This%Sigma**2
-    eA = dexp(This%A)
-    eAg0 = .false.
-    if ( eA > tiny(One) ) eAg0  = .true.
-
-    if ( eAg0 .and. This%TruncatedRight ) then
-      Pa = This%ComputeCDF(X=This%A, Mu=This%Mu, Sigma=This%Sigma)
-      Pb = This%ComputeCDF(X=This%A, Mu=This%Mu, Sigma=This%Sigma)
-      Pma = This%ComputeCDF(X=This%A, Mu=Mup, Sigma=This%Sigma)
-      Pmb = This%ComputeCDF(X=This%B, Mu=Mup, Sigma=This%Sigma)
-    elseif ( eAg0 ) then
-      Pa = This%ComputeCDF(X=This%A, Mu=This%Mu, Sigma=This%Sigma)
-      Pb = One
-      Pma = This%ComputeCDF(X=This%A, Mu=Mup, Sigma=This%Sigma)
-      Pmb = One
-    elseif ( This%TruncatedRight ) then
-      Pa = Zero
-      Pb = This%ComputeCDF(X=This%A, Mu=This%Mu, Sigma=This%Sigma)
-      Pma = Zero
-      Pmb = This%ComputeCDF(X=This%B, Mu=Mup, Sigma=This%Sigma)
-    else
-      Pa = Zero
-      Pb = One
-      Pma = Zero
-      Pmb = One
-    end if
-
-    ComputeMoment2 = dexp(Two*This%Mu+Two*This%Sigma**2) * (Pmb-Pma) / (Pb-Pa)
 
     if (DebugLoc) call Logger%Exiting()
 

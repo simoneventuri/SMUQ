@@ -45,6 +45,8 @@ contains
   procedure, public                                                   ::    GetB
   procedure, public                                                   ::    IsTruncatedLeft
   procedure, public                                                   ::    IsTruncatedRight
+  procedure, public                                                   ::    GetMoment
+  procedure, public                                                   ::    ComputeMomentNumerical
   generic, public                                                     ::    PDF                     =>    PDF_R0D
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
@@ -174,6 +176,13 @@ abstract interface
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function MomentIntegrand( X )  
+    real(8)                                                           ::    MomentIntegrand
+    real(8), intent(in)                                               ::    X
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
 end interface
 
 contains
@@ -266,6 +275,8 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
     IsTruncatedLeft = This%TruncatedLeft
 
     if (DebugLoc) call Logger%Exiting()
@@ -288,9 +299,188 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
     IsTruncatedRight = This%TruncatedRight
 
     if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetMean( This, Debug )
+
+    real(rkp)                                                         ::    GetMean
+
+    class(DistLogNorm_Type), intent(in)                               ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetMean'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    GetMean = This%GetMoment( Moment=1 )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetVariance( This, Debug )
+
+    real(rkp)                                                         ::    GetVariance
+
+    class(DistLogNorm_Type), intent(in)                               ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetVariance'
+    real(rkp)                                                         ::    Ex
+    real(rkp)                                                         ::    Ex2
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    GetVariance = This%GetMoment( Moment=2 ) - ( This%GetMoment( Moment=1 ) )**2
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetMoment( This, Moment, Debug )
+
+    real(rkp)                                                         ::    GetMoment
+
+    class(DistProb_Type), intent(in)                                  ::    This
+    integer, intent(in)                                               ::    Moment
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetMoment'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
+
+    if ( Moment > 0 ) then
+      GetMoment = This%ComputeMomentNumerical( Moment=Moment )
+    else
+      GetMoment = One
+    end if
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function ComputeMomentNumerical( This, Moment, Debug )
+
+    logical                                                           ::    ComputeMomentNumerical
+
+    class(DistProb_Type), intent(in)                                  ::    This
+    integer, intent(in)                                               ::    Moment
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ComputeMomentNumerical'
+    real(rkp)                                                         ::    NumericalMoment
+    procedure(MomentIntegrand), pointer                               ::    PIntegrand=>null()
+    real(8)                                                           ::    Num
+    real(8)                                                           ::    EpsAbs
+    real(8)                                                           ::    EpsRel
+    integer                                                           ::    Key
+    real(8)                                                           ::    AbsErr
+    integer                                                           ::    NEval
+    integer                                                           ::    Limit
+    integer                                                           ::    LenW
+    integer, allocatable, dimension(:)                                ::    iWork
+    real(8), allocatable, dimension(:)                                ::    Work
+    integer                                                           ::    Last
+    real(8)                                                           ::    A
+    real(8)                                                           ::    B
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    AbsErr = Zero
+    NEval=0
+    EpsAbs = 0.0
+    EpsRel = 1.d-3
+    Key = 6
+    Limit = 500
+    LenW = 4*Limit
+
+    A = This%A
+    B = This%B
+
+    allocate( iWork(Limit), stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='iWork', ProcName=ProcName, stat=StatLoc )
+    allocate( Work(LenW), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Work', ProcName=ProcName, stat=StatLoc )
+
+    PIntegrand => Integrand
+
+    NumericalMoment = Zero
+
+    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
+      call dqag( PIntegrand, A, B, EpsAbs, EpsRel, Key, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work )
+      if ( StatLoc /= 0 .and. StatLoc /= 2 ) call Error%Raise( "Dqag exited with non zero exit code : " //                        &
+                                                                                                  ConvertToString(Value=StatLoc) )
+    elseif ( This%TruncatedLeft ) then
+      call dqagi( PIntegrand, A, 1, EpsAbs, EpsRel, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work )
+      if ( StatLoc /= 0 .and. StatLoc /= 2 ) call Error%Raise( "Dqagi exited with non zero exit code : " //                       &
+                                                                                                  ConvertToString(Value=StatLoc) )
+    elseif ( This%TruncatedRight ) then
+      call dqagi( PIntegrand, B, -1, EpsAbs, EpsRel, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work )
+      if ( StatLoc /= 0 .and. StatLoc /= 2 ) call Error%Raise( "Dqagi exited with non zero exit code : " //                       &
+                                                                                                  ConvertToString(Value=StatLoc) )
+    else
+      call dqagi( PIntegrand, Zero, 2, EpsAbs, EpsRel, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work )
+      if ( StatLoc /= 0 .and. StatLoc /= 2 ) call Error%Raise( "Dqagi exited with non zero exit code : " //                       &
+                                                                                                  ConvertToString(Value=StatLoc) )
+    end if
+
+    nullify(PIntegrand)
+    deallocate(iWork, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='iWork', ProcName=ProcName, stat=StatLoc )
+    deallocate(Work, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Work', ProcName=ProcName, stat=StatLoc )
+
+    ComputeMomentNumerical = NumericalMoment
+
+    if (DebugLoc) call Logger%Exiting()
+
+    contains
+
+      function Integrand( X )
+
+        real(8)                                                           ::    Integrand
+
+        real(8), intent(in)                                               ::    X
+
+        Integrand1 = X**Moment * This%PDF( X=X )
+
+      end function
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
