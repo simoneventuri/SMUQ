@@ -216,7 +216,7 @@ contains
       end if
       PDF_R0D = One/(X*dlogof10) * PDF_R0D
     end if
-      
+
     if (DebugLoc) call Logger%Exiting()
 
   end function

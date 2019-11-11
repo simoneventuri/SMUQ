@@ -42,6 +42,7 @@ public                                                                ::    Comp
 public                                                                ::    ScrambleArray
 public                                                                ::    Transform
 public                                                                ::    Bin
+public                                                                ::    BernoulliNumbers
 
 logical, parameter                                                    ::    DebugGlobal = .false.
 
@@ -558,7 +559,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( N < -1 ) call Error%Raise( Line="Unable to compute the factorial given an integer less than 0" )
+    if ( N < -1 ) call Error%Raise( Line="Unable to compute the double factorial given an integer less than -1" )
 
     DoubleFactorial_I = 1
 
@@ -648,7 +649,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( Bottom < 1 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
+    if ( Bottom < 0 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
 
     BinomialCoeff_I_I = 1
 
@@ -678,7 +679,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( Bottom < 1 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
+    if ( Bottom < 0 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
 
     BinomialCoeff_I8_I8 = 1
 
@@ -709,7 +710,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( Bottom < 1 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
+    if ( Bottom < 0 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
 
     BinomialCoeff_R_rkp_I_ikp = One
 
@@ -741,7 +742,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( Bottom < 1 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
+    if ( Bottom < 0 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
 
     BinomialCoeff_R_rkp_I = One
 
@@ -1312,7 +1313,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='Bin_VarR1D'
     logical                                                           ::    DebugLoc
-    integer                                                           ::    StatLoc
+    integer                                                           ::    StatLoc=0
     integer                                                           ::    NbBins
     integer                                                           ::    NbValues
     integer                                                           ::    i
@@ -1356,6 +1357,51 @@ contains
     if (DebugLoc) call Logger%Exiting
 
   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function BernoulliNumbers( P, Debug )
+
+    real(rkp), allocatable, dimension(:)                              ::    BernoulliNumbers
+    
+    integer, intent(in)                                               ::    P
+    logical, optional, intent(in)                                     ::    Debug
+
+    character(*), parameter                                           ::    ProcName='BernoulliNumbers'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    ii
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( P < 1 ) call Error%Raise( "Requested less than 1 Bernoulli number", ProcName=ProcName )
+
+    allocate(BernoulliNumbers(P+1), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='BernoulliNumbers', ProcName=ProcName, stat=StatLoc )
+
+    BernoulliNumbers = Zero
+    BernoulliNumbers(1) = One
+    if ( P > 1 ) BernoulliNumbers(2) = - One/Two
+
+    i = 2
+    do i = 2, P
+      if ( mod(i,2) /= 0 ) then
+        BernoulliNumbers(i+1) = Zero
+      else
+        ii = 0
+        do ii = 0, i-1
+          BernoulliNumbers(i+1) = BernoulliNumbers(i+1) + real(BinomialCoeff(Top=i+1,Bottom=ii),rkp)*BernoulliNumbers(ii+1)
+        end do   
+        BernoulliNumbers(i+1) = -One / ( real(i,rkp) + One ) * BernoulliNumbers(i+1)
+      end if
+    end do
+
+    if (DebugLoc) call Logger%Exiting
+
+  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

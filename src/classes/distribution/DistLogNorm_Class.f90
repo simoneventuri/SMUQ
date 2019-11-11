@@ -420,24 +420,28 @@ contains
     elseif ( .not. ( This%DoubleTruncatedLeft .or. This%TruncatedRight ) ) then
       GetMoment = dexp( real(Moment,rkp)*This%Mu + real(Moment,rkp)**2*This%Sigma**2/Two )
     else
-      CDF_a0 = Zero
-      CDF_b0 = One
-      CDF_ma0 = One
-      CDF_mb0 = Zero
-      if ( This%DoubleTruncatedLeft ) then
-        a0 = ( This%A - This%Mu ) / This%Sigma
-        am0 = real(Moment,rkp)*This%Sigma-a0
-        CDF_a0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=a0 )
-        CDF_ma0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=am0 )
-      end if
       if ( This%TruncatedRight ) then
-        b0 = ( This%B - This%Mu ) / This%Sigma
-        bm0 = real(Moment,rkp)*This%Sigma-b0
-        CDF_b0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=b0 )
-        CDF_mb0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=bm0 )
+        GetMoment = This%ComputeMomentNumerical(Moment=Moment)
+      else
+        CDF_a0 = Zero
+        CDF_b0 = One
+        CDF_ma0 = One
+        CDF_mb0 = Zero
+        GetMoment = dexp( real(Moment,rkp)*This%Mu + real(Moment,rkp)**2*This%Sigma**2/Two )
+        if ( This%DoubleTruncatedLeft ) then
+          a0 = ( This%A - This%Mu ) / This%Sigma
+          am0 = real(Moment,rkp)*This%Sigma-a0
+          CDF_a0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=a0 )
+          CDF_ma0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=am0 )
+        end if
+        if ( This%TruncatedRight ) then
+          b0 = ( This%B - This%Mu ) / This%Sigma
+          bm0 = real(Moment,rkp)*This%Sigma-b0
+          CDF_b0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=b0 )
+          CDF_mb0 = This%ComputeNormalCDF( Mu=Zero, Sigma=One, X=bm0 )
+        end if
+        GetMoment = GetMoment * (CDF_ma0-CDF_mb0) / (CDF_b0-CDF_a0)
       end if
-
-      GetMoment = dexp( real(Moment,rkp)*This%Mu + real(Moment,rkp)**2*This%Sigma**2/Two ) * (CDF_ma0-CDF_mb0) / (CDF_b0-CDF_a0)
 
     end if
 

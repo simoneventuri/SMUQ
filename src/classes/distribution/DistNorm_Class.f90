@@ -234,7 +234,7 @@ contains
       This%TruncatedRight = .true.
     end if
 
-    if ( This%Sigma < Zero ) call Error%Raise( Line='Standard deviation specified to be below minimum of 0', ProcName=ProcName )
+    if ( This%Sigma <= Zero ) call Error%Raise( Line='Standard deviation specified to be below minimum of 0', ProcName=ProcName )
 
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
@@ -726,6 +726,8 @@ contains
     real(rkp)                                                         ::    PDF_B
     real(rkp)                                                         ::    CDF_A
     real(rkp)                                                         ::    CDF_B
+    real(rkp)                                                         ::    Alpha
+    real(rkp)                                                         ::    Beta
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -742,21 +744,25 @@ contains
       i = 0
       imax = floor(real(Moment,rkp)/Two) 
       do i = 0, imax
-        GetMoment = GetMoment + real(BinomialCoeff( Top=Moment , Bottom=2*i ),rkp) * real(DoubleFactorial( N=2*i-1 ),rkp) *       &
+        GetMoment = GetMoment + real(BinomialCoeff( Top=Moment , Bottom=2*i ),rkp) * real(DoubleFactorial( N=(2*i-1) ),rkp) *     &
                                                                                          This%Sigma**(2*i) * This%Mu**(Moment-2*i)
       end do
     else
+      Alpha = One
+      Beta = One
       PDF_A = Zero
       PDF_B = Zero
       CDF_A = Zero
       CDF_B = One
       if ( This%TruncatedLeft ) then
-        PDF_A = This%ComputeNormalPDF( X=This%A, Mu=Zero, Sigma=One )
-        CDF_A = This%ComputeNormalPDF( X=This%A, Mu=Zero, Sigma=One )
+        Alpha = (This%A-This%Mu)/This%Sigma
+        PDF_A = This%ComputeNormalPDF( X=Alpha, Mu=Zero, Sigma=One )
+        CDF_A = This%ComputeNormalCDF( X=Alpha, Mu=Zero, Sigma=One )
       end if
       if ( This%TruncatedRight ) then
-        PDF_B = This%ComputeNormalPDF( X=This%B, Mu=Zero, Sigma=One )
-        CDF_B = This%ComputeNormalPDF( X=This%B, Mu=Zero, Sigma=One )
+        Beta = (This%B-This%Mu)/This%Sigma
+        PDF_B = This%ComputeNormalPDF( X=Beta, Mu=Zero, Sigma=One )
+        CDF_B = This%ComputeNormalCDF( X=Beta, Mu=Zero, Sigma=One )
       end if
       GetMoment = Zero
       L = One
@@ -765,9 +771,9 @@ contains
       i = 0
       do i = 0, Moment
         if ( i > 1 ) then
-          L = (This%B**(i-1)*PDF_B - This%A**(i-1)*PDF_A)/(CDF_B - CDF_A) + real(i-1,rkp)*Lim2
+          L = - (Beta**(i-1)*PDF_B - Alpha**(i-1)*PDF_A)/(CDF_B - CDF_A) + real(i-1,rkp)*Lim2
         elseif ( i == 1 ) then
-          L = (PDF_B - PDF_A)/(CDF_B - CDF_A)
+          L = - (PDF_B - PDF_A)/(CDF_B - CDF_A)
         else
           L = One
         end if

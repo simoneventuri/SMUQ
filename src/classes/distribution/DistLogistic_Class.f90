@@ -22,7 +22,9 @@ use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
 use StatisticsRoutines_Module
-use DistProb_Class                                                ,only:    DistProb_Type
+use StringRoutines_Module
+use QuadPack_Library
+use DistProb_Class
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use InputDet_Class                                                ,only:    InputDet_Type
@@ -318,7 +320,7 @@ contains
     else
       PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, S=This%S )
     end if
-      
+
     if (DebugLoc) call Logger%Exiting()
 
   end function
@@ -618,7 +620,11 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMoment'
+    integer                                                           ::    StatLoc=0
+    real(rkp), allocatable, dimension(:)                              ::    BNumbers
     integer                                                           ::    i
+    real(rkp)                                                         ::    ZMoment
+
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -629,7 +635,27 @@ contains
     if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
 
     if ( Moment > 0 ) then
-      GetMoment = This%ComputeMomentNumerical( Moment=Moment )
+      if ( This%TruncatedRight .and. .not. TruncatedLeft ) call Error%Raise( "DistLogistic module currently cant compute" //      &
+                                                  " moments where lower bound is infinite while upper is not", ProcName=ProcName )
+      if ( .not. ( THis%TruncatedLeft .or. This%TruncatedRight ) ) then
+        BNumbers = BernoulliNumbers( P=Moment )
+        GetMoment = Zero
+        i = 0
+        do i = 0, Moment
+          if ( i == 0 ) then
+            ZMoment = One
+          elseif ( mod(i,2) /= 0 ) then
+            ZMoment = Zero
+          else
+            ZMoment = (Two**i-Two)*Pi**i*abs(BNumbers(i+1))
+          end if
+          GetMoment = GetMoment + real(BinomialCoeff(Top=Moment, Bottom=i),rkp) * This%Mu**(Moment-i) * This%S**i*ZMoment
+        end do
+        deallocate(BNumbers, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='BNumbers', ProcName=ProcName, stat=StatLoc )
+      else
+        GetMoment = This%ComputeMomentNumerical( Moment=Moment )
+      end if
     else
       GetMoment = One
     end if

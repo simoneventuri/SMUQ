@@ -31,6 +31,7 @@ implicit none
 private
 
 public                                                                ::    DistProb_Type
+public                                                                ::    MomentIntegrand
 
 type, abstract                                                        ::    DistProb_Type
   character(:), allocatable                                           ::    Name
@@ -413,8 +414,8 @@ contains
     Limit = 500
     LenW = 4*Limit
 
-    A = This%A
-    B = This%B
+    if ( This%TruncatedLeft ) A = This%GetA()
+    if ( This%TruncatedRight ) B = This%GetB()
 
     allocate( iWork(Limit), stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='iWork', ProcName=ProcName, stat=StatLoc )
@@ -442,6 +443,8 @@ contains
       if ( StatLoc /= 0 .and. StatLoc /= 2 ) call Error%Raise( "Dqagi exited with non zero exit code : " //                       &
                                                                                                   ConvertToString(Value=StatLoc) )
     end if
+
+    if ( NumericalMoment /= NumericalMoment ) call Error%Raise( "Detected a NaN result from integrator", ProcName=ProcName )
 
     nullify(PIntegrand)
     deallocate(iWork, stat=StatLoc)

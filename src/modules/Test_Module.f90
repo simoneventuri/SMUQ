@@ -43,6 +43,7 @@ use OrthoNumerical_Class                                          ,only:    Orth
 use OrthoLegendre_Class                                           ,only:    OrthoLegendre_Type
 use OrthoHermite_Class                                            ,only:    OrthoHermite_Type
 use OrthoLaguerre_Class                                           ,only:    OrthoLaguerre_Type
+use DistProb_Class                                                ,only:    DistProb_Type
 
 implicit none
 
@@ -63,31 +64,45 @@ contains
     character(*), parameter                                           ::    ProcName='Test'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
-    type(DistUnif_Type)                                               ::    DistUnif
-    type(DistLogUnif_Type)                                            ::    DistLogUnif
-    type(DistLog10Unif_Type)                                          ::    DistLog10Unif
-    type(DistNorm_Type)                                               ::    DistNorm
-    type(DistLogNorm_Type)                                            ::    DistLogNorm
-    type(DistLog10Norm_Type)                                          ::    DistLog10Norm
-    type(DistGamma_Type)                                              ::    DistGamma
-    type(DistLogistic_Type)                                           ::    DistLogistic
-    type(HierDistUnif_Type)                                           ::    HierDistUnif
-    type(HierDistLogUnif_Type)                                        ::    HierDistLogUnif
-    type(HierDistLog10Unif_Type)                                      ::    HierDistLog10Unif
-    type(HierDistNorm_Type)                                           ::    HierDistNorm
-    type(HierDistLogNorm_Type)                                        ::    HierDistLogNorm
-    type(HierDistLog10Norm_Type)                                      ::    HierDistLog10Norm
-    type(HierDistGamma_Type)                                          ::    HierDistGamma
-    type(HierDistLogistic_Type)                                       ::    HierDistLogistic
+    type(DistUnif_Type), target                                       ::    DistUnif
+    type(DistLogUnif_Type), target                                    ::    DistLogUnif
+    type(DistLog10Unif_Type), target                                  ::    DistLog10Unif
+    type(DistNorm_Type), target                                       ::    DistNorm
+    type(DistLogNorm_Type), target                                    ::    DistLogNorm
+    type(DistLog10Norm_Type), target                                  ::    DistLog10Norm
+    type(DistGamma_Type), target                                      ::    DistGamma
+    type(DistLogistic_Type), target                                   ::    DistLogistic
+    type(HierDistUnif_Type), target                                   ::    HierDistUnif
+    type(HierDistLogUnif_Type), target                                ::    HierDistLogUnif
+    type(HierDistLog10Unif_Type), target                              ::    HierDistLog10Unif
+    type(HierDistNorm_Type), target                                   ::    HierDistNorm
+    type(HierDistLogNorm_Type), target                                ::    HierDistLogNorm
+    type(HierDistLog10Norm_Type), target                              ::    HierDistLog10Norm
+    type(HierDistGamma_Type), target                                  ::    HierDistGamma
+    type(HierDistLogistic_Type), target                               ::    HierDistLogistic
+    class(DistProb_Type), pointer                                     ::    DistProbPtr
+    integer                                                           ::    i
+!    call DistUnif%Construct( A=-One, B=One )
+!    call DistLogUnif%Construct( A=-One, B=One )
+!    call DistLog10Unif%Construct( A=-One, B=One )
+!    call DistNorm%Construct( Mu=Zero, Sigma=One )
+!    call DistLogNorm%Construct( Mu=Zero, Sigma=One )
+!    call DistLog10Norm%Construct( Mu=Zero, Sigma=One )
+!    call DistGamma%Construct( Alpha=One, Beta=One )
+!    call DistLogistic%Construct( Mu=One, S=One )
 
-    call DistUnif%Construct( A=-One, B=One )
-    call DistLogUnif%Construct( A=-One, B=One )
-    call DistLog10Unif%Construct( A=-One, B=One )
-    call DistNorm%Construct( Mu=Zero, Sigma=One )
-    call DistLogNorm%Construct( Mu=Zero, Sigma=One )
-    call DistLog10Norm%Construct( Mu=Zero, Sigma=One )
-    call DistGamma%Construct( Alpha=One, Beta=One )
-    call DistLogistic%Construct( Mu=One, S=One )
+    call DistLogistic%Construct( Mu=Two, S=Two, B=Ten+two )
+
+    DistProbPtr => DistLogistic
+
+    write(*,*) DistProbPtr%PDF(X=Six)
+    write(*,*) DistProbPtr%CDF(X=Six)
+    write(*,*) DistProbPtr%InvCDF(P=0.2_rkp)
+
+    i = 0
+    do i = 0, 5
+      write(*,*) DistProbPtr%GetMoment(Moment=i)!, DistProbPtr%ComputeMomentNumerical(Moment=i)
+    end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
