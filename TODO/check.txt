@@ -1,2 +1,0 @@
-- check hier probability distrubtions
-- check mean and variance of lognormal distribution

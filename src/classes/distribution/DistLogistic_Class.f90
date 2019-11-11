@@ -635,7 +635,7 @@ contains
     if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
 
     if ( Moment > 0 ) then
-      if ( This%TruncatedRight .and. .not. TruncatedLeft ) call Error%Raise( "DistLogistic module currently cant compute" //      &
+      if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) call Error%Raise( "DistLogistic module currently cant compute" // &
                                                   " moments where lower bound is infinite while upper is not", ProcName=ProcName )
       if ( .not. ( THis%TruncatedLeft .or. This%TruncatedRight ) ) then
         BNumbers = BernoulliNumbers( P=Moment )

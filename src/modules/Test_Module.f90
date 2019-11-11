@@ -19,6 +19,7 @@ use DistLogUnif_Class                                             ,only:    Dist
 use DistLog10Unif_Class                                           ,only:    DistLog10Unif_Type
 use DistLogistic_Class                                            ,only:    DistLogistic_Type
 use DistGamma_Class                                               ,only:    DistGamma_Type
+use HierDistProb_Class                                            ,only:    HierDistProb_Type
 use HierDistNorm_Class                                            ,only:    HierDistNorm_Type
 use HierDistLogNorm_Class                                         ,only:    HierDistLogNorm_Type
 use HierDistLog10Norm_Class                                       ,only:    HierDistLog10Norm_Type
@@ -80,8 +81,15 @@ contains
     type(HierDistLog10Norm_Type), target                              ::    HierDistLog10Norm
     type(HierDistGamma_Type), target                                  ::    HierDistGamma
     type(HierDistLogistic_Type), target                               ::    HierDistLogistic
-    class(DistProb_Type), pointer                                     ::    DistProbPtr
+    class(DistProb_Type), pointer                                     ::    DistProbPtr=>null()
+    class(DistProb_Type), allocatable                                 ::    DistProb
     integer                                                           ::    i
+    type(InputSection_Type)                                           ::    InputSection
+    type(InputDet_Type)                                               ::    InputDet
+    type(InputDet_Type)                                               ::    InputDetEmpty
+    class(HierDistProb_Type), pointer                                 ::    HierDistProbPtr=>null()
+    real(rkp)                                                         ::    X
+    real(rkp)                                                         ::    P
 !    call DistUnif%Construct( A=-One, B=One )
 !    call DistLogUnif%Construct( A=-One, B=One )
 !    call DistLog10Unif%Construct( A=-One, B=One )
@@ -91,17 +99,37 @@ contains
 !    call DistGamma%Construct( Alpha=One, Beta=One )
 !    call DistLogistic%Construct( Mu=One, S=One )
 
-    call DistLogistic%Construct( Mu=Two, S=Two, B=Ten+two )
+    call InputDet%Construct()
+    call InputDetEmpty%Construct()
 
-    DistProbPtr => DistLogistic
+    call DistUnif%Construct( A=-One, B=Five )
+    DistProbPtr => DistUnif
 
-    write(*,*) DistProbPtr%PDF(X=Six)
-    write(*,*) DistProbPtr%CDF(X=Six)
-    write(*,*) DistProbPtr%InvCDF(P=0.2_rkp)
+!    call InputSection%AddParameter( Name='a', Value='-1' )
+!    call InputSection%AddParameter( Name='b', Value='5' )
+
+    call InputSection%AddParameter( Name='a_dependency', Value='a' )
+    call InputSection%AddParameter( Name='b_dependency', Value='b' )
+
+    call InputDet%Append( Label='a', Value=-One )
+    call InputDet%Append( Label='b', Value=Five )
+
+    call HierDistUnif%Construct(Input=InputSection)
+    HierDistProbPtr => HierDistUnif
+
+    call HierDistProbPtr%Generate( Input=InputDet, Distribution=DistProb )    
+!    call HierDistProbPtr%Generate( Input=InputDetEmpty, Distribution=DistProb )    
+
+    X = 3.0_rkp
+    P = 0.2_rkp
+
+    write(*,*) DistProb%PDF(X=X), DistProbPtr%PDF(X=X)
+    write(*,*) DistProb%CDF(X=X), DistProbPtr%CDF(X=X)
+    write(*,*) DistProbPtr%InvCDF(P=P), DistProbPtr%InvCDF(P=P)
 
     i = 0
     do i = 0, 5
-      write(*,*) DistProbPtr%GetMoment(Moment=i)!, DistProbPtr%ComputeMomentNumerical(Moment=i)
+      write(*,*) DistProb%GetMoment(Moment=i), DistProbPtr%GetMoment(Moment=i)
     end do
 
   end subroutine

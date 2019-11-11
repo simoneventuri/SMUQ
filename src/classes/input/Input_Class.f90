@@ -18,6 +18,8 @@ type, abstract                                                        ::    Inpu
   integer                                                             ::    NbInputs=0
   type(String_Type), dimension(:), allocatable                        ::    Label
 contains
+  generic, public                                                     ::    Construct               =>    ConstructEmpty
+  procedure, private                                                  ::    ConstructEmpty
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    GetLabel                =>    GetLabel0D,             &
                                                                                                           GetLabel1D
@@ -94,6 +96,35 @@ abstract interface
 end interface
 
 contains
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructEmpty( This, Debug )
+
+    class(Input_Type), intent(inout)                                  ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+    
+    character(*), parameter                                           ::    ProcName='ConstructEmpty'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( This%Constructed ) call This%Reset()
+    if ( .not. This%Initialized ) call This%Initialize()
+
+    This%NbInputs = 0
+
+    allocate(This%Label(0), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+
+    This%Constructed = .true.
+
+    if (DebugLoc) call Logger%Exiting
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetNbInputs( This, Debug )
