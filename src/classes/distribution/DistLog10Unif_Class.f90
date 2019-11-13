@@ -37,8 +37,8 @@ contains
   procedure, public                                                   ::    GetA
   procedure, public                                                   ::    GetB
   procedure, private                                                  ::    PDF_R0D
-  procedure, public                                                   ::    CDF
-  procedure, public                                                   ::    InvCDF
+  procedure, public                                                   ::    CDF_R0D
+  procedure, public                                                   ::    InvCDF_R0D
   procedure, public                                                   ::    GetMoment 
 end type
 
@@ -201,16 +201,16 @@ contains
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF( This, X, Debug )
+  function CDF_R0D( This, X, Debug )
 
-    real(rkp)                                                         ::    CDF
+    real(rkp)                                                         ::    CDF_R0D
 
     class(DistLog10Unif_Type), intent(in)                             ::    This
     real(rkp), intent(in)                                             ::    X
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='CDF'
+    character(*), parameter                                           ::    ProcName='CDF_R0D'
     logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
@@ -222,12 +222,12 @@ contains
     TripFlag = .false.
 
     if ( X <= Zero ) then
-      CDF = Zero
+      CDF_R0D = Zero
       TripFlag = .true.
     end if
   
     if ( .not. TripFlag ) then
-      CDF = This%ComputeUnifCDF( dlog10(X), This%A, This%B )
+      CDF_R0D = This%ComputeUnifCDF( dlog10(X), This%A, This%B )
     end if
       
     if (DebugLoc) call Logger%Exiting()
@@ -236,16 +236,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF( This, P, Debug )
+  function InvCDF_R0D( This, P, Debug )
 
-    real(rkp)                                                         ::    InvCDF
+    real(rkp)                                                         ::    InvCDF_R0D
 
     class(DistLog10Unif_Type), intent(in)                             ::    This
     real(rkp), intent(in)                                             ::    P
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='InvCDF'
+    character(*), parameter                                           ::    ProcName='InvCDF_R0D'
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -253,8 +253,8 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    InvCDF = This%ComputeUnifInvCDF( P, This%A, This%B )
-    InvCDF = Ten**InvCDF
+    InvCDF_R0D = This%ComputeUnifInvCDF( P, This%A, This%B )
+    InvCDF_R0D = Ten**InvCDF_R0D
 
     if (DebugLoc) call Logger%Exiting()
 

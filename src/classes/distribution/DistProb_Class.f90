@@ -31,7 +31,7 @@ implicit none
 private
 
 public                                                                ::    DistProb_Type
-public                                                                ::    MomentIntegrand
+public                                                                ::    Fun
 
 type, abstract                                                        ::    DistProb_Type
   character(:), allocatable                                           ::    Name
@@ -52,15 +52,23 @@ contains
   procedure, public                                                   ::    GetMean
   procedure, public                                                   ::    GetVariance
   procedure, public                                                   ::    ComputeMomentNumerical
-  generic, public                                                     ::    PDF                     =>    PDF_R0D
+  generic, public                                                     ::    PDF                     =>    PDF_R0D,                &
+                                                                                                          PDF_R1D
+  procedure, public                                                   ::    PDF_R1D
+  generic, public                                                     ::    CDF                     =>    CDF_R0D,                &
+                                                                                                          CDF_R1D
+  procedure, public                                                   ::    CDF_R1D
+  generic, public                                                     ::    InvCDF                  =>    InvCDF_R0D,             &
+                                                                                                          InvCDF_R1D
+  procedure, public                                                   ::    InvCDF_R1D
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(Initialize_DistProb), deferred, public                    ::    Initialize
   procedure(Reset_DistProb), deferred, public                         ::    Reset
   procedure(ConstructInput_DistProb), deferred, private               ::    ConstructInput
   procedure(GetInput_DistProb), deferred, public                      ::    GetInput
-  procedure(CDF_DistProb), deferred, public                           ::    CDF
-  procedure(InvCDF_DistProb), deferred, public                        ::    InvCDF
+  procedure(CDF_R0D_DistProb), deferred, public                       ::    CDF_R0D
+  procedure(InvCDF_R0D_DistProb), deferred, public                    ::    InvCDF_R0D
   procedure(PDF_R0D_DistProb), deferred, private                      ::    PDF_R0D
   procedure(SetDefaults_DistProb), deferred, public                   ::    SetDefaults
   procedure(Copy_DistProb), deferred, public                          ::    Copy
@@ -119,10 +127,10 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_DistProb(This, X, Debug )
+  function CDF_R0D_DistProb(This, X, Debug )
     use                                                               ::    Parameters_Library
     import                                                            ::    DistProb_Type
-    real(rkp)                                                         ::    CDF_DistProb
+    real(rkp)                                                         ::    CDF_R0D_DistProb
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
     logical, optional ,intent(in)                                     ::    Debug
@@ -130,10 +138,10 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_DistProb(This, P, Debug )
+  function InvCDF_R0D_DistProb(This, P, Debug )
     use                                                               ::    Parameters_Library
     import                                                            ::    DistProb_Type
-    real(rkp)                                                         ::    InvCDF_DistProb
+    real(rkp)                                                         ::    InvCDF_R0D_DistProb
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    P
     logical, optional ,intent(in)                                     ::    Debug
@@ -160,8 +168,8 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function MomentIntegrand( X )  
-    real(8)                                                           ::    MomentIntegrand
+  function Fun( X )  
+    real(8)                                                           ::    Fun
     real(8), intent(in)                                               ::    X
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -169,6 +177,108 @@ abstract interface
 end interface
 
 contains
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function PDF_R1D(This, X, Debug )
+
+    real(rkp), allocatable, dimension(:)                              ::    PDF_R1D
+
+    class(DistProb_Type), intent(in)                                  ::    This
+    real(rkp), dimension(:), intent(in)                               ::    X
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='PDF_R1D'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    NbX
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    NbX = size(X,1)
+    
+    allocate(PDF_R1D(NbX), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='PDF_R1D', ProcName=ProcName, stat=StatLoc )
+    
+    i = 1
+    do i = 1, NbX
+      PDF_R1D(i) = This%PDF(X=X(i))
+    end do
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function CDF_R1D(This, X, Debug )
+
+    real(rkp), allocatable, dimension(:)                              ::    CDF_R1D
+
+    class(DistProb_Type), intent(in)                                  ::    This
+    real(rkp), dimension(:), intent(in)                               ::    X
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='CDF_R1D'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    NbX
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    NbX = size(X,1)
+    
+    allocate(CDF_R1D(NbX), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='CDF_R1D', ProcName=ProcName, stat=StatLoc )
+    
+    i = 1
+    do i = 1, NbX
+      CDF_R1D(i) = This%CDF(X=X(i))
+    end do
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function InvCDF_R1D(This, P, Debug )
+
+    real(rkp), allocatable, dimension(:)                              ::    InvCDF_R1D
+
+    class(DistProb_Type), intent(in)                                  ::    This
+    real(rkp), dimension(:), intent(in)                               ::    P
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='InvCDF_R1D'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    NbP
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    NbP = size(P,1)
+    
+    allocate(InvCDF_R1D(NbP), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='InvCDF_R1D', ProcName=ProcName, stat=StatLoc )
+    
+    i = 1
+    do i = 1, NbP
+      InvCDF_R1D(i) = This%InvCDF(P=P(i))
+    end do
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetName( This, Debug )
@@ -385,7 +495,7 @@ contains
     character(*), parameter                                           ::    ProcName='ComputeMomentNumerical'
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    NumericalMoment
-    procedure(MomentIntegrand), pointer                               ::    PIntegrand=>null()
+    procedure(Fun), pointer                                           ::    PIntegrand=>null()
     real(8)                                                           ::    Num
     real(8)                                                           ::    EpsAbs
     real(8)                                                           ::    EpsRel

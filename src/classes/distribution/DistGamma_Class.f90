@@ -50,9 +50,9 @@ contains
   procedure, public                                                   ::    GetInput
   procedure, private                                                  ::    PDF_R0D
   procedure, nopass, public                                           ::    ComputePDF
-  procedure, public                                                   ::    CDF
+  procedure, public                                                   ::    CDF_R0D
   procedure, nopass, public                                           ::    ComputeCDF
-  procedure, public                                                   ::    InvCDF
+  procedure, public                                                   ::    InvCDF_R0D
   procedure, nopass, public                                           ::    ComputeInvCDF
   procedure, public                                                   ::    GetAlpha
   procedure, public                                                   ::    GetBeta
@@ -461,16 +461,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF( This, X, Debug )
+  function CDF_R0D( This, X, Debug )
 
-    real(rkp)                                                         ::    CDF
+    real(rkp)                                                         ::    CDF_R0D
 
     class(DistGamma_Type), intent(in)                                 ::    This
     real(rkp), intent(in)                                             ::    X
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='CDF'
+    character(*), parameter                                           ::    ProcName='CDF_R0D'
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -479,13 +479,13 @@ contains
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
-      CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
+      CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
     else if ( This%DoubleTruncatedLeft ) then
-      CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
+      CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
     else if ( This%TruncatedRight ) then
-      CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
+      CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
     else
-      CDF = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta )
+      CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta )
     end if
       
     if (DebugLoc) call Logger%Exiting()
@@ -559,16 +559,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF( This, P, Debug )
+  function InvCDF_R0D( This, P, Debug )
 
-    real(rkp)                                                         ::    InvCDF
+    real(rkp)                                                         ::    InvCDF_R0D
 
     class(DistGamma_Type), intent(in)                                 ::    This
     real(rkp), intent(in)                                             ::    P
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='InvCDF'
+    character(*), parameter                                           ::    ProcName='InvCDF_R0D'
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -577,13 +577,13 @@ contains
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
-      InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
+      InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
     else if ( This%DoubleTruncatedLeft ) then
-      InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
+      InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
     else if ( This%TruncatedRight ) then
-      InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
+      InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
     else
-      InvCDF = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta )
+      InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta )
     end if
       
     if (DebugLoc) call Logger%Exiting()

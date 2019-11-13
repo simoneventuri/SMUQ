@@ -45,9 +45,9 @@ contains
   procedure, public                                                   ::    GetInput
   procedure, private                                                  ::    PDF_R0D
   procedure, nopass, public                                           ::    ComputeUnifPDF
-  procedure, public                                                   ::    CDF
+  procedure, public                                                   ::    CDF_R0D
   procedure, nopass, public                                           ::    ComputeUnifCDF
-  procedure, public                                                   ::    InvCDF
+  procedure, public                                                   ::    InvCDF_R0D
   procedure, nopass, public                                           ::    ComputeUnifInvCDF
   procedure, public                                                   ::    GetMoment
   procedure, public                                                   ::    Copy
@@ -346,16 +346,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF( This, X, Debug )
+  function CDF_R0D( This, X, Debug )
 
-    real(rkp)                                                         ::    CDF
+    real(rkp)                                                         ::    CDF_R0D
 
     class(DistUnif_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='CDF'
+    character(*), parameter                                           ::    ProcName='CDF_R0D'
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -363,7 +363,7 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    CDF = ComputeUnifCDF( X, This%A, This%B )
+    CDF_R0D = ComputeUnifCDF( X, This%A, This%B )
       
     if (DebugLoc) call Logger%Exiting()
 
@@ -401,16 +401,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF( This, P, Debug )
+  function InvCDF_R0D( This, P, Debug )
 
-    real(rkp)                                                         ::    InvCDF
+    real(rkp)                                                         ::    InvCDF_R0D
 
     class(DistUnif_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    P
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='InvCDF'
+    character(*), parameter                                           ::    ProcName='InvCDF_R0D'
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -418,7 +418,7 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    InvCDF = ComputeUnifInvCDF( P, This%A, This%B )
+    InvCDF_R0D = ComputeUnifInvCDF( P, This%A, This%B )
 
     if (DebugLoc) call Logger%Exiting()
 

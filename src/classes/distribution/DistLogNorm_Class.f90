@@ -41,8 +41,8 @@ contains
   procedure, public                                                   ::    GetA
   procedure, public                                                   ::    GetB
   procedure, private                                                  ::    PDF_R0D
-  procedure, public                                                   ::    CDF
-  procedure, public                                                   ::    InvCDF
+  procedure, public                                                   ::    CDF_R0D
+  procedure, public                                                   ::    InvCDF_R0D
   procedure, public                                                   ::    GetMoment
   procedure, public                                                   ::    Copy
 end type
@@ -299,16 +299,16 @@ contains
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF( This, X, Debug )
+  function CDF_R0D( This, X, Debug )
 
-    real(rkp)                                                         ::    CDF
+    real(rkp)                                                         ::    CDF_R0D
 
     class(DistLogNorm_Type), intent(in)                               ::    This
     real(rkp), intent(in)                                             ::    X
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='CDF'
+    character(*), parameter                                           ::    ProcName='CDF_R0D'
     logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
@@ -320,19 +320,19 @@ contains
     TripFlag = .false.
 
     if ( X <= Zero ) then
-      CDF = Zero
+      CDF_R0D = Zero
       TripFlag = .true.
     end if
 
     if ( .not. TripFlag ) then
       if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
-        CDF = This%ComputeNormalCDF( X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
+        CDF_R0D = This%ComputeNormalCDF( X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
       else if ( This%DoubleTruncatedLeft ) then
-        CDF = This%ComputeNormalCDF( X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A )
+        CDF_R0D = This%ComputeNormalCDF( X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A )
       else if ( This%TruncatedRight ) then
-        CDF = This%ComputeNormalCDF( X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+        CDF_R0D = This%ComputeNormalCDF( X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B )
       else
-        CDF = This%ComputeNormalCDF( X=dlog(X), Mu=This%Mu, Sigma=This%Sigma )
+        CDF_R0D = This%ComputeNormalCDF( X=dlog(X), Mu=This%Mu, Sigma=This%Sigma )
       end if
     end if
 
@@ -342,16 +342,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF( This, P, Debug )
+  function InvCDF_R0D( This, P, Debug )
 
-    real(rkp)                                                         ::    InvCDF
+    real(rkp)                                                         ::    InvCDF_R0D
 
     class(DistLogNorm_Type), intent(in)                               ::    This
     real(rkp), intent(in)                                             ::    P
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='InvCDF'
+    character(*), parameter                                           ::    ProcName='InvCDF_R0D'
     logical                                                           ::    TripFlag
 
     DebugLoc = DebugGlobal
@@ -364,22 +364,22 @@ contains
 
     if ( P == Zero ) then
       if ( .not. This%DoubleTruncatedLeft ) then
-        InvCDF = tiny(One)
+        InvCDF_R0D = tiny(One)
         TripFlag = .true.
       end if
     end if
 
     if ( .not. TripFlag ) then
       if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
-        InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
+        InvCDF_R0D = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
       else if ( This%DoubleTruncatedLeft ) then
-        InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
+        InvCDF_R0D = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
       else if ( This%TruncatedRight ) then
-        InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+        InvCDF_R0D = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
       else
-        InvCDF = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma )
+        InvCDF_R0D = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma )
       end if
-      InvCDF = dexp(InvCDF)
+      InvCDF_R0D = dexp(InvCDF_R0D)
     end if
 
     if (DebugLoc) call Logger%Exiting()

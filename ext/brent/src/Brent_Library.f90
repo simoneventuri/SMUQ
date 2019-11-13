@@ -2,6 +2,14 @@ module Brent_Library
 
 implicit none
 
+private
+
+public                                                                ::    Brent_Zero
+
+interface Brent_Zero
+  module procedure                                                    ::    zero
+end interface
+
 contains
 
 # include "split_files/glomin.f90"

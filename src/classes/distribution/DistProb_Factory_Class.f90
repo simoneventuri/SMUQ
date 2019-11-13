@@ -27,7 +27,7 @@ use DistLogNorm_Class                                             ,only:    Dist
 use DistLog10Norm_Class                                           ,only:    DistLog10Norm_Type
 use DistGamma_Class                                               ,only:    DistGamma_Type
 use DistLogistic_Class                                            ,only:    DistLogistic_Type
-!use DistKernel_Class                                              ,only:    DistKernel_Type
+use DistKernel_Class                                              ,only:    DistKernel_Type
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
