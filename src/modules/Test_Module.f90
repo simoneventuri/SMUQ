@@ -19,6 +19,7 @@ use DistLogUnif_Class                                             ,only:    Dist
 use DistLog10Unif_Class                                           ,only:    DistLog10Unif_Type
 use DistLogistic_Class                                            ,only:    DistLogistic_Type
 use DistGamma_Class                                               ,only:    DistGamma_Type
+use DistKernel_Class                                              ,only:    DistKernel_Type
 use HierDistProb_Class                                            ,only:    HierDistProb_Type
 use HierDistNorm_Class                                            ,only:    HierDistNorm_Type
 use HierDistLogNorm_Class                                         ,only:    HierDistLogNorm_Type
@@ -65,72 +66,24 @@ contains
     character(*), parameter                                           ::    ProcName='Test'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
-    type(DistUnif_Type), target                                       ::    DistUnif
-    type(DistLogUnif_Type), target                                    ::    DistLogUnif
-    type(DistLog10Unif_Type), target                                  ::    DistLog10Unif
-    type(DistNorm_Type), target                                       ::    DistNorm
-    type(DistLogNorm_Type), target                                    ::    DistLogNorm
-    type(DistLog10Norm_Type), target                                  ::    DistLog10Norm
-    type(DistGamma_Type), target                                      ::    DistGamma
-    type(DistLogistic_Type), target                                   ::    DistLogistic
-    type(HierDistUnif_Type), target                                   ::    HierDistUnif
-    type(HierDistLogUnif_Type), target                                ::    HierDistLogUnif
-    type(HierDistLog10Unif_Type), target                              ::    HierDistLog10Unif
-    type(HierDistNorm_Type), target                                   ::    HierDistNorm
-    type(HierDistLogNorm_Type), target                                ::    HierDistLogNorm
-    type(HierDistLog10Norm_Type), target                              ::    HierDistLog10Norm
-    type(HierDistGamma_Type), target                                  ::    HierDistGamma
-    type(HierDistLogistic_Type), target                               ::    HierDistLogistic
-    class(DistProb_Type), pointer                                     ::    DistProbPtr=>null()
-    class(DistProb_Type), allocatable                                 ::    DistProb
+    type(SMUQFile_Type)                                               ::    File
+    character(:), allocatable                                         ::    FileName
+    real(rkp), allocatable, dimension(:)                              ::    Samples
+    type(DistKernel_Type)                                             ::    DistKernel
+    type(DistNorm_Type)                                               ::    DistNorm
+    type(OrthoNumerical_Type)                                         ::    OrthoNumerical
     integer                                                           ::    i
-    type(InputSection_Type)                                           ::    InputSection
-    type(InputDet_Type)                                               ::    InputDet
-    type(InputDet_Type)                                               ::    InputDetEmpty
-    class(HierDistProb_Type), pointer                                 ::    HierDistProbPtr=>null()
-    real(rkp)                                                         ::    X
-    real(rkp)                                                         ::    P
-!    call DistUnif%Construct( A=-One, B=One )
-!    call DistLogUnif%Construct( A=-One, B=One )
-!    call DistLog10Unif%Construct( A=-One, B=One )
-!    call DistNorm%Construct( Mu=Zero, Sigma=One )
-!    call DistLogNorm%Construct( Mu=Zero, Sigma=One )
-!    call DistLog10Norm%Construct( Mu=Zero, Sigma=One )
-!    call DistGamma%Construct( Alpha=One, Beta=One )
-!    call DistLogistic%Construct( Mu=One, S=One )
 
-    call InputDet%Construct()
-    call InputDetEmpty%Construct()
+    FileName = '/home/rstkwsk2/workspace/scratch/kerneldist_test/samples.txt'
+    call File%Construct(File=FileName)
 
-    call DistUnif%Construct( A=-One, B=Five )
-    DistProbPtr => DistUnif
+    call ImportArray(File=File, Array=Samples )
+    call DistKernel%Construct( Samples=Samples )
 
-!    call InputSection%AddParameter( Name='a', Value='-1' )
-!    call InputSection%AddParameter( Name='b', Value='5' )
-
-    call InputSection%AddParameter( Name='a_dependency', Value='a' )
-    call InputSection%AddParameter( Name='b_dependency', Value='b' )
-
-    call InputDet%Append( Label='a', Value=-One )
-    call InputDet%Append( Label='b', Value=Five )
-
-    call HierDistUnif%Construct(Input=InputSection)
-    HierDistProbPtr => HierDistUnif
-
-    call HierDistProbPtr%Generate( Input=InputDet, Distribution=DistProb )    
-!    call HierDistProbPtr%Generate( Input=InputDetEmpty, Distribution=DistProb )    
-
-    X = 3.0_rkp
-    P = 0.2_rkp
-
-    write(*,*) DistProb%PDF(X=X), DistProbPtr%PDF(X=X)
-    write(*,*) DistProb%CDF(X=X), DistProbPtr%CDF(X=X)
-    write(*,*) DistProbPtr%InvCDF(P=P), DistProbPtr%InvCDF(P=P)
-
-    i = 0
-    do i = 0, 5
-      write(*,*) DistProb%GetMoment(Moment=i), DistProbPtr%GetMoment(Moment=i)
-    end do
+    call OrthoNumerical%Construct( Weights=DistKernel, Normalized=.true., Order=30 )
+write(*,*) OrthoNumerical%Alpha
+write(*,*) OrthoNumerical%Beta
+write(*,*) OrthoNumerical%NFactor
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

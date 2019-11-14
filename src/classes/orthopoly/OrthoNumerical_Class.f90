@@ -15,6 +15,7 @@
 !! Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
+! Based on Orthogonal Polynomials, Quadrature, and Approximation: Computational Methods and Software (in Matlab) - WALTER GAUTSCHI
 module OrthoNumerical_Class
 
 use QuadPack_Library
@@ -222,11 +223,11 @@ contains
       if ( size(This%NFactor) /= This%Order ) call Error%Raise( "Order and number of normalization factors do not match" )
     end if
 
+    This%Constructed = .true.
+
     ParameterName = 'precompute_order'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) call This%IncreaseOrder( Order=VarI0D )
-
-    This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -234,11 +235,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Weights, Normalized, Debug )
+  subroutine ConstructCase1( This, Weights, Normalized, Order, Debug )
 
     class(OrthoNumerical_Type), intent(inout)                         ::    This
     class(DistProb_Type), intent(in)                                  ::    Weights
     logical, optional ,intent(in)                                     ::    Normalized
+    integer, optional, intent(in)                                     ::    Order
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -258,6 +260,8 @@ contains
     if ( present(Normalized) ) This%Normalized = Normalized
 
     This%Constructed = .true.
+
+    if ( present(Order) ) call This%IncreaseOrder( Order=Order )
 
     if (DebugLoc) call Logger%Exiting()
 

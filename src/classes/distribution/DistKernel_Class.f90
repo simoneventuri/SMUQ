@@ -51,7 +51,9 @@ contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
+  generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
+  procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
   procedure, private                                                  ::    PDF_R0D
   procedure, nopass, public                                           ::    ComputePDF
@@ -233,7 +235,8 @@ contains
     
     NbSamples = size(Samples)
 
-    call DLAORD( 'I', NbSamples, Samples, 1 )
+    call DLASRT( 'I', NbSamples, Samples, StatLoc )
+    if ( StatLoc /= 0 ) call Error%Raise( 'Something went wrong in DLASRT', ProcName=ProcName )
 
     SampleMin = Samples(1)
     SampleMax = Samples(NbSamples)
@@ -248,6 +251,109 @@ contains
     call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) then
       This%Bandwidth = VarR0D
+    else
+      This%Bandwidth = ComputeRoTBandwidth( Samples=This%TransformedSamples )
+    end if
+
+    if ( This%Bandwidth <= Zero ) call Error%Raise( Line='Bandwidth specified to be at or below zero', ProcName=ProcName )
+
+    allocate(This%XCDFSamples(This%NbCDFSamples), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%XCDFSamples', ProcName=ProcName, stat=StatLoc )
+    allocate(This%CDFSamples(This%NbCDFSamples), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc )
+    This%CDFSamples = Zero
+
+    This%XCDFSamples = LinSpace( InterMin=SampleMin, InterMax=SampleMax, NbNodes=This%NbCDFSamples )
+    call This%Transform( Values=This%XCDFSamples )
+
+    i = 1
+    do i = 1, This%NbCDFSamples
+      This%CDFSamples(i) = This%ComputeCDF( X=This%XCDFSamples(i), Samples=This%TransformedSamples, Bandwidth=This%Bandwidth,     &
+                                                                                                              Kernel=This%Kernel )
+    end do
+
+    This%Constructed = .true.
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructCase1( This, Samples, Kernel, Bandwidth, A, B, Debug )
+
+    class(DistKernel_Type), intent(inout)                             ::    This
+    real(rkp), dimension(:), intent(in)                               ::    Samples
+    class(DistProb_Type), optional, intent(in)                        ::    Kernel
+    real(rkp), optional, intent(in)                                   ::    Bandwidth
+    real(rkp), optional, intent(in)                                   ::    A
+    real(rkp), optional, intent(in)                                   ::    B
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ConstructCase1'
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    ParameterName
+    logical                                                           ::    Found
+    real(rkp)                                                         ::    VarR0D
+    logical                                                           ::    VarL0D
+    character(:), allocatable                                         ::    VarC0D
+    integer                                                           ::    i
+    type(DistNorm_Type)                                               ::    DistNorm
+    real(rkp)                                                         ::    SampleMin
+    real(rkp)                                                         ::    SampleMax
+    real(rkp), allocatable, dimension(:)                              ::    SamplesLoc
+    integer                                                           ::    NbSamples
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( This%Constructed ) call This%Reset()
+    if ( .not. This%Initialized ) call This%Initialize()
+
+    if ( present(A) ) then
+      This%A = A
+      This%TruncatedLeft = .true.
+    end if
+
+    if ( present(B) ) then
+      This%B = B
+      This%TruncatedRight = .true.
+    end if
+
+    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
+      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    end if
+
+    if ( present(Kernel) ) then
+      allocate(This%Kernel, source=Kernel, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Kernel', ProcName=ProcName, stat=StatLoc )
+    else
+      call DistNorm%Construct( Mu=Zero, Sigma=One )
+      allocate(This%Kernel, source=DistNorm, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Kernel', ProcName=ProcName, stat=StatLoc )
+    end if
+
+    allocate(SamplesLoc, source=Samples, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='SamplesLoc', ProcName=ProcName, stat=StatLoc )
+    
+    NbSamples = size(SamplesLoc)
+
+    call DLASRT( 'I', NbSamples, SamplesLoc, StatLoc )
+    if ( StatLoc /= 0 ) call Error%Raise( 'Something went wrong in DLASRT', ProcName=ProcName )
+
+    SampleMin = SamplesLoc(1)
+    SampleMax = SamplesLoc(NbSamples)
+
+    if ( This%TruncatedLeft .and. SampleMin < This%A ) call Error%Raise( "Sample data below minimum", ProcName=ProcName )
+    if ( This%TruncatedRight .and. SampleMax > This%B ) call Error%Raise( "Sample data above maximum", ProcName=ProcName)
+
+    call This%Transform( Values=SamplesLoc )
+    call move_alloc( SamplesLoc, This%TransformedSamples )
+
+    if ( present(Bandwidth) ) then
+      This%Bandwidth = Bandwidth
     else
       This%Bandwidth = ComputeRoTBandwidth( Samples=This%TransformedSamples )
     end if
@@ -516,6 +622,8 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
+    InvCDF_R0D = Zero
+
     if ( P == Zero ) then
       if ( This%TruncatedLeft ) then
         InvCDF_R0D = This%A
@@ -547,7 +655,7 @@ contains
         RightBound = LeftBound
         LeftBound = VarR0D
         
-      elseif ( P > This%CDFSamples(size(This%TransformedSamples)) ) then
+      elseif ( P > This%CDFSamples(This%NbCDFSamples) ) then
         LeftBound = This%XCDFSamples(This%NbCDFSamples)
         dx = This%XCDFSamples(This%NbCDFSamples)-This%XCDFSamples(This%NbCDFSamples-1)
         RightBound = LeftBound
@@ -642,7 +750,9 @@ contains
     end if
 
     VarR1D = dabs(Samples-Median)
-    call DLAORD( 'I', NbSamples, VarR1D, 1 )
+
+    call DLASRT( 'I', NbSamples, VarR1D, StatLoc )
+    if ( StatLoc /= 0 ) call Error%Raise( 'Something went wrong in DLASRT', ProcName=ProcName )
 
     if ( mod(NbSamples,2) == 0 ) then
       Median = (VarR1D(NbSamples/2) + VarR1D(NbSamples/2+1))/Two
@@ -650,7 +760,7 @@ contains
       Median = VarR1D(NbSamples/2+1)
     end if
 
-    ComputeRoTBandwidth = (Four/(Three*NbSamples))**(0.2_rkp)*(Median/0.6745_rkp)
+    ComputeRoTBandwidth = (Four/(Three*NbSamples))**(One/Five)*(Median/0.6745_rkp)
 
     if (DebugLoc) call Logger%Exiting()
 
