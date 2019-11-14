@@ -480,7 +480,7 @@ contains
 
     PDF_R0D = This%ComputePDF( X=XLoc, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel )
 
-    call This%fInvTransform( Value=PDF_R0D )
+    call This%fInvTransform( Value=PDF_R0D, X=X )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -880,10 +880,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine fInvTransform_0D( This, Value, Debug )
+  subroutine fInvTransform_0D( This, Value, X, Debug )
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(inout)                                          ::    Value
+    real(rkp), intent(in)                                             ::    X
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -895,11 +896,11 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      Value = Value * (This%B-This%A)/((Value-This%A)*(This%B-Value))
+      Value = Value * dabs((This%B-This%A)/((X-This%A)*(This%B-X)))
     elseif ( This%TruncatedLeft ) then
-      Value = One / (Value-This%A)
+      Value = Value * dabs(One / (X-This%A))
     elseif ( This%TruncatedRight ) then
-      Value = One / (This%B-Value)
+      Value = Value * dabs(One / (This%B-X))
     end if
 
     if (DebugLoc) call Logger%Exiting()

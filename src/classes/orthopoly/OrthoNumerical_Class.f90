@@ -625,7 +625,6 @@ contains
       i_start = This%Order+1
       do i = i_start, Order
         This%Order = i
-
         iNFactor = Zero
         if ( This%Weights%IsTruncatedLeft() .and. This%Weights%IsTruncatedRight() ) then
           call dqag( PIntegrand2, A, B, EpsAbs, EpsRel, Key, iNFactor, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work )

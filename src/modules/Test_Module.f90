@@ -69,21 +69,38 @@ contains
     type(SMUQFile_Type)                                               ::    File
     character(:), allocatable                                         ::    FileName
     real(rkp), allocatable, dimension(:)                              ::    Samples
-    type(DistKernel_Type)                                             ::    DistKernel
-    type(DistNorm_Type)                                               ::    DistNorm
-    type(OrthoNumerical_Type)                                         ::    OrthoNumerical
+    type(DistKernel_Type)                                             ::    DistKernelE
+    type(DistKernel_Type)                                             ::    DistKernelR
+    type(OrthoNumerical_Type)                                         ::    OrthoNumericalE
+    type(OrthoNumerical_Type)                                         ::    OrthoNumericalR
     integer                                                           ::    i
 
-    FileName = '/home/rstkwsk2/workspace/scratch/kerneldist_test/samples.txt'
+    FileName = '/home/rstkwsk2/workspace/scratch/rates_data_prepare/deltae.txt'
     call File%Construct(File=FileName)
-
     call ImportArray(File=File, Array=Samples )
-    call DistKernel%Construct( Samples=Samples )
+    call DistKernelE%Construct( Samples=Samples, A=-Ten, B=Zero )
 
-    call OrthoNumerical%Construct( Weights=DistKernel, Normalized=.true., Order=30 )
-write(*,*) OrthoNumerical%Alpha
-write(*,*) OrthoNumerical%Beta
-write(*,*) OrthoNumerical%NFactor
+    deallocate(Samples, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Samples', ProcName=ProcName, stat=StatLoc )
+
+    call OrthoNumericalE%Construct( Weights=DistKernelE, Normalized=.true., Order=50 )
+write(*,*) OrthoNumericalE%Alpha
+write(*,*) OrthoNumericalE%Beta
+write(*,*) OrthoNumericalE%NFactor
+
+    FileName = '/home/rstkwsk2/workspace/scratch/rates_data_prepare/deltar.txt'
+    call File%Construct(File=FileName)
+    call ImportArray(File=File, Array=Samples )
+    call DistKernelR%Construct( Samples=Samples, A=0.1712_rkp, B=16.3845_rkp )
+
+    deallocate(Samples, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Samples', ProcName=ProcName, stat=StatLoc )
+
+    call OrthoNumericalR%Construct( Weights=DistKernelR, Normalized=.true., Order=50 )
+
+write(*,*) OrthoNumericalR%Alpha
+write(*,*) OrthoNumericalR%Beta
+write(*,*) OrthoNumericalR%NFactor
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
