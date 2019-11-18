@@ -10,31 +10,14 @@ private
 
 public                                                                ::    Output_Type
 
-type                                                                  ::    Abscissa_Type
-  integer                                                             ::    Size1=0
-  real(rkp), dimension(:), pointer                                    ::    Val => null()
-  character(:), allocatable                                           ::    Name
-contains
-  final                                                               ::    Finalizer_Abscissa
-end type
-
-type                                                                  ::    Ordinate_Type
-  integer                                                             ::    Size1=0
-  integer                                                             ::    Size2=0
-  real(rkp), dimension(:,:), pointer                                  ::    Val => null()
-  character(:), allocatable                                           ::    Name
-contains
-  final                                                               ::    Finalizer_Ordinate
-end type
-
 type                                                                  ::    Output_Type
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Name
   character(:), allocatable                                           ::    Label
-  
-  type(Abscissa_Type)                                                 ::    Abscissa
-  type(Ordinate_Type)                                                 ::    Ordinate
+  real(rkp), dimension(:,:), pointer                                  ::    Output=>null()
+  integer                                                             ::    NbNodes
+  integer                                                             ::    NbDegen
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -43,20 +26,14 @@ contains
                                                                                                           ConstructCase2
   procedure, private                                                  ::    ConstructCase1
   procedure, private                                                  ::    ConstructCase2
-  procedure, public                                                   ::    GetAbscissa
-  procedure, public                                                   ::    GetAbscissaPointer
-  procedure, public                                                   ::    GetOrdinate
-  procedure, public                                                   ::    GetOrdinatePointer
-  procedure, public                                                   ::    GetAbscissaSize
-  procedure, public                                                   ::    GetAbscissaName
-  procedure, public                                                   ::    GetOrdinateSize
-  procedure, public                                                   ::    GetOrdinateNbDegen
-  procedure, public                                                   ::    GetOrdinateName
+  procedure, public                                                   :;    GetOutput
+  procedure, public                                                   ::    GetNbNodes
+  procedure, public                                                   ::    GetNbDegen
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    GetLabel
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
-
+  final                                                               ::    Finalizer
 end type
 
 logical, parameter                                                    ::    DebugGlobal = .false.
@@ -79,9 +56,8 @@ contains
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
-      This%Name = '<undefined>'
+      This%Name = 'output'
       call This%SetDefaults()
-      if (DebugLoc) call Logger%Write( "Initialization Successful" )
     end if
 
     if (DebugLoc) call Logger%Exiting()
@@ -106,17 +82,13 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%Abscissa%Val) ) deallocate( This%Abscissa%Val, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Abscissa%Val', ProcName=ProcName, stat=StatLoc )
-    This%Abscissa%Size1 = 0
+    if ( associated(This%Output) ) deallocate(This%Output, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Output', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Ordinate%Val) ) deallocate( This%Ordinate%Val, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Ordinate%Val', ProcName=ProcName, stat=StatLoc )
-    This%Ordinate%Size1 = 0
-    This%Ordinate%Size2 = 0
+    This%NbNodes = 0
+    This%NbDegen = 0
 
     call This%Initialize()
-    if (DebugLoc) call Logger%Write( "Reset Successful" )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -136,22 +108,18 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    This%Abscissa%Name = '<undefined>'
-    This%Ordinate%Name = '<undefined>'
     This%Label = ''
+
     if (DebugLoc) call Logger%Exiting
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------ 
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase1( This, Abscissa, Ordinate, AbscissaName, OrdinateName, Name, Label, Debug )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructCase1( This, Output, Name, Label, Debug )
 
     class(Output_Type), intent(inout)                                 ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Abscissa
-    real(rkp), dimension(:), intent(in)                               ::    Ordinate
-    character(*), optional, intent(in)                                ::    AbscissaName
-    character(*), optional, intent(in)                                ::    OrdinateName
+    real(rkp), dimension(:), intent(in)                               ::    Output
     character(*), optional, intent(in)                                ::    Name
     character(*), optional, intent(in)                                ::    Label
     logical, optional ,intent(in)                                     ::    Debug
@@ -164,51 +132,38 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( size(Abscissa,1) /= size(Ordinate,1) ) call Error%Raise( Line="Incompatible sizes of Abscissa and Ordinate Arrays",      &
-                                                                                                               ProcName=ProcName )
-
     if ( This%Constructed ) then
-      if ( (This%Abscissa%Size1/=size(Abscissa,1)).or.(This%Ordinate%Size1/=size(Ordinate,1)).or.(This%Ordinate%Size2/=1) ) then
+      if ( This%NbNodes /= size(Output,1) .or. This%NbDegen /= 1 ) then
         call This%Reset()
       else
-        This%Abscissa%Val = Abscissa
-        This%Ordinate%Val(:,1) = Ordinate(:)
+        This%Output = Output
       end if
     end if
 
     if ( .not. This%Initialized ) call This%Initialize()
 
     if ( .not. This%Constructed ) then
-      allocate( This%Abscissa%Val, source=Abscissa, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Abscissa%Val', ProcName=ProcName, stat=StatLoc )
-      This%Abscissa%Size1 = size(This%Abscissa%Val,1)
-      allocate( This%Ordinate%Val(size(Ordinate,1),1), stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Ordinate%Val', ProcName=ProcName, stat=StatLoc )
-      This%Ordinate%Val(:,1) = Ordinate
-      This%Ordinate%Size1 = size(This%Ordinate%Val,1)
-      This%Ordinate%Size2 = size(This%Ordinate%Val,2)
+      allocate(This%Output, source=Output, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Output', ProcName=ProcName, stat=StatLoc )
+      This%NbDegen = 1
+      This%NbNodes = size(Output)
     end if
 
     if ( present(Name) ) This%Name = Name
     if ( present(Label) ) This%Label = Label
-    if ( present(AbscissaName) ) This%Abscissa%Name = AbscissaName
-    if ( present(OrdinateName) ) This%Ordinate%Name = OrdinateName
 
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase2( This, Abscissa, Ordinate, AbscissaName, OrdinateName, Name, Label, Debug )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructCase2( This, Output, Name, Label, Debug )
 
     class(Output_Type), intent(inout)                                 ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Abscissa
-    real(rkp), dimension(:,:), intent(in)                             ::    Ordinate
-    character(*), optional, intent(in)                                ::    AbscissaName
-    character(*), optional, intent(in)                                ::    OrdinateName
+    real(rkp), dimension(:,:), intent(in)                             ::    Output
     character(*), optional, intent(in)                                ::    Name
     character(*), optional, intent(in)                                ::    Label
     logical, optional ,intent(in)                                     ::    Debug
@@ -221,52 +176,42 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( size(Abscissa,1) /= size(Ordinate,1) ) call Error%Raise( Line="Incompatible sizes of Abscissa and Ordinate Arrays",      &
-                                                                                                               ProcName=ProcName )
-
     if ( This%Constructed ) then
-      if ( (This%Abscissa%Size1/=size(Abscissa,1)).or.(This%Ordinate%Size1/=size(Ordinate,1)).or.                                 &
-                                                                                    (This%Ordinate%Size2/=size(Ordinate,2)) ) then
+      if ( This%NbNodes /= size(Output,1) .or. This%NbDegen /= size(Output,2) ) then
         call This%Reset()
       else
-        This%Abscissa%Val(:) = Abscissa(:)
-        This%Ordinate%Val(:,:) = Ordinate(:,:)
+        This%Output = Output
       end if
     end if
 
     if ( .not. This%Initialized ) call This%Initialize()
 
     if ( .not. This%Constructed ) then
-      allocate( This%Abscissa%Val, source=Abscissa, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Abscissa%Val', ProcName=ProcName, stat=StatLoc )
-      This%Abscissa%Size1 = size(This%Abscissa%Val,1)
-      allocate( This%Ordinate%Val, source=Ordinate, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Ordinate%Val', ProcName=ProcName, stat=StatLoc )
-      This%Ordinate%Size1 = size(This%Ordinate%Val,1)
-      This%Ordinate%Size2 = size(This%Ordinate%Val,2)
+      allocate(This%Output, source=Output, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Output', ProcName=ProcName, stat=StatLoc )
+      This%NbDegen = size(Output,2)
+      This%NbNodes = size(Output)
     end if
 
     if ( present(Name) ) This%Name = Name
     if ( present(Label) ) This%Label = Label
-    if ( present(AbscissaName) ) This%Abscissa%Name = AbscissaName
-    if ( present(OrdinateName) ) This%Ordinate%Name = OrdinateName
 
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetAbscissa( This, Debug )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetOutput( This, Debug )
 
-    real(rkp), dimension(:), allocatable                              ::    GetAbscissa
+    real(rkp), dimension(:,:), allocatable                            ::    GetOutput
 
     class(Output_Type), intent(inout)                                 ::    This
     logical, optional ,intent(in)                                     ::    Debug
     
-    character(*), parameter                                           ::    ProcName='GetAbscissa'
+    character(*), parameter                                           ::    ProcName='GetOutput'
     logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
 
@@ -276,74 +221,23 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )        
    
-    allocate( GetAbscissa, source=This%Abscissa%Val, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetAbscissa', ProcName=ProcName, stat=StatLoc )
+    allocate( GetOutput, source=This%Output, stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetOutput', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetAbscissaPointer( This, Debug )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetOutputPointer( This, Debug )
 
-    real(rkp), dimension(:), pointer                                  ::    GetAbscissaPointer
+    real(rkp), dimension(:,:), pointer                                ::    GetOutputPointer
 
     class(Output_Type), intent(in)                                    ::    This
     logical, optional ,intent(in)                                     ::    Debug
     
-    character(*), parameter                                           ::    ProcName='GetAbscissaPointer'
-    logical                                                           ::    DebugLoc
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )        
-
-    GetAbscissaPointer => This%Abscissa%Val
-
-    if (DebugLoc) call Logger%Exiting
-
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetOrdinate( This, Debug )
-
-    real(rkp), dimension(:,:), allocatable                            ::    GetOrdinate
-
-    class(Output_Type), intent(inout)                                 ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-    
-    character(*), parameter                                           ::    ProcName='GetOrdinate'
-    logical                                                           ::    DebugLoc
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )        
-   
-    allocate( GetOrdinate, source=This%Ordinate%Val, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetOrdinate', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
-
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetOrdinatePointer( This, Debug )
-
-    real(rkp), dimension(:,:), pointer                                ::    GetOrdinatePointer
-
-    class(Output_Type), intent(in)                                    ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-    
-    character(*), parameter                                           ::    ProcName='GetOrdinatePointer'
+    character(*), parameter                                           ::    ProcName='GetOutputPointer'
     logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
 
@@ -353,23 +247,23 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    GetOrdinatePointer => This%Ordinate%Val
+    GetOutputPointer => This%Output
 
     if (DebugLoc) call Logger%Exiting
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetAbscissaSize( This, Debug )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetNbNodes( This, Debug )
 
-    integer                                                           ::    GetAbscissaSize
+    integer                                                           ::    GetNbNodes
 
     class(Output_Type), intent(in)                                    ::    This 
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetAbscissaSize'
+    character(*), parameter                                           ::    ProcName='GetNbNodes'
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -377,47 +271,23 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
     
-    GetAbscissaSize = This%Abscissa%Size1
+    GetNbNodes = This%NbNodes
 
     if (DebugLoc) call Logger%Exiting()
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetAbscissaName( This, Debug )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetNbDegen( This, Debug )
 
-    character(:), allocatable                                         ::    GetAbscissaName
+    integer                                                           ::    GetNbDegen
 
     class(Output_Type), intent(in)                                    ::    This 
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetAbscissaName'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetAbscissaName = This%Abscissa%Name
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetOrdinateSize( This, Debug )
-
-    integer                                                           ::    GetOrdinateSize
-
-    class(Output_Type), intent(in)                                    ::    This 
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetOrdinateSize'
+    character(*), parameter                                           ::    ProcName='GetNbDegen'
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -425,62 +295,14 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
     
-    GetOrdinateSize = This%Ordinate%Size1
+    GetNbDegen = This%NbDegen
 
     if (DebugLoc) call Logger%Exiting()
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetOrdinatenbDegen( This, Debug )
-
-    integer                                                           ::    GetOrdinateNbDegen
-
-    class(Output_Type), intent(in)                                    ::    This 
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetOrdinateNbDegen'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-    
-    GetOrdinateNbDegen = This%Ordinate%Size2
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetOrdinateName( This, Debug )
-
-    character(:), allocatable                                         ::    GetOrdinateName
-
-    class(Output_Type), intent(in)                                    ::    This 
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetOrdinateName'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetOrdinateName = This%Ordinate%Name 
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetName( This, Debug )
 
     character(:), allocatable                                         ::    GetName
@@ -502,9 +324,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetLabel( This, Debug )
 
     character(:), allocatable                                         ::    GetLabel
@@ -526,7 +348,7 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy( LHS, RHS )
@@ -549,15 +371,10 @@ contains
     if ( RHS%Constructed ) then
       LHS%Name = RHS%Name
       LHS%Label = RHS%Label
-      LHS%Abscissa%Name = RHS%Abscissa%Name
-      LHS%Abscissa%Size1 = RHS%Abscissa%Size1
-      allocate( LHS%Abscissa%Val, source=RHS%Abscissa%Val, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Abscissa%Val', ProcName=ProcName, stat=StatLoc )
-      LHS%Ordinate%Name = RHS%Ordinate%Name
-      LHS%Ordinate%Size1 = RHS%Ordinate%Size1
-      LHS%Ordinate%Size2 = RHS%Ordinate%Size2
-      allocate( LHS%Ordinate%Val, source=RHS%Ordinate%Val, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Ordinate%Val', ProcName=ProcName, stat=StatLoc )
+      allocate(LHS%Output, source=RHS%Output, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Output', ProcName=ProcName, stat=StatLoc )
+      LHS%NbNodes = RHS%NbNodes
+      LHS%NbDegen = RHS%NbDegen
     end if
 
     if (DebugLoc) call Logger%Exiting
@@ -565,30 +382,10 @@ contains
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Finalizer_Abscissa( This )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Finalizer( This )
 
-    type(Abscissa_Type),intent(inout)                                 ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
-    integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( associated(This%Val) ) deallocate(This%Val, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Val', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
-
-  end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Finalizer_Ordinate( This )
-
-    type(Ordinate_Type),intent(inout)                                 ::    This
+    type(Output_Type),intent(inout)                                   ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     logical                                                           ::    DebugLoc
@@ -597,12 +394,12 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( associated(This%Val) ) deallocate(This%Val, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Val', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%Output) ) deallocate(This%Output, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Output', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

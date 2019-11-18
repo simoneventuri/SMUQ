@@ -42,15 +42,16 @@ public                                                                ::    Resp
 
 type                                                                  ::    Response_Type
   character(:), allocatable                                           ::    Name
-  character(:), allocatable                                           ::    ResponseName
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Label
+  real(rkp), dimension(:,:), pointer                                  ::    Coordinates=>null()
+  type(String_Type), allocatable, dimension(:)                        ::    CoordinatesLabels
+  integer                                                             ::    NbIndCoordinates=0
+  integer                                                             ::    NbNodes=0
   real(rkp), dimension(:,:), pointer                                  ::    ResponseData=>null()
-  real(rkp), dimension(:), pointer                                    ::    Abscissa=>null()
-  character(:), allocatable                                           ::    AbscissaName
-  integer                                                             ::    NbDataSets
-  logical                                                             ::    DataDefined
+  integer                                                             ::    NbDataSets=0
+  logical                                                             ::    DataDefined=.false.
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -58,16 +59,24 @@ contains
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    GetAbscissa
-  procedure, public                                                   ::    GetAbscissaPointer
+  generic, public                                                     ::    GetCoordinates          =>    GetCoordsLabel_R1D,     &
+                                                                                                          GetCoordsLabel_R2D,     &
+                                                                                                          GetCoords_R2D
+  generic, public                                                     ::    GetCoordinatesPointer   =>    GetCoordsLabelPtr_R1D,  &
+                                                                                                          GetCoordsPtr_R2D
+  procedure, public                                                   ::    GetCoordsLabel_R1D
+  procedure, public                                                   ::    GetCoordsLabels_R2D
+  procedure, public                                                   ::    GetCoords_R2D
+  procedure, public                                                   ::    GetCoordsLabelPtr_R1D
+  procedure, public                                                   ::    GetCoordsPtr_R2D
+  procedure, public                                                   ::    GetNbIndCoordinates
   procedure, public                                                   ::    GetData
   procedure, public                                                   ::    GetDataPointer
   procedure, public                                                   ::    GetNbDataSets
-  procedure, public                                                   ::    GetResponseName
-  procedure, public                                                   ::    GetAbscissaName
   procedure, public                                                   ::    GetLabel
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    IsDataDefined
+  procedure, public                                                   ::    IsCoordinatesDefined
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -119,13 +128,17 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%Abscissa) ) deallocate(This%Abscissa, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Abscissa', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%Coordinates) ) deallocate(This%Coordinates, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
+    This%NbIndCoordinates = 0
+
+    if ( allocated(This%CoordinatesLabels) ) deallocate(This%CoordinatesLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CoordinatesLabels', ProcName=ProcName, stat=StatLoc )
 
     if ( associated(This%ResponseData) ) deallocate(This%ResponseData, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseData', ProcName=ProcName, stat=StatLoc )
-
     This%NbDataSets = 0
+    This%DataDefined = .false.
 
     call This%Initialize()
 
@@ -149,9 +162,7 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Label = '<undefined>'
-    This%ResponseName = '<undefined>'
-    This%AbscissaName = '<undefined>'
-    This%NbDataSets = 0
+    This%NbNodes = 0
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -174,6 +185,7 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     logical                                                           ::    Found
+    integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    VarC0D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
@@ -197,37 +209,34 @@ contains
     
     ParameterName = 'name'
     call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
-    if ( Found ) This%ResponseName = VarC0D
+    if ( Found ) This%Name = VarC0D
 
     ParameterName = 'label'
     call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
     This%Label = VarC0D
 
-    SectionName = 'abscissa'
+    ParameterName = 'nb_nodes'
+    call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.true. )
+    This%NbNodes = VarI0D
 
-    ParameterName = 'name'
-    call Input%GetValue( ParameterName=ParameterName, Value=VarC0D, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) This%AbscissaName = VarC0D
+    ParameterName = 'nb_ind_coordinates'
+    call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.true. )
+    This%NbIndCoordinates = VarI0D
 
-    ParameterName = 'source' 
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-    AbscissaSource = VarC0D
-    SubSectionName = SectionName // '>source'
-    select case ( AbscissaSource )
-      case ( 'values' )
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
-      case ( 'computed' )
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        VarR1D = LinSpaceVec( Input=InputSection )
-      case default
-        call Error%Raise( Line='Abscissa source not recognized', ProcName=ProcName )
-    end select
+    SectionName = 'coordinates'
+    if ( Input%HasSection( SubSectionName=SectionName ) then
+      ParameterName = 'name'
+      call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
+      call Parse( Input=VarC0D, Separator=' ', Output=This%CoordinatesLabels )
 
-    allocate(This%Abscissa, source=VarR1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Abscissa', ProcName=ProcName, stat=StatLoc )
-    deallocate(VarR1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      SubSectionName = SectionName // '>source'
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+      call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
+      allocate(This%Coordinates, source=VarR2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
+      deallocate(VarR2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    end if
 
     SectionName = 'data'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found )
@@ -235,28 +244,25 @@ contains
       SubSectionName = SectionName // '>source'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
       call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc, RowMajor=.true. )
-
-      AbscissaColumn = 1
-      ParameterName = 'abscissa_column'
-      call Input%GetValue( ParameterName=ParameterName, Value=VarI0D, SectionName=SectionName, Mandatory=.false., Found=Found )
-      if ( Found ) AbscissaColumn = VarI0D
-
       
-      ParameterName = 'ordinate_column'
+      if ( size(VarR2D,1) /= This%NbNodes ) call Error%Raise( Line='Number of lines in data file does not match specified ' //    &
+                                                                           'number of nodes for the response', ProcName=ProcName )
+
+      ParameterName = 'column'
       call Input%GetValue( ParameterName=ParameterName, Value=VarC0D, SectionName=SectionName, Mandatory=.false., Found=Found )
       if ( Found ) then
         VarI1D = ConvertToIntegers( String=VarC0D )
       else
-        VarI1D = LinSequence( SeqStart=2, SeqEnd=size(VarR2D,2)-1 )
+        VarI1D = LinSequence( SeqStart=1, SeqEnd=size(VarR2D,2) )
       end if
       This%NbDataSets = size(VarI1D,1)
 
-      allocate(This%ResponseData(size(This%Abscissa,1),This%NbDataSets), stat=StatLoc)
+      allocate(This%ResponseData(This%NbNodes,This%NbDataSets), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ResponseData', ProcName=ProcName, stat=StatLoc )
 
       i = 1
       do i = 1, size(VarI1D,1)
-        This%ResponseData(:,i) = Interpolate( Abscissa=VarR2D(:,AbscissaColumn), Ordinate=VarR2D(:,VarI1D(i)),Nodes=This%Abscissa)
+        This%ResponseData(:,i) = VarR2D(:,VarI1D(i))
       end do
 
       deallocate(VarI1D, stat=StatLoc)
@@ -264,6 +270,8 @@ contains
 
       deallocate(VarR2D, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+
+      This%DataDefined = .true.
 
       nullify(InputSection)
     end if
@@ -318,35 +326,36 @@ contains
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
     if ( len_trim(This%Label) /= 0 ) call GetInput%AddParameter( Name='label', Value=This%Label )
-    if ( len_trim(This%ResponseName) /= 0 ) call GetInput%AddParameter( Name='name', Value=This%ResponseName )
+    if ( len_trim(This%Name) /= 0 ) call GetInput%AddParameter( Name='name', Value=This%Name )
 
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/abscissa'
-    SectionName = 'abscissa'
-    call GetInput%AddSection( SectionName=SectionName )
-    if ( len_trim(This%AbscissaName) /= 0 ) call GetInput%AddParameter( Name='name', Value=This%Name, SectionName=SectionName )
+    if ( len_trim(This%Name) /= 0 ) call GetInput%AddParameter( Name='nb_nodes', Value=This%NbNodes )
+    if ( len_trim(This%Name) /= 0 ) call GetInput%AddParameter( Name='nb_ind_coordinates', Value=This%NbIndCoordinates )
 
-    call GetInput%AddParameter( Name='source', Value='values', SectionName=SectionName )
-
-    SubSectionName = 'source'
-    call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-    call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,             &
+    if ( associated(This%Coordinates) ) then
+      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/coordinates'
+      SectionName = 'coordinates'
+      call GetInput%AddSection( SectionName=SectionName )
+      call GetInput%AddParameter( Name='labels', Value=ConvertToString(This%CoordinatesLabels), SectionName=SectionName )
+      SubSectionName = 'source'
+      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
                                                                                                                 Mandatory=.true. )
-    if ( ExternalFlag ) then
-      FileName = DirectoryLoc // '/abscissa.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%Abscissa, File=File )
-    else
-      call ExportArray( Input=InputSection, Array=This%Abscissa )
+      if ( ExternalFlag ) then
+        FileName = DirectoryLoc // '/coordinates.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call ExportArray( Input=InputSection, Array=This%Coordinates, File=File )
+      else
+        call ExportArray( Input=InputSection, Array=This%Coordinates )
+      end if
+      nullify(InputSection)
     end if
-    nullify(InputSection)
 
-    if ( This%NbDataSets > 1 ) then
+    if ( This%DataDefined ) then
       SectionName = 'data'
       call GetInput%AddSection( SectionName=SectionName )
 
-      call GetInput%AddParameter( Name='abscissa_column', Value='1', SectionName=SectionName )
-      call GetInput%AddParameter( Name='ordinate_column', Value=ConvertToString(                                                  &
-                                                      LinSequence(SeqStart=2,SeqEnd=This%NbDataSets)+1), SectionName=SectionName )
+      call GetInput%AddParameter( Name='column', Value=ConvertToString( LinSequence(SeqStart=1,SeqEnd=This%NbDataSets),           &
+                                                                                                         SectionName=SectionName )
 
       SubSectionName = 'source'
       call GetInput%AddSection( SectionName=SubSectionName, To_Subsection=SectionName )
@@ -368,16 +377,19 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetAbscissa( This, Debug )
+  function GetCoordsLabel_R1D( This, Label, Debug )
 
-    real(rkp), allocatable, dimension(:)                              ::    GetAbscissa
+    real(rkp), allocatable, dimension(:)                              ::    GetCoordsLabel_R1D
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
+    character(*), intent(in)                                          ::    Label
+    logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetAbscissa'
+    character(*), parameter                                           ::    ProcName='GetCoordsLabel_R1D'
     integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    i, ii
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -385,8 +397,20 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    allocate(GetAbscissa, source=This%Abscissa, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetAbscissa', ProcName=ProcName, stat=StatLoc )
+    if ( .not. associated(This%Coordinates) ) call Error%Raise( Line='Coordinates were never defined', ProcName=ProcName )
+
+    i = 1
+    ii = 0
+    do i = 1, This%NbIndCoordinates
+      if ( Label /= This%CoordinatesLabels(i)%GetValue() ) cycle
+      ii = i
+      exit
+    end do
+
+    if ( ii == 0 ) call Error%Raise( Line='Did not finding a coordinate with requested label', ProcName=ProcName )
+
+    allocate(GetCoordsLabel_R1D, source=This%Coordinates(:,ii), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCoordsLabel_R1D', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -394,15 +418,63 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetAbscissaPointer( This, Debug )
+  function GetCoordsLabel_R2D( This, Labels, Debug )
 
-    real(rkp), dimension(:), pointer                                  ::    GetAbscissaPointer
+    real(rkp), allocatable, dimension(:,:)                            ::    GetCoordsLabel_R2D
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
+    character(*), dimension(:), intent(in)                            ::    Label
+    logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetAbscissaPointer'
+    character(*), parameter                                           ::    ProcName='GetCoordsLabel_R2D'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    NbLabels
+    integer                                                           ::    i
+    integer                                                           ::    ii
+    integer                                                           ::    iii
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    if ( .not. associated(This%Coordinates) ) call Error%Raise( Line='Coordinates were never defined', ProcName=ProcName )
+
+    NbLabels = size(Labels)
+
+    allocate(GetCoordsLabel_R2D(This%NbNodes,NbLabels), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCoordsLabel_R2D', ProcName=ProcName, stat=StatLoc )
+
+    iii = 1
+    do iii = 1, NbLabels
+      i = 1
+      ii = 0
+      do i = 1, This%NbIndCoordinates
+        if ( Label /= This%CoordinatesLabels(i)%GetValue() ) cycle
+        ii = i
+        exit
+      end do
+      if ( ii == 0 ) call Error%Raise( Line='Did not finding a coordinate with requested label', ProcName=ProcName )
+      GetCoordsLabel_R2D(:,iii) = This%Coordinates(:,iii)
+    end do
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetCoords_R2D( This, Debug )
+
+    real(rkp), allocatable, dimension(:,:)                            ::    GetCoords_R2D
+
+    class(Response_Type), intent(in)                                  ::    This
+    logical, optional, intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetCoords_R2D'
     integer                                                           ::    StatLoc=0
 
     DebugLoc = DebugGlobal
@@ -411,7 +483,78 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    GetAbscissaPointer => This%Abscissa
+    if ( .not. associated(This%Coordinates) ) call Error%Raise( Line='Coordinates were never defined', ProcName=ProcName )
+
+    allocate(This%GetCoords_R2D, source=This%Coordinates, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%GetCoords_R2D', ProcName=ProcName, stat=StatLoc )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetCoordsLabelPtr_R1D( This, Label, Debug )
+
+    real(rkp), pointer, dimension(:)                                  ::    GetCoordsLabel_R1D
+
+    class(Response_Type), intent(in)                                  ::    This
+    character(*), intent(in)                                          ::    Label
+    logical, optional, intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetCoordsLabel_R1D'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    i, ii
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    if ( .not. associated(This%Coordinates) ) call Error%Raise( Line='Coordinates were never defined', ProcName=ProcName )
+
+    i = 1
+    ii = 0
+    do i = 1, This%NbIndCoordinates
+      if ( Label /= This%CoordinatesLabels(i)%GetValue() ) cycle
+      ii = i
+      exit
+    end do
+
+    if ( ii == 0 ) call Error%Raise( Line='Did not finding a coordinate with requested label', ProcName=ProcName )
+
+    GetCoordsLabelPtr_R1D => This%Coordinates(:,ii)
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetCoordsPtr_R2D( This, Label, Debug )
+
+    real(rkp), pointer, dimension(:)                                  ::    GetCoordsPtr_R2D
+
+    class(Response_Type), intent(in)                                  ::    This
+    character(*), intent(in)                                          ::    Label
+    logical, optional, intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetCoordsPtr_R2D'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    if ( .not. associated(This%Coordinates) ) call Error%Raise( Line='Coordinates were never defined', ProcName=ProcName )
+
+    GetCoordsPtr_R2D => This%Coordinates
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -467,56 +610,6 @@ contains
     if ( This%NbDataSets < 1 ) call Error%Raise( Line='No data available', ProcName=ProcName )
 
     GetDataPointer => This%ResponseData
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetAbscissaName( This, Debug )
-
-    character(:), allocatable                                         ::    GetAbscissaName
-
-    class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetAbscissaName'
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
-
-    GetAbscissaName = This%Abscissaname
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetResponseName( This, Debug )
-
-    character(:), allocatable                                         ::    GetResponseName
-
-    class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetResponseName'
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
-
-    GetResponseName = This%ResponseName
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -599,6 +692,31 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  function GetNbIndCoordinates( This, Debug )
+
+    integer                                                           ::    GetNbIndCoordinates
+
+    class(Response_Type), intent(in)                                  ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetNbIndCoordinates'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    GetNbIndCoordinates = This%NbIndCoordinates
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   function IsDataDefined( This, Debug )
 
     logical                                                           ::    IsDataDefined
@@ -618,6 +736,31 @@ contains
 
     IsDataDefined = .false.
     if ( This%NbDataSets > 0 ) IsDataDefined = .true.
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsCoordinatesDefined( This, Debug )
+
+    logical                                                           ::    IsCoordinatesDefined
+
+    class(Response_Type), intent(in)                                  ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='IsCoordinatesDefined'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    IsCoordinatesDefined = associated(This%Coordinates)
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -645,15 +788,18 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          LHS%ResponseName = RHS%ResponseName
           LHS%Name = RHS%Name
-          LHS%AbscissaName = RHS%AbscissaName
           LHS%Label = RHS%Label
           LHS%NbDataSets = RHS%NbDataSets
-          allocate(LHS%Abscissa, source=RHS%Abscissa, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Abscissa', ProcName=ProcName, stat=StatLoc )
+          LHS%DataDefined = RHS%DataDefined
+          LHS%NbNodes = RHS%NbNodes
+          LHS%NbIndCoordinates = RHS%NbIndCoordinates
           allocate(LHS%ResponseData, source=RHS%ResponseData, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ResponseData', ProcName=ProcName, stat=StatLoc )
+          allocate(LHS%CoordinatesLabels, source=RHS%CoordinatesLabels, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CoordinatesLabels', ProcName=ProcName, stat=StatLoc )
+          allocate(LHS%Coordinates, source=RHS%Coordinates, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Coordinates', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -678,8 +824,11 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( associated(This%Abscissa) ) deallocate(This%Abscissa, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Abscissa', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%Coordinates) ) deallocate(This%Coordinates, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%CoordinatesLabels) ) deallocate(This%CoordinatesLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CoordinatesLabels', ProcName=ProcName, stat=StatLoc )
 
     if ( associated(This%ResponseData) ) deallocate(This%ResponseData, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseData', ProcName=ProcName, stat=StatLoc )

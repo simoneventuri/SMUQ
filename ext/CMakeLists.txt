@@ -257,11 +257,11 @@ if ( NOT (${LAPACK_FOUND} AND ${BLAS_FOUND}) )
   add_library( blas STATIC IMPORTED GLOBAL )
 
   set_property( TARGET lapack
-                PROPERTY IMPORTED_LOCATION "${SMUQ_BINARY_DIR}/ext_install/forpack/lib/liblapack.a"
+                PROPERTY IMPORTED_LOCATION "${SMUQ_BINARY_DIR}/ext_install/lapack/lib/liblapack.a"
   )
 
   set_property( TARGET blas
-                PROPERTY IMPORTED_LOCATION "${SMUQ_BINARY_DIR}/ext_install/forpack/lib/libblas.a"
+                PROPERTY IMPORTED_LOCATION "${SMUQ_BINARY_DIR}/ext_install/lapack/lib/libblas.a"
   )
 
   add_dependencies( smuqApp lapack blas lapackExt )

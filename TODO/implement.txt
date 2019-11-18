@@ -1,8 +1,10 @@
- - implement reading a probability distribution from file
  - add in ability to compute sobol indices as part of polynomial chaos surrogate modeling output
  - add in option to record history of sobol indices for polynomial chaos surrogate modeling and to have it as output
  - implement nataf transform so that the space sampler is able to sample correlated spaces other than multivariate normal
  - change file readrecord to use non-predetermined length buffer
  - move up hierarchical stuff above the bayesian inference class, make it part of regular parameterspace?
  - allow for distribution to be obtained from parameter space using labels
+
+ - Change output to have coordinates instead of 1d abscissa and everything that depends on it
+ - Change bayesian covariance matrices to be restrcted to usage with bayesian stuff
 

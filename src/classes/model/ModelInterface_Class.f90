@@ -218,11 +218,9 @@ contains
         if ( iii == 0 ) call Error%Raise( Line='Did not finding matching output label for response : ' //                         &
                                                                                   This%Response(i)%GetLabel(), ProcName=ProcName )
 
-        call Output(i)%Construct( Abscissa=This%Response(i)%GetAbscissaPointer(), Ordinate=Interpolate(                           &
-                                  Abscissa=OutputLoc(iii)%GetAbscissaPointer(), Ordinate=OutputLoc(iii)%GetOrdinatePointer(),     &
-                                  Nodes=This%Response(i)%GetAbscissaPointer()),                                                   &
-                                  AbscissaName=This%Response(i)%GetAbscissaName(),OrdinateName=This%Response(i)%GetResponseName(),&
-                                  Label=This%Response(i)%GetLabel() )
+        if ( OutputLoc(iii)%GetNbNodes() /= This%Response(i)%GetNbNodes() ) call Error%Raise( Line='Mismatching number of ' //   &
+                                                                       'output nodes with specified response', ProcName=ProcName )
+        Output(i) = OutputLoc(iii)
 
       end do
 
