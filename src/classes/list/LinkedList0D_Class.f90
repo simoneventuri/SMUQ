@@ -35,8 +35,8 @@ type                                                                  ::    List
 end type
 
 type                                                                  ::    LinkedList0D_Type
-  integer(8)                                                          ::    BrowserLoc=0
-  integer(8)                                                          ::    NbNodes=0
+  integer                                                             ::    BrowserLoc=0
+  integer                                                             ::    NbNodes=0
   type(ListNode0D_Type), pointer                                      ::    Head => null()
   type(ListNode0D_Type), pointer                                      ::    Tail => null()
   type(ListNode0D_Type), pointer                                      ::    Browser => null()
@@ -140,8 +140,8 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListAppend1D'
-    integer(8)                                                        ::    i
-    integer(8)                                                        ::    Length
+    integer                                                           ::    i
+    integer                                                           ::    Length
     integer                                                           ::    StatLoc
 
     DebugLoc = DebugGlobal
@@ -165,7 +165,7 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     real(rkp), intent(out)                                            ::    Value
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -197,7 +197,7 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     integer, intent(out)                                              ::    Value
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -229,7 +229,7 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     character(:), allocatable, intent(out)                            ::    Value
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -261,7 +261,7 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     logical, intent(out)                                              ::    Value
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -293,7 +293,7 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     complex, intent(out)                                              ::    Value
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -325,13 +325,13 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     real(rkp), allocatable, dimension(:), intent(out)                 ::    Values
-    integer(8), optional, intent(in)                                  ::    NodeMin
-    integer(8), optional, intent(in)                                  ::    NodeMax
+    integer, optional, intent(in)                                     ::    NodeMin
+    integer, optional, intent(in)                                     ::    NodeMax
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetR1D'
-    integer(8)                                                        ::    i, NodeMinLoc, NodeMaxLoc
+    integer                                                           ::    i, NodeMinLoc, NodeMaxLoc
     integer                                                           ::    StatLoc
 
     DebugLoc = DebugGlobal
@@ -362,13 +362,13 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     integer, allocatable, dimension(:), intent(out)                   ::    Values
-    integer(8), optional, intent(in)                                  ::    NodeMin
-    integer(8), optional, intent(in)                                  ::    NodeMax
+    integer, optional, intent(in)                                     ::    NodeMin
+    integer, optional, intent(in)                                     ::    NodeMax
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetI1D'
-    integer(8)                                                        ::    i, NodeMinLoc, NodeMaxLoc
+    integer                                                           ::    i, NodeMinLoc, NodeMaxLoc
     integer                                                           ::    StatLoc
 
     DebugLoc = DebugGlobal
@@ -401,13 +401,13 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     type(String_Type), allocatable, dimension(:), intent(out)         ::    Values
-    integer(8), optional, intent(in)                                  ::    NodeMin
-    integer(8), optional, intent(in)                                  ::    NodeMax
+    integer, optional, intent(in)                                     ::    NodeMin
+    integer, optional, intent(in)                                     ::    NodeMax
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetC1D'
-    integer(8)                                                        ::    i, NodeMinLoc, NodeMaxLoc
+    integer                                                           ::    i, NodeMinLoc, NodeMaxLoc
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    StatLoc
 
@@ -440,13 +440,13 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     logical, allocatable, dimension(:), intent(out)                   ::    Values
-    integer(8), optional, intent(in)                                  ::    NodeMin
-    integer(8), optional, intent(in)                                  ::    NodeMax
+    integer, optional, intent(in)                                     ::    NodeMin
+    integer, optional, intent(in)                                     ::    NodeMax
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetL1D'
-    integer(8)                                                        ::    i, NodeMinLoc, NodeMaxLoc
+    integer                                                           ::    i, NodeMinLoc, NodeMaxLoc
     integer                                                           ::    StatLoc
 
     DebugLoc = DebugGlobal
@@ -477,13 +477,13 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     complex, allocatable, dimension(:), intent(out)                   ::    Values
-    integer(8), optional, intent(in)                                  ::    NodeMin
-    integer(8), optional, intent(in)                                  ::    NodeMax
+    integer, optional, intent(in)                                     ::    NodeMin
+    integer, optional, intent(in)                                     ::    NodeMax
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetCX1D'
-    integer(8)                                                        ::    i, NodeMinLoc, NodeMaxLoc
+    integer                                                           ::    i, NodeMinLoc, NodeMaxLoc
     integer                                                           ::    StatLoc
 
     DebugLoc = DebugGlobal
@@ -514,7 +514,7 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     real(rkp), pointer, intent(inout)                                 ::    Value
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -548,7 +548,7 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     integer, pointer, intent(inout)                                   ::    Value
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -582,7 +582,7 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     character(:), pointer, intent(inout)                              ::    Value
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -616,7 +616,7 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     logical, pointer, intent(inout)                                   ::    Value
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -650,7 +650,7 @@ contains
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     complex, pointer, intent(inout)                                   ::    Value
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -683,7 +683,7 @@ contains
   subroutine ListGetNode0D( This, Node, NodePointer, Debug )
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     type(ListNode0D_Type), pointer, intent(inout)                     ::    NodePointer
     logical, optional, intent(in)                                     ::    Debug
 
@@ -710,12 +710,12 @@ contains
   subroutine MoveBrowser( This, Node, Debug )
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='MoveBrowser'
-    integer(8)                                                        ::    i, i_Max
+    integer                                                           ::    i, i_Max
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -745,7 +745,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function ListLength( This, Debug )
 
-    integer(8)                                                        ::    ListLength
+    integer                                                           ::    ListLength
     class(LinkedList0D_Type), intent(in)                              ::    This
     logical, optional, intent(in)                                     ::    Debug
 
@@ -773,8 +773,8 @@ contains
     character(*), parameter                                           ::    ProcName='PurgeList'
     type(ListNode0D_Type), pointer                                    ::    TempCurrent => null()
     type(ListNode0D_Type), pointer                                    ::    TempNext => null()
-    integer(8)                                                        ::    i
-    integer(8)                                                        ::    NbNodesLoc
+    integer                                                           ::    i
+    integer                                                           ::    NbNodesLoc
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -811,7 +811,7 @@ contains
   subroutine RemoveNode( This, Node, Debug )
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -874,13 +874,13 @@ contains
   subroutine RemoveNodeRange( This, NodeMin, NodeMax, Debug )
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
-    integer(8), intent(in)                                            ::    NodeMin
-    integer(8), intent(in)                                            ::    NodeMax
+    integer, intent(in)                                               ::    NodeMin
+    integer, intent(in)                                               ::    NodeMax
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='RemoveNodeRange'
-    integer(8)                                                        ::    i
+    integer                                                           ::    i
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -910,7 +910,7 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
-    integer(8)                                                        ::    i
+    integer                                                           ::    i
     type(ListNode0D_Type), pointer                                    ::    NodePointer=>null()
 
     DebugLoc = DebugGlobal
@@ -946,8 +946,8 @@ contains
     logical                                                           ::    DebugLoc
     type(ListNode0D_Type), pointer                                    ::    TempCurrent => null()
     type(ListNode0D_Type), pointer                                    ::    TempNext => null()
-    integer(8)                                                        ::    i
-    integer(8)                                                        ::    NbNodesLoc
+    integer                                                           ::    i
+    integer                                                           ::    NbNodesLoc
     integer                                                           ::    StatLoc=0
 
     DebugLoc = DebugGlobal

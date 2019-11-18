@@ -35,8 +35,8 @@ type                                                                  ::    List
 end type
 
 type                                                                  ::    LinkedList2D_Type
-  integer(8)                                                          ::    BrowserLoc=0
-  integer(8)                                                          ::    NbNodes=0
+  integer                                                             ::    BrowserLoc=0
+  integer                                                             ::    NbNodes=0
   type(ListNode2D_Type), pointer                                      ::    Head => null()
   type(ListNode2D_Type), pointer                                      ::    Tail => null()
   type(ListNode2D_Type), pointer                                      ::    Browser => null()
@@ -130,8 +130,8 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListAppend3D'
-    integer(8)                                                        ::    i
-    integer(8)                                                        ::    Length
+    integer                                                           ::    i
+    integer                                                           ::    Length
     integer                                                           ::    StatLoc=0
 
     DebugLoc = DebugGlobal
@@ -155,7 +155,7 @@ contains
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     real(rkp), dimension(:,:), allocatable, intent(out)               ::    Values
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -189,7 +189,7 @@ contains
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     integer, dimension(:,:), allocatable, intent(out)                 ::    Values
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -223,7 +223,7 @@ contains
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     character(:), dimension(:,:), allocatable, intent(out)            ::    Values
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -257,7 +257,7 @@ contains
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     logical, dimension(:,:), allocatable, intent(out)                 ::    Values
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -291,7 +291,7 @@ contains
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     complex, dimension(:,:), allocatable, intent(out)                 ::    Values
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -325,7 +325,7 @@ contains
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     real(rkp), dimension(:,:), pointer, intent(inout)                 ::    Values
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -360,7 +360,7 @@ contains
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     integer, dimension(:,:), pointer, intent(inout)                   ::    Values
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -395,7 +395,7 @@ contains
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     character(:), dimension(:,:), pointer, intent(inout)              ::    Values
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -430,7 +430,7 @@ contains
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     logical, dimension(:,:), pointer, intent(inout)                   ::    Values
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -465,7 +465,7 @@ contains
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     complex, dimension(:,:), pointer, intent(inout)                   ::    Values
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -499,7 +499,7 @@ contains
   subroutine ListGetNode2D( This, Node, NodePointer, Debug )
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     type(ListNode2D_Type), pointer, intent(inout)                     ::    NodePointer
     logical, optional, intent(in)                                     ::    Debug
 
@@ -526,12 +526,12 @@ contains
   subroutine MoveBrowser( This, Node, Debug )
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='MoveBrowser'
-    integer(8)                                                        ::    i, i_Max
+    integer                                                           ::    i, i_Max
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -561,7 +561,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function ListLength( This, Debug )
 
-    integer(8)                                                        ::    ListLength
+    integer                                                           ::    ListLength
     class(LinkedList2D_Type), intent(in)                              ::    This
     logical, optional, intent(in)                                     ::    Debug
 
@@ -589,8 +589,8 @@ contains
     character(*), parameter                                           ::    ProcName='PurgeList'
     type(ListNode2D_Type), pointer                                    ::    TempCurrent => null()
     type(ListNode2D_Type), pointer                                    ::    TempNext => null()
-    integer(8)                                                        ::    i
-    integer(8)                                                        ::    NbNodesLoc
+    integer                                                           ::    i
+    integer                                                           ::    NbNodesLoc
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -627,7 +627,7 @@ contains
   subroutine RemoveNode( This, Node, Debug )
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
-    integer(8), intent(in)                                            ::    Node
+    integer, intent(in)                                               ::    Node
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -690,13 +690,13 @@ contains
   subroutine RemoveNodeRange( This, NodeMin, NodeMax, Debug )
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
-    integer(8), intent(in)                                            ::    NodeMin
-    integer(8), intent(in)                                            ::    NodeMax
+    integer, intent(in)                                               ::    NodeMin
+    integer, intent(in)                                               ::    NodeMax
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='RemoveNodeRange'
-    integer(8)                                                        ::    i
+    integer                                                           ::    i
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -726,7 +726,7 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
-    integer(8)                                                        ::    i
+    integer                                                           ::    i
     type(ListNode2D_Type), pointer                                    ::    NodePointer=>null()
 
     DebugLoc = DebugGlobal
@@ -762,8 +762,8 @@ contains
     logical                                                           ::    DebugLoc
     type(ListNode2D_Type), pointer                                    ::    TempCurrent => null()
     type(ListNode2D_Type), pointer                                    ::    TempNext => null()
-    integer(8)                                                        ::    i
-    integer(8)                                                        ::    NbNodesLoc
+    integer                                                           ::    i
+    integer                                                           ::    NbNodesLoc
     integer                                                           ::    StatLoc=0
 
     DebugLoc = DebugGlobal

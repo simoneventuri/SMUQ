@@ -246,6 +246,8 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
+    call Error%Raise( 'GENPI is a template plug in and is not meant to be ran', ProcName=ProcName )
+
     Line = 'sh ' // This%FullRunDir // '/Allclean || true && ' // This%FullRunDir // '/Allrun > /dev/null 2>&1'
 
     call system( Line )
