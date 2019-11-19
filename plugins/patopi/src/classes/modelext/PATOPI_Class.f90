@@ -319,12 +319,10 @@ contains
           if ( i == 1 ) then
             ii = 1
             do ii = 1, size(OutputLoc,1)
-              allocate(VarR2D(OutputLoc(ii)%GetOrdinateSize(),NbDegen*OutputLoc(ii)%GetOrdinateNbDegen()), stat=StatLoc)
+              allocate(VarR2D(OutputLoc(ii)%GetNbNodes(),NbDegen*OutputLoc(ii)%GetNbDegen()), stat=StatLoc)
               if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
               VarR2D = Zero
-              call Output(ii)%Construct(Abscissa=OutputLoc(ii)%GetAbscissaPointer(), AbscissaName=OutputLoc(ii)%GetAbscissaName(),&
-                                      Ordinate=VarR2D, OrdinateName=OutputLoc(ii)%GetOrdinateName(), Name=OutputLoc(ii)%GetName(),&
-                                      Label=OutputLoc(ii)%GetLabel())
+              call Output(ii)%Construct(Values=VarR2D, Label=OutputLoc(ii)%GetLabel())
               deallocate(VarR2D, stat=StatLoc)
               if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
             end do
@@ -332,9 +330,9 @@ contains
 
           ii = 1
           do ii = 1, size(OutputLoc,1)
-            OrdinatePointer => Output(ii)%GetOrdinatePointer()
-            OrdinateLocPointer => OutputLoc(ii)%GetOrdinatePointer()
-            NbDegenLoc = OutputLoc(ii)%GetOrdinateNbDegen()
+            OrdinatePointer => Output(ii)%GetValuesPointer()
+            OrdinateLocPointer => OutputLoc(ii)%GetValuesPointer()
+            NbDegenLoc = OutputLoc(ii)%GetNbDegen()
             OrdinatePointer(:,(i-1)*NbDegenLoc+1:i*NbDegenLoc) = OrdinateLocPointer(:,:)
             nullify(OrdinatePointer)
             nullify(OrdinateLocPointer)

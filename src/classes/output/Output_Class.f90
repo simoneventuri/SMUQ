@@ -13,9 +13,8 @@ public                                                                ::    Outp
 type                                                                  ::    Output_Type
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  character(:), allocatable                                           ::    Name
   character(:), allocatable                                           ::    Label
-  real(rkp), dimension(:,:), pointer                                  ::    Output=>null()
+  real(rkp), dimension(:,:), pointer                                  ::    Values=>null()
   integer                                                             ::    NbNodes
   integer                                                             ::    NbDegen
 contains
@@ -26,10 +25,10 @@ contains
                                                                                                           ConstructCase2
   procedure, private                                                  ::    ConstructCase1
   procedure, private                                                  ::    ConstructCase2
-  procedure, public                                                   :;    GetOutput
+  procedure, public                                                   :;    GetValues
+  procedure, public                                                   :;    GetValuesPointer
   procedure, public                                                   ::    GetNbNodes
   procedure, public                                                   ::    GetNbDegen
-  procedure, public                                                   ::    GetName
   procedure, public                                                   ::    GetLabel
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
@@ -82,8 +81,8 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%Output) ) deallocate(This%Output, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Output', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
     This%NbNodes = 0
     This%NbDegen = 0
@@ -116,10 +115,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------ 
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Output, Name, Label, Debug )
+  subroutine ConstructCase1( This, Values, Name, Label, Debug )
 
     class(Output_Type), intent(inout)                                 ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Output
+    real(rkp), dimension(:), intent(in)                               ::    Values
     character(*), optional, intent(in)                                ::    Name
     character(*), optional, intent(in)                                ::    Label
     logical, optional ,intent(in)                                     ::    Debug
@@ -133,20 +132,20 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) then
-      if ( This%NbNodes /= size(Output,1) .or. This%NbDegen /= 1 ) then
+      if ( This%NbNodes /= size(Values,1) .or. This%NbDegen /= 1 ) then
         call This%Reset()
       else
-        This%Output = Output
+        This%Values = Values
       end if
     end if
 
     if ( .not. This%Initialized ) call This%Initialize()
 
     if ( .not. This%Constructed ) then
-      allocate(This%Output, source=Output, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Output', ProcName=ProcName, stat=StatLoc )
+      allocate(This%Values, source=Values, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
       This%NbDegen = 1
-      This%NbNodes = size(Output)
+      This%NbNodes = size(Values)
     end if
 
     if ( present(Name) ) This%Name = Name
@@ -160,10 +159,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase2( This, Output, Name, Label, Debug )
+  subroutine ConstructCase2( This, Values, Name, Label, Debug )
 
     class(Output_Type), intent(inout)                                 ::    This
-    real(rkp), dimension(:,:), intent(in)                             ::    Output
+    real(rkp), dimension(:,:), intent(in)                             ::    Values
     character(*), optional, intent(in)                                ::    Name
     character(*), optional, intent(in)                                ::    Label
     logical, optional ,intent(in)                                     ::    Debug
@@ -177,20 +176,20 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) then
-      if ( This%NbNodes /= size(Output,1) .or. This%NbDegen /= size(Output,2) ) then
+      if ( This%NbNodes /= size(Values,1) .or. This%NbDegen /= size(Values,2) ) then
         call This%Reset()
       else
-        This%Output = Output
+        This%Values = Values
       end if
     end if
 
     if ( .not. This%Initialized ) call This%Initialize()
 
     if ( .not. This%Constructed ) then
-      allocate(This%Output, source=Output, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Output', ProcName=ProcName, stat=StatLoc )
-      This%NbDegen = size(Output,2)
-      This%NbNodes = size(Output)
+      allocate(This%Values, source=Values, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
+      This%NbDegen = size(Values,2)
+      This%NbNodes = size(Values)
     end if
 
     if ( present(Name) ) This%Name = Name
@@ -204,14 +203,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOutput( This, Debug )
+  function GetValues( This, Debug )
 
-    real(rkp), dimension(:,:), allocatable                            ::    GetOutput
+    real(rkp), dimension(:,:), allocatable                            ::    GetValues
 
     class(Output_Type), intent(inout)                                 ::    This
     logical, optional ,intent(in)                                     ::    Debug
     
-    character(*), parameter                                           ::    ProcName='GetOutput'
+    character(*), parameter                                           ::    ProcName='GetValues'
     logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
 
@@ -221,8 +220,8 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )        
    
-    allocate( GetOutput, source=This%Output, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetOutput', ProcName=ProcName, stat=StatLoc )
+    allocate( GetValues, source=This%Values, stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetValues', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 
@@ -230,14 +229,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOutputPointer( This, Debug )
+  function GetValuesPointer( This, Debug )
 
-    real(rkp), dimension(:,:), pointer                                ::    GetOutputPointer
+    real(rkp), dimension(:,:), pointer                                ::    GetValuesPointer
 
     class(Output_Type), intent(in)                                    ::    This
     logical, optional ,intent(in)                                     ::    Debug
     
-    character(*), parameter                                           ::    ProcName='GetOutputPointer'
+    character(*), parameter                                           ::    ProcName='GetValuesPointer'
     logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
 
@@ -247,7 +246,7 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    GetOutputPointer => This%Output
+    GetValuesPointer => This%Values
 
     if (DebugLoc) call Logger%Exiting
 
@@ -303,30 +302,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
-
-    character(:), allocatable                                         ::    GetName
-
-    class(Output_Type), intent(in)                                    ::    This 
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetName = This%Name 
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   function GetLabel( This, Debug )
 
     character(:), allocatable                                         ::    GetLabel
@@ -371,8 +346,8 @@ contains
     if ( RHS%Constructed ) then
       LHS%Name = RHS%Name
       LHS%Label = RHS%Label
-      allocate(LHS%Output, source=RHS%Output, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Output', ProcName=ProcName, stat=StatLoc )
+      allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Values', ProcName=ProcName, stat=StatLoc )
       LHS%NbNodes = RHS%NbNodes
       LHS%NbDegen = RHS%NbDegen
     end if
@@ -394,8 +369,8 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( associated(This%Output) ) deallocate(This%Output, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Output', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 

@@ -41,7 +41,6 @@ public                                                                ::    OFil
 type, extends(OFileFormated_Type)                                     ::    OFileTable_Type
   type(SMUQFile_Type)                                                 ::    OutputFile
   integer                                                             ::    NbOutputs=0
-  integer                                                             ::    AbscissaColumn=0
   integer, allocatable, dimension(:)                                  ::    OutputColumn
   type(String_Type), allocatable, dimension(:)                        ::    OutputLabel
 contains
@@ -129,8 +128,6 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    This%AbscissaColumn = 0
-
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
@@ -172,11 +169,6 @@ contains
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     call This%OutputFile%Construct( Input=InputSection, Prefix=PrefixLoc )
     nullify(InputSection)
-
-    ParameterName = 'abscissa_column'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
-    This%AbscissaColumn = VarI0D
-
 
     SectionName = 'outputs'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -246,8 +238,6 @@ contains
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file'
     call GetInput%AddSection( Section=This%OutputFile%GetInput( MainSectionName='file', Prefix=PrefixLoc, Directory=DirectorySub))
 
-    call GetInput%AddParameter( Name='abscissa_column', Value=Convert_To_String(This%AbscissaColumn) )
-
     call GetInput%AddParameter( Name='nb_outputs', Value=Convert_To_String(This%NbOutputs) )
 
     SectionName = 'outputs'
@@ -301,7 +291,6 @@ contains
     character(*), parameter                                           ::    ProcName='GetOutput'
     integer                                                           ::    StatLoc=0
     type(String_Type), allocatable, dimension(:,:)                    ::    Strings
-    real(rkp), allocatable, dimension(:)                              ::    Abscissa
     real(rkp), allocatable, dimension(:)                              ::    TableOutput
     integer                                                           ::    NbLines
     integer                                                           ::    i, ii
@@ -316,18 +305,10 @@ contains
 
     NbLines = size(Strings,2)
 
-    allocate(Abscissa(NbLines), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Abscissa', ProcName=ProcName, stat=StatLoc )
-
     allocate(TableOutput(NbLines), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='TableOutput', ProcName=ProcName, stat=StatLoc )
 
     if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( Line='Passed down an incorrect size Output', ProcName=ProcName )
-
-    i = 1
-    do i = 1, NbLines
-      Abscissa(i) = ConvertToRealrkp( String=Strings(This%AbscissaColumn,i)%GetValue() )
-    end do
 
     ii = 1
     do ii = 1, This%NbOutputs
@@ -335,7 +316,7 @@ contains
       do i = 1, NbLines
         TableOutput(i) = ConvertToRealrkp( String=Strings(This%OutputColumn(ii),i)%GetValue() )
       end do
-      call Output(ii)%Construct( Abscissa=Abscissa, Ordinate=TableOutput, Label=This%OutputLabel(ii)%GetValue() )
+      call Output(ii)%Construct( Values=TableOutput, Label=This%OutputLabel(ii)%GetValue() )
     end do
 
     deallocate(Strings, stat=StatLoc)
@@ -343,9 +324,6 @@ contains
 
     deallocate(TableOutput, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='TableOutput', ProcName=ProcName, stat=StatLoc )
-
-    deallocate(Abscissa, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Abscissa', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -401,7 +379,6 @@ contains
 
         if ( RHS%Constructed ) then
           LHS%NbOutputs = RHS%NbOutputs
-          LHS%AbscissaColumn = RHS%AbscissaColumn
           LHS%OutputFile = RHS%OutputFile
           allocate(LHS%OutputColumn, source=RHS%OutputColumn, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OutputColumn', ProcName=ProcName, stat=StatLoc )

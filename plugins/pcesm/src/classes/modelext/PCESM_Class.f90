@@ -39,31 +39,9 @@ private
 
 public                                                                ::    PCESM_Type
 
-type                                                                  ::    Cell_Type
-  logical                                                             ::    Initialized=.false.
-  logical                                                             ::    Constructed=.false.
-  character(:), allocatable                                           ::    Directory
-  type(PolyChaosModel_Type)                                           ::    PCEModel
-  integer                                                             ::    NbOutputs=0
-  integer                                                             ::    NbInputs=0
-contains
-  procedure, public                                                   ::    Initialize              =>    Initialize_Cell
-  procedure, public                                                   ::    Reset                   =>    Reset_Cell
-  procedure, public                                                   ::    SetDefaults             =>    SetDefaults_Cell
-  generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure, private                                                  ::    ConstructInput          =>    ConstructInput_Cell
-  procedure, public                                                   ::    GetInput                =>    GetInput_Cell
-  procedure, public                                                   ::    Run                     =>    Run_Cell
-  procedure, public                                                   ::    GetNbOutputs            =>    GetNbOutputs_Cell
-  generic, public                                                     ::    assignment(=)           =>    Copy
-  procedure, public                                                   ::    Copy                    =>    Copy_Cell
-  final                                                               ::    Finalizer_Cell
-end type
-
 type, extends(ModelExtTemplate_Type)                                  ::    PCESM_Type
-  type(Cell_Type), allocatable, dimension(:)                          ::    Cell
-  integer                                                             ::    NbCells=0
-  integer                                                             ::    NbOutputs=0
+  type(PolyChaosModel_Type), allocatable, dimension(:)                ::    PCEModels
+  integer                                                             ::    NbModels=0
   integer                                                             ::    NbFixedParams=0
   real(rkp), allocatable, dimension(:)                                ::    FixedParamVals
   type(String_Type), allocatable, dimension(:)                        ::    FixedParamLabels   
@@ -124,8 +102,8 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( allocated(This%Cell) ) deallocate(This%Cell, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cell', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%PCEModels) ) deallocate(This%PCEModels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PCEModels', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%FixedParamLabels) ) deallocate(This%FixedParamLabels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FixedParamLabels', ProcName=ProcName, stat=StatLoc )
@@ -139,8 +117,7 @@ contains
     if ( allocated(This%ParamTransformLabel) ) deallocate(This%ParamTransform, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamTransform', ProcName=ProcName, stat=StatLoc )
 
-    This%NbCells = 0
-    This%NbOutputs = 0
+    This%NbModels = 0
     This%NbFixedParams = 0
     This%NbTransformParams = 0
 
@@ -193,6 +170,7 @@ contains
     character(:), allocatable                                         ::    VarC0D
     character(:), allocatable, dimension(:)                           ::    VarC1D
     real(rkp)                                                         ::    VarR0D
+    character(:), allocatable, dimension(:)                           ::    LabelMap
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -206,20 +184,47 @@ contains
 
     SectionName = 'models'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    This%NbCells = InputSection%GetNumberOfSubSections()
-    nullify(InputSection)
-
-    allocate(This%Cell(This%NbCells), stat=StatLoc)
+    This%NbModels = InputSection%GetNumberOfSubSections()
+    allocate(This%PCEModels(This%NbModels), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cell', ProcName=ProcName, stat=StatLoc )
-    This%NbOutputs = 0
 
     i = 1
-    do i = 1, This%NbCells
-      SubSectionName = SectionName // '>model' // Convert_To_String(i)
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call This%Cell(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
-      nullify( InputSection )
-      This%NbOutputs = This%NbOutputs + This%Cell(i)%GetNbOutputs()
+    do i = 1, This%NbModels
+      SubSectionName = SectionName // '>model' // ConvertToString(Value=i)
+      ParameterName = 'directory'
+      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found, SectionName=SubSectionName )
+      if ( Found )
+        call This%PCEModels(i)%Construct( Prefix=PrefixLoc // VarC0D )
+
+        SubSectionName = SectionName // '>model' // ConvertToString(Value=i) // '>input_label_map'
+        if ( Input%HasSection( SubSectionName=SubSectionName ) ) then
+          i = 1
+          do i = 1, Input%GetNumberofParameters(FromSubSection=SubSectionName)
+            ParameterName = 'map' // ConvertToString(Value=i)
+            call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
+            call Parse( Input=VarC0D, Separator=' ', Output=LabelMap )
+            if ( size(LabelMap,1) /= 2 ) call Error%Raise( Line='Incorrect input label map format', ProcName=ProcName )
+            call This%PCEModels(i)%ReplaceInputLabel( OldLabel=trim(adjustl(LabelMap(1))),  NewLabel=trim(adjustl(LabelMap(2))) )
+          end do
+        end if
+
+        SectionName = SectionName // '>model' // ConvertToString(Value=i) // '>output_label_map'
+        if ( Input%HasSection( SubSectionName=SubSectionName ) ) then
+          i = 1
+          do i = 1, Input%GetNumberofParameters(FromSubSection=SubSectionName)
+            ParameterName = 'map' // ConvertToString(Value=i)
+            call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
+            call Parse( Input=VarC0D, Separator=' ', Output=LabelMap )
+            if ( size(LabelMap,1) /= 2 ) call Error%Raise( Line='Incorrect input label map format', ProcName=ProcName )
+            call This%PCEModels(i)%ReplaceOutputLabel( OldLabel=trim(adjustl(LabelMap(1))),  NewLabel=trim(adjustl(LabelMap(2))) )
+          end do
+        end if
+      else
+        SubSectionName = SubSectionName // '>pce_input'
+        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call This%PCEModels(i)%Construct( Input=Input, Prefix=PrefixLoc )
+        nullify(InputSection)
+      end if
     end do
 
     SectionName = 'fixed_parameters'
@@ -376,12 +381,23 @@ contains
 
     if ( DirectoryLoc /= '<undefined>' ) ExternalFlag = .true.
 
+    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
+    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+
+    SectionName = 'models'
+    call GetInput%AddSection( SectionName=SectionName )
+
     i = 1
-    do i = 1, This%NbCells
-      SectionName = 'model' // Convert_To_String(i)
-      call GetInput%AddSection( Section=This%Cell(i)%GetInput(MainSectionName=SectionName) )
+    do i = 1, This%NbModels
+      SubSectionName = 'model' // ConvertToString(Value=i)
+      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+      SubSectionName = SectionName // '>' // SubSectionName
+      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/model' // ConvertToString(Value=i)
+      call GetInput%AddSection( Section=This%PCEModels(i)%GetInput(MainSectionName='pce_input', Prefix=PrefixLoc,                 &
+                                                                          Directory=DirectorySub ), To_SubSection=SubSectionName )
     end do
 
     if ( This%NbFixedParams > 0 ) then
@@ -435,7 +451,6 @@ contains
     character(*), parameter                                           ::    ProcName='RunCase1'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i, ii
-    integer                                                           ::    NbOutputsLoc
     class(Input_Type), allocatable                                    ::    InputLoc
 
     DebugLoc = DebugGlobal
@@ -443,13 +458,13 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. allocated(Output) ) then
-      allocate( Output(This%NbOutputs), stat=StatLoc )
+      allocate( Output(This%NbModels), stat=StatLoc )
       if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
     else
-      if ( size(Output,1) /= This%NbOutputs ) then
+      if ( size(Output,1) /= This%NbModels ) then
         deallocate(Output, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-        allocate( Output(This%NbOutputs), stat=StatLoc )
+        allocate( Output(This%NbModels), stat=StatLoc )
         if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
       end if
     end if
@@ -471,24 +486,16 @@ contains
           call InputLoc%Transform( Transformations=This%ParamTransform(i)%Values, Label=This%ParamTransformLabel(i)%GetValue() )
         end do
       end if 
-      ii = 0
       i = 1
-      do i = 1, This%NbCells
-        NbOutputsLoc = This%Cell(i)%GetNbOutputs()
-        if ( NbOutputsLoc <= 0 ) cycle
-        call This%Cell(i)%Run( Input=InputLoc, Output=Output(ii+1:ii+NbOutputsLoc) )
-        ii = ii + NbOutputsLoc
+      do i = 1, This%NbModels
+        call This%PCEModels(i)%Run( Input=InputLoc, Output=Output(i) )
       end do
       deallocate(InputLoc, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputLoc', ProcName=ProcName, stat=StatLoc )
     else
-      ii = 0
       i = 1
-      do i = 1, This%NbCells
-        NbOutputsLoc = This%Cell(i)%GetNbOutputs()
-        if ( NbOutputsLoc <= 0 ) cycle
-        call This%Cell(i)%Run( Input=Input, Output=Output(ii+1:ii+NbOutputsLoc) )
-        ii = ii + NbOutputsLoc
+      do i = 1, This%NbModels
+        call This%PCEModels(i)%Run( Input=Input, Output=Output(i) )
       end do
     end if
 
@@ -521,10 +528,11 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          LHS%NbOutputs = RHS%NbOutputs
-          LHS%NbCells = RHS%NbCells
+          LHS%NbModels = RHS%NbModels
+          allocate(LHS%PCEModels, source=RHS%PCEModels, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PCEModels', ProcName=ProcName, stat=StatLoc )
           LHS%NbTransformParams = RHS%NbTransformParams
-          allocate(LHS%Cell(RHS%NbCells), stat=StatLoc)
+          allocate(LHS%Cell(RHS%NbModels), stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='Cell', ProcName=ProcName, stat=StatLoc )
           LHS%NbFixedParams = RHS%NbFixedParams
           if ( RHS%NbFixedParams > 0 ) then
@@ -547,7 +555,7 @@ contains
             end do
           end if
           i = 1
-          do i = 1, RHS%NbCells
+          do i = 1, RHS%NbModels
             LHS%Cell(i) = RHS%Cell(i)
           end do
         end if
@@ -574,8 +582,8 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
   
-    if ( allocated(This%Cell) ) deallocate(This%Cell, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cell', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%PCEModels) ) deallocate(This%PCEModels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PCEModels', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%FixedParamLabels) ) deallocate(This%FixedParamLabels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FixedParamLabels', ProcName=ProcName, stat=StatLoc )
@@ -589,298 +597,6 @@ contains
     if ( allocated(This%ParamTransformLabel) ) deallocate(This%ParamTransformLabel, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamTransformLabel', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  !!------------------------------------------------------------------------------------------------------------------------------
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_Cell( This, Debug )
-
-    class(Cell_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='Initialize_Cell'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Initialized ) then
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_Cell( This, Debug )
-
-    class(Cell_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='Reset_Cell'
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    This%Initialized=.false.
-    This%Constructed=.false.
-
-    call This%PCEModel%Reset()
-
-    This%NbInputs = 0
-    This%NbOutputs = 0
-
-    call This%SetDefaults()
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_Cell( This, Debug )
-
-    class(Cell_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='SetDefaults_Cell'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    This%Directory = ''
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_Cell( This, Input, Prefix, Debug )
-
-    class(Cell_Type), intent(inout)                                   ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ConstructInput_Cell'
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    PrefixLoc
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    VarI0D
-    integer                                                           ::    NbOutputs
-    integer                                                           ::    NbMaps
-    integer                                                           ::    i
-    character(:), allocatable, dimension(:)                           ::    LabelMap
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
-
-    PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
-
-    ParameterName = 'directory'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
-    This%Directory = VarC0D
-
-    call This%PCEModel%Construct( Prefix=PrefixLoc // VarC0D )
-
-    This%NbInputs = This%PCEModel%GetNbInputs()
-    
-    SectionName = 'input_label_map'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      i = 1
-      do i = 1, Input%GetNumberofParameters(FromSubSection=SectionName)
-        ParameterName = 'map' // ConvertToString(Value=i)
-        call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-        call Parse( Input=VarC0D, Separator=' ', Output=LabelMap )
-        if ( size(LabelMap,1) /= 2 ) call Error%Raise( Line='Incorrect input label map format', ProcName=ProcName )
-        call This%PCEModel%ReplaceInputLabel( OldLabel=trim(adjustl(LabelMap(1))),  NewLabel=trim(adjustl(LabelMap(2))) )
-      end do
-    end if
-
-    This%NbOutputs = This%PCEModel%GetNbOutputs()
-
-    SectionName = 'output_label_map'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      i = 1
-      do i = 1, Input%GetNumberofParameters(FromSubSection=SectionName)
-        ParameterName = 'map' // ConvertToString(Value=i)
-        call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-        call Parse( Input=VarC0D, Separator=' ', Output=LabelMap )
-        if ( size(LabelMap,1) /= 2 ) call Error%Raise( Line='Incorrect input label map format', ProcName=ProcName )
-        call This%PCEModel%ReplaceOutputLabel( OldLabel=trim(adjustl(LabelMap(1))),  NewLabel=trim(adjustl(LabelMap(2))) )
-      end do
-    end if
-
-    This%Constructed = .true.
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_Cell( This, MainSectionName, Prefix, Directory, Debug )
-
-    use String_Library
-    use StringRoutines_Module
-
-    type(InputSection_Type)                                           ::    GetInput_Cell
-
-    class(Cell_Type), intent(in)                                      ::    This
-    character(*), intent(in)                                          ::    MainSectionName
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetInput_Cell'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
-
-    DirectoryLoc = '<undefined>'
-    PrefixLoc = ''
-    DirectorySub = DirectoryLoc
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
-
-    if ( DirectoryLoc /= '<undefined>' ) ExternalFlag = .true.
-
-    call GetInput_Cell%SetName( SectionName = trim(adjustl(MainSectionName)) )
-
-    call GetInput_Cell%AddParameter( Name='directory', Value=This%Directory )
-    
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_Cell( This, Input, Output, Debug )
-
-    class(Cell_Type), intent(inout)                                   ::    This
-    class(Input_Type), intent(in)                                     ::    Input
-    type(Output_Type), dimension(:), intent(inout)                    ::    Output
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='Run_Cell'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    call This%PCEModel%RunPredet( Input=Input, Output=Output )
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbOutputs_Cell( This, Debug )
-
-    integer                                                           ::    GetNbOutputs_Cell
-
-    class(Cell_Type), intent(in)                                      ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetNbOutputs_Cell'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetNbOutputs_Cell = This%NbOutputs
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_Cell( LHS, RHS )
-
-    class(Cell_Type), intent(out)                                     ::    LHS
-    class(Cell_Type), intent(in)                                      ::    RHS
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='Copy_Cell'
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    call LHS%Reset()
-    LHS%Initialized = RHS%Initialized
-    LHS%Constructed = RHS%Constructed
-
-    if ( RHS%Constructed ) then
-      LHS%Directory = RHS%Directory
-      LHS%NbOutputs = RHS%NbOutputs
-      LHS%NbInputs = RHS%NbInputs
-      LHS%PCEModel = RHS%PCEModel
-    end if
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Finalizer_Cell( This )
-
-    type(Cell_Type), intent(inout)                                    ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer_Cell'
-    logical                                                           ::    DebugLoc
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-  
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine

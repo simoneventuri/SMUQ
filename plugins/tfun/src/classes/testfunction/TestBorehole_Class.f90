@@ -37,9 +37,6 @@ private
 public                                                                ::    TestBorehole_Type
 
 type, extends(TestFunction_Type)                                      ::    TestBorehole_Type
-  real(rkp), dimension(1)                                             ::    Abscissa=Zero
-  character(:), allocatable                                           ::    AbscissaName
-  character(:), allocatable                                           ::    ResponseName
   character(:), allocatable                                           ::    Label
   real(rkp)                                                           ::    R
   real(rkp)                                                           ::    RW
@@ -136,9 +133,6 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    This%Abscissa=Zero
-    This%ResponseName = 'borehole'
-    This%AbscissaName = 'scalar'
     This%Label = 'borehole'
     This%R = 2000.0
     This%RW = 0.1
@@ -193,16 +187,8 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    ParameterName = 'response_name'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%ResponseName = VarC0D
-
-    ParameterName = 'abscissa_name'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%AbscissaName = VarC0D
-
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true., Found=Found )
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%Label = VarC0D
 
     SectionName = 'parameters'
@@ -315,9 +301,7 @@ contains
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-
-    call GetInput%AddParameter( Name='response_name', Value=This%ResponseName )
-    call GetInput%AddParameter( Name='abscissa_name', Value=This%AbscissaName )    
+   
     call GetInput%AddParameter( Name='label', Value=This%AbscissaName )
 
     SectionName='parameters'
@@ -496,8 +480,7 @@ contains
         call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
     end select
 
-    call Output(1)%Construct( Abscissa=This%Abscissa, Ordinate=Ordinate, AbscissaName=This%AbscissaName,                          &
-                                                                                 OrdinateName=This%ResponseName, Label=This%Label)
+    call Output(1)%Construct( Values=Ordinate, Label=This%Label )
 
     deallocate(Ordinate, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
@@ -555,9 +538,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
         if( RHS%Constructed ) then
-          LHS%AbscissaName = RHS%AbscissaName
-          LHS%ResponseName = RHS%ResponseName
-          LHS%Abscissa = RHS%Abscissa
+          LHS%Label = RHS%Label
           LHS%R = RHS%R
           LHS%RW = RHS%RW
           LHS%TU = RHS%TU

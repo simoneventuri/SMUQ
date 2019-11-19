@@ -69,14 +69,15 @@ contains
   procedure, public                                                   ::    GetCoords_R2D
   procedure, public                                                   ::    GetCoordsLabelPtr_R1D
   procedure, public                                                   ::    GetCoordsPtr_R2D
+  procedure, public                                                   ::    GetCoordinateLabels
   procedure, public                                                   ::    GetNbIndCoordinates
   procedure, public                                                   ::    GetData
   procedure, public                                                   ::    GetDataPointer
   procedure, public                                                   ::    GetNbDataSets
   procedure, public                                                   ::    GetLabel
+  procedure, public                                                   ::    GetNbNodes
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    IsDataDefined
-  procedure, public                                                   ::    IsCoordinatesDefined
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -132,8 +133,8 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
     This%NbIndCoordinates = 0
 
-    if ( allocated(This%CoordinatesLabels) ) deallocate(This%CoordinatesLabels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CoordinatesLabels', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%CoordinateLabels) ) deallocate(This%CoordinateLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CoordinateLabels', ProcName=ProcName, stat=StatLoc )
 
     if ( associated(This%ResponseData) ) deallocate(This%ResponseData, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseData', ProcName=ProcName, stat=StatLoc )
@@ -224,23 +225,20 @@ contains
     This%NbIndCoordinates = VarI0D
 
     SectionName = 'coordinates'
-    if ( Input%HasSection( SubSectionName=SectionName ) then
-      ParameterName = 'name'
-      call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-      call Parse( Input=VarC0D, Separator=' ', Output=This%CoordinatesLabels )
+    ParameterName = 'labels'
+    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
+    call Parse( Input=VarC0D, Separator=' ', Output=This%CoordinateLabels )
 
-      SubSectionName = SectionName // '>source'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
-      allocate(This%Coordinates, source=VarR2D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
-      deallocate(VarR2D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-    end if
+    SubSectionName = SectionName // '>source'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarR2D, RowMajor=.true.,Prefix=PrefixLoc )
+    allocate(This%Coordinates, source=VarR2D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
+    deallocate(VarR2D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
 
     SectionName = 'data'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found )
-    if ( Found ) then
+    if ( Input%HasSection(SubSectionName=SectionName) ) then
       SubSectionName = SectionName // '>source'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
       call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc, RowMajor=.true. )
@@ -331,24 +329,22 @@ contains
     if ( len_trim(This%Name) /= 0 ) call GetInput%AddParameter( Name='nb_nodes', Value=This%NbNodes )
     if ( len_trim(This%Name) /= 0 ) call GetInput%AddParameter( Name='nb_ind_coordinates', Value=This%NbIndCoordinates )
 
-    if ( associated(This%Coordinates) ) then
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/coordinates'
-      SectionName = 'coordinates'
-      call GetInput%AddSection( SectionName=SectionName )
-      call GetInput%AddParameter( Name='labels', Value=ConvertToString(This%CoordinatesLabels), SectionName=SectionName )
-      SubSectionName = 'source'
-      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
-                                                                                                                Mandatory=.true. )
-      if ( ExternalFlag ) then
-        FileName = DirectoryLoc // '/coordinates.dat'
-        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call ExportArray( Input=InputSection, Array=This%Coordinates, File=File )
-      else
-        call ExportArray( Input=InputSection, Array=This%Coordinates )
-      end if
-      nullify(InputSection)
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/coordinates'
+    SectionName = 'coordinates'
+    call GetInput%AddSection( SectionName=SectionName )
+    call GetInput%AddParameter( Name='labels', Value=ConvertToString(This%CoordinateLabels), SectionName=SectionName )
+    SubSectionName = 'source'
+    call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+    call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
+                                                                                                              Mandatory=.true. )
+    if ( ExternalFlag ) then
+      FileName = DirectoryLoc // '/coordinates.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Input=InputSection, Array=This%Coordinates, RowMajor=.true., File=File )
+    else
+      call ExportArray( Input=InputSection, Array=This%Coordinates, RowMajor=.true. )
     end if
+    nullify(InputSection)
 
     if ( This%DataDefined ) then
       SectionName = 'data'
@@ -397,12 +393,10 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    if ( .not. associated(This%Coordinates) ) call Error%Raise( Line='Coordinates were never defined', ProcName=ProcName )
-
     i = 1
     ii = 0
     do i = 1, This%NbIndCoordinates
-      if ( Label /= This%CoordinatesLabels(i)%GetValue() ) cycle
+      if ( Label /= This%CoordinateLabels(i)%GetValue() ) cycle
       ii = i
       exit
     end do
@@ -440,8 +434,6 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    if ( .not. associated(This%Coordinates) ) call Error%Raise( Line='Coordinates were never defined', ProcName=ProcName )
-
     NbLabels = size(Labels)
 
     allocate(GetCoordsLabel_R2D(This%NbNodes,NbLabels), stat=StatLoc)
@@ -452,7 +444,7 @@ contains
       i = 1
       ii = 0
       do i = 1, This%NbIndCoordinates
-        if ( Label /= This%CoordinatesLabels(i)%GetValue() ) cycle
+        if ( Label /= This%CoordinateLabels(i)%GetValue() ) cycle
         ii = i
         exit
       end do
@@ -483,8 +475,6 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    if ( .not. associated(This%Coordinates) ) call Error%Raise( Line='Coordinates were never defined', ProcName=ProcName )
-
     allocate(This%GetCoords_R2D, source=This%Coordinates, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%GetCoords_R2D', ProcName=ProcName, stat=StatLoc )
 
@@ -514,12 +504,10 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    if ( .not. associated(This%Coordinates) ) call Error%Raise( Line='Coordinates were never defined', ProcName=ProcName )
-
     i = 1
     ii = 0
     do i = 1, This%NbIndCoordinates
-      if ( Label /= This%CoordinatesLabels(i)%GetValue() ) cycle
+      if ( Label /= This%CoordinateLabels(i)%GetValue() ) cycle
       ii = i
       exit
     end do
@@ -551,8 +539,6 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
-
-    if ( .not. associated(This%Coordinates) ) call Error%Raise( Line='Coordinates were never defined', ProcName=ProcName )
 
     GetCoordsPtr_R2D => This%Coordinates
 
@@ -610,6 +596,32 @@ contains
     if ( This%NbDataSets < 1 ) call Error%Raise( Line='No data available', ProcName=ProcName )
 
     GetDataPointer => This%ResponseData
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetCoordinateLabels( This, Debug )
+
+    type(String_Type), allocatable, dimension(:)                      ::    GetCoordinateLabels
+
+    class(Response_Type), intent(in)                                  ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetCoordinateLabels'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    allocate(GetCoordinateLabels, source=This%CoordinateLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCoordinateLabels', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -717,6 +729,31 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  function GetNbNodes( This, Debug )
+
+    integer                                                           ::    GetNbNodes
+
+    class(Response_Type), intent(in)                                  ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetNbNodes'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    GetNbNOdes = This%NbNodes
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   function IsDataDefined( This, Debug )
 
     logical                                                           ::    IsDataDefined
@@ -736,31 +773,6 @@ contains
 
     IsDataDefined = .false.
     if ( This%NbDataSets > 0 ) IsDataDefined = .true.
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsCoordinatesDefined( This, Debug )
-
-    logical                                                           ::    IsCoordinatesDefined
-
-    class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='IsCoordinatesDefined'
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
-
-    IsCoordinatesDefined = associated(This%Coordinates)
 
     if (DebugLoc) call Logger%Exiting()
 

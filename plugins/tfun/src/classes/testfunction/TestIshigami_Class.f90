@@ -46,9 +46,6 @@ type, extends(TestFunction_Type)                                      ::    Test
   character(:), allocatable                                           ::    X1_Dependency
   character(:), allocatable                                           ::    X2_Dependency
   character(:), allocatable                                           ::    X3_Dependency
-  real(rkp), dimension(1)                                             ::    Abscissa
-  character(:), allocatable                                           ::    AbscissaName
-  character(:), allocatable                                           ::    ResponseName
   character(:), allocatable                                           ::    Label
 
 contains
@@ -67,7 +64,7 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This, Debug )
 
     class(TestIshigami_Type), intent(inout)                           ::    This
@@ -90,9 +87,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This, Debug )
 
     class(TestIshigami_Type), intent(inout)                           ::    This
@@ -114,9 +111,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This, Debug )
 
     class(TestIshigami_Type), intent(inout)                           ::    This
@@ -139,17 +136,14 @@ contains
     This%X1_Dependency = ''
     This%X2_Dependency = ''
     This%X3_Dependency = ''
-    This%Abscissa = Zero
-    This%ResponseName = 'ishigami'
-    This%AbscissaName = 'scalar'
     This%Label = 'ishigami'
 
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix, Debug )
 
     class(TestIshigami_Type), intent(inout)                           ::    This
@@ -180,17 +174,9 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    ParameterName = 'response_name'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%ResponseName = VarC0D
-
     ParameterName = 'label'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%Label = VarC0D
-
-    ParameterName = 'abscissa_name'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%AbscissaName = VarC0D
 
     ParameterName = 'a'
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -235,9 +221,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput( This, MainSectionName, Prefix, Directory, Debug )
 
     use StringRoutines_Module
@@ -278,8 +264,6 @@ contains
     call GetInput%AddParameter( Name='a', Value=ConvertToString(Value=This%A) )
     call GetInput%AddParameter( Name='b', Value=ConvertToString(Value=This%B) )
     call GetInput%AddParameter( Name='c', Value=ConvertToString(Value=This%C) )
-    call GetInput%AddParameter( Name='response_name', Value=This%ResponseName )
-    call GetInput%AddParameter( Name='abscissa_name', Value=This%AbscissaName )
     call GetInput%AddParameter( Name='label', Value=This%AbscissaName )
 
     SectionName='parameters'
@@ -297,9 +281,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Run( This, Input, Output, Debug )
 
     class(TestIshigami_Type), intent(inout)                           ::    This
@@ -387,8 +371,7 @@ contains
         call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
     end select
 
-    call Output(1)%Construct( Abscissa=This%Abscissa, Ordinate=Ordinate, AbscissaName=This%AbscissaName,                          &
-                                                                                 OrdinateName=This%ResponseName, Label=This%Label)
+    call Output(1)%Construct( Values=Ordinate, Label=This%Label)
 
     deallocate(Ordinate, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
@@ -396,9 +379,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function ComputeIshigami( A, B, C, X1, X2, X3, Debug )
 
     real(rkp)                                                         ::    ComputeIshigami
@@ -423,9 +406,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy( LHS, RHS )
 
     class(TestIshigami_Type), intent(out)                             ::    LHS
@@ -445,8 +428,6 @@ contains
         LHS%Constructed = RHS%Constructed
         if ( RHS%Constructed ) then
           LHS%Label = RHS%Label
-          LHS%AbscissaName = RHS%AbscissaName
-          LHS%ResponseName = RHS%ResponseName
           LHS%A = RHS%A
           LHS%B = RHS%B
           LHS%C = RHS%C
@@ -456,7 +437,6 @@ contains
           LHS%X1_Dependency = RHS%X1_Dependency
           LHS%X2_Dependency = RHS%X2_Dependency
           LHS%X3_Dependency = RHS%X3_Dependency
-          LHS%Abscissa = RHS%Abscissa
         end if
       class default
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
@@ -465,9 +445,9 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Finalizer( This )
 
     type(TestIshigami_Type), intent(inout)                            ::    This
@@ -482,6 +462,6 @@ contains
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

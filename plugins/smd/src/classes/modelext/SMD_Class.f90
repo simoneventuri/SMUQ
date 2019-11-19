@@ -40,8 +40,6 @@ private
 public                                                                ::    SMD_Type
 
 type, extends(ModelExtTemplate_Type)                                  ::    SMD_Type
-  character(:), allocatable                                           ::    AbscissaName
-  character(:), allocatable                                           ::    ResponseName
   character(:), allocatable                                           ::    Label
   real(rkp), dimension(2)                                             ::    IC=Zero
   real(rkp), allocatable, dimension(:)                                ::    Abscissa
@@ -132,8 +130,6 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    This%ResponseName = 'y'
-    This%AbscissaName = 'time'
     This%Label = 'smd'
     This%IC = Zero
     This%RTOL = 1.0d-6
@@ -183,14 +179,6 @@ contains
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
-
-    ParameterName = 'response_name'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%ResponseName = VarC0D
-
-    ParameterName = 'abscissa_name'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%AbscissaName = VarC0D
 
     ParameterName = 'label'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -344,6 +332,8 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
     
+    call GetInput%AddParameter( Name='label', Value=This%Label )
+
     SectionName='parameters'
     call GetInput%AddSection( SectionName=SectionName )
     call GetInput%AddParameter( Name='m', Value=ConvertToString(Value=This%M), SectionName=SectionName )
@@ -543,8 +533,7 @@ contains
         call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
     end select
 
-    call Output(1)%Construct( Abscissa=This%Abscissa, Ordinate=Ordinate, AbscissaName='time', OrdinateName='position',            &
-                                                                                                                 Label=This%Label)
+    call Output(1)%Construct( Values=Ordinate, Label=This%Label )
 
     deallocate(IWORK, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='IWORK', ProcName=ProcName, stat=StatLoc )
@@ -595,6 +584,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
         if( RHS%Constructed ) then
+          LHS%Label = RHS%Label
           LHS%M = RHS%M
           LHS%K = RHS%K
           LHS%C = RHS%C

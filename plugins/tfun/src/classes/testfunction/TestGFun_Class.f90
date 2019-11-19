@@ -41,9 +41,6 @@ type, extends(TestFunction_Type)                                      ::    Test
   type(String_Type), allocatable, dimension(:)                        ::    InputLabel
   real(rkp), allocatable, dimension(:)                                ::    Parameters
   real(rkp), allocatable, dimension(:)                                ::    c
-  real(rkp), dimension(1)                                             ::    Abscissa=Zero
-  character(:), allocatable                                           ::    AbscissaName
-  character(:), allocatable                                           ::    ResponseName
   character(:), allocatable                                           ::    Label
 contains
   procedure, public                                                   ::    Initialize
@@ -135,9 +132,6 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    This%Abscissa=Zero
-    This%ResponseName = 'gfunction'
-    This%AbscissaName = 'scalar'
     This%Label = 'gfunction'
 
     if (DebugLoc) call Logger%Exiting()
@@ -177,14 +171,6 @@ contains
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
-
-    ParameterName = 'response_name'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%ResponseName = VarC0D
-
-    ParameterName = 'abscissa_name'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%AbscissaName = VarC0D
 
     ParameterName = 'label'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -278,8 +264,6 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    call GetInput%AddParameter( Name='response_name', Value=This%ResponseName )
-    call GetInput%AddParameter( Name='abscissa_name', Value=This%AbscissaName )
     call GetInput%AddParameter( Name='nb_dimensions', Value=ConvertToString(Value=This%NbParams) )
     call GetInput%AddParameter( Name='label', Value=This%AbscissaName )
 
@@ -389,8 +373,7 @@ contains
     deallocate(X, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='X', ProcName=ProcName, stat=StatLoc )
 
-    call Output(1)%Construct( Abscissa=This%Abscissa, Ordinate=Ordinate, AbscissaName=This%AbscissaName,                          &
-                                                                                 OrdinateName=This%ResponseName, Label=This%Label)
+    call Output(1)%Construct( Values=Ordinate, Label=This%Label)
 
     deallocate(Ordinate, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
@@ -452,8 +435,6 @@ contains
         LHS%Constructed = RHS%Constructed
         if ( RHS%Constructed ) then
           LHS%Label = RHS%Label
-          LHS%AbscissaName = RHS%AbscissaName
-          LHS%ResponseName = RHS%ResponseName
           LHS%NbParams = RHS%NbParams
           allocate(LHS%InputLabel, source=RHS%InputLabel, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%InputLabel', ProcName=ProcName, stat=StatLoc )
@@ -461,7 +442,6 @@ contains
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Parameters', ProcName=ProcName, stat=StatLoc )
           allocate( LHS%c, source=RHS%c, stat=StatLoc )
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%c', ProcName=ProcName, stat=StatLoc )
-          LHS%Abscissa = RHS%Abscissa
         end if
       class default
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )

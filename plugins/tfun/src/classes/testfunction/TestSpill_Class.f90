@@ -43,8 +43,6 @@ type, extends(TestFunction_Type)                                      ::    Test
   real(rkp), allocatable, dimension(:)                                ::    Location
   real(rkp), allocatable, dimension(:)                                ::    Time
   integer                                                             ::    NbOutputs
-  type(String_Type), allocatable, dimension(:)                        ::    AbscissaName
-  type(String_Type), allocatable, dimension(:)                        ::    ResponseName
   type(String_Type), allocatable, dimension(:)                        ::    Label
   real(rkp)                                                           ::    M
   real(rkp)                                                           ::    D
@@ -120,12 +118,6 @@ contains
 
     if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%AbscissaName) ) deallocate(This%AbscissaName, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%AbscissaName', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%ResponseName) ) deallocate(This%ResponseName, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseName', ProcName=ProcName, stat=StatLoc )
 
     This%NbOutputs = 0
 
@@ -226,12 +218,6 @@ contains
     allocate(This%Label(This%NbOutputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%ResponseName(This%NbOutputs), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ResponseName', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%AbscissaName(This%NbOutputs), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%AbscissaName', ProcName=ProcName, stat=StatLoc )
-
     allocate(This%Location(This%NbOutputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Location', ProcName=ProcName, stat=StatLoc )
 
@@ -248,22 +234,6 @@ contains
       ParameterName = 'label'
       call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
       This%Label(i) = VarC0D
-
-      ParameterName = 'response_name'
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.false., Found=Found )
-      if ( Found ) then
-        This%ResponseName(i) = VarC0D
-      else
-        This%ResponseName(i) = This%Label(i)
-      end if
-
-      ParameterName = 'abscissa_name'
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.false., Found=Found )
-      if ( Found ) then
-        This%AbscissaName(i) = VarC0D
-      else
-        This%AbscissaName(i) = 'time at s=' // ConvertToString(Value=This%Location(i)) // ', (s)'
-      end if
 
     end do
 
@@ -360,8 +330,6 @@ contains
       SubSectionName = SectionName // '>' // SubSectionName
       call GetInput%AddParameter( Name='location', Value=ConvertToString(Value=This%Location(i)), SectionName=SubSectionName )
       call GetInput%AddParameter( Name='label', Value=This%Label(i)%GetValue(), SectionName=SubSectionName )
-      call GetInput%AddParameter( Name='response_name', Value=This%ResponseName(i)%GetValue(), SectionName=SubSectionName )
-      call GetInput%AddParameter( Name='abscissa_name', Value=This%AbscissaName(i)%GetValue(), SectionName=SubSectionName )
     end do
 
     SectionName='parameters'
@@ -450,8 +418,7 @@ contains
         i = 1
         do i = 1, This%NbOutputs
           call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time, Concentration=Ordinate(:,1) )
-          call Output(i)%Construct( Abscissa=This%Time, Ordinate=Ordinate, AbscissaName=This%AbscissaName(i)%GetValue(),          &
-                                                     OrdinateName=This%ResponseName(i)%GetValue(), Label=This%Label(i)%GetValue())
+          call Output(i)%Construct( Values=Ordinate, Label=This%Label(i)%GetValue() )
         end do
       type is (InputStoch_Type)
         allocate(Ordinate(size(This%Time),Input%GetNbDegen()), stat=StatLoc)
@@ -484,8 +451,7 @@ contains
             call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time,                            &
                                                                                                     Concentration=Ordinate(:,ii) )
           end do
-          call Output(i)%Construct( Abscissa=This%Time, Ordinate=Ordinate, AbscissaName=This%AbscissaName(i)%GetValue(),          &
-                                                     OrdinateName=This%ResponseName(i)%GetValue(), Label=This%Label(i)%GetValue())
+          call Output(i)%Construct( Values=Ordinate, Label=This%Label(i)%GetValue() )
         end do
 
       class default
@@ -558,8 +524,6 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
         if( RHS%Constructed ) then
-          LHS%AbscissaName = RHS%AbscissaName
-          LHS%ResponseName = RHS%ResponseName
           LHS%NbOutputs = RHS%NbOutputs
           allocate(LHS%Label, source=RHS%Label, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Label', ProcName=ProcName, stat=StatLoc )
@@ -605,12 +569,6 @@ contains
 
     if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%AbscissaName) ) deallocate(This%AbscissaName, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%AbscissaName', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%ResponseName) ) deallocate(This%ResponseName, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseName', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
