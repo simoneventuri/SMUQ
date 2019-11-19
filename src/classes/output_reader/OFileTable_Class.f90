@@ -16,40 +16,41 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module OFileReader_Class
+module OFileTable_Class
 
 use Input_Library
 use Parameters_Library
+use String_Library
+use StringRoutines_Module
+use StringRoutines_Module
+use ArrayRoutines_Module
+use ArrayIORoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use Output_Class                                                  ,only:    Output_Type
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use OFileFormated_Class                                           ,only:    OFileFormated_Type
-use OFileFormated_Vec_Class                                       ,only:    OFileFormated_Vec_Type
-use OFileFormated_Factory_Class                                   ,only:    OFileFormated_Factory
+use Output_Class                                                  ,only:    Output_Type
+use String_Library
 
 implicit none
 
 private
 
-public                                                                ::    OFileReader_Type
+public                                                                ::    OFileTable_Type
 
-type                                                                  ::    OFileReader_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
-  logical                                                             ::    Constructed=.false.
-  integer                                                             ::    NbOFiles
-  type(OFileFormated_Vec_Type), allocatable, dimension(:)             ::    OFile
-  integer                                                             ::    NbOutputs
+type, extends(OFileFormated_Type)                                     ::    OFileTable_Type
+  type(SMUQFile_Type)                                                 ::    OutputFile
+  integer                                                             ::    OutputColumn
+  integer                                                             ::    AbscissaColumn
+  real(rkp), allocatable, dimension                                   ::    InterpolationNodes
+  logical                                                             ::    Interpolated
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
-  generic, public                                                     ::    Construct               =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    ReadOutput
-  procedure, public                                                   ::    GetNbOutputs
-  generic, public                                                     ::    assignment(=)           =>    Copy
+  procedure, public                                                   ::    GetOutput
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -61,7 +62,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This, Debug )
 
-    class(OFileReader_Type), intent(inout)                            ::    This
+    class(OFileTable_Type), intent(inout)                             ::    This
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -72,7 +73,7 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
-      This%Name = 'ofilereader'
+      This%Name = 'ofiletable'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -85,7 +86,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This, Debug )
 
-    class(OFileReader_Type), intent(inout)                            ::    This
+    class(OFileTable_Type), intent(inout)                             ::    This
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -96,11 +97,10 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( allocated(This%OFile) ) deallocate(This%OFile, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OFile', ProcName=ProcName, stat=StatLoc )
+    call This%OutputFile%Reset()
 
-    This%NbOFiles = 0
-    This%NbOutputs = 0
+    if ( allocated(This%InterpolationNodes) ) deallocate(This%InterpolationNodes, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
 
     call This%SetDefaults()
 
@@ -112,7 +112,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This, Debug )
 
-    class(OFileReader_Type), intent(inout)                            ::    This
+    class(OFileTable_Type), intent(inout)                             ::    This
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -122,6 +122,10 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
+    This%AbscissaColumn = 0
+    This%OutputColumn = 0
+    This%Interpolated = .false.
+
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
@@ -130,10 +134,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix, Debug )
 
-    use StringRoutines_Module
     use String_Library
 
-    class(OFileReader_Type), intent(inout)                            ::    This
+    class(OFileTable_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    Debug
@@ -143,18 +146,13 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    class(OFileFormated_Type), allocatable                            ::    OFile
-    class(OFileFormated_Type), pointer                                ::    OFilePointer=>null()
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    VarI0D
-    integer                                                           ::    NbOutputs
-    integer                                                           ::    i, ii
-    type(String_Type), allocatable, dimension(:)                      ::    OutputLabels
-    character(:), allocatable                                         ::    LabelLoc
-
+    character(:), allocatable                                         ::    VarC0D
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    integer                                                           ::    i
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -166,49 +164,42 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    SectionName = 'files'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    This%NbOFiles = InputSection%GetNumberofSubSections()
+    ParameterName = 'abscissa_column'
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%AbscissaColumn = VarI0D
 
-    allocate(This%OFile(This%NbOFiles), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OFile', ProcName=ProcName, stat=StatLoc )
-    
-    This%NbOutputs = 0
-    i = 1
-    do i = 1, This%NbOFiles
-      SubSectionName = SectionName // '>file' // ConvertToString(i)
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call OFileFOrmated_Factory%Construct( Object=OFile, Input=InputSection, Prefix=PrefixLoc )
-      call This%OFile(i)%Set( Object=OFile ) 
-      This%NbOutputs = This%NbOutputs + OFile%GetNbOutputs()
-      deallocate(OFile, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='OFile', ProcName=ProcName, stat=StatLoc )
-      nullify(InputSection)
-    end do
+    ParameterName = 'output_column'
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%OutputColumn = VarI0D
 
-    allocate(OutputLabels(This%NbOutputs), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='OutputLabels', ProcName=ProcName, stat=StatLoc )
-    ii = 0
-    i = 1
-    do i = 1, This%NbOFiles
-      OFilePointer => This%OFile(i)%GetPointer()
-      if ( OFilePointer%GetNbOutputs() <= 0 ) cycle
-      OutputLabels(ii+1:ii+OFilePointer%GetNbOutputs()) = OFilePointer%GetOutputLabels()
-      ii = ii+OFilePointer%GetNbOutputs()
-    end do
+    SectionName = 'file'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call This%OutputFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+    nullify(InputSection)
 
-    i = 1
-    ii = 1
-    do i = 1, This%NbOutputs-1
-      LabelLoc = OutputLabels(i)%GetValue()
-      ii = i
-      do ii = i+1,This%NbOutputs
-        if ( LabelLoc == OutputLabels(ii)%GetValue() ) call Error%Raise( Line='Duplicate labels detected', ProcName=ProcName )
-      end do
-    end do
+    SectionName = 'interpolation_nodes'
 
-    deallocate(OutputLabels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputLabels', ProcName=ProcName, stat=StatLoc )
+    if ( Input%HasSection( SubSectionName = SectionName ) then
+      This%Interpolated = .true.
+      ParameterName = 'source' 
+      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+      AbscissaSource = VarC0D
+      SubSectionName = SectionName // '>source'
+      select case ( AbscissaSource )
+        case ( 'values' )
+          call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+          call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
+        case ( 'computed' )
+          call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+          VarR1D = LinSpaceVec( Input=InputSection )
+        case default
+          call Error%Raise( Line='Abscissa source not recognized', ProcName=ProcName )
+      end select
+      allocate(This%InterpolationNodes, source=VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    end if
 
     This%Constructed = .true.
 
@@ -220,11 +211,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput( This, MainSectionName, Prefix, Directory, Debug )
 
-    use StringRoutines_Module
-
     type(InputSection_Type)                                           ::    GetInput
 
-    class(OFileReader_Type), intent(in)                               ::    This
+    class(OFileTable_Type), intent(in)                                ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -238,8 +227,9 @@ contains
     logical                                                           ::    ExternalFlag=.false.
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
-    class(OFileFormated_Type), pointer                                ::    OFile=>null()
     integer                                                           ::    i
+    character(:), allocatable                                         ::    FileName
+    type(SMUQFile_Type)                                               ::    File
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -257,19 +247,30 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file'
+    call GetInput%AddSection( Section=This%OutputFile%GetInput( MainSectionName='file', Prefix=PrefixLoc, Directory=DirectorySub))
 
-    SectionName = 'files'
-    call GetInput%AddSection( SectionName=SectionName )
-    
-    i = 1
-    do i = 1, This%NbOFiles
-      SubSectionName = 'file' // ConvertToString(Value=i)
-      OFile => This%OFile(i)%GetPointer()
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file' // ConvertToString(Value=i)
-      call GetInput%AddSection( Section=OFileFormated_Factory%GetObjectInput( MainSectionName=SubSectionName, Object=OFile,       &
-                                                           Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
-      nullify(OFile)
-    end do
+    call GetInput%AddParameter( Name='abscissa_column', Value=Convert_To_String(This%AbscissaColumn) )
+    call GetInput%AddParameter( Name='output_column', Value=Convert_To_String(This%OutputColumn) )
+
+    if ( This%Interpolated ) then
+      SectionName = 'interpolation_nodes'
+      call GetInput%AddParameter( Name='source', Value='values', SectionName=SectionName )
+
+      call GetInput%AddSection( SectionName=SectionName )
+      SubSectionName = 'source'
+      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
+                                                                                                                Mandatory=.true. )
+      if ( ExternalFlag ) then
+        FileName = DirectoryLoc // '/interpolation_nodes.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call ExportArray( Input=InputSection, Array=This%InterpolationNodes, File=File )
+      else
+        call ExportArray( Input=InputSection, Array=This%InterpolationNodes )
+      end if
+      nullify(InputSection)
+    end if
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -277,37 +278,57 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReadOutput( This, Output, Debug )
+  subroutine ReadOutput( This, Values, Debug )
 
-    class(OFileReader_Type), intent(inout)                            ::    This
-    type(Output_Type), dimension(:), intent(inout)                    ::    Output
+    class(OFileTable_Type), intent(in)                                ::    This
+    real(rkp), allocatable, dimension(:), intent(out)                 ::    Values
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ReadOutput'
     integer                                                           ::    StatLoc=0
-    integer                                                           ::    i, ii
-    class(OFileFormated_Type), pointer                                ::    OFile=>null()
-    integer                                                           ::    NbOutputsLoc
-
+    type(String_Type), allocatable, dimension(:,:)                    ::    Strings
+    real(rkp), allocatable, dimension(:)                              ::    TableOutput
+    real(rkp), allocatable, dimension(:)                              ::    Abscissa
+    real(rkp), allocatable, dimension(:)                              ::    InterpolatedOutput
+    integer                                                           ::    NbLines
+    integer                                                           ::    i
+    
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( Line='Passed down incorrect size Output array', ProcName=ProcName )
+    call ImportArray( Array=Strings, File=This%OutputFile )
 
-    ii = 0
+    NbLines = size(Strings,2)
+
+    allocate(TableOutput(NbLines), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='TableOutput', ProcName=ProcName, stat=StatLoc )
+    allocate(Abscissa(NbLines), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Abscissa', ProcName=ProcName, stat=StatLoc )
+
     i = 1
-    do i = 1, This%NbOFiles
-      OFile => This%OFile(i)%GetPointer()
-      NbOutputsLoc = OFile%GetNbOutputs()
-      if ( NbOutputsLoc <= 0 ) cycle
-      call OFile%GetOutput( Output=Output(ii+1:ii+NbOutputsLoc) )
-      ii = ii + NbOutputsLoc
-      nullify(OFile)
+    do i = 1, NbLines
+      TableOutput(i) = ConvertToRealrkp( String=Strings(This%OutputColumn,i)%GetValue() )
+      Abscissa(i) = ConvertToRealrkp( String=Strings(This%AbscissaColumn,i)%GetValue() )
     end do
+
+    if ( This%Interpolated ) then
+      Values = Interpolate( Abscissa=Abscissa, Ordinate=TableOutput, Nodes=This%InterpolationNodes )
+    else
+      Values = TableOutput
+    end if
+
+    deallocate(Strings, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(Abscissa, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Abscissa', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(TableOutput, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TableOutput', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -315,60 +336,34 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbOutputs( This, Debug )
-
-    integer                                                           ::    GetNbOutputs
-
-    class(OFileReader_Type), intent(in)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetNbOutputs'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetNbOutputs = This%NbOutputs
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy( LHS, RHS )
 
-    class(OFileReader_Type), intent(out)                              ::    LHS
-    class(OFileReader_Type), intent(in)                               ::    RHS
+    class(OFileTable_Type), intent(out)                               ::    LHS
+    class(OFileFormated_Type), intent(in)                             ::    RHS
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
 
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
-      type is (OFileReader_Type)
+      type is (OFileTable_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          LHS%NbOutputs = RHS%NbOutputs
-          LHS%NbOFiles = RHS%NbOFiles
-          allocate(LHS%OFile, source=RHS%OFile, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OFile', ProcName=ProcName, stat=StatLoc )
-
-          i = 1
-          do i = 1, LHS%NbOFiles
-            call LHS%OFile(i)%Set( RHS%OFile(i)%GetPointer() )
-          end do
+          LHS%OutputFile = RHS%OutputFile
+          LHS%AbscissaColumn = RHS%AbscissaColumn
+          LHS%OutputColumn = RHS%OutputColumn
+          LHS%Interpolated = RHS%Interpolated
+          if ( LHS%Interpolated ) then
+            allocate(LHS%InterpolationNodes, source=RHS%InterpolationNodes, stat=StatLoc)
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
+          end if
         end if
 
       class default
@@ -384,7 +379,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Finalizer( This )
 
-    type(OFileReader_Type),intent(inout)                              ::    This
+    type(OFileTable_Type),intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     logical                                                           ::    DebugLoc
@@ -393,8 +388,11 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( allocated(This%OFile) ) deallocate(This%OFile, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OFile', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%OutputColumn) ) deallocate(This%OutputColumn, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OutputColumn', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%OutputLabel) ) deallocate(This%OutputLabel, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OutputLabel', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 

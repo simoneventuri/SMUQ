@@ -44,9 +44,7 @@ contains
   procedure(SetDefaults_OFileFormated), deferred, public              ::    SetDefaults
   procedure(ConstructInput_OFileFormated), deferred, private          ::    ConstructInput
   procedure(GetInput_OFileFormated), deferred, public                 ::    GetInput
-  procedure(GetNbOutputs_OFileFormated), deferred, public             ::    GetNbOutputs
-  procedure(GetOutput_OFileFormated), deferred, public                ::    GetOutput
-  procedure(GetOutputLabels_OFileFormated), deferred, public          ::    GetOutputLabels
+  procedure(ReadOutput_OFileFormated), deferred, public               ::    ReadOutput
   procedure(Copy_OFileFormated), deferred, public                     ::    Copy
 end type
 
@@ -90,20 +88,6 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1_OFileFormated( This, OFile, NbOutputs, AbscissaColumn, OutputColumn, OutputMap, Debug )
-    import                                                            ::    OFileFormated_Type
-    import                                                            ::    SMUQFile_Type
-    class(OFileFormated_Type), intent(inout)                          ::    This
-    type(SMUQFile_Type), intent(in)                                   ::    OFile
-    integer                                                           ::    NbOutputs
-    integer                                                           ::    AbscissaColumn
-    integer, dimension(:), intent(in)                                 ::    OutputColumn
-    integer, dimension(:), intent(in)                                 ::    OutputMap
-    logical, optional, intent(in)                                     ::    Debug
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput_OFileFormated( This, MainSectionName, Prefix, Directory, Debug )
     import                                                            ::    OFileFormated_Type
     import                                                            ::    InputSection_Type
@@ -117,32 +101,13 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbOutputs_OFileFormated( This, Debug )
-    import                                                            ::    OFileFormated_Type  
-    integer                                                           ::    GetNbOutputs_OFileFormated
-    class(OFileFormated_Type), intent(in)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetOutput_OFileFormated( This, Output, Debug )
+  subroutine ReadOutput_OFileFormated( This, Values, Debug )
     use Output_Class                                              ,only:    Output_Type
     import                                                            ::    OFileFormated_Type
-    class(OFileFormated_Type), intent(inout)                          ::    This
-    type(Output_Type), dimension(:), intent(inout)                    ::    Output
+    class(OFileFormated_Type), intent(in)                             ::    This
+    real(rkp), allocatable, dimension(:), intent(out)                 ::    Values
     logical, optional ,intent(in)                                     ::    Debug
   end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOutputLabels_OFileFormated( This, Debug )
-    use String_Library
-    import                                                            ::    OFileFormated_Type  
-    type(String_Type), allocatable, dimension(:)                      ::    GetOutputLabels_OFileFormated
-    class(OFileFormated_Type), intent(in)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

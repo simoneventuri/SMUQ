@@ -16,32 +16,46 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module MFileWriter_Class
+module OutputReader_Class
 
 use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use MFileInput_Class                                              ,only:    MFileInput_Type
-use MFileInput_Vec_Class                                          ,only:    MFileInput_Vec_Type
-use MFileInput_Factory_Class                                      ,only:    MFileInput_Factory
-use SMUQFile_Class                                                ,only:    SMUQFile_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use String_Library
+use Output_Class                                                  ,only:    Output_Type
+use OFileFormated_Class                                           ,only:    OFileFormated_Type
+use OFileFormated_Vec_Class                                       ,only:    OFileFormated_Vec_Type
+use OFileFormated_Factory_Class                                   ,only:    OFileFormated_Factory
 
 implicit none
 
 private
 
-public                                                                ::    MFileWriter_Type
+public                                                                ::    OutputReader_Type
 
-type                                                                  ::    MFileWriter_Type
+type                                                                  ::    Cell_Type
+  character(:), allocatable                                           ::    Label
+  type(OFileFormated_Vec_Type), allocatable, dimension(:)             ::    OFile
+  integer                                                             ::    NbOFiles
+contains
+  procedure, public                                                   ::    Initialize              =>    Initialize_Cell
+  procedure, public                                                   ::    Reset                   =>    Reset_Cell
+  procedure, public                                                   ::    SetDefaults             =>    SetDefaults
+  generic, public                                                     ::    Construct               =>    ConstructInput
+  procedure, private                                                  ::    ConstructInput          =>    ConstructInput_Cell
+  procedure, public                                                   ::    GetInput                =>    GetInput_Cell
+  procedure, public                                                   ::    ReadOutput              =>    ReadOutput_Cell
+  generic, public                                                     ::    assignment(=)           =>    Copy
+  procedure, public                                                   ::    Copy
+  final                                                               ::    Finalizer
+end type
+
+type                                                                  ::    OutputReader_Type
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  integer                                                             ::    NbFiles
-  type(SMUQFile_Type), allocatable, dimension(:)                      ::    ModelFile
-  type(MFileInput_Vec_Type), allocatable, dimension(:)                ::    FileProcessor
+  type(Cell_Type)                                                     ::    Cells
+  integer                                                             ::    NbCells
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -49,7 +63,8 @@ contains
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    WriteInput
+  procedure, public                                                   ::    ReadOutput
+  procedure, public                                                   ::    GetNbOutputs
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -62,7 +77,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This, Debug )
 
-    class(MFileWriter_Type), intent(inout)                            ::    This
+    class(OutputReader_Type), intent(inout)                           ::    This
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -73,7 +88,7 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
-      This%Name = 'mfilewriter'
+      This%Name = 'output_reader'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -86,7 +101,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This, Debug )
 
-    class(MFileWriter_Type), intent(inout)                            ::    This
+    class(OutputReader_Type), intent(inout)                           ::    This
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -97,18 +112,12 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( allocated(This%FileProcessor) ) deallocate(This%FileProcessor, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FileProcessor', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%ModelFile) ) deallocate(This%ModelFile, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ModelFile', ProcName=ProcName, stat=StatLoc )
+    This%NbCells = 0
 
-    This%NbFiles = 0
-
-    This%Initialized = .false.
-    This%Constructed = .false.
-
-    call This%Initialize()
+    call This%SetDefaults()
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -118,7 +127,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This, Debug )
 
-    class(MFileWriter_Type), intent(inout)                            ::    This
+    class(OutputReader_Type), intent(inout)                            ::    This
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -136,9 +145,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix, Debug )
 
-    use String_Library
     use StringRoutines_Module
-    class(MFileWriter_Type), intent(inout)                            ::    This
+    use String_Library
+
+    class(OutputReader_Type), intent(inout)                            ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    Debug
@@ -148,14 +158,18 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    class(MFileInput_Type), allocatable                               ::    FileProcessor
+    class(OFileFormated_Type), allocatable                            ::    OFile
+    class(OFileFormated_Type), pointer                                ::    OFilePointer=>null()
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    VarI0D
-    integer                                                           ::    i
-    
+    integer                                                           ::    NbOutputs
+    integer                                                           ::    i, ii
+    type(String_Type), allocatable, dimension(:)                      ::    OutputLabels
+    character(:), allocatable                                         ::    LabelLoc
+
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -166,32 +180,50 @@ contains
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
-    
-    SectionName = 'files'
+
+    SectionName = 'outputs'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    This%NbFiles = InputSection%GetNumberofSubSections()
+    This%NbCells = InputSection%GetNumberofSubSections()
 
-    allocate(This%ModelFile(This%NbFiles), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ModelFile', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Cells(This%NbCells), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
+    
+    This%NbOutputs = 0
+    i = 1
+    do i = 1, This%NbOFiles
+      SubSectionName = SectionName // '>file' // ConvertToString(i)
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+      call OFileFOrmated_Factory%Construct( Object=OFile, Input=InputSection, Prefix=PrefixLoc )
+      call This%OFile(i)%Set( Object=OFile ) 
+      This%NbOutputs = This%NbOutputs + OFile%GetNbOutputs()
+      deallocate(OFile, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='OFile', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+    end do
 
-    allocate(This%FileProcessor(This%NbFiles), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%FileProcessor', ProcName=ProcName, stat=StatLoc )
+    allocate(OutputLabels(This%NbOutputs), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='OutputLabels', ProcName=ProcName, stat=StatLoc )
+    ii = 0
+    i = 1
+    do i = 1, This%NbOFiles
+      OFilePointer => This%OFile(i)%GetPointer()
+      if ( OFilePointer%GetNbOutputs() <= 0 ) cycle
+      OutputLabels(ii+1:ii+OFilePointer%GetNbOutputs()) = OFilePointer%GetOutputLabels()
+      ii = ii+OFilePointer%GetNbOutputs()
+    end do
 
     i = 1
-    do i = 1, This%NbFiles
-      SectionName = 'files>file' // ConvertToString(Value=i)
-      SubSectionName = SectionName // '>file'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call This%ModelFile(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
-      nullify(InputSection)
-
-      SubSectionName = SectionName // '>format'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call MFileInput_Factory%Construct( Object=FileProcessor, Input=InputSection, Prefix=PrefixLoc )
-      call This%FileProcessor(i)%Set( Object=FileProcessor )
-      deallocate(FileProcessor, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='FileProcessor', ProcName=ProcName, stat=StatLoc )
+    ii = 1
+    do i = 1, This%NbOutputs-1
+      LabelLoc = OutputLabels(i)%GetValue()
+      ii = i
+      do ii = i+1,This%NbOutputs
+        if ( LabelLoc == OutputLabels(ii)%GetValue() ) call Error%Raise( Line='Duplicate labels detected', ProcName=ProcName )
+      end do
     end do
+
+    deallocate(OutputLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputLabels', ProcName=ProcName, stat=StatLoc )
 
     This%Constructed = .true.
 
@@ -207,7 +239,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(MFileWriter_Type), intent(in)                               ::    This
+    class(OutputReader_Type), intent(in)                               ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -221,9 +253,8 @@ contains
     logical                                                           ::    ExternalFlag=.false.
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
-    class(MFileInput_Type), pointer                                   ::    FileProcessor=>null()
-    integer                                                           ::    i                        
-
+    class(OFileFormated_Type), pointer                                ::    OFile=>null()
+    integer                                                           ::    i
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -240,28 +271,19 @@ contains
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    
+
+
     SectionName = 'files'
     call GetInput%AddSection( SectionName=SectionName )
-
+    
     i = 1
-    do i = 1, This%NbFiles
-      call GetInput%AddSection( SectionName='file' // ConvertToString(Value=i), To_SubSection='files' )
-
-      SectionName = 'files>file' // ConvertToString(Value=i)
-
-      SubSectionName = 'file'
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file' // ConvertToString(Value=i) // '_file'
-      call GetInput%AddSection( Section=This%ModelFile(i)%GetInput(MainSectionName=SubSectionName, Prefix=PrefixLoc,              &
-                                                                              Directory=DirectorySub), To_SubSection=SectionName )
-
-      FileProcessor => This%FileProcessor(i)%GetPointer()
-      SubSectionName = 'format'
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file' // ConvertToString(Value=i) // '_format'
-      call GetInput%AddSection( Section=MFileInput_Factory%GetObjectInput( Object=FileProcessor,MainSectionName=SubSectionName,   &
+    do i = 1, This%NbOFiles
+      SubSectionName = 'file' // ConvertToString(Value=i)
+      OFile => This%OFile(i)%GetPointer()
+      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file' // ConvertToString(Value=i)
+      call GetInput%AddSection( Section=OFileFormated_Factory%GetObjectInput( MainSectionName=SubSectionName, Object=OFile,       &
                                                            Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
-
-      nullify(FileProcessor)
+      nullify(OFile)
     end do
 
     if (DebugLoc) call Logger%Exiting()
@@ -270,18 +292,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInput( This, Input, Debug )
+  subroutine ReadOutput( This, Output, Debug )
 
-    class(MFileWriter_Type), intent(inout)                            ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    class(OutputReader_Type), intent(inout)                            ::    This
+    type(Output_Type), dimension(:), intent(inout)                    ::    Output
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='WriteInput'
+    character(*), parameter                                           ::    ProcName='ReadOutput'
     integer                                                           ::    StatLoc=0
-    class(MFileInput_Type), pointer                                   ::    FileProcessor=>null()
-    integer                                                           ::    i
-    type(String_Type), allocatable, dimension(:)                      ::    Strings
+    integer                                                           ::    i, ii
+    class(OFileFormated_Type), pointer                                ::    OFile=>null()
+    integer                                                           ::    NbOutputsLoc
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -289,13 +311,17 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
+    if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( Line='Passed down incorrect size Output array', ProcName=ProcName )
+
+    ii = 0
     i = 1
-    do i = 1, This%NbFiles
-      FileProcessor => This%FileProcessor(i)%GetPointer()
-      call FileProcessor%WriteInput( Input=Input, Strings=Strings )
-      call This%ModelFile(i)%Export( Strings=Strings )
-      deallocate(Strings, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
+    do i = 1, This%NbOFiles
+      OFile => This%OFile(i)%GetPointer()
+      NbOutputsLoc = OFile%GetNbOutputs()
+      if ( NbOutputsLoc <= 0 ) cycle
+      call OFile%GetOutput( Output=Output(ii+1:ii+NbOutputsLoc) )
+      ii = ii + NbOutputsLoc
+      nullify(OFile)
     end do
 
     if (DebugLoc) call Logger%Exiting()
@@ -304,10 +330,34 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  function GetNbOutputs( This, Debug )
+
+    integer                                                           ::    GetNbOutputs
+
+    class(OutputReader_Type), intent(in)                               ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetNbOutputs'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    GetNbOutputs = This%NbOutputs
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy( LHS, RHS )
 
-    class(MFileWriter_Type), intent(out)                              ::    LHS
-    class(MFileWriter_Type), intent(in)                               ::    RHS
+    class(OutputReader_Type), intent(out)                              ::    LHS
+    class(OutputReader_Type), intent(in)                               ::    RHS
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
@@ -319,17 +369,21 @@ contains
 
     select type (RHS)
   
-      type is (MFileWriter_Type)
+      type is (OutputReader_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          LHS%NbFiles = RHS%NbFiles
-          allocate(LHS%ModelFile, source=RHS%ModelFile, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ModelFile', ProcName=ProcName, stat=StatLoc )
-          allocate(LHS%FileProcessor, source=RHS%FileProcessor, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%FileProcesso', ProcName=ProcName, stat=StatLoc )
+          LHS%NbOutputs = RHS%NbOutputs
+          LHS%NbOFiles = RHS%NbOFiles
+          allocate(LHS%OFile, source=RHS%OFile, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OFile', ProcName=ProcName, stat=StatLoc )
+
+          i = 1
+          do i = 1, LHS%NbOFiles
+            call LHS%OFile(i)%Set( RHS%OFile(i)%GetPointer() )
+          end do
         end if
 
       class default
@@ -345,7 +399,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Finalizer( This )
 
-    type(MFileWriter_Type),intent(inout)                              ::    This
+    type(OutputReader_Type),intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     logical                                                           ::    DebugLoc
@@ -354,15 +408,23 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( allocated(This%FileProcessor) ) deallocate(This%FileProcessor, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FileProcessor', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%ModelFile) ) deallocate(This%ModelFile, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ModelFile', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%OFile) ) deallocate(This%OFile, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OFile', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 
   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  !!------------------------------------------------------------------------------------------------------------------------------
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
   !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

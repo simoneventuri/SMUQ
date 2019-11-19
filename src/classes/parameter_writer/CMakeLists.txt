@@ -5,5 +5,5 @@ add_target_sources ( smuqApp
   MFileScalar_Class.f90
   MFileTable_Class.f90
   MFileMixed_Class.f90
-  MFileWriter_Class.f90
+  ParmameterWriter_Class.f90
 )

@@ -24,9 +24,9 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
 use ModelExtTemplate_Class                                        ,only:    ModelExtTemplate_Type
-use GENPIModel_Class                                              ,only:    GENPIModel_Type
-use MFileWriter_Class                                             ,only:    MFileWriter_Type
-use OFileReader_Class                                             ,only:    OFileReader_Type
+use PATOPIModel_Class                                             ,only:    PATOPIModel_Type
+use ParameterWriter_Class                                         ,only:    ParameterWriter_Type
+use OutputReader_Class                                            ,only:    OutputReader_Type
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
 use InputDet_Class                                                ,only:    InputDet_Type
@@ -39,9 +39,9 @@ private
 public                                                                ::    PATOPI_Type
 
 type, extends(ModelExtTemplate_Type)                                  ::    PATOPI_Type
-  type(GENPIModel_Type)                                               ::    GENPIModel
-  type(MFileWriter_Type)                                              ::    MFileWriter
-  type(OFileReader_Type)                                              ::    OFileReader
+  type(PATOPIModel_Type)                                              ::    PATOPIModel
+  type(ParameterWriter_Type)                                          ::    ParameterWriter
+  type(OutputReader_Type)                                             ::    OutputReader
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -71,7 +71,7 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
-      This%Name = 'GENPIModel'
+      This%Name = 'PATOPIModel'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -149,17 +149,17 @@ contains
 
     SectionName = 'model'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call This%GENPIModel%Construct( Input=InputSection, Prefix=PrefixLoc )
+    call This%PATOPIModel%Construct( Input=InputSection, Prefix=PrefixLoc )
     nullify( InputSection )
 
-    SectionName = 'mfile_writer'
+    SectionName = 'parameter_writer'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call This%MFileWriter%Construct( Input=InputSection, Prefix=PrefixLoc )
+    call This%ParameterWriter%Construct( Input=InputSection, Prefix=PrefixLoc )
     nullify( InputSection )
 
-    SectionName = 'ofile_reader'
+    SectionName = 'output_reader'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call This%OFileReader%Construct( Input=InputSection, Prefix=PrefixLoc )
+    call This%OutputReader%Construct( Input=InputSection, Prefix=PrefixLoc )
     nullify( InputSection )
 
     This%Constructed = .true.
@@ -239,11 +239,11 @@ contains
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddSection( Section=This%GENPIModel%GetInput(MainSectionName='model', Prefix=PrefixLoc,                        &
+    call GetInput%AddSection( Section=This%PATOPIModel%GetInput(MainSectionName='model', Prefix=PrefixLoc,                        &
                                                                                                          Directory=DirectorySub) )
-    call GetInput%AddSection( Section=This%MFileWriter%GetInput(MainSectionName='mfile_writer', Prefix=PrefixLoc,                 &
+    call GetInput%AddSection( Section=This%ParameterWriter%GetInput(MainSectionName='parameter_writer', Prefix=PrefixLoc,         &
                                                                                                          Directory=DirectorySub) )
-    call GetInput%AddSection( Section=This%OFileReader%GetInput(MainSectionName='ofile_reader', Prefix=PrefixLoc,                 &
+    call GetInput%AddSection( Section=This%OutputReader%GetInput(MainSectionName='output_reader', Prefix=PrefixLoc,               &
                                                                                                          Directory=DirectorySub) )
 
     if (DebugLoc) call Logger%Exiting()
@@ -278,7 +278,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    NbOutputsLoc = This%OFileReader%GetNbOutputs()
+    NbOutputsLoc = This%OutputReader%GetNbOutputs()
 
     if ( allocated(Output) ) then
       if ( size(Output,1) /= NbOutputsLoc ) then
@@ -294,27 +294,30 @@ contains
     select type (Input)
 
       type is (InputDet_Type)
-        call This%MFileWriter%WriteInput( Input=Input )
+        call This%ParameterWriter%WriteInput( Input=Input )
 
-        call This%GENPIModel%Run( Stat=StatRun )
+        call This%PATOPIModel%Run( Stat=StatRun )
 
         if ( present(Stat) ) Stat = StatRun
 
-        if ( StatRun == 0 ) call This%OFileReader%ReadOutput( Output=Output )
+        if ( StatRun == 0 ) call This%OutputReader%ReadOutput( Output=Output )
 
       type is (InputStoch_Type)
+        allocate(OutputLoc(NbOutputs), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )
+
         NbDegen = Input%GetNbDegen()
 
         i = 1
         do i = 1, NbDegen
           InputLoc = Input%GetDetInput(Num=i)
-          call This%MFileWriter%WriteInput( Input=InputLoc )
-          call This%GENPIModel%Run( Stat=StatRun )
+          call This%ParameterWriter%WriteInput( Input=InputLoc )
+          call This%PATOPIModel%Run( Stat=StatRun )
           if ( present(Stat) ) Stat = StatRun
-          
+        
           if ( StatRun /= 0 ) exit
 
-          call This%OFileReader%ReadOutput( Output=OutputLoc )
+          call This%OutputReader%ReadOutput( Output=OutputLoc )
 
           if ( i == 1 ) then
             ii = 1
@@ -322,7 +325,7 @@ contains
               allocate(VarR2D(OutputLoc(ii)%GetNbNodes(),NbDegen*OutputLoc(ii)%GetNbDegen()), stat=StatLoc)
               if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
               VarR2D = Zero
-              call Output(ii)%Construct(Values=VarR2D, Label=OutputLoc(ii)%GetLabel())
+              call Output(ii)%Construct( Values=VarR2D, Label=OutputLoc(ii)%GetLabel() )
               deallocate(VarR2D, stat=StatLoc)
               if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
             end do
@@ -381,9 +384,9 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          LHS%GENPIModel = RHS%GENPIModel
-          LHS%MFileWriter = RHS%MFileWriter
-          LHS%OFileReader = RHS%OFileReader
+          LHS%PATOPIModel = RHS%PATOPIModel
+          LHS%ParameterWriter = RHS%ParameterWriter
+          LHS%OutputReader = RHS%OutputReader
         end if
 
       class default

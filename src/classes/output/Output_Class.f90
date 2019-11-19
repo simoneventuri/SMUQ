@@ -145,7 +145,7 @@ contains
       allocate(This%Values, source=Values, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
       This%NbDegen = 1
-      This%NbNodes = size(Values)
+      This%NbNodes = size(Values,1)
     end if
 
     if ( present(Name) ) This%Name = Name
@@ -189,7 +189,7 @@ contains
       allocate(This%Values, source=Values, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
       This%NbDegen = size(Values,2)
-      This%NbNodes = size(Values)
+      This%NbNodes = size(Values,1)
     end if
 
     if ( present(Name) ) This%Name = Name

@@ -36,8 +36,8 @@ type                                                                  ::    List
 end type
 
 type                                                                  ::    LinkedList1D_Type
-  integer                                                          ::    BrowserLoc=0
-  integer                                                          ::    NbNodes=0
+  integer                                                             ::    BrowserLoc=0
+  integer                                                             ::    NbNodes=0
   type(ListNode1D_Type), pointer                                      ::    Head => null()
   type(ListNode1D_Type), pointer                                      ::    Tail => null()
   type(ListNode1D_Type), pointer                                      ::    Browser => null()
