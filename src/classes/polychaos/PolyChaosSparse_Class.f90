@@ -71,7 +71,10 @@ contains
   procedure, private                                                  ::    ConstructInput          =>    ConstructInput_Cell
   procedure, private                                                  ::    ConstructCase1          =>    ConstructCase1_Cell
   procedure, public                                                   ::    GetInput                =>    GetInput_Cell
-  procedure, public                                                   ::    AppendRecord            =>    AppendRecord_Cell
+  generic, public                                                     ::    AppendRecord            =>    AppendRecordR0D_Cell,   &
+                                                                                                          AppendRecordR1D_Cell
+  procedure, public                                                   ::    AppendRecordR0D_Cell
+  procedure, public                                                   ::    AppendRecordR1D_Cell
   procedure, public                                                   ::    GetNbRecords            =>    GetNbRecords_Cell
   procedure, public                                                   ::    GetRecord               =>    GetRecord_Cell
   procedure, public                                                   ::    SetModel                =>    SetModel_Cell
@@ -85,18 +88,18 @@ contains
 end type
 
 type, extends(PolyChaosMethod_Type)                                   ::    PolyChaosSparse_Type
-  logical                                                             ::    Silent=.false.
-  real(rkp)                                                           ::    StopError=Zero
-  integer                                                             ::    Step=0
-  integer                                                             ::    MaxNumOverfit=3
+  logical                                                             ::    Silent
+  real(rkp)                                                           ::    StopError
+  integer                                                             ::    Step
+  integer                                                             ::    MaxNumOverfit
+  integer                                                             ::    CheckpointFreq
+  type(Cell_Type), allocatable, dimension(:)                          ::    Cells  
+  integer                                                             ::    NbCells
   class(LinSolverSparse_Type), allocatable                            ::    Solver
   real(rkp), allocatable, dimension(:,:)                              ::    ParamRecord
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
-  type(Cell_Type), allocatable, dimension(:)                          ::    Cells  
-  integer                                                             ::    NbCells=0
   type(SpaceSampler_Type)                                             ::    Sampler
-  logical                                                             ::    Preload=.false.
-  integer                                                             ::    CheckpointFreq=-1
+
 
   integer, allocatable, dimension(:)                                  ::    NbCellsOutput
   logical, allocatable, dimension(:)                                  ::    ParamSampleRan
@@ -104,6 +107,7 @@ type, extends(PolyChaosMethod_Type)                                   ::    Poly
   logical                                                             ::    SamplesRan
   logical                                                             ::    SamplesAnalyzed
   integer                                                             ::    ParamSampleStep
+
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -165,12 +169,19 @@ contains
 
     This%Step = 0
 
-    call This%ParamRecord%Purge()
-    call This%ParamSample%Purge()
+    if ( allocated(This%ParamRecord) ) deallocate(This%ParamRecord, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
+    
+    if ( allocated(This%ParamSample) ) deallocate(This%ParamSample, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%NbCellsOutput) ) deallocate(This%NbCellsOutput, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%NbCellsOutput', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
 
     call This%Sampler%Reset()
-
-    This%NodesAnalyzed = .true.
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -197,10 +208,13 @@ contains
 
     This%MaxNumOverfit = 3
     This%StopError = Zero
-    This%Preload = .false.
     This%SectionChain = ''
     This%CheckpointFreq = -1
     This%Silent = .false.
+    This%SamplesObtained = .false.
+    This%SamplesRan = .false.
+    This%SamplesProcessed = .false.
+    This%ParamSampleStep = 0
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -231,6 +245,7 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    integer                                                           ::    NbOutputs
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -260,23 +275,12 @@ contains
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%StopError = VarR0D
 
-    This%BeingSampled = .false.
     SectionName = 'sampler'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true., Found=Found )
-    if ( Found ) then
+    if ( Input%HasSection( SubSectionName=SectionName ) ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call This%Sampler%Construct( Input=InputSection, Prefix=PrefixLoc )
       nullify( InputSection )
     end if
-      SectionName = 'samples'
-      SubSectionName = 'input_samples'
-
-      SubSectionName = 'output_samples'
-    end if
-
-
-
-
-
 
     SectionName = "sparse_solver"
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -472,8 +476,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine BuildModel( This, ModelInterface, Basis, SpaceInput, IndexSetScheme, Coefficients, Indices, CVErrors,                &
-                                                                                                          OutputDirectory, Debug )
+  subroutine BuildModel( This, ModelInterface, Basis, SpaceInput, IndexSetScheme, Coefficients, Indices, CVErrors,&
+                                                                        OutputDirectory, SpaceInputSamples, OutputSamples, Debug )
 
     class(PolyChaosSparse_Type), intent(inout)                        ::    This
     type(ModelInterface_Type), intent(inout)                          ::    ModelInterface
@@ -484,6 +488,8 @@ contains
     type(LinkedList1D_Type), allocatable, dimension(:), intent(out)   ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:), intent(out)   ::    Indices
     character(*), optional, intent(in)                                ::    OutputDirectory
+    real(rkp), optional, dimension(:,:), intent(in)                   ::    SpaceInputSamples
+    real(rkp), optional, dimension(:,:), intent(in)                   ::    OutputSamples
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -528,41 +534,59 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     NbOutputs = ModelInterface%GetNbResponses()
+    NbDim = SpaceInput%GetNbDim()
+
+    allocate(This%NbCellsOutput(NbOutputs)), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%NbCellsOutput', ProcName=ProcName, stat=StatLoc )
+
+    This%NbCells = 0
+    i = 1
+    do i = 1, NbOutputs
+      ResponsePointer => ModelInterface%GetResponsePointer(Num=i)
+      NbCellsOutput(i) = ResponsePointer%GetNbNodes()
+      This%NbCells = This%NbCells + NbCellsOutput(i)
+    end do
+
+    allocate(This%Cells(This%NbCells), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, This%NbCells
+      This%Cells(i)%Construct()
+    end do
 
     if ( This%Step == 0 ) then
-    
-    else
-      ResponsePointer => ModelInterface%GetResponsePointer(Num=i)
-      VarR1DPointer => ResponsePointer%GetAbscissaPointer()
-      if ( size(VarR1DPointer,1) /= This%NbCellsOutput ) call Error%Raise(                                            &
-                         Line='Mismatch detected between preloaded and passed response abscissa total size', ProcName=ProcName )
-    end if
+      if ( ( present(SpaceInputSamples) .and. .not present(OutputSamples) ) .or.                                                  &
+                                                                       ( present(OutputSamples) .and. .not present(InputSamples) )&
+                call Error%Raise( Line='Need both parameter and output samples to be passed at the same time', ProcName=ProcName )
 
-
-    if ( This%Preload ) then
-      i = 1
-      do i = 1, This%NbManagers
-
-
-        nullify(VarR1DPointer)
-        nullify(ResponsePointer)
-      end do
-      This%Preload = .false.
-    else
-      This%NbManagers = ModelInterface%GetNbResponses()
-      allocate( This%Manager(This%NbManagers), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Manager', ProcName=ProcName, stat=StatLoc )
-      i = 1
-      do i = 1, This%NbManagers
-        ResponsePointer => ModelInterface%GetResponsePointer(Num=i)
-        call This%Manager(i)%Construct( Response=ResponsePointer )
-        nullify(ResponsePointer)
-      end do
+      if ( present(SpaceInputSamples) ) then
+        if ( .not. SilentLoc ) then
+          Line = 'Processing precomputed samples'
+          write(*,'(A)') '' 
+          write(*,'(A)') Line
+          write(*,'(A)') '' 
+        end if
+        if ( size(OutputSamples,2) /= This%NbCells ) call Error%Raise( Line='Number of nodes in output samples does not match ' //& 
+                                                                          'number of nodes for all responses', ProcName=ProcName )
+        if ( size(SpaceInputSamples,2) /= size(OutputSamples,1) ) call Error%Raise( Line='Number of samples from input space ' // &
+                                                                  'and number of output samples do not match', ProcName=ProcName )
+        if ( size(SpaceInputSamples,1) /= NbDim ) call Error%Raise( Line='Dimensionality of provided samples does not match ' //  &
+                                                                      'the dimensionality of the input space', ProcName=ProcName )                                        
+        This%ParamRecord = SpaceInputSamples
+        i = 1
+        do i = 1, This%NbCells
+          This%Cells(i)%AppendRecord( Entries=OutputSamples(:,i) )
+        end do
+        This%SamplesObtained = .true.
+        This%SamplesRan = .true.
+        This%SamplesProcessed = .false.
+        This%Step = size(This%ParamRecord,2)
+      end if
     end if
 
     SilentLoc = This%Silent
     StepExceededFlag = .false.
-    NbDim = SpaceInput%GetNbDim()
     MaxTruncationOrder = IndexSetScheme%GetMaxOrder()
 
     do
@@ -607,20 +631,20 @@ contains
 
       iStart = This%Step
 
-      if ( .not. SilentLoc ) then
-        if ( This%Step /= 0 ) then
-          Line = 'Performing enrichment'
-        else
-          Line = 'Initial population of the linear system'
-        end if
-        write(*,'(A)') '' 
-        write(*,'(A)') Line
-        write(*,'(A)') '' 
-      end if
-
       !***************************************************************************************************************************
       ! Obtaining samples
       if ( .not. This%SamplesObtained ) then
+
+        if ( .not. SilentLoc ) then
+          if ( This%Step /= 0 ) then
+            Line = 'Performing enrichment'
+          else
+            Line = 'Initial population of the linear system'
+          end if
+          write(*,'(A)') '' 
+          write(*,'(A)') Line
+          write(*,'(A)') '' 
+        end if
 
         if ( allocated(This%Sampler) ) then
           if ( This%SamplesRan ) then
@@ -687,7 +711,7 @@ contains
               nullify(VarR1DPointer)
             end do
           end if
-          This%ParamSampleStep = 0
+
           if ( This%CheckpointFreq > 0 .and. mod(i, abs(This%CheckpointFreq)) == 0 ) then
             call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
                             Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
@@ -718,7 +742,9 @@ contains
         deallocate(This%ParamSampleRan, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
 
+        This%ParamSampleStep = 0
         This%SamplesRan = .true.
+
       end if
      
       iEnd = size(This%ParamRecord,2)
@@ -1101,9 +1127,6 @@ contains
 
     call This%OutputRecord%Purge()
 
-    This%CVError = 1000_rkp
-    This%IndexOrder = 0
-
     call This%SetDefaults()
 
     if (DebugLoc) call Logger%Exiting()
@@ -1123,6 +1146,9 @@ contains
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
+
+    This%CVError = huge(1)
+    This%IndexOrder = 0
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -1349,14 +1375,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AppendRecord_Cell( This, Entry, Debug )
+  subroutine AppendRecordR0D_Cell( This, Entry, Debug )
 
     class(Cell_Type), intent(inout)                                   ::    This
     real(rkp), intent(in)                                             ::    Entry
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='AppendRecord_Cell'
+    character(*), parameter                                           ::    ProcName='AppendRecordR0D_Cell'
     integer                                                           ::    StatLoc=0
 
     DebugLoc = DebugGlobal
@@ -1366,6 +1392,30 @@ contains
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     call This%OutputRecord%Append( Value=Entry )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine AppendRecordR1D_Cell( This, Entries, Debug )
+
+    class(Cell_Type), intent(inout)                                   ::    This
+    real(rkp), dimension(:), intent(in)                               ::    Entries
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='AppendRecordR1D_Cell'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    call This%OutputRecord%Append( Values=Entries )
 
     if (DebugLoc) call Logger%Exiting()
 
