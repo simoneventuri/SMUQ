@@ -111,7 +111,7 @@ abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
   subroutine BuildModel_PolyChaosMethod( This, ModelInterface, Basis, SpaceInput, IndexSetScheme, Coefficients, Indices, CVErrors,&
-                                                                                                           OutputDirectory, Debug)
+                                                                         OutputDirectory, SpaceInputSamples, OutputSamples, Debug)
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    OrthoMultivar_Type
     import                                                            ::    SpaceInput_Type
@@ -130,6 +130,8 @@ abstract interface
     type(LinkedList1D_Type), allocatable, dimension(:), intent(out)   ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:), intent(out)   ::    Indices
     character(*), optional, intent(in)                                ::    OutputDirectory
+    real(rkp), optional, dimension(:,:), intent(in)                   ::    SpaceInputSamples
+    real(rkp), optional, dimension(:,:), intent(in)                   ::    OutputSamples
     logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
