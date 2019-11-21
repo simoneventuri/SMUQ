@@ -30,6 +30,7 @@ use SpaceInput_Class                                              ,only:    Spac
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use LinkedList1D_Class                                            ,only:    LinkedList1D_Type
 use LinkedList2D_Class                                            ,only:    LinkedList2D_Type
+use List2D_Class                                                  ,only:    List2D_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 
 implicit none
@@ -111,7 +112,7 @@ abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
   subroutine BuildModel_PolyChaosMethod( This, ModelInterface, Basis, SpaceInput, IndexSetScheme, Coefficients, Indices, CVErrors,&
-                                                                         OutputDirectory, SpaceInputSamples, OutputSamples, Debug)
+                                                                              OutputDirectory, InputSamples, OutputSamples, Debug)
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    OrthoMultivar_Type
     import                                                            ::    SpaceInput_Type
@@ -121,6 +122,7 @@ abstract interface
     import                                                            ::    LinkedList0D_Type
     import                                                            ::    LinkedList2D_Type
     import                                                            ::    LinkedList1D_Type
+    import                                                            ::    List2D_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
     type(ModelInterface_Type), intent(inout)                          ::    ModelInterface
     type(OrthoMultiVar_Type), intent(inout)                           ::    Basis
@@ -130,8 +132,8 @@ abstract interface
     type(LinkedList1D_Type), allocatable, dimension(:), intent(out)   ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:), intent(out)   ::    Indices
     character(*), optional, intent(in)                                ::    OutputDirectory
-    real(rkp), optional, dimension(:,:), intent(in)                   ::    SpaceInputSamples
-    real(rkp), optional, dimension(:,:), intent(in)                   ::    OutputSamples
+    real(rkp), optional, dimension(:,:), intent(in)                   ::    InputSamples
+    type(List2D_Type), dimension(:), optional, intent(in)             ::    OutputSamples
     logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

@@ -514,7 +514,7 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine BuildModel( This, ModelInterface, Basis, SpaceInput, IndexSetScheme, Coefficients, Indices, CVErrors,&
-                                                                        OutputDirectory, SpaceInputSamples, OutputSamples, Debug )
+                                                                             OutputDirectory, InputSamples, OutputSamples, Debug )
 
     class(PolyChaosSparse_Type), intent(inout)                        ::    This
     type(ModelInterface_Type), intent(inout)                          ::    ModelInterface
@@ -525,8 +525,8 @@ contains
     type(LinkedList1D_Type), allocatable, dimension(:), intent(out)   ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:), intent(out)   ::    Indices
     character(*), optional, intent(in)                                ::    OutputDirectory
-    real(rkp), optional, dimension(:,:), intent(in)                   ::    SpaceInputSamples
-    real(rkp), optional, dimension(:,:), intent(in)                   ::    OutputSamples
+    real(rkp), optional, dimension(:,:), intent(in)                   ::    InputSamples
+    type(List2D_Type), dimension(:), optional, intent(in)             ::    OutputSamples
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -541,6 +541,7 @@ contains
     type(InputDet_Type)                                               ::    Input
     real(rkp)                                                         ::    VarR0D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    real(rkp), pointer, dimension(:,:)                                ::    VarR2DPointer=>null()
     real(rkp), allocatable, dimension(:)                              ::    VarR1D_1, VarR1D_2
     real(rkp), dimension(:), pointer                                  ::    VarR1DPointer=>null()
     integer                                                           ::    VarI0D
@@ -564,6 +565,8 @@ contains
     type(Response_Type), pointer                                      ::    ResponsePointer=>null()
     integer                                                           ::    MaxTruncationOrder
     integer, allocatable, dimension(:)                                ::    NbCellsOutput
+    integer                                                           ::    iMin
+    integer                                                           ::    iMax
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -593,28 +596,46 @@ contains
     end if
 
     if ( This%Step == 0 ) then
-      if ( ( present(SpaceInputSamples) .and. .not. present(OutputSamples) ) .or.                                                  &
+      if ( ( present(InputSamples) .and. .not. present(OutputSamples) ) .or.                                                  &
                                                                        ( present(OutputSamples) .and. .not present(InputSamples) )&
                 call Error%Raise( Line='Need both parameter and output samples to be passed at the same time', ProcName=ProcName )
 
-      if ( present(SpaceInputSamples) ) then
+      if ( present(InputSamples) ) then
         if ( .not. SilentLoc ) then
           Line = 'Processing precomputed samples'
           write(*,'(A)') '' 
           write(*,'(A)') Line
           write(*,'(A)') '' 
         end if
-        if ( size(OutputSamples,2) /= This%NbCells ) call Error%Raise( Line='Number of nodes in output samples does not match ' //& 
-                                                                          'number of nodes for all responses', ProcName=ProcName )
-        if ( size(SpaceInputSamples,2) /= size(OutputSamples,1) ) call Error%Raise( Line='Number of samples from input space ' // &
-                                                                  'and number of output samples do not match', ProcName=ProcName )
-        if ( size(SpaceInputSamples,1) /= NbDim ) call Error%Raise( Line='Dimensionality of provided samples does not match ' //  &
-                                                                      'the dimensionality of the input space', ProcName=ProcName )                                        
-        This%ParamRecord = SpaceInputSamples
+
+        if ( size(InputSamples,1) /= NbDim ) call Error%Raise( Line='Dimensionality of provided samples does not match ' //  &
+                                                                      'the dimensionality of the input space', ProcName=ProcName )
+
+        This%ParamRecord = InputSamples
+
         i = 1
-        do i = 1, This%NbCells
-          This%Cells(i)%AppendRecord( Entries=OutputSamples(:,i) )
+        do i = 1, NbOutputs
+          call OutputSamples(i)%GetPointer( Values=VarR2DPointer )
+          if ( size(VarR2DPointer,1) /= size(InputSamples,2) ) call Error%Raise( 'Mismatch in number of input and output samples' &
+                                                                                                             , ProcName=ProcName )
+          if ( size(VarR2DPointer,2) /= NbCellsOutput(i) ) call Error%Raise( 'Mismatch in number of nodes in response and ' //    &
+                                                                                     'initial output samples', ProcName=ProcName )
+
+          if ( i > 1 ) then
+            iMin = sum(NbCellsOutput(1:i-1)) + 1
+          else
+            iMin = 1
+          end if
+
+          iMax = NbCellsOutput(i)
+          iii = 0
+          ii = iMin
+          do ii = iMin, iMax
+            iii = iii + 1
+            call This%Cells(ii)%AppendRecord( Entries=VarR2DPointer(:,iii) )
+          end do
         end do
+
         This%SamplesObtained = .true.
         This%SamplesRan = .true.
         This%SamplesProcessed = .false.

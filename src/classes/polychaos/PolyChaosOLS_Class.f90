@@ -514,7 +514,7 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine BuildModel( This, ModelInterface, Basis, SpaceInput, IndexSetScheme, Coefficients, Indices, CVErrors,                &
-                                                                        OutputDirectory, SpaceInputSamples, OutputSamples, Debug )
+                                                                             OutputDirectory, InputSamples, OutputSamples, Debug )
 
     class(PolyChaosOLS_Type), intent(inout)                           ::    This
     type(ModelInterface_Type), intent(inout)                          ::    ModelInterface
@@ -525,8 +525,8 @@ contains
     type(LinkedList1D_Type), allocatable, dimension(:), intent(out)   ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:), intent(out)   ::    Indices
     character(*), optional, intent(in)                                ::    OutputDirectory
-    real(rkp), optional, dimension(:,:), intent(in)                   ::    SpaceInputSamples
-    real(rkp), optional, dimension(:,:), intent(in)                   ::    OutputSamples
+    real(rkp), optional, dimension(:,:), intent(in)                   ::    InputSamples
+    type(List2D_Type), dimension(:), optional, intent(in)             ::    OutputSamples
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -598,11 +598,11 @@ contains
     end if
 
     if ( This%Step == 0 ) then
-      if ( ( present(SpaceInputSamples) .and. .not. present(OutputSamples) ) .or.                                                  &
+      if ( ( present(InputSamples) .and. .not. present(OutputSamples) ) .or.                                                  &
                                                                        ( present(OutputSamples) .and. .not present(InputSamples) )&
                 call Error%Raise( Line='Need both parameter and output samples to be passed at the same time', ProcName=ProcName )
 
-      if ( present(SpaceInputSamples) ) then
+      if ( present(InputSamples) ) then
         if ( .not. SilentLoc ) then
           Line = 'Processing precomputed samples'
           write(*,'(A)') '' 
@@ -611,15 +611,36 @@ contains
         end if
         if ( size(OutputSamples,2) /= This%NbCells ) call Error%Raise( Line='Number of nodes in output samples does not match ' //& 
                                                                           'number of nodes for all responses', ProcName=ProcName )
-        if ( size(SpaceInputSamples,2) /= size(OutputSamples,1) ) call Error%Raise( Line='Number of samples from input space ' // &
+        if ( size(InputSamples,2) /= size(OutputSamples,1) ) call Error%Raise( Line='Number of samples from input space ' //      &
                                                                   'and number of output samples do not match', ProcName=ProcName )
-        if ( size(SpaceInputSamples,1) /= NbDim ) call Error%Raise( Line='Dimensionality of provided samples does not match ' //  &
-                                                                      'the dimensionality of the input space', ProcName=ProcName )                                        
-        This%ParamRecord = SpaceInputSamples
+        if ( size(InputSamples,1) /= NbDim ) call Error%Raise( Line='Dimensionality of provided samples does not match ' //       &
+                                                                      'the dimensionality of the input space', ProcName=ProcName )
+
+        This%ParamRecord = InputSamples
+
         i = 1
-        do i = 1, This%NbCells
-          This%Cells(i)%AppendRecord( Entries=OutputSamples(:,i) )
+        do i = 1, NbOutputs
+          call OutputSamples(i)%GetPointer( Values=VarR2DPointer )
+          if ( size(VarR2DPointer,1) /= size(InputSamples,2) ) call Error%Raise( 'Mismatch in number of input and output samples' &
+                                                                                                             , ProcName=ProcName )
+          if ( size(VarR2DPointer,2) /= NbCellsOutput(i) ) call Error%Raise( 'Mismatch in number of nodes in response and ' //    &
+                                                                                     'initial output samples', ProcName=ProcName )
+
+          if ( i > 1 ) then
+            iMin = sum(NbCellsOutput(1:i-1)) + 1
+          else
+            iMin = 1
+          end if
+
+          iMax = NbCellsOutput(i)
+          iii = 0
+          ii = iMin
+          do ii = iMin, iMax
+            iii = iii + 1
+            call This%Cells(ii)%AppendRecord( Entries=VarR2DPointer(:,iii) )
+          end do
         end do
+
         This%SamplesObtained = .true.
         This%SamplesRan = .true.
         This%SamplesProcessed = .false.
@@ -1123,8 +1144,6 @@ contains
 
       end do
 
-      end do
-
     end if
 
     if (DebugLoc) call Logger%Exiting()
@@ -1154,22 +1173,16 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
+          LHS%DesignRatio = RHS%DesignRatio
           LHS%Silent = RHS%Silent
           LHS%StopError = RHS%StopError
-          LHS%DesignRatio = RHS%DesignRatio
           LHS%Step = RHS%Step
-          LHS%Sampler = RHS%Sampler
-          LHS%NbManagers = RHS%NbManagers
-          allocate( LHS%Manager(RHS%NbManagers), stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Manager', ProcName=ProcName, stat=StatLoc )
-          i = 1
-          do i = 1, RHS%NbManagers
-            LHS%Manager(i) = RHS%Manager(i)
-          end do
-          LHS%ParamRecord = RHS%ParamRecord
-          LHS%ParamSample = RHS%ParamSample
-          LHS%NodesAnalyzed = RHS%NodesAnalyzed
+          LHS%MaxNumOverfit = RHS%MaxNumOverfit
           LHS%CheckpointFreq = RHS%CheckpointFreq
+          if ( allocated(RHS%Sampler) ) then
+            allocate(LHS%Sampler, source=RHS%Sampler, stat=StatLoc)
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Sampler', ProcName=ProcName, stat=StatLoc )
+          end if
         end if
       
       class default
@@ -1194,8 +1207,20 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
   
-    if ( allocated(This%Manager) ) deallocate(This%Manager, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Manager', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%ParamRecord) ) deallocate(This%ParamRecord, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
+    
+    if ( allocated(This%ParamSample) ) deallocate(This%ParamSample, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%NbCellsOutput) ) deallocate(This%NbCellsOutput, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%NbCellsOutput', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
 
     call This%ParamRecord%Purge()
 
@@ -1275,6 +1300,8 @@ contains
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
+
+    This%CVError = huge(1)
 
     if (DebugLoc) call Logger%Exiting()
 

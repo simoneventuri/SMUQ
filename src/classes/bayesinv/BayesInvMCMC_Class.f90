@@ -38,6 +38,7 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use MCMCMethod_Class
 use MCMCMethod_Factory_Class                                      ,only:    MCMCMethod_Factory
 use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
+use LikelihoodFunction_Vec_Class                                  ,only:    LikelihoodFunction_Vec_Type
 use LikelihoodGauss_Class                                         ,only:    LikelihoodGauss_Type
 use LikelihoodFunction_Factory_Class                              ,only:    LikelihoodFunction_Factory
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
@@ -58,7 +59,7 @@ public                                                                ::    Baye
 
 type, extends(BayesInvMethod_Type)                                    ::    BayesInvMCMC_Type
   logical                                                             ::    Silent=.false.
-  class(LikelihoodFunction_Type), allocatable                         ::    LikelihoodFunction
+  type(LikelihoodFunction_Vec_Type), allocatable, dimension(:)        ::    LikelihoodFunctionVec
   class(MCMCMethod_Type), allocatable                                 ::    MCMC
   type(SpaceHierParam_Type)                                           ::    HierarchicalSpace
   type(SpaceSampler_Type)                                             ::    HierarchicalSampler
@@ -120,8 +121,8 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%LikelihoodFunction) ) deallocate(This%LikelihoodFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LikelihoodFunction', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%LikelihoodFunctionVec) ) deallocate(This%LikelihoodFunctionVec, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LikelihoodFunctionVec', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%MCMC) ) deallocate(This%MCMC, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MCMC', ProcName=ProcName, stat=StatLoc )
@@ -179,6 +180,8 @@ contains
     integer                                                           ::    i
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
+    class(LikelihoodFunction_Type), allocatable                       ::    LikelihoodFunction
+    integer                                                           ::    NbLikelihoods
 
 
     DebugLoc = DebugGlobal
@@ -201,8 +204,22 @@ contains
 
     SectionName = 'likelihood'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call LikelihoodFunction_Factory%Construct( Object=This%LikelihoodFunction, Input=InputSection, Prefix=PrefixLoc )
+    NbLikelihoods = InputSection%GetNbSubSections()
     nullify( InputSection )
+    if ( NbLikelihoods <= 0 ) call Error%Raise( 'Must specify at least one likelihood function', ProcName=ProcName )
+    allocate(This%LikelihoodFunctionVec(NbLikelihoods), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%LikelihoodFunctionVec', ProcName=ProcName, stat=StatLoc )
+    i = 1
+    do i = 1, NbLikelihoods
+      SubSectionName = SectionName // '>likelihood' // ConvertToString(Value=i)
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+      call LikelihoodFunction_Factory%Construct( Object=LikelihoodFunction, Input=InputSection, Prefix=PrefixLoc )
+      nullify( InputSection )
+      call This%LikelihoodFunctionVec(i)%Set( Object=LikelihoodFunction )
+    end do
+
+    deallocate(LikelihoodFunction, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='LikelihoodFunction', ProcName=ProcName, stat=StatLoc )
 
     SectionName = 'hierarchical'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
@@ -247,6 +264,9 @@ contains
     logical                                                           ::    ExternalFlag=.false.
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    SectionName
+    integer                                                           ::    NbLikelihoods
+    integer                                                           ::    i
+    class(LikelihoodFunction_Type, pointer                            ::    LikelihoodPtr=>null()
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -270,9 +290,17 @@ contains
                                                                                        Prefix=PrefixLoc, Directory=DirectorySub) )
 
     SectionName = 'likelihood'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/likelihood'
-    call GetInput%AddSection( Section=LikelihoodFunction_Factory%GetObjectInput(Object=This%LikelihoodFunction,                   &
-                                                          MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub) )
+    call GetInput%AddSection( SectionName=SectionName )
+    NbLikelihoods = size(This%LikelihoodFunctionVec,1)
+    i = 1
+    do i = 1, NbLikelihoods
+      SubSectionName = 'likelihood' // ConvertToString(Value=i) 
+      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/likelihood' // ConvertToString(Value=i) 
+      LikelihoodPtr => This%LikelihoodFunctionVec(i)%GetPointer()
+      call GetInput%AddSection( Section=LikelihoodFunction_Factory%GetObjectInput(Object=LikelihoodPtr,                           &
+                            MainSectionName=SubSectionName, Prefix=PrefixLoc, Directory=DirectorySub). To_SubSection=SectionName )
+      nullify(LikelihoodPtr)
+    end do
 
     if ( This%Hierarchical ) then
       call GetInput%AddSection( SectionName='hierarchical' )
@@ -394,6 +422,8 @@ contains
         class(DistProb_Type), pointer                                     ::    DistProb
         real(rkp)                                                         ::    VarR0D
         integer                                                           ::    RunStat
+        integer                                                           ::    iLoc
+        class(LikelihoodFunction_Type, pointer                            ::    LikelihoodPtr=>null()
         
         DebugLoc = DebugGlobal
         if ( present(Debug) ) DebugLoc = Debug
@@ -427,7 +457,13 @@ contains
         if ( Prior > Zero ) then
           call ModelInterface%Run( Input=Input, Output=Output, Stat=RunStat )
           if ( RunStat == 0 ) then
-            Likelihood = This%LikelihoodFunction%Evaluate( Response=Response, Input=Input, Output=Output )
+            Likelihood = One
+            iLoc = 1
+            do iLoc = 1, size(This%LikelihoodFunctionVec,1)
+              LikelihoodPtr => This%LikelihoodFunctionVec(i)%GetPointer()
+              Likelihood = Likelihood * LikelihoodPtr%Evaluate( Response=Response, Input=Input, Output=Output )
+              nullify(LikelihoodPtr)
+            end do
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
           else
@@ -462,6 +498,8 @@ contains
         real(rkp)                                                         ::    VarR0D
         integer                                                           ::    RunStat
         real(rkp)                                                         ::    Likelihood
+        integer                                                           ::    iLoc
+        class(LikelihoodFunction_Type, pointer                            ::    LikelihoodPtr=>null()
 
         DebugLoc = DebugGlobal
         if ( present(Debug) ) DebugLoc = Debug
@@ -523,7 +561,13 @@ contains
           call ModelInterface%Run( Input=HierInput, Output=Output, Stat=RunStat )
 
           if ( RunStat == 0 ) then
-            Likelihood = This%LikelihoodFunction%Evaluate( Response=Response, Input=HierInput, Output=Output )
+            Likelihood = One
+            iLoc = 1
+            do iLoc = 1, size(Response,1)
+              LikelihoodPtr => This%LikelihoodFunctionVec(i)%GetPointer()
+              Likelihood = Likelihood * LikelihoodPtr%Evaluate( Response=Response, Input=HierInput, Output=Output )
+              nullify(LikelihoodPtr)
+            end do
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
           else
@@ -633,8 +677,8 @@ contains
 
         if ( RHS%Constructed ) then
           LHS%Hierarchical = RHS%Hierarchical
-          allocate(LHS%LikelihoodFunction, source=RHS%LikelihoodFunction, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%LikelihoodFunction', ProcName=ProcName, stat=StatLoc )
+          allocate(LHS%LikelihoodFunctionVec, source=RHS%LikelihoodFunctionVec, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%LikelihoodFunctionVec', ProcName=ProcName, stat=StatLoc )
           allocate(LHS%MCMC, source=RHS%MCMC, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MCMC', ProcName=ProcName, stat=StatLoc )
           if ( LHS%Hierarchical ) then
@@ -665,8 +709,8 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
   
-    if ( allocated(This%LikelihoodFunction) ) deallocate(This%LikelihoodFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LikelihoodFunction', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%LikelihoodFunctionVec) ) deallocate(This%LikelihoodFunctionVec, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LikelihoodFunctionVec', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%MCMC) ) deallocate(This%MCMC, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MCMC', ProcName=ProcName, stat=StatLoc )

@@ -38,12 +38,15 @@ type, abstract                                                        ::    Like
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
+  character(:), allocatable                                           ::    Label
 contains
   procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    Evaluate                =>    EvaluateDet,            &
-                                                                                                          EvaluateStoch
+                                                                                                          EvaluateStoch,          &
+                                                                                                          EvaluateDetPre,         &
+                                                                                                          EvaluateStochPre
   procedure(Initialize_LikelihoodFunction), deferred, public          ::    Initialize
   procedure(Reset_LikelihoodFunction), deferred, public               ::    Reset
   procedure(SetDefaults_LikelihoodFunction), deferred, public         ::    SetDefaults
@@ -115,9 +118,9 @@ abstract interface
     import                                                            ::    Output_Type
     real(rkp)                                                         ::    EvaluateDet_LikelihoodFunction
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), intent(in)                                   ::    Response
     type(InputDet_Type), intent(in)                                   ::    Input
-    type(Output_Type), dimension(:), intent(in)                       ::    Output
+    type(Output_Type), intent(in)                                     ::    Output
     logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -131,9 +134,9 @@ abstract interface
     import                                                            ::    Output_Type
     real(rkp)                                                         ::    EvaluateStoch_LikelihoodFunction
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), intent(in)                                   ::    Response
     type(InputStoch_Type), intent(in)                                 ::    Input
-    type(Output_Type), dimension(:), intent(in)                       ::    Output
+    type(Output_Type), intent(in)                                     ::    Output
     logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -165,6 +168,112 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
 
     GetName = This%Name
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function EvaluateDetPre( This, Response, Input, Output, Debug )
+
+    real(rkp)                                                         ::    EvaluateDetPre
+
+    class(LikelihoodFunction_Type), intent(inout)                     ::    This
+    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Output_Type), dimension(:), intent(in)                       ::    Output
+    logical, optional ,intent(in)                                     ::    Debug
+    integer                                                           ::    iOutput
+    integer                                                           ::    iResponse
+    integer                                                           ::    NbOutputs
+    integer                                                           ::    NbResponses
+    integer                                                           ::    i
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    iOutput = 0
+    iResponse = 0
+
+    NbOutputs = size(Output,1)
+    NbResponses = size(Response,1)
+
+    i = 1
+    do i = 1, NbOutputs
+      if ( Output(i)%GetLabel() == This%Label ) then
+        iOutput = i
+        exit
+      end if
+    end do
+
+    if ( iOutput == 0 ) call Error%Raise( Line='Did not find required output : ' // This%Label, ProcName=ProcName )
+
+    i = 1
+    do i = 1, NbResponses
+      if ( Response(i)%GetLabel() == This%Label ) then
+        iResponse = i
+        exit
+      end if
+    end do
+
+    if ( iResponse == 0 ) call Error%Raise( Line='Did not find required response : ' // This%Label, ProcName=ProcName )
+
+    call This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput) )
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function EvaluateStochPre( This, Response, Input, Output, Debug )
+
+    real(rkp)                                                         ::    EvaluateStochPre
+
+    class(LikelihoodFunction_Type), intent(inout)                     ::    This
+    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(InputStoch_Type), intent(in)                                 ::    Input
+    type(Output_Type), dimension(:), intent(in)                       ::    Output
+    logical, optional ,intent(in)                                     ::    Debug
+    integer                                                           ::    iOutput
+    integer                                                           ::    iResponse
+    integer                                                           ::    NbOutputs
+    integer                                                           ::    NbResponses
+    integer                                                           ::    i
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    iOutput = 0
+    iResponse = 0
+
+    NbOutputs = size(Output,1)
+    NbResponses = size(Response,1)
+
+    i = 1
+    do i = 1, NbOutputs
+      if ( Output(i)%GetLabel() == This%Label ) then
+        iOutput = i
+        exit
+      end if
+    end do
+
+    if ( iOutput == 0 ) call Error%Raise( Line='Did not find required output : ' // This%Label, ProcName=ProcName )
+
+    i = 1
+    do i = 1, NbResponses
+      if ( Response(i)%GetLabel() == This%Label ) then
+        iResponse = i
+        exit
+      end if
+    end do
+
+    if ( iResponse == 0 ) call Error%Raise( Line='Did not find required response : ' // This%Label, ProcName=ProcName )
+
+    call This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput) )
 
     if (DebugLoc) call Logger%Exiting()
 

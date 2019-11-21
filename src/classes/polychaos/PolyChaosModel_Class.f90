@@ -91,7 +91,9 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
+  generic, public                                                     ::    Run                     =>    RunCase2
   procedure, public                                                   ::    RunCase1
+  procedure, public                                                   ::    RunCase2
   procedure, public                                                   ::    ReplaceInputLabel
   procedure, public                                                   ::    ReplaceOutputLabel
   procedure, public                                                   ::    GetNbInputs
@@ -449,8 +451,44 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine RunCase1( This, Input, Output, Stat, Debug )
+    
+    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(Input_Type), intent(in)                                     ::    Input
+    type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
+    integer, optional, intent(out)                                    ::    Stat
+    logical, optional ,intent(in)                                     ::    Debug 
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='RunCase1'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( allocated(Output) ) then
+      if ( size(Output,1) /= 1 ) then
+        deallocate(Output, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+      end
+    end if
+    if ( .not. allocated(Output) ) then
+      allocate(Output(1), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+    end if
+
+    if ( present(Stat) then
+      call This%Run( Input, Output(1), Stat )
+    else
+      call This%Run( Input, Output(1) )
+    end if
+
+    if (DebugLoc) call Logger%Exiting()
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine RunCase2( This, Input, Output, Stat, Debug )
     
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     class(Input_Type), intent(in)                                     ::    Input

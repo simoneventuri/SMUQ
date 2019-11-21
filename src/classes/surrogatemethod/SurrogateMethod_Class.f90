@@ -111,7 +111,7 @@ abstract interface
     type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
     type(Response_Type), dimension(:), intent(in)                     ::    Response
     class(Model_Type), intent(inout)                                  ::    Model
-    class(Model_Type), allocatable, optional, intent(out)             ::    SurrogateModel
+    class(Model_Type), allocatable, dimension(:),optional,intent(out) ::    SurrogateModel
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional, intent(in)                                     ::    Debug
   end subroutine

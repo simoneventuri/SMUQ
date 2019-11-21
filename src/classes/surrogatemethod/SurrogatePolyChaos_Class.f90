@@ -72,6 +72,10 @@ type, extends(SurrogateMethod_Type)                                   ::    Surr
   class(PolyChaosMethod_Type), allocatable                            ::    PolyChaosMethod
   logical                                                             ::    Silent=.false.
   character(:), allocatable                                           ::    BasisScheme
+  type(String_Type), allocatable, dimension(:)                        ::    InputSamplesLabels
+  logical                                                             ::    InputSamplesTransform
+  real(rkp), allocatable, dimension(:,:)                              ::    InputSamples
+  type(List2D_Type), allocatable, dimension(:)                        ::    OutputSamples
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -142,6 +146,12 @@ contains
     if ( allocated(This%IndexSetScheme) ) deallocate(This%IndexSetScheme, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%IndexSetScheme', ProcName=ProcName, stat=StatLoc )
 
+    if ( allocated(This%InputSamples) ) deallocate(This%InputSamples, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InputSamples', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%OutputSamples) ) deallocate(This%OutputSamples, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OutputSamples', ProcName=ProcName, stat=StatLoc )
+
     call This%Initialize()
 
     if (DebugLoc) call Logger%Exiting()
@@ -164,6 +174,7 @@ contains
 
     This%BasisScheme = 'askey'
     This%SectionChain = ''
+    This%TransformInputSamples = .false.
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -191,10 +202,14 @@ contains
     logical                                                           ::    VarL0D
     integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    VarC0D
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    real(rkp), pointer, dimension(:,:)                                ::    VarR2DPointer=>null()
     integer                                                           ::    i
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
+    integer                                                           ::    NbSamples
+    integer                                                           ::    NbOutputs
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -236,6 +251,44 @@ contains
     call PolyChaosMethod_Factory%Construct( Object=This%PolyChaosMethod, Input=InputSection,                                      &
                                                                    SectionChain=This%SectionChain // '>method', Prefix=PrefixLoc )
     nullify( InputSection )
+
+    SectionName = 'initial_samples'
+    if ( Input%HasSection( SubSectionName=SectionName ) ) then
+      ParameterName = 'transform_samples'
+      call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
+      if ( Found ) This%InputSamplesTransform=VarL0D
+
+      ParameterName = 'labels'
+      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+      call Parse( Input=VarC0D, Separator=' ', This%InputSamplesLabels )
+
+      SubSectionName = SectionName // '>input'
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+      call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
+      nullify( InputSection )
+      This%InputSamples = VarR2D
+      deallocate(VarR2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+
+      SubSectionName = SectionName // '>output'
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+      NbOutputs = InputSection%GetNumberOfSubSections()
+      nullify( InputSection )
+
+      i = 1
+      do i = 1, NbOutputs
+        SubSectionName = SectionName // '>output>output' // ConvertToString(Value=i)
+        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc, RowMajor=.true. )
+        nullify( InputSection )
+        call This%OutputSamples(i)%Set(Values=VarR2D)
+        if ( size(VarR2D,1) /= size(This%InputSamples,2) ) call Error%Raise( 'Number of output samples does not match number' //  &
+                                                                                          ' of input samples', ProcName=ProcName )
+        deallocate(VarR2D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+      end do
+
+    else
 
     This%Constructed = .true.
 
@@ -309,7 +362,7 @@ contains
     type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
     type(Response_Type), dimension(:), intent(in)                     ::    Response
     class(Model_Type), intent(inout)                                  ::    Model
-    class(Model_Type), allocatable, optional, intent(out)             ::    SurrogateModel
+    class(Model_Type), allocatable, dimension(:),optional,intent(out) ::    SurrogateModel
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, intent(in), optional                                     ::    Debug
 
@@ -323,7 +376,13 @@ contains
     type(LinkedList1D_Type), allocatable, dimension(:)                ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:)                ::    Indices
     type(ModelInterface_Type)                                         ::    ModelInterface
-    type(PolyChaosModel_Type)                                         ::    PolyChaosModelLoc
+    type(PolyChaosModel_Type), dimension(:), allocatable              ::    PolyChaosModelLoc
+    character(:), allocatable                                         ::    OutputDirectoryLoc
+    real(rkp), allocatable, dimension(:,:)                            ::    InputSamplesLoc
+    integer                                                           ::    i
+    integer                                                           ::    ii
+    integer                                                           ::    iii
+    real(rkp), allocatable, dimension(:)                              ::    X
     character(:), allocatable                                         ::    OutputDirectoryLoc
 
     DebugLoc = DebugGlobal
@@ -353,12 +412,61 @@ contains
 
     if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/solver'
 
-    call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,             &
-         ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                            &
-         OutputDirectory=OutputDirectoryLoc )
+    if ( allocated(This%InputSamples) ) then
+      allocate(InputSamplesLoc(SpaceTransform%GetNbDim(),size(This%InputSamples,2)), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='InputSamplesLoc', ProcName=ProcName, stat=StatLoc )
+      i = 1
+      do i = 1, SpaceTransform%GetNbDim()
+        ii = 1
+        iii = 0
+        do ii = 1, size(This%InputSamplesLabel,1)
+          if ( SpaceTransform%GetLabel(Num=i) == This%InputSamplesLabel(ii)%GetValue() ) then
+            iii = ii
+            exit
+          end if
+        end do
+        if ( iii = 0 ) call Error%Raise( 'Did not find a corresponding label in the samples:' // SpaceTransform%GetLabel(Num=i),  &
+                                                                                                               ProcName=ProcName )
+        InputSamplesLoc(i,:) = This%InputSamples(iii,:)
+      end do
 
-    call PolyChaosModelLoc%Construct( Response=Response, SpaceTransf=SpaceTransform, Basis=Basis, Coefficients=Coefficients,      &
-                                                                                              Indices=Indices, CVErrors=CVErrors )
+      if ( This%InputSamplesTransform ) then
+        i = 1
+        do i = 1, size(InputSamplesLoc,2)
+          X = InputSamplesLoc(:,i)
+          InputSamplesLoc(:,i) = SpaceTransform%Transform( X=X )
+        end do
+        deallocate(X, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='X', ProcName=ProcName, stat=StatLoc )
+      end if
+
+      call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,           &
+           ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                          &
+           OutputDirectory=OutputDirectoryLoc, InputSamples=InputSamplesLoc, OutputSamples=This%OutputSamples )
+      deallocate(InputSamplesLoc, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputSamplesLoc', ProcName=ProcName, stat=StatLoc )
+    else
+      call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,           &
+           ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                          &
+           OutputDirectory=OutputDirectoryLoc )
+    end if
+
+    allocate(PolyChaosModelLoc(size(Response,1)), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='PolyChaosModelLoc', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, size(Response,1)
+      call PolyChaosModelLoc(i)%Construct( Response=Response(i), SpaceTransf=SpaceTransform, Basis=Basis,                         &
+                                                          Coefficients=Coefficients(i), Indices=Indices(i), CVErrors=CVErrors(i) )
+      if ( present(OutputDirectory) ) then
+        OutputDirectoryLoc = OutputDirectory // '/pce_models/' Response(i)%GetLabel()
+        call This%WriteOutput( PolyChaosModel=PolyChaosModelLoc(i), Directory=OutputDirectory )
+      end if
+      call Coefficients(i)%Purge()
+      call Indices(i)%Purge()
+      call CVErrors(i)%Purge()
+    end do
+
     deallocate(Coefficients, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Coefficients', ProcName=ProcName, stat=StatLoc )
     deallocate(Indices, stat=StatLoc)
@@ -371,7 +479,8 @@ contains
       if ( StatLoc /= 0 ) call Error%Allocate( Name='SurrogateModel', ProcName=ProcName, stat=StatLoc )
     end if
 
-    if ( present(OutputDirectory) ) call This%WriteOutput( PolyChaosModel=PolyChaosModelLoc, Directory=OutputDirectory )
+    deallocate(PolyChaosModelLoc, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='PolyChaosModelLoc', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
