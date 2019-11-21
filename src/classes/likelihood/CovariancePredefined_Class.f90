@@ -202,11 +202,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Scalar, Abscissa, Debug )
+  subroutine ConstructCase1( This, Scalar, NbNodes, Debug )
 
     class(CovariancePredefined_Type), intent(inout)                   ::    This
     real(rkp), intent(in)                                             ::    Scalar
-    real(rkp), dimension(:), intent(in)                               ::    Abscissa
+    integer                                                           ::    NbNodes
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -220,7 +220,7 @@ contains
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
-    allocate(This%PredefinedCov(size(Abscissa),size(Abscissa)), stat=StatLoc)
+    allocate(This%PredefinedCov(NbNodes,NbNodes), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%PredefinedCov', ProcName=ProcName, stat=StatLoc )
     This%PredefinedCov = Zero
 
@@ -301,10 +301,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AssembleCov( This, Abscissa, Input, Cov, Debug )
+  subroutine AssembleCov( This, Coordinates, CoordinateLabels, Input, Cov, Debug )
 
     class(CovariancePredefined_Type), intent(in)                      ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Abscissa
+    real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
+    type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
     type(InputDet_Type), intent(in)                                   ::    Input
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
     logical, optional ,intent(in)                                     ::    Debug
@@ -313,6 +314,7 @@ contains
     character(*), parameter                                           ::    ProcName='AssembleCov'
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    MLoc
+    integer                                                           ::    NbNodes
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -320,22 +322,24 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
+    NbNodes = size(Coordinates,1)
+
     if ( allocated(Cov) ) then
-      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= size(Abscissa,1) ) then
+      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= NbNodes ) then
         deallocate(Cov, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
       end if
     end if
 
     if ( .not. allocated(Cov) ) then
-      allocate(Cov(size(Abscissa,1),size(Abscissa,1)), stat=StatLoc)
+      allocate(Cov(NbNodes,NbNodes), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
     end if
     Cov = Zero
 
     if ( allocated(This%PredefinedCov) ) then
-      if ( size(Abscissa,1) /= size(This%PredefinedCov,1) )                                                                  &
-                   call Error%Raise( Line='Incompatible predefined covariance matrix with specified abscissa', ProcName=ProcName )
+      if ( NbNodes /= size(This%PredefinedCov,1) )                                                                                &
+                   call Error%Raise( Line='Incompatible predefined covariance matrix with specified coords', ProcName=ProcName )
       Cov = This%PredefinedCov
     else
       call Eye( Array=Cov )
@@ -348,10 +352,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetCovariance( This, Abscissa, Cov, Debug )
+  subroutine GetCovariance( This, Coordinates, CoordinateLabels, Cov, Debug )
 
     class(CovariancePredefined_Type), intent(in)                      ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Abscissa
+    real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
+    type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
     logical, optional ,intent(in)                                     ::    Debug
 
@@ -359,6 +364,7 @@ contains
     character(*), parameter                                           ::    ProcName='GetCov'
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    MLoc
+    integer                                                           ::    NbNodes
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -366,22 +372,24 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
+    NbNodes = size(Coordinates,1)
+
     if ( allocated(Cov) ) then
-      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= size(Abscissa,1) ) then
+      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= NbNodes ) then
         deallocate(Cov, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
       end if
     end if
 
     if ( .not. allocated(Cov) ) then
-      allocate(Cov(size(Abscissa,1),size(Abscissa,1)), stat=StatLoc)
+      allocate(Cov(NbNodes,NbNodes), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
     end if
     Cov = Zero
 
     if ( allocated(This%PredefinedCov) ) then
-      if ( size(Abscissa,1) /= size(This%PredefinedCov,1) )                                                                  &
-                   call Error%Raise( Line='Incompatible predefined covariance matrix with specified abscissa', ProcName=ProcName )
+      if ( NbNodes /= size(This%PredefinedCov,1) )                                                                                &
+                   call Error%Raise( Line='Incompatible predefined covariance matrix with specified coords', ProcName=ProcName )
       Cov = This%PredefinedCov
     else
       call Eye( Array=Cov )

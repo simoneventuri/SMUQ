@@ -20,6 +20,7 @@ module CovarianceConstructor_Class
 
 use Input_Library
 use Parameters_Library
+use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
@@ -105,12 +106,14 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AssembleCov_CovarianceConstructor( This, Abscissa, Input, Cov, Debug)
+  subroutine AssembleCov_CovarianceConstructor( This, Coordinates, CoordinateLabels, Input, Cov, Debug)
     use                                                               ::    Parameters_Library
     import                                                            ::    CovarianceConstructor_Type
     import                                                            ::    InputDet_Type
+    import                                                            ::    String_Type
     class(CovarianceConstructor_Type), intent(in)                     ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Abscissa
+    real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
+    type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
     type(InputDet_Type), intent(in)                                   ::    Input
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
     logical, optional ,intent(in)                                     ::    Debug

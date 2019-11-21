@@ -346,7 +346,8 @@ contains
     NbDegen = size(OutputPtr,2)
     NbDataSets = size(DataPtr,2)
 
-    call This%CovarianceConstructor%AssembleCov( Input=Input, Coordinates=Response%GetCoordinatesPointer(), Cov=This%L )
+    call This%CovarianceConstructor%AssembleCov( Input=Input, Coordinates=Response%GetCoordinatesPointer(),                       &
+                                                                     CoordinateLabels=Response%GetCoordinateLabels(), Cov=This%L )
 
     IsDiagonalFlag = IsDiagonal( Array=This%L )
 
@@ -494,7 +495,7 @@ contains
 
       if ( StochCovFlag .or. i == 1 ) then
         call This%CovarianceConstructor%AssembleCov( Input=Input%GetDetInput(Num=i), Coordinates=Response%GetCoordinatesPointer(),&
-                                                                                                                      Cov=This%L )
+                                                                     CoordinateLabels=Response%GetCoordinateLabels(), Cov=This%L )
 
         IsDiagonalFlag = IsDiagonal( Array=This%L )
 

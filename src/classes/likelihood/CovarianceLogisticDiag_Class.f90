@@ -46,6 +46,7 @@ type, extends(CovarianceConstructor_Type)                             ::    Cova
   character(:), allocatable                                           ::    X0_Dependency
   real(rkp)                                                           ::    X0
   real(rkp)                                                           ::    Tolerance
+  character(:), allocatable                                           ::    CoordinateLabel
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -133,6 +134,7 @@ contains
     This%X0 = Zero
     This%X0_Dependency = ''
     This%Tolerance = 1e-10
+    This%CoordinateLabel = ''
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -209,6 +211,10 @@ contains
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%Tolerance=VarR0D
 
+    ParameterName = 'coordinate_label'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    if ( Found ) This%CoordinateLabel=VarC0D
+
     This%Constructed = .true.
 
     if (DebugLoc) call Logger%Exiting()
@@ -257,6 +263,8 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
+    call GetInput%AddParameter( Name='coordinate_label', Value=This%CoordinateLabel )
+
     call GetInput%AddParameter( Name='m', Value=ConvertToString(This%M) )
     if ( len_trim(This%M_Dependency) /= 0 )call GetInput%AddParameter( Name='m_dependency', Value=This%M_Dependency )
     if ( allocated(This%M_Transform) ) call GetInput%AddParameter( Name='m_transform',                                            &
@@ -276,10 +284,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AssembleCov( This, Abscissa, Input, Cov, Debug )
+  subroutine AssembleCov( This, Coordinates, CoordinateLabels, Input, Cov, Debug )
 
     class(CovarianceLogisticDiag_Type), intent(in)                    ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Abscissa
+    real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
+    type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
     type(InputDet_Type), intent(in)                                   ::    Input
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
     logical, optional ,intent(in)                                     ::    Debug
@@ -291,6 +300,8 @@ contains
     real(rkp)                                                         ::    KLoc
     real(rkp)                                                         ::    X0Loc
     integer                                                           ::    i
+    integer                                                           ::    NbNodes
+    integer                                                           ::    iCoordinate
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -298,15 +309,29 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
+    NbNodes = size(Coordinates,1)
+
+    i = 1
+    iCoordinate = 0
+    do i = 1, size(Coordinates,2)
+      if ( CoordinateLabels(i)%GetValue() == This%CoordinateLabel ) then
+        iCoordinate = i
+        exit
+      end if
+    end do
+
+    if ( iCoordinate == 0 ) call Error%Raise( 'Did not find matching coordinate label: ' // This%CoordinateLabel,                 &
+                                                                                                               ProcName=ProcName )
+
     if ( allocated(Cov) ) then
-      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= size(Abscissa,1) ) then
+      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= NbNodes ) then
         deallocate(Cov, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
       end if
     end if
 
     if ( .not. allocated(Cov) ) then
-      allocate(Cov(size(Abscissa,1),size(Abscissa,1)), stat=StatLoc)
+      allocate(Cov(NbNodes,NbNodes), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
     end if
     Cov = Zero
@@ -320,8 +345,8 @@ contains
     if ( len_trim(This%X0_Dependency) /= 0 ) call Input%GetValue( Value=X0Loc, Label=This%X0_Dependency )
     
     i = 1
-    do i = 1, size(Cov,1)
-      Cov(i,i) = MLoc / ( One + dexp(-KLoc*(Abscissa(i)-X0Loc)) )
+    do i = 1, NbNodes
+      Cov(i,i) = MLoc / ( One + dexp(-KLoc*(Coordiantes(i,iCoordinate)-X0Loc)) )
     end do
 
     if (DebugLoc) call Logger%Exiting()
@@ -404,6 +429,7 @@ contains
           LHS%X0_Dependency = RHS%X0_Dependency
           LHS%X0 = RHS%X0
           LHS%Tolerance = RHS%Tolerance
+          LHS%CoordinateLabel = RHS%CoordinateLabel
         end if
       
       class default

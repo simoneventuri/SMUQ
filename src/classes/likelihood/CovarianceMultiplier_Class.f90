@@ -249,10 +249,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AssembleCov( This, Abscissa, Input, Cov, Debug )
+  subroutine AssembleCov( This, Coordinates, CoordinateLabels, Input, Cov, Debug )
 
     class(CovarianceMultiplier_Type), intent(in)                      ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Abscissa
+    real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
+    type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
     type(InputDet_Type), intent(in)                                   ::    Input
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
     logical, optional ,intent(in)                                     ::    Debug
@@ -261,6 +262,7 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    MLoc
+    integer                                                           ::    NbNodes
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -268,20 +270,22 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
+    NbNodes = size(Coordinates,1)
+
     if ( allocated(Cov) ) then
-      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= size(Abscissa,1) ) then
+      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= NbNodes ) then
         deallocate(Cov, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
       end if
     end if
 
     if ( .not. allocated(Cov) ) then
-      allocate(Cov(size(Abscissa,1),size(Abscissa,1)), stat=StatLoc)
+      allocate(Cov(NbNodes,NbNodes), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
     end if
     Cov = Zero
 
-    call This%ConstructorPredefined%GetCovariance( Abscissa=Abscissa, Cov=Cov )
+    call This%ConstructorPredefined%GetCovariance( Coordinates=Coordinates, CoordinateLabels, Cov=Cov )
 
     if ( len_trim(This%M_Dependency) /= 0 ) then
       call Input%GetValue( Value=MLoc, Label=This%M_Dependency, Mandatory=.true. )
