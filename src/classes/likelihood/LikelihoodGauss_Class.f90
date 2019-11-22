@@ -54,25 +54,8 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    EvaluateDet
-  procedure, public                                                   ::    EvaluateStoch
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
-end type
-
-type                                                                  ::    Observations_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
-  logical                                                             ::    Constructed=.false.
-
-contains
-  procedure, public                                                   ::    Initialize              =>    Initialize_Obs
-  procedure, public                                                   ::    Reset                   =>    Reset_Obs
-  procedure, public                                                   ::    SetDefaults             =>    SetDefaults_Obs
-  generic, public                                                     ::    Construct               =>    ConstructInput_Obs
-  procedure, private                                                  ::    ConstructInput_Obs
-  procedure, public                                                   ::    GetInput                =>    GetInput_Obs
-  procedure, public                                                   ::    Copy                    =>    Copy_Obs
-  final                                                               ::    Finalizer_Obs
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -266,7 +249,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvaluateDet( This, Response, Input, Output, Debug )
+  function EvaluateDet( This, Response, Input, Output, LogValue, Debug )
 
     real(rkp)                                                         ::    EvaluateDet
 
@@ -274,6 +257,7 @@ contains
     type(Response_Type), dimension(:), intent(in)                     ::    Response
     type(InputDet_Type), intent(in)                                   ::    Input
     type(Output_Type), dimension(:), intent(in)                       ::    Output
+    logical, optional, intent(in)                                     ::    LogValue
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -296,10 +280,14 @@ contains
     logical                                                           ::    ExitFlag
     integer                                                           ::    NbNodes
     real(rkp)                                                         ::    ln2pi
+    logical                                                           ::    LogValueLoc
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
+
+    LogValueLoc = .false.
+    if ( present(LogValue) ) LogValueLoc = LogValue
 
     ln2pi = dlog(Two*pi)
 
@@ -386,173 +374,17 @@ contains
 
     EvaluateDet = lnPreExp + lnExp + This%Scalar
 
-    if ( EvaluateDet > TVarR0D .and. EvaluateDet < HVarR0D ) then
-      EvaluateDet = dexp(EvaluateDet)
-    elseif (EvaluateDet < HVarR0D ) then
-      EvaluateDet = Zero
-    else
-      call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                             &
-           ConvertToString(Value=EvaluateDet) // '. Consider changing value of the scalar modifier and rerun for response: ' //   &
-                                                                                                   This%Label, ProcName=ProcName )
-    end if
-
-    nullify(OutputPtr)
-    nullify(DataPtr)
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function EvaluateStoch( This, Response, Input, Output, Debug )
-
-    real(rkp)                                                         ::    EvaluateStoch
-
-    class(LikelihoodGauss_Type), intent(inout)                        ::    This
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
-    type(InputStoch_Type), intent(in)                                 ::    Input
-    type(Output_Type), dimension(:), intent(in)                       ::    Output
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='EvaluateStoch'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    NbDataSets
-    integer                                                           ::    i
-    integer                                                           ::    ii
-    integer                                                           ::    iii
-    integer                                                           ::    iv
-    real(rkp), pointer, dimension(:,:)                                ::    OutputPtr=>null()
-    real(rkp), pointer, dimension(:,:)                                ::    DataPtr=>null()
-    logical                                                           ::    IsDiagonalFlag
-    logical                                                           ::    Found
-    integer                                                           ::    NbDegenInput
-    integer                                                           ::    NbDegenOutput
-    real(rkp)                                                         ::    VarR0D
-    real(rkp)                                                         ::    HVarR0D
-    real(rkp)                                                         ::    TVarR0D
-    integer                                                           ::    imin
-    integer                                                           ::    imax
-    integer                                                           ::    NbNodes
-    real(rkp)                                                         ::    lnExp
-    real(rkp)                                                         ::    ln2pi
-    logical                                                           ::    StochCovFlag
-    real(rkp)                                                         ::    lnPreExp
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    ln2pi = dlog(Two*pi)
-
-    HVarR0D = dlog(huge(VarR0D))
-    TVarR0D = dlog(tiny(VarR0D))
-
-    NbDegenInput = Input%GetNbDegen()
-
-    EvaluateStoch = Zero
-
-    if ( .not. Response%IsDataDefined() ) call Error%Raise( Line='Data not defined for the response', ProcName=ProcName )
-
-    StochCovFlag = This%CovarianceConstructor%IsStochastic( Input=Input )
-    if ( mod(Output%GetNbDegen(),NbDegenInput) /= 0 )                                                                             &
-                     call Error%Raise(Line= 'An unequal number of realizations per each stochastic input realization for output: '&
-                                                                            // Output(This%iOutput)%GetName(), ProcName=ProcName )
-    NbDegenOutput = Output%GetNbDegen() / NbDegenInput
-
-    OutputPtr => Output%GetValuesPointer()
-    DataPtr => Response%GetDataPointer()
-    NbDataSets = Response%GetNbDataSets()
-    NbNodes = Response%GetNbNodes()
-
-    if ( allocated(This%L) ) then
-      if ( size(This%L,1) /= NbNodes ) then
-        deallocate(This%L, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
-        deallocate(This%XmMean, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
-      end if
-    end if
-
-    if ( .not. allocated(This%L) ) then
-      allocate(This%L(NbNodes,NbNodes), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
-      This%L = Zero
-      allocate(This%XmMean(NbNodes,1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
-      This%XmMean = Zero
-    end if
-
-    ! computing ln(likelihood) values first before transforming them back to linear scale
-
-    EvaluateStoch = Zero
-
-    i = 1
-    do i = 1, NbDegenInput
-
-      lnExp = Zero
-
-      if ( StochCovFlag .or. i == 1 ) then
-        call This%CovarianceConstructor%AssembleCov( Input=Input%GetDetInput(Num=i), Coordinates=Response%GetCoordinatesPointer(),&
-                                                                     CoordinateLabels=Response%GetCoordinateLabels(), Cov=This%L )
-
-        IsDiagonalFlag = IsDiagonal( Array=This%L )
-
-        if ( .not. IsDiagonalFlag ) then
-          call DPOTRF( 'L', NbNodes, This%L, NbNodes, StatLoc )
-          if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DPOTRF', ProcName=ProcName )
-        else
-          This%L = dsqrt(This%L)
-        end if
-
-        lnPreExp = Zero
-        iii = 1
-        do iii = 1, NbNodes
-          lnPreExp = lnPreExp + dlog(This%L(iii,iii))
-        end do
-        lnPreExp = (-real(NbNodes,rkp)/Two*ln2pi - lnPreExp ) * NbDegenOutput*NbDataSets
-      end if
-
-      imin = (i-1)*NbDegenOutput+1
-      imax = i*NbDegenOutput
-
-      VarR0D = Zero
-      do iii = 1, NbDataSets
-        iv = imin
-        do iv = imin, imax
-          if ( This%MultiplicativeError ) then
-            This%XmMean(:,1) = DataPtr(:,iii) / OutputPtr(:,iv)
-            This%XmMean(:,1) = dlog(This%XmMean(:,1))
-          else
-            This%XmMean(:,1) = DataPtr(:,iii) - OutputPtr(:,iv)
-          end if
-
-          call DTRTRS( 'L', 'N', 'N', NbNodes, 1, This%L, NbNodes, This%XmMean(:,:), NbNodes, StatLoc )
-          if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DTRTRS with code: ' //                            &
-                                                                             ConvertToString(Value=StatLoc), ProcName=ProcName )
-          VarR0D = VarR0D - 0.5 * dot_product(This%XmMean(:,1), This%XmMean(:,1))
-        end do
-      end do
-
-      lnExp = lnExp + VarR0D
-
-      VarR0D = lnPreExp + lnExp + This%Scalar
-
-      if ( VarR0D > TVarR0D .and. VarR0D < HVarR0D ) then
-        VarR0D = dexp(VarR0D)
-      elseif (VarR0D < HVarR0D ) then
-        VarR0D = Zero
+    if ( .not. LogValueLoc ) then
+      if ( EvaluateDet > TVarR0D .and. EvaluateDet < HVarR0D ) then
+        EvaluateDet = dexp(EvaluateDet)
+      elseif (EvaluateDet < TVarR0D ) then
+        EvaluateDet = Zero
       else
         call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
-                ConvertToString(Value=VarR0D) // '. Consider changing value of the scalar modifier and rerun', ProcName=ProcName )
+             ConvertToString(Value=EvaluateDet) // '. Consider changing value of the scalar modifier and rerun for response: ' // &
+                                                                                                   This%Label, ProcName=ProcName )
       end if
-
-      EvaluateStoch = EvaluateStoch + VarR0D
-
-    end do
-
-    EvaluateStoch = EvaluateStoch / NbDegenInput
+    end if
 
     nullify(OutputPtr)
     nullify(DataPtr)

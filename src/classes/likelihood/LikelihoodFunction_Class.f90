@@ -44,16 +44,13 @@ contains
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    Evaluate                =>    EvaluateDet,            &
-                                                                                                          EvaluateStoch,          &
-                                                                                                          EvaluateDetPre,         &
-                                                                                                          EvaluateStochPre
+                                                                                                          EvaluateDetPre
   procedure(Initialize_LikelihoodFunction), deferred, public          ::    Initialize
   procedure(Reset_LikelihoodFunction), deferred, public               ::    Reset
   procedure(SetDefaults_LikelihoodFunction), deferred, public         ::    SetDefaults
   procedure(ConstructInput_LikelihoodFunction), deferred, private     ::    ConstructInput
   procedure(GetInput_LikelihoodFunction), deferred, public            ::    GetInput
   procedure(EvaluateDet_LikelihoodFunction), deferred, public         ::    EvaluateDet
-  procedure(EvaluateStoch_LikelihoodFunction), deferred, public       ::    EvaluateStoch
   procedure(Copy_LikelihoodFunction), deferred, public                ::    Copy
 end type
 
@@ -110,7 +107,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvaluateDet_LikelihoodFunction( This, Response, Input, Output, Debug )
+  function Evaluate_LikelihoodFunction( This, Response, Input, Output, LogValue, Debug )
     use                                                               ::    Parameters_Library
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    Response_Type
@@ -121,22 +118,7 @@ abstract interface
     type(Response_Type), intent(in)                                   ::    Response
     type(InputDet_Type), intent(in)                                   ::    Input
     type(Output_Type), intent(in)                                     ::    Output
-    logical, optional ,intent(in)                                     ::    Debug
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function EvaluateStoch_LikelihoodFunction( This, Response, Input, Output, Debug )
-    use                                                               ::    Parameters_Library
-    import                                                            ::    LikelihoodFunction_Type
-    import                                                            ::    Response_Type
-    import                                                            ::    InputStoch_Type
-    import                                                            ::    Output_Type
-    real(rkp)                                                         ::    EvaluateStoch_LikelihoodFunction
-    class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    type(Response_Type), intent(in)                                   ::    Response
-    type(InputStoch_Type), intent(in)                                 ::    Input
-    type(Output_Type), intent(in)                                     ::    Output
+    logical, optional, intent(in)                                     ::    LogValue
     logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -175,7 +157,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvaluateDetPre( This, Response, Input, Output, Debug )
+  function EvaluateDetPre( This, Response, Input, Output, LogValue, Debug )
 
     real(rkp)                                                         ::    EvaluateDetPre
 
@@ -183,7 +165,12 @@ contains
     type(Response_Type), dimension(:), intent(in)                     ::    Response
     type(InputDet_Type), intent(in)                                   ::    Input
     type(Output_Type), dimension(:), intent(in)                       ::    Output
+    logical, optional, intent(in)                                     ::    LogValue
     logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='EvaluateDetPre'
+    integer                                                           ::    StatLoc=0
     integer                                                           ::    iOutput
     integer                                                           ::    iResponse
     integer                                                           ::    NbOutputs
@@ -220,60 +207,11 @@ contains
 
     if ( iResponse == 0 ) call Error%Raise( Line='Did not find required response : ' // This%Label, ProcName=ProcName )
 
-    call This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput) )
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function EvaluateStochPre( This, Response, Input, Output, Debug )
-
-    real(rkp)                                                         ::    EvaluateStochPre
-
-    class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
-    type(InputStoch_Type), intent(in)                                 ::    Input
-    type(Output_Type), dimension(:), intent(in)                       ::    Output
-    logical, optional ,intent(in)                                     ::    Debug
-    integer                                                           ::    iOutput
-    integer                                                           ::    iResponse
-    integer                                                           ::    NbOutputs
-    integer                                                           ::    NbResponses
-    integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    iOutput = 0
-    iResponse = 0
-
-    NbOutputs = size(Output,1)
-    NbResponses = size(Response,1)
-
-    i = 1
-    do i = 1, NbOutputs
-      if ( Output(i)%GetLabel() == This%Label ) then
-        iOutput = i
-        exit
-      end if
-    end do
-
-    if ( iOutput == 0 ) call Error%Raise( Line='Did not find required output : ' // This%Label, ProcName=ProcName )
-
-    i = 1
-    do i = 1, NbResponses
-      if ( Response(i)%GetLabel() == This%Label ) then
-        iResponse = i
-        exit
-      end if
-    end do
-
-    if ( iResponse == 0 ) call Error%Raise( Line='Did not find required response : ' // This%Label, ProcName=ProcName )
-
-    call This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput) )
+    if ( present(LogValue) ) then
+      call This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput), Logvalue=LogValue )
+    else
+      call This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput) )
+    end if
 
     if (DebugLoc) call Logger%Exiting()
 

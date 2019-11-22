@@ -344,13 +344,19 @@ contains
     type(String_Type), allocatable, dimension(:)                      ::    Labels
     integer                                                           ::    i
     type(Output_Type), allocatable, dimension(:)                      ::    Output
+    type(Output_Type), allocatable, dimension(:,:)                    ::    HierOutput
     real(rkp), allocatable, dimension(:,:)                            ::    HierSamples
-    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
     type(SpaceParam_Type)                                             ::    SpaceParamRealization
+    real(rkp)                                                         ::    HVarR0D
+    real(rkp)                                                         ::    TVarR0D
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
+
+    HVarR0D = dlog(huge(VarR0D))
+    TVarR0D = dlog(tiny(VarR0D))
 
     if ( SpaceInput%IsCorrelated() ) call Error%Raise( Line='Bayesian inference does not support correlated spaces',              &
                                                                                                                ProcName=ProcName )    
@@ -386,9 +392,9 @@ contains
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierSamples', ProcName=ProcName, stat=StatLoc )
     end if
 
-    if ( allocated(VarR2D) ) then
-      deallocate(VarR2D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(VarR1D) ) then
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
     end if
 
     if ( present(OutputDirectory) ) call This%WriteOutput( SpaceInput=SpaceInput, PosteriorChain=PosteriorChain,                  &
@@ -444,10 +450,10 @@ contains
         end if
 
         Prior = One
-        i = 1
-        do i = 1, SpaceInput%GetNbDim()
-          DistProb => SpaceInput%GetDistributionPointer( Num=i )
-          call Input%GetValue( Value=VarR0D, Label=SpaceInput%GetLabel(Num=i) )
+        iLoc = 1
+        do iLoc = 1, SpaceInput%GetNbDim()
+          DistProb => SpaceInput%GetDistributionPointer( Num=iLoc )
+          call Input%GetValue( Value=VarR0D, Label=SpaceInput%GetLabel(Num=iLoc) )
           Prior = Prior * DistProb%PDF( X=VarR0D )
         end do
         nullify( DistProb )
@@ -457,13 +463,21 @@ contains
         if ( Prior > Zero ) then
           call ModelInterface%Run( Input=Input, Output=Output, Stat=RunStat )
           if ( RunStat == 0 ) then
-            Likelihood = One
+            Likelihood = Zero
             iLoc = 1
             do iLoc = 1, size(This%LikelihoodFunctionVec,1)
-              LikelihoodPtr => This%LikelihoodFunctionVec(i)%GetPointer()
-              Likelihood = Likelihood * LikelihoodPtr%Evaluate( Response=Response, Input=Input, Output=Output )
+              LikelihoodPtr => This%LikelihoodFunctionVec(iLoc)%GetPointer()
+              Likelihood = Likelihood + LikelihoodPtr%Evaluate( Response=Response, Input=Input, Output=Output, LogValue=.true. )
               nullify(LikelihoodPtr)
             end do
+            if ( Likelihood > TVarR0D .and. Likelihood < HVarR0D ) then
+              Likelihood = dexp(Likelihood)
+            elseif (Likelihood < TVarR0D ) then
+              Likelihood = Zero
+            else
+              call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                     &
+                   ConvertToString(Value=Likelihood) // '. Consider changing value of the scalar modifier of responses'
+            end if
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
           else
@@ -491,15 +505,18 @@ contains
 
         logical                                                           ::    DebugLoc
         character(*), parameter                                           ::    ProcName='MCMCPosterior'
-        integer                                                           ::    i
+        integer                                                           ::    iLoc
         real(rkp)                                                         ::    Prior
         class(DistProb_Type), pointer                                     ::    DistProb
-        type(InputStoch_Type)                                             ::    HierInput
+        type(InputDet_Type), allocatable, dimension(:)                    ::    HierInput
         real(rkp)                                                         ::    VarR0D
         integer                                                           ::    RunStat
         real(rkp)                                                         ::    Likelihood
         integer                                                           ::    iLoc
+        integer                                                           ::    iiLoc
         class(LikelihoodFunction_Type, pointer                            ::    LikelihoodPtr=>null()
+        integer                                                           ::    NbDimOrig
+        integer                                                           ::    NbDimHier
 
         DebugLoc = DebugGlobal
         if ( present(Debug) ) DebugLoc = Debug
@@ -507,6 +524,8 @@ contains
 
         Likelihood = Zero
         Prior = Zero
+
+        NbDimOrig = Input%GetNbInputs()
 
         if ( allocated(MiscValues) ) then
           if ( size(MiscValues) /= 2 ) then
@@ -533,41 +552,60 @@ contains
         if ( Prior > Zero ) then
 
           call This%HierarchicalSpace%Generate( Input=Input, SpaceParam=SpaceParamRealization )
-
+          NbDimHier = SpaceParamRealization%GetNbDim()
           HierSamples = This%HierarchicalSampler%Draw( SpaceInput=SpaceParamRealization )
 
-          if ( allocated(VarR2D) ) then
-            if ( size(VarR2D,1) /= SpaceParamRealization%GetNbDim()+SpaceInput%GetNbDim() .or.                                   &
-                                                                                      size(VarR2D,2) /= size(HierSamples,2) ) then
-              deallocate(VarR2D, stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+          if ( allocated(VarR1D) ) then
+            if ( size(VarR1D,1) /= NbDimOrig + NbDimHier ) then
+              deallocate(VarR1D, stat=StatLoc)
+              if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
             end if
           end if
 
-          if ( .not. allocated(VarR2D) ) then
-            allocate(VarR2D(SpaceParamRealization%GetNbDim()+SpaceInput%GetNbDim(),size(HierSamples,2)), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+          if ( .not. allocated(VarR1D) ) then
+            allocate(VarR1D(NbDimOrig + NbDimHier), stat=StatLoc)
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
           end if
 
-          i = 1
-          do i = 1, SpaceInput%GetNbDim()
-            call Input%GetValue( Value=VarR2D(i,1), Label=Labels(i)%GetValue() )
-            VarR2D(i,:) = VarR2D(i,1)
+          iLoc = 1
+          do iLoc = 1, NbDimOrig
+            call Input%GetValue( Value=VarR1D(iLoc), Label=Labels(iLoc)%GetValue() )
           end do
-          VarR2D(SpaceInput%GetNbDim()+1:,:) = HierSamples
 
-          call HierInput%Construct( Input=VarR2D, Labels=Labels )
+          allocate(HierInput(size(HierSamples,2)), stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='HierInput', ProcName=ProcName, stat=StatLoc )
+
+          iLoc = 1
+          do iLoc = 1, size(HierInput,1)
+            VarR1D(NbDimOrig+1:) = HierSamples(:,iLoc)
+            call HierInput(iLoc)%Construct( Input=VarR1D, Labels=Labels )
+          end do
 
           call ModelInterface%Run( Input=HierInput, Output=Output, Stat=RunStat )
 
           if ( RunStat == 0 ) then
-            Likelihood = One
-            iLoc = 1
-            do iLoc = 1, size(Response,1)
-              LikelihoodPtr => This%LikelihoodFunctionVec(i)%GetPointer()
-              Likelihood = Likelihood * LikelihoodPtr%Evaluate( Response=Response, Input=HierInput, Output=Output )
-              nullify(LikelihoodPtr)
+            VarR0D
+            iiLoc = 1
+            do iiLoc = 1, size(HierInput,1)
+              Likelihood = Zero
+              iLoc = 1
+              do iLoc = 1, size(Response,1)
+                LikelihoodPtr => This%LikelihoodFunctionVec(iLoc)%GetPointer()
+                Likelihood = Likelihood + LikelihoodPtr%Evaluate( Response=Response, Input=HierInput(iiLoc),                      &
+                                                                                         Output=Output(:,iiLoc), LogValue=.true. )
+                nullify(LikelihoodPtr)
+              end do
+              if ( Likelihood > TVarR0D .and. Likelihood < HVarR0D ) then
+                Likelihood = dexp(Likelihood)
+              elseif (Likelihood < TVarR0D ) then
+                Likelihood = Zero
+              else
+                call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                     &
+                     ConvertToString(Value=Likelihood) // '. Consider changing value of the scalar modifier of responses'
+              end if
+              VarR0D = VarR0D + Likelihood
             end do
+            Likelihood = VarR0D / real(size(HierInput,1),rkp)
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
           else
