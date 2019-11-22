@@ -517,6 +517,7 @@ contains
         class(LikelihoodFunction_Type, pointer                            ::    LikelihoodPtr=>null()
         integer                                                           ::    NbDimOrig
         integer                                                           ::    NbDimHier
+        integer                                                           ::    NbHierSamples
 
         DebugLoc = DebugGlobal
         if ( present(Debug) ) DebugLoc = Debug
@@ -539,10 +540,10 @@ contains
         end if
 
         Prior = One
-        i = 1
-        do i = 1, SpaceInput%GetNbDim()
-          DistProb => SpaceInput%GetDistributionPointer( Num=i )
-          call Input%GetValue( Value=VarR0D, Label=SpaceInput%GetLabel(Num=i) )
+        iLoc = 1
+        do iLoc = 1, SpaceInput%GetNbDim()
+          DistProb => SpaceInput%GetDistributionPointer( Num=iLoc )
+          call Input%GetValue( Value=VarR0D, Label=SpaceInput%GetLabel(Num=iLoc) )
           Prior = Prior * DistProb%PDF( X=VarR0D )
         end do
         nullify( DistProb )
@@ -554,6 +555,7 @@ contains
           call This%HierarchicalSpace%Generate( Input=Input, SpaceParam=SpaceParamRealization )
           NbDimHier = SpaceParamRealization%GetNbDim()
           HierSamples = This%HierarchicalSampler%Draw( SpaceInput=SpaceParamRealization )
+          NbHierSamples = size(HierSamples,2)
 
           if ( allocated(VarR1D) ) then
             if ( size(VarR1D,1) /= NbDimOrig + NbDimHier ) then
@@ -572,21 +574,21 @@ contains
             call Input%GetValue( Value=VarR1D(iLoc), Label=Labels(iLoc)%GetValue() )
           end do
 
-          allocate(HierInput(size(HierSamples,2)), stat=StatLoc)
+          allocate(HierInput(NbHierSamples), stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='HierInput', ProcName=ProcName, stat=StatLoc )
 
           iLoc = 1
-          do iLoc = 1, size(HierInput,1)
+          do iLoc = 1, NbHierSamples
             VarR1D(NbDimOrig+1:) = HierSamples(:,iLoc)
             call HierInput(iLoc)%Construct( Input=VarR1D, Labels=Labels )
           end do
 
-          call ModelInterface%Run( Input=HierInput, Output=Output, Stat=RunStat )
+          call ModelInterface%Run( Input=HierInput, Output=HierOutput, Stat=RunStat )
 
           if ( RunStat == 0 ) then
-            VarR0D
+            VarR0D = Zero
             iiLoc = 1
-            do iiLoc = 1, size(HierInput,1)
+            do iiLoc = 1, NbHierSamples
               Likelihood = Zero
               iLoc = 1
               do iLoc = 1, size(Response,1)
@@ -605,7 +607,7 @@ contains
               end if
               VarR0D = VarR0D + Likelihood
             end do
-            Likelihood = VarR0D / real(size(HierInput,1),rkp)
+            Likelihood = VarR0D / real(NbHierSamples,rkp)
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
           else
