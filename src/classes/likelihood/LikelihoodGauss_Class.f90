@@ -157,6 +157,7 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     logical                                                           ::    Found
     real(rkp)                                                         ::    VarR0D
+    character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    i
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
@@ -254,9 +255,9 @@ contains
     real(rkp)                                                         ::    EvaluateDet
 
     class(LikelihoodGauss_Type), intent(inout)                        ::    This
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), intent(in)                                   ::    Response
     type(InputDet_Type), intent(in)                                   ::    Input
-    type(Output_Type), dimension(:), intent(in)                       ::    Output
+    type(Output_Type), intent(in)                                     ::    Output
     logical, optional, intent(in)                                     ::    LogValue
     logical, optional ,intent(in)                                     ::    Debug
 
@@ -286,13 +287,13 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
+    if ( Response%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect response', ProcName=ProcName )
+    if ( Output%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect output', ProcName=ProcName )
+
     LogValueLoc = .false.
     if ( present(LogValue) ) LogValueLoc = LogValue
 
     ln2pi = dlog(Two*pi)
-
-    NbOutputs = size(Output)
-    NbResponses = size(Response)
 
     EvaluateDet = Zero
 

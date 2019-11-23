@@ -25,6 +25,7 @@ use ArrayIORoutines_Module
 use ArrayRoutines_Module
 use StringRoutines_Module
 use CommandRoutines_Module
+use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
@@ -60,7 +61,7 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   generic, public                                                     ::    GetCoordinates          =>    GetCoordsLabel_R1D,     &
-                                                                                                          GetCoordsLabel_R2D,     &
+                                                                                                          GetCoordsLabels_R2D,    &
                                                                                                           GetCoords_R2D
   generic, public                                                     ::    GetCoordinatesPointer   =>    GetCoordsLabelPtr_R1D,  &
                                                                                                           GetCoordsPtr_R2D
@@ -133,8 +134,8 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
     This%NbIndCoordinates = 0
 
-    if ( allocated(This%CoordinateLabels) ) deallocate(This%CoordinateLabels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CoordinateLabels', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%CoordinatesLabels) ) deallocate(This%CoordinatesLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CoordinatesLabels', ProcName=ProcName, stat=StatLoc )
 
     if ( associated(This%ResponseData) ) deallocate(This%ResponseData, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseData', ProcName=ProcName, stat=StatLoc )
@@ -196,7 +197,6 @@ contains
     integer                                                           ::    i
     integer                                                           ::    AbscissaColumn
     character(:), allocatable                                         ::    AbscissaSource
-    integer                                                           ::    VarI0D
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -227,7 +227,7 @@ contains
     SectionName = 'coordinates'
     ParameterName = 'labels'
     call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-    call Parse( Input=VarC0D, Separator=' ', Output=This%CoordinateLabels )
+    This%CoordinatesLabels = ConvertToStrings(Value=VarC0D)
 
     SubSectionName = SectionName // '>source'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
@@ -326,13 +326,13 @@ contains
     if ( len_trim(This%Label) /= 0 ) call GetInput%AddParameter( Name='label', Value=This%Label )
     if ( len_trim(This%Name) /= 0 ) call GetInput%AddParameter( Name='name', Value=This%Name )
 
-    if ( len_trim(This%Name) /= 0 ) call GetInput%AddParameter( Name='nb_nodes', Value=This%NbNodes )
-    if ( len_trim(This%Name) /= 0 ) call GetInput%AddParameter( Name='nb_ind_coordinates', Value=This%NbIndCoordinates )
+    call GetInput%AddParameter( Name='nb_nodes', Value=ConvertToString(Value=This%NbNodes) )
+    call GetInput%AddParameter( Name='nb_ind_coordinates', Value=ConvertToString(Value=This%NbIndCoordinates) )
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/coordinates'
     SectionName = 'coordinates'
     call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%AddParameter( Name='labels', Value=ConvertToString(This%CoordinateLabels), SectionName=SectionName )
+    call GetInput%AddParameter( Name='labels', Value=ConvertToString(This%CoordinatesLabels), SectionName=SectionName )
     SubSectionName = 'source'
     call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
     call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
@@ -350,7 +350,7 @@ contains
       SectionName = 'data'
       call GetInput%AddSection( SectionName=SectionName )
 
-      call GetInput%AddParameter( Name='column', Value=ConvertToString( LinSequence(SeqStart=1,SeqEnd=This%NbDataSets),           &
+      call GetInput%AddParameter( Name='column', Value=ConvertToString(LinSequence(SeqStart=1,SeqEnd=This%NbDataSets)),           &
                                                                                                          SectionName=SectionName )
 
       SubSectionName = 'source'
@@ -385,7 +385,7 @@ contains
     character(*), parameter                                           ::    ProcName='GetCoordsLabel_R1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
-    integer                                                           ::    i, ii
+    integer                                                           ::    ii
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -396,7 +396,7 @@ contains
     i = 1
     ii = 0
     do i = 1, This%NbIndCoordinates
-      if ( Label /= This%CoordinateLabels(i)%GetValue() ) cycle
+      if ( Label /= This%CoordinatesLabels(i)%GetValue() ) cycle
       ii = i
       exit
     end do
@@ -412,16 +412,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordsLabel_R2D( This, Labels, Debug )
+  function GetCoordsLabels_R2D( This, Labels, Debug )
 
-    real(rkp), allocatable, dimension(:,:)                            ::    GetCoordsLabel_R2D
+    real(rkp), allocatable, dimension(:,:)                            ::    GetCoordsLabels_R2D
 
     class(Response_Type), intent(in)                                  ::    This
-    character(*), dimension(:), intent(in)                            ::    Label
+    type(String_Type), dimension(:), intent(in)                       ::    Labels
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetCoordsLabel_R2D'
+    character(*), parameter                                           ::    ProcName='GetCoordsLabels_R2D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbLabels
     integer                                                           ::    i
@@ -436,7 +436,7 @@ contains
 
     NbLabels = size(Labels)
 
-    allocate(GetCoordsLabel_R2D(This%NbNodes,NbLabels), stat=StatLoc)
+    allocate(GetCoordsLabels_R2D(This%NbNodes,NbLabels), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCoordsLabel_R2D', ProcName=ProcName, stat=StatLoc )
 
     iii = 1
@@ -444,12 +444,12 @@ contains
       i = 1
       ii = 0
       do i = 1, This%NbIndCoordinates
-        if ( Label /= This%CoordinateLabels(i)%GetValue() ) cycle
+        if ( Labels(iii)%GetValue() /= This%CoordinatesLabels(i)%GetValue() ) cycle
         ii = i
         exit
       end do
       if ( ii == 0 ) call Error%Raise( Line='Did not finding a coordinate with requested label', ProcName=ProcName )
-      GetCoordsLabel_R2D(:,iii) = This%Coordinates(:,iii)
+      GetCoordsLabels_R2D(:,iii) = This%Coordinates(:,iii)
     end do
 
     if (DebugLoc) call Logger%Exiting()
@@ -475,8 +475,8 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    allocate(This%GetCoords_R2D, source=This%Coordinates, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%GetCoords_R2D', ProcName=ProcName, stat=StatLoc )
+    allocate(GetCoords_R2D, source=This%Coordinates, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCoords_R2D', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -486,7 +486,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetCoordsLabelPtr_R1D( This, Label, Debug )
 
-    real(rkp), pointer, dimension(:)                                  ::    GetCoordsLabel_R1D
+    real(rkp), pointer, dimension(:)                                  ::    GetCoordsLabelPtr_R1D
 
     class(Response_Type), intent(in)                                  ::    This
     character(*), intent(in)                                          ::    Label
@@ -496,7 +496,7 @@ contains
     character(*), parameter                                           ::    ProcName='GetCoordsLabel_R1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
-    integer                                                           ::    i, ii
+    integer                                                           ::    ii
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -507,7 +507,7 @@ contains
     i = 1
     ii = 0
     do i = 1, This%NbIndCoordinates
-      if ( Label /= This%CoordinateLabels(i)%GetValue() ) cycle
+      if ( Label /= This%CoordinatesLabels(i)%GetValue() ) cycle
       ii = i
       exit
     end do
@@ -522,12 +522,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordsPtr_R2D( This, Label, Debug )
+  function GetCoordsPtr_R2D( This, Debug )
 
-    real(rkp), pointer, dimension(:)                                  ::    GetCoordsPtr_R2D
+    real(rkp), pointer, dimension(:,:)                                ::    GetCoordsPtr_R2D
 
     class(Response_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    Label
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -620,8 +619,8 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    allocate(GetCoordinateLabels, source=This%CoordinateLabels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCoordinateLabels', ProcName=ProcName, stat=StatLoc )
+    allocate(GetCoordinateLabels, source=This%CoordinatesLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCoordinatesLabels', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 

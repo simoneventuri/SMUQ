@@ -269,8 +269,8 @@ contains
     ParameterName = 'initial_start'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) then
-      This%IniMu = ConvertToRealrkps( String=VarC0D )
-      VarR1D = ConvertToRealrkps( String=VarC0D )
+      This%IniMu = ConvertToReals( String=VarC0D )
+      VarR1D = ConvertToReals( String=VarC0D )
     end if
 
     SectionName = 'initial_covariance'
@@ -282,7 +282,7 @@ contains
         case ( 'diagonals' )
           ParameterName = 'values'
           call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-          VarR1D = ConvertToRealrkps( String=VarC0D )
+          VarR1D = ConvertToReals( String=VarC0D )
           allocate(This%IniCov(size(VarR1D,1),size(VarR1D,1)), stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='This%IniCov', ProcName=ProcName, stat=StatLoc )
           This%IniCov = Zero

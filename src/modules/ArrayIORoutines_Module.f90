@@ -144,7 +144,7 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-        allocate(Array, source=ConvertToRealrkps( String=VarC0D, Separator=' ' ), stat=StatLoc)
+        allocate(Array, source=ConvertToReals( String=VarC0D, Separator=' ' ), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
       case default
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
@@ -690,9 +690,9 @@ contains
                                                              ProcName=ProcName )
 
           if ( RowMajorLoc ) then
-            Array(i,:) = ConvertToRealrkps( Strings=VarC1D )
+            Array(i,:) = ConvertToReals( Strings=VarC1D )
           else
-            Array(:,i) = ConvertToRealrkps( Strings=VarC1D )
+            Array(:,i) = ConvertToReals( Strings=VarC1D )
           end if
 
         end do
@@ -1431,14 +1431,14 @@ contains
           if ( i <= NbLinesSkipLoc ) cycle
           if ( VarC0D(1:len(Comment)) == Comment ) cycle
           ii = ii + 1
-          Array(ii) = ConvertToRealrkp( String=VarC0D )
+          Array(ii) = ConvertToReal( String=VarC0D )
         end do
       else
         if ( ii /= 1 ) call Error%Raise( Line='Only one line can specify the array to be read in column wise', ProcName=ProcName )
         call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
         allocate(Array(size(VarC1D,1)), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
-        Array = ConvertToRealrkps(Strings=VarC1D)
+        Array = ConvertToReals(Strings=VarC1D)
         deallocate(VarC1D, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
       end if
@@ -2064,9 +2064,9 @@ contains
         call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
         if ( size(VarC1D) /= Size1 ) call Error%Raise( Line='Number of entries mismatch in the line', ProcName=ProcName )
         if ( RowMajorLoc ) then
-          Array(ii,:) = ConvertToRealrkps( Strings=VarC1D )
+          Array(ii,:) = ConvertToReals( Strings=VarC1D )
         else
-          Array(:,ii) = ConvertToRealrkps( Strings=VarC1D )
+          Array(:,ii) = ConvertToReals( Strings=VarC1D )
         end if
       end do
 

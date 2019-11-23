@@ -209,8 +209,8 @@ contains
     character(*), parameter                                           ::    ProcName='algorithmH'
     logical                                                           ::    DebugLoc
     type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
-    integer(8)                                                        ::    i
-    integer(8)                                                        ::    NbIndices
+    integer                                                           ::    i
+    integer                                                           ::    NbIndices
     integer                                                           ::    k, s, x
     integer, dimension(:), allocatable                                ::    al, VarI1D
     integer                                                           ::    StatLoc=0
@@ -298,8 +298,8 @@ contains
     logical                                                           ::    DebugLoc
     type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
     integer, dimension(:), allocatable                                ::    al
-    integer(8)                                                        ::    NbIndices
-    integer(8)                                                        ::    i
+    integer                                                           ::    NbIndices
+    integer                                                           ::    i
     integer                                                           ::    k, l, r
     integer                                                           ::    VarI0D
     integer, dimension(:), allocatable                                ::    VarI1D

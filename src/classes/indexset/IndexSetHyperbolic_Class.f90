@@ -336,10 +336,10 @@ contains
     integer, dimension(:,:), allocatable                              ::    VarI2D
     integer, dimension(:,:), allocatable                              ::    IdentityM
     real(rkp), dimension(:), allocatable                              ::    VarR1D
-    integer(8)                                                        ::    i, ii
+    integer                                                           ::    i, ii
     integer                                                           ::    k, j
     integer                                                           ::    jmax
-    integer(8)                                                        ::    NbPermutations, NbIndices
+    integer                                                           ::    NbPermutations, NbIndices
     logical, dimension(:), allocatable                                ::    LogicMask
     integer                                                           ::    StatLoc=0
 
@@ -367,7 +367,7 @@ contains
     call IndicesRecord%Append( VarI1D )
 
     do k = 1, Order
-      jmax = min(M,k,8)
+      jmax = min(M,k)
 
       do j = 1, jmax
 

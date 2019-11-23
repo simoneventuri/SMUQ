@@ -195,8 +195,8 @@ contains
 
     i = 1
     do i = 1, size(VarR2D,2)
-      This%OriginalTable(i,1) = ConvertToRealrkp( String=VarR2D(AbscissaColumn,i)%GetValue() )
-      This%OriginalTable(i,2) = ConvertToRealrkp( String=VarR2D(ParamColumn,i)%GetValue() )
+      This%OriginalTable(i,1) = ConvertToReal( String=VarR2D(AbscissaColumn,i)%GetValue() )
+      This%OriginalTable(i,2) = ConvertToReal( String=VarR2D(ParamColumn,i)%GetValue() )
     end do
 
     deallocate(VarR2D, stat=StatLoc)

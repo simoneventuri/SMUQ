@@ -45,12 +45,13 @@ contains
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    Evaluate                =>    EvaluateDet,            &
                                                                                                           EvaluateDetPre
+  procedure, public                                                   ::    EvaluateDetPre
   procedure(Initialize_LikelihoodFunction), deferred, public          ::    Initialize
   procedure(Reset_LikelihoodFunction), deferred, public               ::    Reset
   procedure(SetDefaults_LikelihoodFunction), deferred, public         ::    SetDefaults
   procedure(ConstructInput_LikelihoodFunction), deferred, private     ::    ConstructInput
   procedure(GetInput_LikelihoodFunction), deferred, public            ::    GetInput
-  procedure(EvaluateDet_LikelihoodFunction), deferred, public         ::    EvaluateDet
+  procedure(Evaluate_LikelihoodFunction), deferred, public            ::    EvaluateDet
   procedure(Copy_LikelihoodFunction), deferred, public                ::    Copy
 end type
 
@@ -113,7 +114,7 @@ abstract interface
     import                                                            ::    Response_Type
     import                                                            ::    InputDet_Type
     import                                                            ::    Output_Type
-    real(rkp)                                                         ::    EvaluateDet_LikelihoodFunction
+    real(rkp)                                                         ::    Evaluate_LikelihoodFunction
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
     type(Response_Type), intent(in)                                   ::    Response
     type(InputDet_Type), intent(in)                                   ::    Input
@@ -208,9 +209,9 @@ contains
     if ( iResponse == 0 ) call Error%Raise( Line='Did not find required response : ' // This%Label, ProcName=ProcName )
 
     if ( present(LogValue) ) then
-      call This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput), Logvalue=LogValue )
+      EvaluateDetPre = This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput), Logvalue=LogValue )
     else
-      call This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput) )
+      EvaluateDetPre = This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput) )
     end if
 
     if (DebugLoc) call Logger%Exiting()

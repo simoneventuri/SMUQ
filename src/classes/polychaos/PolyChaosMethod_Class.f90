@@ -113,6 +113,7 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
   subroutine BuildModel_PolyChaosMethod( This, ModelInterface, Basis, SpaceInput, IndexSetScheme, Coefficients, Indices, CVErrors,&
                                                                               OutputDirectory, InputSamples, OutputSamples, Debug)
+    use Parameters_Library
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    OrthoMultivar_Type
     import                                                            ::    SpaceInput_Type

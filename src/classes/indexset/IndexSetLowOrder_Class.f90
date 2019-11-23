@@ -330,8 +330,8 @@ contains
     integer, dimension(:,:), allocatable                              ::    VarI2D
     real(rkp), dimension(:), allocatable                              ::    VarR1D
     type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
-    integer(8)                                                        ::    i, ii
-    integer(8)                                                        ::    NbPermutations, NbIndices
+    integer                                                           ::    i, ii
+    integer                                                           ::    NbPermutations, NbIndices
     integer                                                           ::    StatLoc=0
 
     DebugLoc = DebugGlobal

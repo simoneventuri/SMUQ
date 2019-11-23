@@ -11,6 +11,7 @@ private
 public                                                                ::    Output_Type
 
 type                                                                  ::    Output_Type
+  character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Label
@@ -25,8 +26,8 @@ contains
                                                                                                           ConstructCase2
   procedure, private                                                  ::    ConstructCase1
   procedure, private                                                  ::    ConstructCase2
-  procedure, public                                                   :;    GetValues
-  procedure, public                                                   :;    GetValuesPointer
+  procedure, public                                                   ::    GetValues
+  procedure, public                                                   ::    GetValuesPointer
   procedure, public                                                   ::    GetNbNodes
   procedure, public                                                   ::    GetNbDegen
   procedure, public                                                   ::    GetLabel
@@ -115,11 +116,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------ 
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Values, Name, Label, Debug )
+  subroutine ConstructCase1( This, Values, Label, Debug )
 
     class(Output_Type), intent(inout)                                 ::    This
     real(rkp), dimension(:), intent(in)                               ::    Values
-    character(*), optional, intent(in)                                ::    Name
     character(*), optional, intent(in)                                ::    Label
     logical, optional ,intent(in)                                     ::    Debug
     
@@ -135,20 +135,20 @@ contains
       if ( This%NbNodes /= size(Values,1) .or. This%NbDegen /= 1 ) then
         call This%Reset()
       else
-        This%Values = Values
+        This%Values(:,1) = Values
       end if
     end if
 
     if ( .not. This%Initialized ) call This%Initialize()
 
     if ( .not. This%Constructed ) then
-      allocate(This%Values, source=Values, stat=StatLoc)
+      allocate(This%Values(size(Values,1),1), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
+      This%Values(:,1) = Values
       This%NbDegen = 1
       This%NbNodes = size(Values,1)
     end if
 
-    if ( present(Name) ) This%Name = Name
     if ( present(Label) ) This%Label = Label
 
     This%Constructed = .true.
@@ -159,11 +159,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase2( This, Values, Name, Label, Debug )
+  subroutine ConstructCase2( This, Values, Label, Debug )
 
     class(Output_Type), intent(inout)                                 ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Values
-    character(*), optional, intent(in)                                ::    Name
     character(*), optional, intent(in)                                ::    Label
     logical, optional ,intent(in)                                     ::    Debug
     
@@ -192,7 +191,6 @@ contains
       This%NbNodes = size(Values,1)
     end if
 
-    if ( present(Name) ) This%Name = Name
     if ( present(Label) ) This%Label = Label
 
     This%Constructed = .true.

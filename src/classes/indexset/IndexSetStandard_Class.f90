@@ -312,10 +312,10 @@ contains
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeIndices'
     type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
-    integer(8)                                                        ::    i, ii
+    integer                                                           ::    i, ii
     integer                                                           ::    k, j
     integer                                                           ::    jmax
-    integer(8)                                                        ::    NbIndices, NbPermutations
+    integer                                                           ::    NbIndices, NbPermutations
     integer, dimension(:,:), allocatable                              ::    Indices_Loc
     integer, dimension(:), allocatable                                ::    VarI1D
     integer, dimension(:,:), allocatable                              ::    VarI2D

@@ -22,6 +22,8 @@ use Input_Library
 use Parameters_Library
 use String_Library
 use StringRoutines_Module
+use String_Library
+use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
@@ -171,6 +173,7 @@ contains
     character(:), allocatable, dimension(:)                           ::    VarC1D
     real(rkp)                                                         ::    VarR0D
     character(:), allocatable, dimension(:)                           ::    LabelMap
+    logical                                                           ::    Found
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -188,41 +191,35 @@ contains
     allocate(This%PCEModels(This%NbModels), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cell', ProcName=ProcName, stat=StatLoc )
 
+    Found = .false.
+
     i = 1
     do i = 1, This%NbModels
       SubSectionName = SectionName // '>model' // ConvertToString(Value=i)
       ParameterName = 'directory'
       call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found, SectionName=SubSectionName )
-      if ( Found )
+      if ( Found ) then
         call This%PCEModels(i)%Construct( Prefix=PrefixLoc // VarC0D )
+
+        ParameterName = 'output_label'
+        call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
+        call This%PCEModels(i)%ReplaceOutputLabel( NewLabel=VarC0D )
 
         SubSectionName = SectionName // '>model' // ConvertToString(Value=i) // '>input_label_map'
         if ( Input%HasSection( SubSectionName=SubSectionName ) ) then
-          i = 1
-          do i = 1, Input%GetNumberofParameters(FromSubSection=SubSectionName)
-            ParameterName = 'map' // ConvertToString(Value=i)
+          ii = 1
+          do ii = 1, Input%GetNumberofParameters(FromSubSection=SubSectionName)
+            ParameterName = 'map' // ConvertToString(Value=ii)
             call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
             call Parse( Input=VarC0D, Separator=' ', Output=LabelMap )
             if ( size(LabelMap,1) /= 2 ) call Error%Raise( Line='Incorrect input label map format', ProcName=ProcName )
             call This%PCEModels(i)%ReplaceInputLabel( OldLabel=trim(adjustl(LabelMap(1))),  NewLabel=trim(adjustl(LabelMap(2))) )
           end do
         end if
-
-        SectionName = SectionName // '>model' // ConvertToString(Value=i) // '>output_label_map'
-        if ( Input%HasSection( SubSectionName=SubSectionName ) ) then
-          i = 1
-          do i = 1, Input%GetNumberofParameters(FromSubSection=SubSectionName)
-            ParameterName = 'map' // ConvertToString(Value=i)
-            call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-            call Parse( Input=VarC0D, Separator=' ', Output=LabelMap )
-            if ( size(LabelMap,1) /= 2 ) call Error%Raise( Line='Incorrect input label map format', ProcName=ProcName )
-            call This%PCEModels(i)%ReplaceOutputLabel( OldLabel=trim(adjustl(LabelMap(1))),  NewLabel=trim(adjustl(LabelMap(2))) )
-          end do
-        end if
       else
         SubSectionName = SubSectionName // '>pce_input'
         call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call This%PCEModels(i)%Construct( Input=Input, Prefix=PrefixLoc )
+        call This%PCEModels(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
         nullify(InputSection)
       end if
     end do
@@ -342,8 +339,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput( This, MainSectionName, Prefix, Directory, Debug )
-
-    use String_Library
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -532,8 +527,6 @@ contains
           allocate(LHS%PCEModels, source=RHS%PCEModels, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PCEModels', ProcName=ProcName, stat=StatLoc )
           LHS%NbTransformParams = RHS%NbTransformParams
-          allocate(LHS%Cell(RHS%NbModels), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='Cell', ProcName=ProcName, stat=StatLoc )
           LHS%NbFixedParams = RHS%NbFixedParams
           if ( RHS%NbFixedParams > 0 ) then
             allocate(LHS%FixedParamVals, source=RHS%FixedParamVals, stat=StatLoc)
@@ -554,10 +547,6 @@ contains
               LHS%ParamTransformLabel(i) = RHS%ParamTransformLabel(i)%GetValue()
             end do
           end if
-          i = 1
-          do i = 1, RHS%NbModels
-            LHS%Cell(i) = RHS%Cell(i)
-          end do
         end if
 
       class default

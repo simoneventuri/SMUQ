@@ -10,14 +10,15 @@ implicit none
 private
 
 public                                                                ::    ConvertToString
+public                                                                ::    ConvertToStrings
 public                                                                ::    ConvertToInteger
 public                                                                ::    ConvertToIntegers
 public                                                                ::    ConvertToInteger8
 public                                                                ::    ConvertToInteger8s
-public                                                                ::    ConvertToRealrkp
-public                                                                ::    ConvertToRealrkps
 public                                                                ::    ConvertToReal
 public                                                                ::    ConvertToReals
+public                                                                ::    ConvertToReal4
+public                                                                ::    ConvertToReal4s
 public                                                                ::    ConvertToReal8
 public                                                                ::    ConvertToReal8s
 public                                                                ::    ConvertToLogical
@@ -45,6 +46,11 @@ interface ConvertToString
   module procedure                                                    ::    Convert_String1D_To_C0D
 end interface
 
+interface ConvertToStrings
+  module procedure                                                    ::    Convert_C0D_To_String1D
+  module procedure                                                    ::    Convert_C1D_To_String1D
+end interface
+
 interface ConvertToInteger8                                            
   module procedure                                                    ::    Convert_C0D_To_I80D
 end interface
@@ -63,22 +69,22 @@ interface ConvertToIntegers
   module procedure                                                    ::    Convert_C1D_To_I1D
 end interface
 
-interface ConvertToRealrkp                                            
-  module procedure                                                    ::    Convert_C0D_To_Rrkp0D
-end interface
-
-interface ConvertToRealrkps                                          
-  module procedure                                                    ::    Convert_C0D_To_Rrkp1D
-  module procedure                                                    ::    Convert_C1D_To_Rrkp1D
-end interface
-
 interface ConvertToReal                                            
   module procedure                                                    ::    Convert_C0D_To_R0D
 end interface
 
-interface ConvertToReals                                            
+interface ConvertToReals                                         
   module procedure                                                    ::    Convert_C0D_To_R1D
   module procedure                                                    ::    Convert_C1D_To_R1D
+end interface
+
+interface ConvertToReal4                                            
+  module procedure                                                    ::    Convert_C0D_To_R40D
+end interface
+
+interface ConvertToReal4s                                         
+  module procedure                                                    ::    Convert_C0D_To_R41D
+  module procedure                                                    ::    Convert_C1D_To_R41D
 end interface
 
 interface ConvertToReal8                                           
@@ -281,94 +287,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Convert_C0D_To_Rrkp0D( String, Debug )
-
-    real(rkp)                                                         ::    Convert_C0D_To_Rrkp0D
-
-    character(*), intent(in)                                          ::    String
-    logical, optional ,intent(in)                                     ::    Debug
-
-    character(*), parameter                                           ::    ProcName='Convert_C0D_To_Rrkp0D'
-    logical                                                           ::    DebugLoc
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    read(unit=String, fmt=*, iostat=StatLoc) Convert_C0D_To_Rrkp0D
-    if ( StatLoc /= 0 ) call Error%Read( Message='Error when performing an internal read', ProcName=ProcName, Status=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function Convert_C0D_To_Rrkp1D( String, Separator, Debug )
-
-    real(rkp), allocatable, dimension(:)                              ::    Convert_C0D_To_Rrkp1D
-
-    character(*), intent(in)                                          ::    String
-    character(*), optional, intent(in)                                ::    Separator
-    logical, optional ,intent(in)                                     ::    Debug
-
-    character(*), parameter                                           ::    ProcName='Convert_C0D_To_Rrkp1D'
-    logical                                                           ::    DebugLoc
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    SeparatorLoc
-    character(:), allocatable, dimension(:)                           ::    Strings
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    SeparatorLoc = ' '
-    if ( present(Separator) ) SeparatorLoc = Separator
-
-    call Parse( Input=String, Separator=SeparatorLoc, Output=Strings )
-
-    Convert_C0D_To_Rrkp1D = ConvertToRealrkps( Strings=Strings )
-
-    if (DebugLoc) call Logger%Exiting
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function Convert_C1D_To_Rrkp1D( Strings, Debug )
-
-    real(rkp), allocatable, dimension(:)                              ::    Convert_C1D_To_Rrkp1D
-
-    character(*), dimension(:), intent(in)                            ::    Strings
-    logical, optional ,intent(in)                                     ::    Debug
-
-    character(*), parameter                                           ::    ProcName='Convert_C1D_To_R1D'
-    logical                                                           ::    DebugLoc
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    allocate(Convert_C1D_To_Rrkp1D(size(Strings,1)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Convert_C1D_To_Rrkp1D', ProcName=ProcName, stat=StatLoc )
-
-    do i = 1, size(Strings,1)
-      read(unit=Strings(i), fmt=*, iostat=StatLoc) Convert_C1D_To_Rrkp1D(i)
-      if ( StatLoc /= 0 ) call Error%Read( Message='Error when performing an internal read', ProcName=ProcName, Status=StatLoc )
-    end do
-
-    if (DebugLoc) call Logger%Exiting
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   function Convert_C0D_To_R0D( String, Debug )
 
-    real                                                              ::    Convert_C0D_To_R0D
+    real(rkp)                                                         ::    Convert_C0D_To_R0D
 
     character(*), intent(in)                                          ::    String
     logical, optional ,intent(in)                                     ::    Debug
@@ -392,7 +313,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function Convert_C0D_To_R1D( String, Separator, Debug )
 
-    real, allocatable, dimension(:)                                   ::    Convert_C0D_To_R1D
+    real(rkp), allocatable, dimension(:)                              ::    Convert_C0D_To_R1D
 
     character(*), intent(in)                                          ::    String
     character(*), optional, intent(in)                                ::    Separator
@@ -423,7 +344,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function Convert_C1D_To_R1D( Strings, Debug )
 
-    real, allocatable, dimension(:)                                   ::    Convert_C1D_To_R1D
+    real(rkp), allocatable, dimension(:)                              ::    Convert_C1D_To_R1D
 
     character(*), dimension(:), intent(in)                            ::    Strings
     logical, optional ,intent(in)                                     ::    Debug
@@ -442,6 +363,91 @@ contains
 
     do i = 1, size(Strings,1)
       read(unit=Strings(i), fmt=*, iostat=StatLoc) Convert_C1D_To_R1D(i)
+      if ( StatLoc /= 0 ) call Error%Read( Message='Error when performing an internal read', ProcName=ProcName, Status=StatLoc )
+    end do
+
+    if (DebugLoc) call Logger%Exiting
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_C0D_To_R40D( String, Debug )
+
+    real(4)                                                           ::    Convert_C0D_To_R40D
+
+    character(*), intent(in)                                          ::    String
+    logical, optional ,intent(in)                                     ::    Debug
+
+    character(*), parameter                                           ::    ProcName='Convert_C0D_To_R40D'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    read(unit=String, fmt=*, iostat=StatLoc) Convert_C0D_To_R40D
+    if ( StatLoc /= 0 ) call Error%Read( Message='Error when performing an internal read', ProcName=ProcName, Status=StatLoc )
+
+    if (DebugLoc) call Logger%Exiting
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_C0D_To_R41D( String, Separator, Debug )
+
+    real(4), allocatable, dimension(:)                                ::    Convert_C0D_To_R41D
+
+    character(*), intent(in)                                          ::    String
+    character(*), optional, intent(in)                                ::    Separator
+    logical, optional ,intent(in)                                     ::    Debug
+
+    character(*), parameter                                           ::    ProcName='Convert_C0D_To_R41D'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    SeparatorLoc
+    character(:), allocatable, dimension(:)                           ::    Strings
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    SeparatorLoc = ' '
+    if ( present(Separator) ) SeparatorLoc = Separator
+
+    call Parse( Input=String, Separator=SeparatorLoc, Output=Strings )
+
+    Convert_C0D_To_R41D = ConvertToReal8s( Strings=Strings )
+
+    if (DebugLoc) call Logger%Exiting
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_C1D_To_R41D( Strings, Debug )
+
+    real(4), allocatable, dimension(:)                                ::    Convert_C1D_To_R41D
+
+    character(*), dimension(:), intent(in)                            ::    Strings
+    logical, optional ,intent(in)                                     ::    Debug
+
+    character(*), parameter                                           ::    ProcName='Convert_C1D_To_R41D'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    allocate(Convert_C1D_To_R41D(size(Strings,1)), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Convert_C1D_To_R41D', ProcName=ProcName, stat=StatLoc )
+
+    do i = 1, size(Strings,1)
+      read(unit=Strings(i), fmt=*, iostat=StatLoc) Convert_C1D_To_R41D(i)
       if ( StatLoc /= 0 ) call Error%Read( Message='Error when performing an internal read', ProcName=ProcName, Status=StatLoc )
     end do
 
@@ -1222,6 +1228,100 @@ contains
     i = 2
     do i = 2, size(Values,1)
       Convert_String1D_To_C0D = Convert_String1D_To_C0D // SeparatorLoc // Values(i)%GetValue()
+    end do
+
+    if (DebugLoc) call Logger%Exiting
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_C0D_To_String1D( Value, Format, Separator, Debug )
+
+    type(String_Type), dimension(:), allocatable                      ::    Convert_C0D_To_String1D
+
+    character(*), intent(in)                                          ::    Value
+    character(*), optional, intent(in)                                ::    Separator
+    character(*), optional, intent(in)                                ::    Format
+    logical, optional ,intent(in)                                     ::    Debug
+
+    character(*), parameter                                           ::    ProcName='Convert_C0D_To_String1D'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    SeparatorLoc
+    character(:), allocatable                                         ::    FormatLoc
+    integer                                                           ::    i
+    character(:), allocatable, dimension(:)                           ::    Output
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    SeparatorLoc = ' '
+    if ( present(Separator) ) SeparatorLoc = Separator
+
+    FormatLoc = 'G0'
+    if ( present(Format) ) FormatLoc = Format
+
+    if ( SeparatorLoc == ' ' ) SeparatorLoc = '1X'
+
+    FormatLoc = '(' // FormatLoc // ',*(' // SeparatorLoc // ',' // FormatLoc // '))'
+
+    call Parse( Input=Value, Separator=SeparatorLoc, Output=Output )
+
+    allocate(Convert_C0D_To_String1D(size(Output,1)), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Convert_C0D_To_String1D', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, size(Output,1)
+      Convert_C0D_To_String1D(i) = trim(adjustl(Output(i)(:)))
+    end do
+
+    deallocate(Output, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+
+    if (DebugLoc) call Logger%Exiting
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_C1D_To_String1D( Values, Format, Separator, Debug )
+
+    type(String_Type), dimension(:), allocatable                      ::    Convert_C1D_To_String1D
+
+    character(*), dimension(:), intent(in)                            ::    Values
+    character(*), optional, intent(in)                                ::    Separator
+    character(*), optional, intent(in)                                ::    Format
+    logical, optional ,intent(in)                                     ::    Debug
+
+    character(*), parameter                                           ::    ProcName='Convert_C1D_To_String1D'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    SeparatorLoc
+    character(:), allocatable                                         ::    FormatLoc
+    integer                                                           ::    i
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    SeparatorLoc = ' '
+    if ( present(Separator) ) SeparatorLoc = Separator
+
+    FormatLoc = 'G0'
+    if ( present(Format) ) FormatLoc = Format
+
+    if ( SeparatorLoc == ' ' ) SeparatorLoc = '1X'
+
+    FormatLoc = '(' // FormatLoc // ',*(' // SeparatorLoc // ',' // FormatLoc // '))'
+
+    allocate(Convert_C1D_To_String1D(size(Values,1)), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Convert_C1D_To_String1D', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, size(Values,1)
+      Convert_C1D_To_String1D(i) = trim(adjustl(Values(i)(:)))
     end do
 
     if (DebugLoc) call Logger%Exiting

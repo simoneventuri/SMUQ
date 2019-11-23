@@ -20,9 +20,11 @@ module TFUN_Class
 
 use Input_Library
 use Parameters_Library
+use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use TestFunction_Class                                            ,only:    TestFunction_Type
+use TestFunction_Vec_Class                                        ,only:    TestFunction_Vec_Type
 use TestFunction_Factory_Class                                    ,only:    TestFunction_Factory
 use ModelExtTemplate_Class                                        ,only:    ModelExtTemplate_Type
 use Model_Class                                                   ,only:    Model_Type
@@ -36,7 +38,8 @@ private
 public                                                                ::    TFUN_Type
 
 type, extends(ModelExtTemplate_Type)                                  ::    TFUN_Type
-  class(TestFunction_Type), allocatable                               ::    TestFunction
+  class(TestFunction_Vec_Type), allocatable, dimension(:)             ::    TestFunctions
+  integer                                                             ::    NbFunctions
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -90,8 +93,12 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( allocated(This%TestFunction) ) deallocate(This%TestFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TestFunction', ProcName=ProcName, stat=StatLoc )
+    This%Initialized = .false.
+    This%Constructed = .false.
+
+    if ( allocated(This%TestFunctions) ) deallocate(This%TestFunctions, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TestFunctions', ProcName=ProcName, stat=StatLoc )
+    This%NbFunctions = 0
 
     call This%SetDefaults()
 
@@ -136,6 +143,8 @@ contains
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    VarC0D
+    integer                                                           ::    i
+    class(TestFunction_Type), allocatable                             ::    TestFunction
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -147,10 +156,21 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    SectionName = 'function'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call TestFunction_Factory%Construct( Object=This%TestFunction, Input=InputSection, Prefix=PrefixLoc )
-    nullify(InputSection)
+    This%NbFunctions = Input%GetNumberofSubSections()
+
+    allocate(This%TestFunctions(This%NbFunctions), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%TestFunctions', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, This%NbFunctions
+      SectionName = 'function' // ConvertToString(Value=i)
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call TestFunction_Factory%Construct( Object=TestFunction, Input=InputSection, Prefix=PrefixLoc )
+      nullify(InputSection)
+      call This%TestFunctions(i)%Set( Object=TestFunction )
+      deallocate(TestFunction, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='TesetFunction', ProcName=ProcName, stat=StatLoc )
+    end do
 
     This%Constructed = .true.
 
@@ -213,6 +233,8 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     character(:), allocatable                                         ::    SectionName
     logical                                                           ::    ExternalFlag=.false.
+    class(TestFunction_Type), pointer                                 ::    TestFunctionPtr=>null()
+    integer                                                           ::    i
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -230,10 +252,14 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    SectionName = 'function'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/function'
-    call GetInput%AddSection( Section=TestFunction_Factory%GetObjectInput(Object=This%TestFunction, MainSectionName=SectionName,  &
+    i = 1
+    do i = 1, This%NbFunctions
+      SectionName = 'function' // ConvertToString(Value=i)
+      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/function' // ConvertToString(Value=i)
+      TestFunctionPtr => This%TestFunctions(i)%GetPointer()
+      call GetInput%AddSection( Section=TestFunction_Factory%GetObjectInput(Object=TestFunctionPtr, MainSectionName=SectionName,  &
                                                                                        Prefix=PrefixLoc, Directory=DirectorySub) )
+    end do
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -252,12 +278,30 @@ contains
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='RunCase1'
     integer                                                           ::    StatLoc=0
+    class(TestFunction_Type), pointer                                 ::    TestFunctionPtr=>null()
+    integer                                                           ::    i
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    call This%TestFunction%Run( Input=Input, Output=Output )
+    if ( .not. allocated(Output) ) then
+      allocate( Output(This%NbFunctions), stat=StatLoc )
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+    else
+      if ( size(Output,1) /= This%NbFunctions ) then
+        deallocate(Output, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+        allocate( Output(This%NbFunctions), stat=StatLoc )
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+      end if
+    end if
+
+    i = 1
+    do i = 1, This%NbFunctions
+      TestFunctionPtr => This%TestFunctions(i)%GetPointer()
+      call TestFunctionPtr%Run( Input=Input, Output=Output(i) )
+    end do
 
     if ( present(Stat) ) Stat = 0
 
@@ -287,8 +331,9 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          allocate(LHS%TestFunction, source=RHS%TestFunction, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%TestFunction', ProcName=ProcName, stat=StatLoc )
+          LHS%NbFunctions = RHS%NbFunctions
+          allocate(LHS%TestFunctions, source=RHS%TestFunctions, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%TestFunctions', ProcName=ProcName, stat=StatLoc )
         end if
 
       class default

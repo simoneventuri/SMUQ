@@ -671,7 +671,7 @@ contains
       OrderExceededFlag = .true.
       i = 1
       do i = 1, This%NbCells
-        if ( Cells(i)%GetTruncationOrder() < MaxTruncationOrder ) then
+        if ( Cells(i)%GetTruncationOrder() <= MaxTruncationOrder ) then
           OrderExceededFlag = .false.
           exit
         end if
@@ -759,15 +759,17 @@ contains
             im1 = 0
             ii = 1
             do ii = 1, ModelInterface%GetNbResponses()
-              VarR1DPointer => Output(ii)%GetOrdinatePointer()
+              VarR2DPointer => Output(ii)%GetOrdinatePointer()
+              if ( Outputs(ii)%GetNbDegen() > 1 ) call Error%Raise( 'Polychaos procedure cant deal with stochastic responses',    &
+                                                                                                               ProcName=ProcName )
               iv = 0
               iii = im1 + 1
-              do iii = im1+1, im1+size(VarR1DPointer)
+              do iii = im1+1, im1+size(VarR1DPointer,1)
                 iv = iv + 1
-                call This%Cells(iii)%AppendRecord( Entry=VarR1DPointer(iv) )
+                call This%Cells(iii)%AppendRecord( Entry=VarR1DPointer(iv,1) )
               end do
-              im1 = im1 + size(VarR1DPointer)
-              nullify(VarR1DPointer)
+              im1 = im1 + size(VarR2DPointer,1)
+              nullify(VarR2DPointer)
             end do
           end if
 
@@ -778,7 +780,7 @@ contains
     
         end do
 
-        allocate(NbDim,This%Step), stat=StatLoc)
+        allocate(VarR2D(NbDim,This%Step), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         if ( allocated(This%ParamRecord) ) then
           VarR2D(:,1:size(This%ParamRecord,2)) = This%ParamRecord

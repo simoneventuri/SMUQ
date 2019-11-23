@@ -42,8 +42,9 @@ public                                                                ::    Test
 type, extends(TestFunction_Type)                                      ::    TestSpill_Type
   real(rkp), allocatable, dimension(:)                                ::    Location
   real(rkp), allocatable, dimension(:)                                ::    Time
-  integer                                                             ::    NbOutputs
-  type(String_Type), allocatable, dimension(:)                        ::    Label
+  integer                                                             ::    NbTimes
+  integer                                                             ::    NbLocations
+  character(:), allocatable                                           ::    Label
   real(rkp)                                                           ::    M
   real(rkp)                                                           ::    D
   real(rkp)                                                           ::    L
@@ -116,10 +117,8 @@ contains
     if ( allocated(This%Location) ) deallocate(This%Location, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Location', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
-
-    This%NbOutputs = 0
+    This%NbTimes = 0
+    This%NbLocations = 0
 
     call This%Initialize()
 
@@ -150,6 +149,7 @@ contains
     This%D_Dependency = ''
     This%L_Dependency = ''
     This%Tau_Dependency = ''
+    This%Label = 'spill'
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -192,50 +192,29 @@ contains
 
     Found = .false.
 
-    SectionName = 'Output'
-    i = 0
-    do
-      SubSectionName = SectionName // '>output' // ConvertToString(Value=i)
-      if ( .not. Input%HasSection( SubSectionName=SubSectionName ) ) exit
-      i = i + 1
-    end do
-    This%NbOutputs = i
-
-    if ( i <= 0 ) call Error%Raise( Line='Found no outputs in the input deck', ProcName=ProcName )
+    ParameterName = 'label'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found, SectionName=SectionName )
+    if ( Found ) This%Label = VarC0D
 
     ParameterName = 'time_range'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-    TimeRange = ConvertToRealrkps(String=VarC0D)
+    TimeRange = ConvertToReals(String=VarC0D)
     if ( TimeRange(1) < 0 ) call Error%Raise( Line='Minimum time range below zero', ProcName=ProcName )
     if ( TimeRange(2) < TimeRange(1) ) call Error%Raise( Line='Minimum time larger than maximum', ProcName=ProcName )
         
     ParameterName = 'nb_times'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-    NbTimes = VarI0D
+    This%NbTimes = VarI0D
 
     This%Time = LinSpace(TimeRange(1), TimeRange(2), NbTimes)
 
-    allocate(This%Label(This%NbOutputs), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%Location(This%NbOutputs), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Location', ProcName=ProcName, stat=StatLoc )
-
-    i = 1
-    do i = 1, This%NbOutputs
-      SubSectionName = SectionName // '>output' // ConvertToString(Value=i)
-
-      ParameterName = 'location'
-      call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-      This%Location(i) = VarR0D
-      if ( This%Location(i) > 3.0 .or. This%Location(i) < 0.0 ) call Error%Raise( Line='Location must be in between 0 and 3',     &
+    ParameterName = 'location'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Location = ConvertToReals( String=VarC0D )
+    if ( any(This%Location > 3.0) .or. any(This%Location < 0.0) ) call Error%Raise( Line='Location must be in between 0 and 3',   &
                                                                                                                ProcName=ProcName ) 
-
-      ParameterName = 'label'
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-      This%Label(i) = VarC0D
-
-    end do
+    This%NbLocations = size(This%Location)
+    if ( THis%NbLocations <= 0 ) call Error%Raise( 'Must specify at least one location', ProcName=ProcName )
 
     SectionName = 'parameters'
 
@@ -318,19 +297,12 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    SectionName = 'output'
-    call GetInput%AddSection( SectionName=SectionName )
+    call GetInput%AddParameter( Name='label', Value=This%Label )
     VarC0D = ConvertToString(This%Time(1)) // ' ' // ConvertToString(This%Time(2))
-    call GetInput%AddParameter( Name='time_range', Value=VarC0D, SectionName=SectionName )
-    call GetInput%AddParameter( Name='nb_times', Value=ConvertToString(Value=size(This%Time)), SectionName=SectionName )
-    i = 1
-    do i = 1, This%NbOutputs
-      SubSectionName = 'output' // ConvertToString(Value=i)
-      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-      SubSectionName = SectionName // '>' // SubSectionName
-      call GetInput%AddParameter( Name='location', Value=ConvertToString(Value=This%Location(i)), SectionName=SubSectionName )
-      call GetInput%AddParameter( Name='label', Value=This%Label(i)%GetValue(), SectionName=SubSectionName )
-    end do
+    call GetInput%AddParameter( Name='time_range', Value=VarC0D )
+    call GetInput%AddParameter( Name='nb_times', Value=ConvertToString(Value=This%NbTimes ) )
+
+    call GetInput%AddParameter( Name='location', Value=ConvertToString(Values=This%Location) )
 
     SectionName='parameters'
     call GetInput%AddSection( SectionName=SectionName )
@@ -357,13 +329,14 @@ contains
 
     class(TestSpill_Type), intent(inout)                              ::    This
     class(Input_Type), intent(in)                                     ::    Input
-    type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
+    type(Output_Type), intent(inout)                                  ::    Output
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ProcessInput'
     integer                                                           ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                            ::    Ordinate
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(rkp)                                                         ::    M
     real(rkp)                                                         ::    D
     real(rkp)                                                         ::    L
@@ -372,6 +345,7 @@ contains
     integer                                                           ::    ii
     character(:), allocatable                                         ::    VarC0D
     type(InputDet_Type)                                               ::    InputLoc
+    integer                                                           ::    NbTimes
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -379,21 +353,9 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    if ( .not. allocated(Output) ) then
-      allocate( Output(This%NbOutputs), stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-    else
-      if ( size(Output,1) /= This%NbOutputs ) then
-        deallocate(Output, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-        allocate( Output(This%NbOutputs), stat=StatLoc )
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-      end if
-    end if
-
     select type (Input)
       type is (InputDet_Type)
-        allocate(Ordinate(size(This%Time),1), stat=StatLoc)
+        allocate(Ordinate(This%NbTimes*This%NbLocations,1), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
         if ( len_trim(This%M_Dependency) /= 0 ) then
           call Input%GetValue( Value=M, Label=This%M_Dependency )
@@ -416,15 +378,16 @@ contains
           Tau = This%Tau
         end if
         i = 1
-        do i = 1, This%NbOutputs
-          call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time, Concentration=Ordinate(:,1) )
-          call Output(i)%Construct( Values=Ordinate, Label=This%Label(i)%GetValue() )
+        do i = 1, This%NbLocations
+          call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time, Concentration=VarR1D )
+          Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,1) = VarR1D
         end do
+        call Output%Construct( Values=Ordinate, Label=This%Label )
       type is (InputStoch_Type)
-        allocate(Ordinate(size(This%Time),Input%GetNbDegen()), stat=StatLoc)
+        allocate(Ordinate(This%NbTimes*This%NbLocations,Input%GetNbDegen()), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
         i = 1
-        do i = 1, This%NbOutputs
+        do i = 1, This%NbLocations
           ii = 1
           do ii = 1, Input%GetNbDegen()
             InputLoc = Input%GetDetInput(Num=ii)
@@ -448,12 +411,11 @@ contains
             else
               Tau = This%Tau
             end if
-            call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time,                            &
-                                                                                                    Concentration=Ordinate(:,ii) )
+            call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time, Concentration=VarR1D )
+            Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,ii) = VarR1D
           end do
-          call Output(i)%Construct( Values=Ordinate, Label=This%Label(i)%GetValue() )
         end do
-
+        call Output%Construct( Values=Ordinate, Label=This%Label )
       class default
         call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
     end select
@@ -524,9 +486,8 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
         if( RHS%Constructed ) then
-          LHS%NbOutputs = RHS%NbOutputs
-          allocate(LHS%Label, source=RHS%Label, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Label', ProcName=ProcName, stat=StatLoc )
+          LHS%NbLocations = RHS%NbLocations
+          LHS%NbTimes = RHS%NbTimes
           allocate(LHS%Location, source=RHS%Location, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Location', ProcName=ProcName, stat=StatLoc )
           allocate(LHS%Time, source=RHS%Time, stat=StatLoc)
@@ -566,9 +527,6 @@ contains
 
     if ( allocated(This%Location) ) deallocate(This%Location, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Location', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 

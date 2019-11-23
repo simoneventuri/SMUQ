@@ -346,7 +346,7 @@ contains
     
     i = 1
     do i = 1, NbNodes
-      Cov(i,i) = MLoc / ( One + dexp(-KLoc*(Coordiantes(i,iCoordinate)-X0Loc)) )
+      Cov(i,i) = MLoc / ( One + dexp(-KLoc*(Coordinates(i,iCoordinate)-X0Loc)) )
     end do
 
     if (DebugLoc) call Logger%Exiting()

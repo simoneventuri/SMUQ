@@ -204,7 +204,7 @@ contains
 
     SectionName = 'likelihood'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    NbLikelihoods = InputSection%GetNbSubSections()
+    NbLikelihoods = InputSection%GetNumberofSubSections()
     nullify( InputSection )
     if ( NbLikelihoods <= 0 ) call Error%Raise( 'Must specify at least one likelihood function', ProcName=ProcName )
     allocate(This%LikelihoodFunctionVec(NbLikelihoods), stat=StatLoc)
@@ -266,7 +266,7 @@ contains
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    NbLikelihoods
     integer                                                           ::    i
-    class(LikelihoodFunction_Type, pointer                            ::    LikelihoodPtr=>null()
+    class(LikelihoodFunction_Type), pointer                           ::    LikelihoodPtr=>null()
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -298,7 +298,7 @@ contains
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/likelihood' // ConvertToString(Value=i) 
       LikelihoodPtr => This%LikelihoodFunctionVec(i)%GetPointer()
       call GetInput%AddSection( Section=LikelihoodFunction_Factory%GetObjectInput(Object=LikelihoodPtr,                           &
-                            MainSectionName=SubSectionName, Prefix=PrefixLoc, Directory=DirectorySub). To_SubSection=SectionName )
+                            MainSectionName=SubSectionName, Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SectionName )
       nullify(LikelihoodPtr)
     end do
 
@@ -348,6 +348,7 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    HierSamples
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     type(SpaceParam_Type)                                             ::    SpaceParamRealization
+    real(rkp)                                                         ::    VarR0D
     real(rkp)                                                         ::    HVarR0D
     real(rkp)                                                         ::    TVarR0D
 
@@ -426,10 +427,10 @@ contains
         real(rkp)                                                         ::    Likelihood
         real(rkp)                                                         ::    Prior
         class(DistProb_Type), pointer                                     ::    DistProb
-        real(rkp)                                                         ::    VarR0D
+        real(rkp)                                                         ::    VarR0DLoc
         integer                                                           ::    RunStat
         integer                                                           ::    iLoc
-        class(LikelihoodFunction_Type, pointer                            ::    LikelihoodPtr=>null()
+        class(LikelihoodFunction_Type), pointer                           ::    LikelihoodPtr=>null()
         
         DebugLoc = DebugGlobal
         if ( present(Debug) ) DebugLoc = Debug
@@ -453,8 +454,8 @@ contains
         iLoc = 1
         do iLoc = 1, SpaceInput%GetNbDim()
           DistProb => SpaceInput%GetDistributionPointer( Num=iLoc )
-          call Input%GetValue( Value=VarR0D, Label=SpaceInput%GetLabel(Num=iLoc) )
-          Prior = Prior * DistProb%PDF( X=VarR0D )
+          call Input%GetValue( Value=VarR0DLoc, Label=SpaceInput%GetLabel(Num=iLoc) )
+          Prior = Prior * DistProb%PDF( X=VarR0DLoc )
         end do
         nullify( DistProb )
 
@@ -476,7 +477,7 @@ contains
               Likelihood = Zero
             else
               call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                     &
-                   ConvertToString(Value=Likelihood) // '. Consider changing value of the scalar modifier of responses'
+                   ConvertToString(Value=Likelihood) // '. Consider changing value of the scalar modifier of responses' )
             end if
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
@@ -505,16 +506,15 @@ contains
 
         logical                                                           ::    DebugLoc
         character(*), parameter                                           ::    ProcName='MCMCPosterior'
-        integer                                                           ::    iLoc
         real(rkp)                                                         ::    Prior
         class(DistProb_Type), pointer                                     ::    DistProb
         type(InputDet_Type), allocatable, dimension(:)                    ::    HierInput
-        real(rkp)                                                         ::    VarR0D
+        real(rkp)                                                         ::    VarR0DLoc
         integer                                                           ::    RunStat
         real(rkp)                                                         ::    Likelihood
         integer                                                           ::    iLoc
         integer                                                           ::    iiLoc
-        class(LikelihoodFunction_Type, pointer                            ::    LikelihoodPtr=>null()
+        class(LikelihoodFunction_Type), pointer                           ::    LikelihoodPtr=>null()
         integer                                                           ::    NbDimOrig
         integer                                                           ::    NbDimHier
         integer                                                           ::    NbHierSamples
@@ -543,8 +543,8 @@ contains
         iLoc = 1
         do iLoc = 1, SpaceInput%GetNbDim()
           DistProb => SpaceInput%GetDistributionPointer( Num=iLoc )
-          call Input%GetValue( Value=VarR0D, Label=SpaceInput%GetLabel(Num=iLoc) )
-          Prior = Prior * DistProb%PDF( X=VarR0D )
+          call Input%GetValue( Value=VarR0DLoc, Label=SpaceInput%GetLabel(Num=iLoc) )
+          Prior = Prior * DistProb%PDF( X=VarR0DLoc )
         end do
         nullify( DistProb )
 
@@ -586,7 +586,7 @@ contains
           call ModelInterface%Run( Input=HierInput, Output=HierOutput, Stat=RunStat )
 
           if ( RunStat == 0 ) then
-            VarR0D = Zero
+            VarR0DLoc = Zero
             iiLoc = 1
             do iiLoc = 1, NbHierSamples
               Likelihood = Zero
@@ -594,7 +594,7 @@ contains
               do iLoc = 1, size(Response,1)
                 LikelihoodPtr => This%LikelihoodFunctionVec(iLoc)%GetPointer()
                 Likelihood = Likelihood + LikelihoodPtr%Evaluate( Response=Response, Input=HierInput(iiLoc),                      &
-                                                                                         Output=Output(:,iiLoc), LogValue=.true. )
+                                                                                     Output=HierOutput(:,iiLoc), LogValue=.true. )
                 nullify(LikelihoodPtr)
               end do
               if ( Likelihood > TVarR0D .and. Likelihood < HVarR0D ) then
@@ -603,11 +603,11 @@ contains
                 Likelihood = Zero
               else
                 call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                     &
-                     ConvertToString(Value=Likelihood) // '. Consider changing value of the scalar modifier of responses'
+                     ConvertToString(Value=Likelihood) // '. Consider changing value of the scalar modifier of responses' )
               end if
-              VarR0D = VarR0D + Likelihood
+              VarR0DLoc = VarR0DLoc + Likelihood
             end do
-            Likelihood = VarR0D / real(NbHierSamples,rkp)
+            Likelihood = VarR0DLoc / real(NbHierSamples,rkp)
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
           else

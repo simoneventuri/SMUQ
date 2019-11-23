@@ -188,8 +188,8 @@ contains
     if ( present(Prefix) ) PrefixLoc = Prefix
 
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Label = VarC0D
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Label = VarC0D
 
     SectionName = 'parameters'
 
@@ -302,7 +302,7 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
    
-    call GetInput%AddParameter( Name='label', Value=This%AbscissaName )
+    call GetInput%AddParameter( Name='label', Value=This%Label )
 
     SectionName='parameters'
     call GetInput%AddSection( SectionName=SectionName )
@@ -341,7 +341,7 @@ contains
 
     class(TestBorehole_Type), intent(inout)                           ::    This
     class(Input_Type), intent(in)                                     ::    Input
-    type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
+    type(Output_Type), intent(inout)                                  ::    Output
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -367,18 +367,6 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
-
-    if ( .not. allocated(Output) ) then
-      allocate( Output(1), stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-    else
-      if ( size(Output,1) /= 1 ) then
-        deallocate(Output, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-        allocate( Output(1), stat=StatLoc )
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-      end if
-    end if
 
     select type (Input)
       type is (InputDet_Type)
@@ -480,7 +468,7 @@ contains
         call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
     end select
 
-    call Output(1)%Construct( Values=Ordinate, Label=This%Label )
+    call Output%Construct( Values=Ordinate, Label=This%Label )
 
     deallocate(Ordinate, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )

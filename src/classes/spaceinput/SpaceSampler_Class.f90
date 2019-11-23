@@ -56,6 +56,7 @@ contains
   generic, public                                                     ::    Enrich                  =>    EnrichSpace
   procedure, private                                                  ::    EnrichSpace
   procedure, public                                                   ::    DrawMVarNormal
+  procedure, public                                                   ::    IsConstructed
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -688,6 +689,29 @@ contains
 
 !  end function
 !  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsConstructed( This, Debug )
+
+    logical                                                           ::    IsConstructed
+
+    class(SpaceSampler_Type), intent(in)                              ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='DrawMVarNormal'
+    integer                                                           ::    StatLoc=0
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    IsConstructed = This%Constructed
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy( LHS, RHS )

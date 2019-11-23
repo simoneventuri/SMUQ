@@ -325,7 +325,7 @@ contains
                                                                                                                ProcName=ProcName )
 
     if ( allocated(Cov) ) then
-      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= NbNodes) ) then
+      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= NbNodes ) then
         deallocate(Cov, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
       end if

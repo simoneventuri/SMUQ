@@ -108,7 +108,7 @@ abstract interface
     import                                                            ::    Output_Type
     class(TestFunction_Type), intent(inout)                           ::    This
     class(Input_Type), intent(in)                                     ::    Input
-    type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
+    type(Output_Type), intent(inout)                                  ::    Output
     logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

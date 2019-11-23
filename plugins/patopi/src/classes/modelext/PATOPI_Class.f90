@@ -303,7 +303,7 @@ contains
         if ( StatRun == 0 ) call This%OutputReader%ReadOutput( Output=Output )
 
       type is (InputStoch_Type)
-        allocate(OutputLoc(NbOutputs), stat=StatLoc)
+        allocate(OutputLoc(NbOutputsLoc), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )
 
         NbDegen = Input%GetNbDegen()

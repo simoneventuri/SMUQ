@@ -186,7 +186,7 @@ contains
 
     ParameterName = 'mean'
     call Input%GetValue( VarC0D, ParameterName=ParameterName, Mandatory=.true. )
-    VarR1D = ConvertToRealrkps( String=VarC0D )
+    VarR1D = ConvertToReals( String=VarC0D )
     allocate(This%Mu, source=VarR1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Mu', ProcName=ProcName, stat=StatLoc )
   
@@ -200,7 +200,7 @@ contains
       case ( 'diagonals' )
         ParameterName = 'values'
         call Input%GetValue( VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-        VarR1D = ConvertToRealrkps( String=VarC0D )
+        VarR1D = ConvertToReals( String=VarC0D )
         if ( size(VarR1D,1) /= This%NbDim ) call Error%Raise( Line='Mismatching number of diagonal terms', ProcName=ProcName )
         allocate(This%Cov(This%NbDim,This%NbDim), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cov', ProcName=ProcName, stat=StatLoc )
@@ -209,7 +209,7 @@ contains
         do i = 1, This%NbDim
           This%Cov(i,i) = VarR1D(i)
         end do
-        This%Mu = ConvertToRealrkps( String=VarC0D )        
+        This%Mu = ConvertToReals( String=VarC0D )        
       case ('full' )
         call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
         call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )

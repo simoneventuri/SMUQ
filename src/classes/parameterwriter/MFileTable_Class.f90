@@ -241,7 +241,7 @@ contains
       VarC0D = trim(adjustl(This%TemplateTranscript(i)%GetValue()))  
       if ( VarC0D(1:1) == This%Comment ) cycle
       call This%TemplateTranscript(i)%Parse(Strings=VarString1D, Separator=This%Separator )
-      This%Abscissa(i) = ConvertToRealrkp( String=VarString1D(This%AbscissaColumn)%GetValue() )
+      This%Abscissa(i) = ConvertToReal( String=VarString1D(This%AbscissaColumn)%GetValue() )
     end do
 
     SectionName = 'params'
@@ -391,7 +391,7 @@ contains
       VarC0D = trim(adjustl(This%TemplateTranscript(i)%GetValue()))  
       if ( VarC0D(1:1) == This%Comment ) cycle
       call This%TemplateTranscript(i)%Parse(Strings=VarString1D, Separator=This%Separator )
-      This%Abscissa(i) = ConvertToRealrkp( String=VarString1D(This%AbscissaColumn)%GetValue() )
+      This%Abscissa(i) = ConvertToReal( String=VarString1D(This%AbscissaColumn)%GetValue() )
     end do
 
     SectionName = 'params'

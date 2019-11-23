@@ -25,6 +25,7 @@ use StringRoutines_Module
 use StringRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
+use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
@@ -42,7 +43,7 @@ type, extends(OFileFormated_Type)                                     ::    OFil
   type(SMUQFile_Type)                                                 ::    OutputFile
   integer                                                             ::    OutputColumn
   integer                                                             ::    AbscissaColumn
-  real(rkp), allocatable, dimension                                   ::    InterpolationNodes
+  real(rkp), allocatable, dimension(:)                                ::    InterpolationNodes
   logical                                                             ::    Interpolated
 contains
   procedure, public                                                   ::    Initialize
@@ -50,7 +51,7 @@ contains
   procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    GetOutput
+  procedure, public                                                   ::    ReadOutput
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -153,6 +154,7 @@ contains
     character(:), allocatable                                         ::    VarC0D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     integer                                                           ::    i
+    character(:), allocatable                                         ::    InterpNodesSource
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -179,13 +181,13 @@ contains
 
     SectionName = 'interpolation_nodes'
 
-    if ( Input%HasSection( SubSectionName = SectionName ) then
+    if ( Input%HasSection( SubSectionName = SectionName ) ) then
       This%Interpolated = .true.
       ParameterName = 'source' 
       call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-      AbscissaSource = VarC0D
+      InterpNodesSource = VarC0D
       SubSectionName = SectionName // '>source'
-      select case ( AbscissaSource )
+      select case ( InterpNodesSource )
         case ( 'values' )
           call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
           call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
@@ -193,7 +195,7 @@ contains
           call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
           VarR1D = LinSpaceVec( Input=InputSection )
         case default
-          call Error%Raise( Line='Abscissa source not recognized', ProcName=ProcName )
+          call Error%Raise( Line='Interpolation nodes source not recognized', ProcName=ProcName )
       end select
       allocate(This%InterpolationNodes, source=VarR1D, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
@@ -221,6 +223,8 @@ contains
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
+    integer                                                           ::    StatLoc=0
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
@@ -281,7 +285,7 @@ contains
   subroutine ReadOutput( This, Values, Debug )
 
     class(OFileTable_Type), intent(in)                                ::    This
-    real(rkp), allocatable, dimension(:), intent(out)                 ::    Values
+    real(rkp), allocatable, dimension(:,:), intent(out)               ::    Values
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -293,6 +297,7 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    InterpolatedOutput
     integer                                                           ::    NbLines
     integer                                                           ::    i
+    type(SMUQFile_Type)                                               ::    FileLoc
     
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -300,7 +305,9 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    call ImportArray( Array=Strings, File=This%OutputFile )
+    FileLoc = This%OutputFile
+
+    call ImportArray( Array=Strings, File=FileLoc )
 
     NbLines = size(Strings,2)
 
@@ -311,14 +318,17 @@ contains
 
     i = 1
     do i = 1, NbLines
-      TableOutput(i) = ConvertToRealrkp( String=Strings(This%OutputColumn,i)%GetValue() )
-      Abscissa(i) = ConvertToRealrkp( String=Strings(This%AbscissaColumn,i)%GetValue() )
+      TableOutput(i) = ConvertToReal( String=Strings(This%OutputColumn,i)%GetValue() )
+      Abscissa(i) = ConvertToReal( String=Strings(This%AbscissaColumn,i)%GetValue() )
     end do
 
+    allocate(Values(NbLines,1), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+
     if ( This%Interpolated ) then
-      Values = Interpolate( Abscissa=Abscissa, Ordinate=TableOutput, Nodes=This%InterpolationNodes )
+      Values(:,1) = Interpolate( Abscissa=Abscissa, Ordinate=TableOutput, Nodes=This%InterpolationNodes )
     else
-      Values = TableOutput
+      Values(:,1) = TableOutput
     end if
 
     deallocate(Strings, stat=StatLoc)
@@ -388,11 +398,8 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( allocated(This%OutputColumn) ) deallocate(This%OutputColumn, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OutputColumn', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%OutputLabel) ) deallocate(This%OutputLabel, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OutputLabel', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%InterpolationNodes) ) deallocate(This%InterpolationNodes, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 

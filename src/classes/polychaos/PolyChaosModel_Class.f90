@@ -87,8 +87,10 @@ contains
   procedure, public                                                   ::    Reset                   =>    Reset
   procedure, public                                                   ::    SetDefaults             =>    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructInput,         &
+                                                                                                          ConstructInput2,        &
                                                                                                           ConstructCase1
   procedure, private                                                  ::    ConstructInput
+  procedure, private                                                  ::    ConstructInput2
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
   generic, public                                                     ::    Run                     =>    RunCase2
@@ -153,7 +155,7 @@ contains
     if ( allocated(This%InputLabel) ) deallocate(This%InputLabel, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
+    if ( associated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
     This%NbCells = 0
 
@@ -261,7 +263,102 @@ contains
     This%NbCells = Input%GetNumberofSubSections()
     nullify(InputSection)
 
-    allocate( This%Cell(This%NbCells), stat=StatLoc )
+    allocate( This%Cells(This%NbCells), stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cell', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, This%NbCells
+      SubSectionName = SectionName // ">cell" // ConvertToString(Value=i)
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+      call This%Cells(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
+    end do
+
+    allocate(This%CoordinateLabels(size(This%Cells(1)%GetCoordinatePointer())))
+    ParameterName = 'coordinate_labels'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Parse( Input=VarC0D, Separator=' ', Output=Strings )
+    if ( size(Strings,1) /= size(This%CoordinateLabels) ) call Error%Raise( 'Incorrect number of coordinate labels',              &
+                                                                                                               ProcName=ProcName )
+    i = 1
+    do i = 1, size(This%CoordinateLabels)
+      This%CoordinateLabels(i) = trim(adjustl(Strings(i)(:)))
+    end do
+
+    This%Constructed = .true.
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructInput2( This, Input, Prefix, Debug )
+
+    use StringRoutines_Module
+
+    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(InputSection_Type), intent(in)                              ::    Input
+    character(*), optional, intent(in)                                ::    Prefix
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='ConstructInput2'
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    character(:), allocatable                                         ::    ParameterName
+    character(:), allocatable                                         ::    SectionName
+    character(:), allocatable                                         ::    SubSectionName
+    integer                                                           ::    VarI0D
+    character(:), allocatable                                         ::    VarC0D
+    character(:), allocatable, dimension(:)                           ::    Strings
+    integer                                                           ::    i
+    logical                                                           ::    Found
+    character(:), allocatable                                         ::    PrefixLoc
+    character(:), allocatable                                         ::    FileName
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    UnitLoc
+    integer                                                           ::    IOLoc
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( This%Constructed ) call This%Reset()
+    if ( .not. This%Initialized ) call This%Initialize()  
+
+    PrefixLoc = ''
+    if ( present(Prefix) ) PrefixLoc = Prefix
+
+    SectionName = 'space_transform'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call SpaceTransf_Factory%Construct( Object=This%SpaceTransf, Input=InputSection, Prefix=PrefixLoc )
+    nullify( InputSection )
+    This%NbDim = This%SpaceTransf%GetNbDim()
+    if ( This%NbDim < 1 ) call Error%Raise( Line='Dimensionality of parameter space below minimum of 1', ProcName=ProcName )
+
+    allocate(This%InputLabel(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
+    i = 1
+    do i = 1, This%NbDim
+      This%InputLabel(i) = This%SpaceTransf%GetLabel(Num=i)
+    end do
+
+    SectionName = 'basis'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call This%Basis%Construct( Input=InputSection, Prefix=PrefixLoc )
+    nullify( InputSection )
+    if ( This%Basis%GetNbDim() /= This%NbDim ) call Error%Raise(                                                                  &
+               Line='Dimension of basis polynomials does not match the dimension of original parameter space', ProcName=ProcName )
+
+    ParameterName = 'output_label'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%OutputLabel = VarC0D
+
+    SectionName = 'cells'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    This%NbCells = Input%GetNumberofSubSections()
+    nullify(InputSection)
+
+    allocate( This%Cells(This%NbCells), stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cell', ProcName=ProcName, stat=StatLoc )
 
     i = 1
@@ -324,7 +421,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%SpaceTransf', ProcName=ProcName, stat=StatLoc )
 
     This%NbDim = This%SpaceTransf%GetNbDim()
-    This%NbManagers = size(Response,1)
     
     allocate(This%InputLabel(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
@@ -340,13 +436,13 @@ contains
 
     This%NbCells = Response%GetNbNodes()
 
-    if ( This%NbCells /= size(Coefficients,1) ) call Error%Raise( Line='Mismatch between number of coefficient records and '      &
+    if ( This%NbCells /= Coefficients%GetLength() ) call Error%Raise( Line='Mismatch between number of coefficient records and '  &
                                                                                          // 'number of nodes', ProcName=ProcName )
 
-    if ( This%NbCells /= size(Indices,1) ) call Error%Raise( Line='Mismatch between number of indices records and '               &
+    if ( This%NbCells /= Indices%GetLength() ) call Error%Raise( Line='Mismatch between number of indices records and '           &
                                                                                          // 'number of nodes', ProcName=ProcName )
 
-    if ( present(CVErrors) then
+    if ( present(CVErrors) ) then
       if ( This%NbCells /= size(CVErrors,1) ) call Error%Raise( Line='Mismatch between number of CV error records and '           &
                                                                                          // 'number of nodes', ProcName=ProcName )
     end if
@@ -365,10 +461,10 @@ contains
       call Coefficients%GetPointer( Node=i, Values=VarR1DPointer )
       call Indices%GetPointer( Node=i, Values=VarI2DPointer )
       VarR1D = VarR2DPointer(i,:)
-      if ( present(CVErrors) then
-        call This%Cells(i)%Constructl( Coefficients=VarR1DPointer, Indices=VarR2DPointer, Coordinate=VarR1D, CVError=CVErrors(i) )
+      if ( present(CVErrors) ) then
+        call This%Cells(i)%Construct( Coefficients=VarR1DPointer, Indices=VarI2DPointer, Coordinate=VarR1D, CVError=CVErrors(i) )
       else
-        call This%Cells(i)%Constructl( Coefficients=VarR1DPointer, Indices=VarR2DPointer, Coordinate=VarR1D )
+        call This%Cells(i)%Construct( Coefficients=VarR1DPointer, Indices=VarI2DPointer, Coordinate=VarR1D )
       end if
     end do
 
@@ -432,7 +528,7 @@ contains
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/basis'
     call GetInput%AddSection( Section=This%Basis%GetInput( MainSectionName='basis', Prefix=PrefixLoc, Directory=DirectorySub ) )
 
-    call GetInput%AddParameter( Name='output_label', Value=This%OutputValue )
+    call GetInput%AddParameter( Name='output_label', Value=This%OutputLabel )
     call GetInput%AddParameter( Name='coordinate_labels', Value=ConvertToString(Values=This%CoordinateLabels) )
 
     SectionName = 'cells'
@@ -471,20 +567,22 @@ contains
       if ( size(Output,1) /= 1 ) then
         deallocate(Output, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-      end
+      end if
     end if
     if ( .not. allocated(Output) ) then
       allocate(Output(1), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
     end if
 
-    if ( present(Stat) then
+    if ( present(Stat) ) then
       call This%Run( Input, Output(1), Stat )
     else
       call This%Run( Input, Output(1) )
     end if
 
     if (DebugLoc) call Logger%Exiting()
+
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -646,7 +744,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetNbNodes( This, Debug )
 
-    integer                                                           ::    GetNbOutputs
+    integer                                                           ::    GetNbNodes
 
     class(PolyChaosModel_Type), intent(in)                            ::    This
     logical, optional ,intent(in)                                     ::    Debug
@@ -668,29 +766,25 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoefficientsPointer( This, ManagerNum, CellNum, Debug )
+  function GetCoefficientsPointer( This, Node, Debug )
 
     real(rkp), dimension(:), pointer                                  ::    GetCoefficientsPointer
 
     class(PolyChaosModel_Type), intent(in)                            ::    This
-    integer, intent(in)                                               ::    ManagerNum
-    integer, intent(in)                                               ::    CellNum
+    integer, intent(in)                                               ::    Node
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCoefficientsPointer'
-    type(Cell_Type), pointer                                          ::    CellPointer=>null()
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-    if ( ManagerNum < 1 ) call Error%Raise( Line='ManagerNum specifier below minimum of 1', ProcName=ProcName )
+    if ( Node < 1 .or. Node > This%NbCells) call Error%Raise( Line='Node specifier outside of bounds', ProcName=ProcName )
 
-    CellPointer => This%Manager(ManagerNum)%GetCellPointer( Num=CellNum )
-    GetCoefficientsPointer => CellPointer%GetCoefficientsPointer()
-    nullify(CellPointer)
+    GetCoefficientsPointer => This%Cells(Node)%GetCoefficientsPointer()
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -698,29 +792,25 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetIndicesPointer( This, ManagerNum, CellNum, Debug )
+  function GetIndicesPointer( This, Node, Debug )
 
     integer, dimension(:,:), pointer                                  ::    GetIndicesPointer
 
     class(PolyChaosModel_Type), intent(in)                            ::    This
-    integer, intent(in)                                               ::    ManagerNum
-    integer, intent(in)                                               ::    CellNum
+    integer, intent(in)                                               ::    Node
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetIndicesPointer'
-    type(Cell_Type), pointer                                          ::    CellPointer=>null()
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-    if ( ManagerNum < 1 ) call Error%Raise( Line='ManagerNum specifier below minimum of 1', ProcName=ProcName )
+    if ( Node < 1 .or. Node > This%NbCells) call Error%Raise( Line='Node specifier outside of bounds', ProcName=ProcName )
 
-    CellPointer => This%Manager(ManagerNum)%GetCellPointer( Num=CellNum )
-    GetIndicesPointer => CellPointer%GetIndicesPointer()
-    nullify(CellPointer)
+    GetIndicesPointer => This%Cells(Node)%GetIndicesPointer()
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -728,29 +818,25 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCVError( This, ManagerNum, CellNum, Debug )
+  function GetCVError( This, Node, Debug )
 
     real(rkp)                                                         ::    GetCVError
 
     class(PolyChaosModel_Type), intent(in)                            ::    This
-    integer, intent(in)                                               ::    ManagerNum
-    integer, intent(in)                                               ::    CellNum
+    integer, intent(in)                                               ::    Node
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCVError'
-    type(Cell_Type), pointer                                          ::    CellPointer=>null()
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-    if ( ManagerNum < 1 ) call Error%Raise( Line='ManagerNum specifier below minimum of 1', ProcName=ProcName )
+    if ( Node < 1 .or. Node > This%NbCells) call Error%Raise( Line='Node specifier outside of bounds', ProcName=ProcName )
 
-    CellPointer => This%Manager(ManagerNum)%GetCellPointer( Num=CellNum )
-    GetCVError = CellPointer%GetCVError()
-    nullify(CellPointer)
+    GetCVError = This%Cells(Node)%GetCVError()
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -835,12 +921,15 @@ contains
 
     if ( allocated(This%SpaceTransf) ) deallocate(This%SpaceTransf, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%SpaceTransf', ProcName=ProcName, stat=StatLoc )
-  
-    if ( allocated(This%Manager) ) deallocate(This%Manager, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Manager', ProcName=ProcName, stat=StatLoc )
+
+    if ( associated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%InputLabel) ) deallocate(This%InputLabel, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%CoordinateLabels) ) deallocate(This%CoordinateLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CoordinateLabels', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -963,8 +1052,8 @@ contains
 
     ParameterName = 'coordinate'
     call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
-    VarR1D = ConvertToRealrkps(String=VarC0D)
-    allocate(This%Coordinate, source=VaR1D, stat=StatLoc)
+    VarR1D = ConvertToReals(String=VarC0D)
+    allocate(This%Coordinate, source=VarR1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Coordinate', ProcName=ProcName, stat=StatLoc )
     deallocate(VarR1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
@@ -1128,7 +1217,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetCoordPointer_Cell( This, Debug )
 
-    real(rkp), allocatable, dimension(:)                              ::    GetCoordinate_Cell
+    real(rkp), pointer, dimension(:)                                  ::    GetCoordPointer_Cell
 
     class(Cell_Type), intent(inout)                                   ::    This
     logical, optional ,intent(in)                                     ::    Debug

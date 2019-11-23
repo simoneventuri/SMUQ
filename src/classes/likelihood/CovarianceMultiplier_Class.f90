@@ -285,7 +285,7 @@ contains
     end if
     Cov = Zero
 
-    call This%ConstructorPredefined%GetCovariance( Coordinates=Coordinates, CoordinateLabels, Cov=Cov )
+    call This%ConstructorPredefined%GetCovariance( Coordinates=Coordinates, CoordinateLabels=CoordinateLabels, Cov=Cov )
 
     if ( len_trim(This%M_Dependency) /= 0 ) then
       call Input%GetValue( Value=MLoc, Label=This%M_Dependency, Mandatory=.true. )

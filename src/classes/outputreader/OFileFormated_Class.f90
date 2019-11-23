@@ -103,9 +103,10 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ReadOutput_OFileFormated( This, Values, Debug )
     use Output_Class                                              ,only:    Output_Type
+    use Parameters_Library
     import                                                            ::    OFileFormated_Type
     class(OFileFormated_Type), intent(in)                             ::    This
-    real(rkp), allocatable, dimension(:), intent(out)                 ::    Values
+    real(rkp), allocatable, dimension(:,:), intent(out)               ::    Values
     logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

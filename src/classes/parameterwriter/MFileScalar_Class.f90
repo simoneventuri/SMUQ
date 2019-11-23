@@ -440,7 +440,7 @@ contains
     character(:), allocatable                                         ::    VarC0D
     class(MParamScalar_Type), pointer                                 ::    MParamPointer=>null()
     integer                                                           ::    i
-    integer(8)                                                        ::    ii
+    integer                                                           ::    ii
     integer                                                           ::    IndexLoc
 
     DebugLoc = DebugGlobal

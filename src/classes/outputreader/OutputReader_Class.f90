@@ -28,7 +28,7 @@ use Output_Class                                                  ,only:    Outp
 use OFileFormated_Class                                           ,only:    OFileFormated_Type
 use OFileFormated_Vec_Class                                       ,only:    OFileFormated_Vec_Type
 use OFileFormated_Factory_Class                                   ,only:    OFileFormated_Factory
-
+use LinkedList2D_Class                                            ,only:    LinkedList2D_Type 
 implicit none
 
 private
@@ -36,27 +36,30 @@ private
 public                                                                ::    OutputReader_Type
 
 type                                                                  ::    Cell_Type
+  character(:), allocatable                                           ::    Name
+  logical                                                             ::    Initialized=.false.
+  logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Label
   type(OFileFormated_Vec_Type), allocatable, dimension(:)             ::    OFile
   integer                                                             ::    NbOFiles
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize_Cell
   procedure, public                                                   ::    Reset                   =>    Reset_Cell
-  procedure, public                                                   ::    SetDefaults             =>    SetDefaults
-  generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure, private                                                  ::    ConstructInput          =>    ConstructInput_Cell
+  procedure, public                                                   ::    SetDefaults             =>    SetDefaults_Cell
+  generic, public                                                     ::    Construct               =>    ConstructInput_Cell
+  procedure, private                                                  ::    ConstructInput_Cell
   procedure, public                                                   ::    GetInput                =>    GetInput_Cell
   procedure, public                                                   ::    ReadOutput              =>    ReadOutput_Cell
-  generic, public                                                     ::    assignment(=)           =>    Copy
-  procedure, public                                                   ::    Copy
-  final                                                               ::    Finalizer
+  generic, public                                                     ::    assignment(=)           =>    Copy_Cell
+  procedure, public                                                   ::    Copy_Cell
+  final                                                               ::    Finalizer_Cell
 end type
 
 type                                                                  ::    OutputReader_Type
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  type(Cell_Type)                                                     ::    Cells
+  type(Cell_Type), allocatable, dimension(:)                          ::    Cells
   integer                                                             ::    NbCells
 contains
   procedure, public                                                   ::    Initialize
@@ -233,17 +236,15 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    SectionName = 'files'
+    SectionName = 'outputs'
     call GetInput%AddSection( SectionName=SectionName )
     
     i = 1
-    do i = 1, This%NbOFiles
-      SubSectionName = 'file' // ConvertToString(Value=i)
-      OFile => This%OFile(i)%GetPointer()
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file' // ConvertToString(Value=i)
-      call GetInput%AddSection( Section=OFileFormated_Factory%GetObjectInput( MainSectionName=SubSectionName, Object=OFile,       &
-                                                           Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
-      nullify(OFile)
+    do i = 1, This%NbCells
+      SubSectionName = 'output' // ConvertToString(Value=i)
+      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/output' // ConvertToString(Value=i)
+      call GetInput%AddSection( Section=This%Cells(i)%GetInput( MainSectionName=SubSectionName, Prefix=PrefixLoc,                 &
+                                                                             Directory=DirectorySub ), To_SubSection=SectionName )
     end do
 
     if (DebugLoc) call Logger%Exiting()
@@ -273,7 +274,7 @@ contains
 
     i = 1
     do i = 1, This%NbCells
-      call OFile%GetOutput( Output=Output(i) )
+      call This%Cells(i)%ReadOutput( Output=Output(i) )
     end do
 
     if (DebugLoc) call Logger%Exiting()
@@ -505,7 +506,7 @@ contains
 
     use StringRoutines_Module
 
-    type(InputSection_Type)                                           ::    GetInput
+    type(InputSection_Type)                                           ::    GetInput_Cell
 
     class(Cell_Type), intent(in)                                      ::    This
     character(*), intent(in)                                          ::    MainSectionName
@@ -538,19 +539,19 @@ contains
 
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput_Cell%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    call GetInput%AddParameter( Name='label', Value=This%Label )
+    call GetInput_Cell%AddParameter( Name='label', Value=This%Label )
 
     SectionName = 'files'
-    call GetInput%AddSection( SectionName=SectionName )
+    call GetInput_Cell%AddSection( SectionName=SectionName )
     
     i = 1
     do i = 1, This%NbOFiles
       SubSectionName = 'file' // ConvertToString(Value=i)
       OFile => This%OFile(i)%GetPointer()
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file' // ConvertToString(Value=i)
-      call GetInput%AddSection( Section=OFileFormated_Factory%GetObjectInput( MainSectionName=SubSectionName, Object=OFile,       &
+      call GetInput_Cell%AddSection( Section=OFileFormated_Factory%GetObjectInput( MainSectionName=SubSectionName, Object=OFile,  &
                                                            Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
       nullify(OFile)
     end do
@@ -573,10 +574,11 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
     class(OFileFormated_Type), pointer                                ::    OFile=>null()
-    type(LinkedList1D_Type)                                           ::    Outputs
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
-    real(rkp), dimension(:), pointer                                  ::    VarR1DPointer
+    type(LinkedList2D_Type)                                           ::    Outputs
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    real(rkp), dimension(:,:), pointer                                ::    VarR2DPointer=>null()
     integer                                                           ::    OutputSize
+    integer                                                           ::    OutputNbDegen
     
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -588,30 +590,33 @@ contains
     i = 1
     do i = 1, This%NbOFiles
       OFile => This%OFile(i)%GetPointer()
-      call OFile%ReadOutput( Values=VarR1D )
-      OutputSize = OutputSize + size(VarR1D)
-      call Outputs%Append( Values=VarR1D )
+      call OFile%ReadOutput( Values=VarR2D )
+      if ( i == 1 ) OutputNbDegen = size(VarR2D,2)
+      if ( OutputNbDegen /= size(VarR2D,2) ) call Error%Raise( 'Output has different number of realizations between files : ' //  &
+                                                                                                   This%Label, ProcName=ProcName )
+      OutputSize = OutputSize + size(VarR2D,1)
+      call Outputs%Append( Values=VarR2D )
       nullify(OFile)
     end do
 
-    allocate(VarR1D(OutputSize), stat=StatLoc)
+    allocate(VarR2D(OutputSize,OutputNbDegen), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
 
     ii = 0
     i = 1
     do i = 1, This%NbOFiles
-      call Outputs%GetPointer( Node=i, Values=VarR1DPointer )
-      VarR1D(ii+1:ii+size(VarR1DPointer)) = VarR1DPointer
-      ii = ii + size(VarR1DPointer)
-      nullify(VarR1DPointer)
+      call Outputs%GetPointer( Node=i, Values=VarR2DPointer )
+      VarR2D(ii+1:ii+size(VarR2DPointer,1),:) = VarR2DPointer
+      ii = ii + size(VarR2DPointer,1)
+      nullify(VarR2DPointer)
     end do
 
-    call Output%Construct( Values=VarR1D, Label=This%Label )
+    call Output%Construct( Values=VarR2D, Label=This%Label )
 
     call Outputs%Purge()
 
-    deallocate(VarR1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    deallocate(VarR2D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -634,7 +639,7 @@ contains
 
     select type (RHS)
   
-      type is (OFileReader_Type)
+      type is (Cell_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
