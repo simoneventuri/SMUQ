@@ -435,6 +435,8 @@ contains
 
     call LHS%Purge()
 
+    LHS%Constructed = RHS%Constructed
+
     if ( RHS%Constructed ) then
       allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Values', ProcName=ProcName, stat=StatLoc )

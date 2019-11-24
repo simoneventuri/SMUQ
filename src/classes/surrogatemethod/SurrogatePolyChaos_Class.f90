@@ -81,6 +81,7 @@ type, extends(SurrogateMethod_Type)                                   ::    Surr
   logical                                                             ::    InputSamplesTransform
   real(rkp), allocatable, dimension(:,:)                              ::    InputSamples
   type(List2D_Type), allocatable, dimension(:)                        ::    OutputSamples
+  type(String_Type), allocatable, dimension(:)                        ::    OutputSamplesLabels
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -260,23 +261,30 @@ contains
       call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
       if ( Found ) This%InputSamplesTransform=VarL0D
 
-      ParameterName = 'input_labels'
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+      SubSectionName = SectionName // '>input'
+
+      ParameterName = 'labels'
+      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
       allocate(This%InputSamplesLabels, source=ConvertToStrings(Value=VarC0D), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InputSamplesLabels', ProcName=ProcName, stat=StatLoc )
 
-      SubSectionName = SectionName // '>input'
+      SubSectionName = SubSectionName // '>values'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
       call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
       nullify( InputSection )
       This%InputSamples = VarR2D
       deallocate(VarR2D, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+      if ( size(This%InputSamples,1) /= size(This%InputSamplesLabels) ) call Error%Raise(                                         &
+                                                          'Mismatch in the number of inputs and input labels', ProcName=ProcName )
 
       SubSectionName = SectionName // '>output'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
       NbOutputs = InputSection%GetNumberOfSubSections()
       nullify( InputSection )
+
+      allocate(This%OutputSamplesLabels(NbOutputs), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OutputSamplesLabels', ProcName=ProcName, stat=StatLoc )
 
       allocate(This%OutputSamples(NbOutputs), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OutputSamples', ProcName=ProcName, stat=StatLoc )
@@ -284,6 +292,12 @@ contains
       i = 1
       do i = 1, NbOutputs
         SubSectionName = SectionName // '>output>response' // ConvertToString(Value=i)
+
+        ParameterName = 'label'
+        call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
+        This%OutputSamplesLabels(i) = VarC0D
+
+        SubSectionName = SubSectionName // '>values'
         call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
         call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc, RowMajor=.true. )
         nullify( InputSection )
@@ -293,6 +307,7 @@ contains
         deallocate(VarR2D, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
       end do
+
     end if
 
     This%Constructed = .true.
@@ -384,6 +399,7 @@ contains
     type(PolyChaosModel_Type), dimension(:), allocatable              ::    PolyChaosModelLoc
     character(:), allocatable                                         ::    OutputDirectoryLoc
     real(rkp), allocatable, dimension(:,:)                            ::    InputSamplesLoc
+    type(List2D_Type), allocatable, dimension(:)                      ::    OutputSamplesLoc
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii
@@ -445,11 +461,29 @@ contains
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='X', ProcName=ProcName, stat=StatLoc )
       end if
 
+      allocate(OutputSamplesLoc(size(This%OutputSamples,1)), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc )
+
+      i = 1
+      do i = 1, size(Response,1)
+        ii = 1
+        iii = 0
+        do ii = 1, size(This%OutputSamples)
+          if ( Response(i)%GetLabel() == This%OutputSamplesLabels(i)%GetValue() ) then
+            iii = ii
+            exit
+          end if
+        end do
+        OutputSamplesLoc(i) = This%OutputSamples(iii)
+      end do
+
       call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,           &
            ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                          &
-           OutputDirectory=OutputDirectoryLoc, InputSamples=InputSamplesLoc, OutputSamples=This%OutputSamples )
+           OutputDirectory=OutputDirectoryLoc, InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc )
       deallocate(InputSamplesLoc, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputSamplesLoc', ProcName=ProcName, stat=StatLoc )
+      deallocate(OutputSamplesLoc, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc )
     else
       call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,           &
            ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                          &
