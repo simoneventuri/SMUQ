@@ -1236,20 +1236,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Convert_C0D_To_String1D( Value, Format, Separator, Debug )
+  function Convert_C0D_To_String1D( Value, Separator, Debug )
 
     type(String_Type), dimension(:), allocatable                      ::    Convert_C0D_To_String1D
 
     character(*), intent(in)                                          ::    Value
     character(*), optional, intent(in)                                ::    Separator
-    character(*), optional, intent(in)                                ::    Format
     logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='Convert_C0D_To_String1D'
     logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    SeparatorLoc
-    character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    i
     character(:), allocatable, dimension(:)                           ::    Output
 
@@ -1259,13 +1257,6 @@ contains
 
     SeparatorLoc = ' '
     if ( present(Separator) ) SeparatorLoc = Separator
-
-    FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
-
-    if ( SeparatorLoc == ' ' ) SeparatorLoc = '1X'
-
-    FormatLoc = '(' // FormatLoc // ',*(' // SeparatorLoc // ',' // FormatLoc // '))'
 
     call Parse( Input=Value, Separator=SeparatorLoc, Output=Output )
 
@@ -1286,35 +1277,21 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Convert_C1D_To_String1D( Values, Format, Separator, Debug )
+  function Convert_C1D_To_String1D( Values, Debug )
 
     type(String_Type), dimension(:), allocatable                      ::    Convert_C1D_To_String1D
 
     character(*), dimension(:), intent(in)                            ::    Values
-    character(*), optional, intent(in)                                ::    Separator
-    character(*), optional, intent(in)                                ::    Format
     logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='Convert_C1D_To_String1D'
     logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    SeparatorLoc
-    character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    i
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
-
-    SeparatorLoc = ' '
-    if ( present(Separator) ) SeparatorLoc = Separator
-
-    FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
-
-    if ( SeparatorLoc == ' ' ) SeparatorLoc = '1X'
-
-    FormatLoc = '(' // FormatLoc // ',*(' // SeparatorLoc // ',' // FormatLoc // '))'
 
     allocate(Convert_C1D_To_String1D(size(Values,1)), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Convert_C1D_To_String1D', ProcName=ProcName, stat=StatLoc )

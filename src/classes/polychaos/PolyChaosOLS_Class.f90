@@ -614,8 +614,6 @@ contains
           write(*,'(A)') '' 
         end if
 
-        if ( size(InputSamples,2) /= size(OutputSamples,1) ) call Error%Raise( Line='Number of samples from input space ' //      &
-                                                                  'and number of output samples do not match', ProcName=ProcName )
         if ( size(InputSamples,1) /= NbDim ) call Error%Raise( Line='Dimensionality of provided samples does not match ' //       &
                                                                       'the dimensionality of the input space', ProcName=ProcName )
 
@@ -635,15 +633,16 @@ contains
             iMin = 1
           end if
 
-          iMax = NbCellsOutput(i)
+          iMax = sum(NbCellsOutput(1:i))
           iii = 0
           ii = iMin
           do ii = iMin, iMax
             iii = iii + 1
             call This%Cells(ii)%AppendRecord( Entries=VarR2DPointer(:,iii) )
           end do
+          nullify(VarR2DPointer)
         end do
-
+        This%Step = size(This%ParamRecord,2)
         This%SamplesObtained = .true.
         This%SamplesRan = .true.
         This%SamplesAnalyzed = .false.
@@ -1105,7 +1104,7 @@ contains
 
       NbOutputs = ModelInterface%GetNbResponses()
 
-      FileName = '/nboutputs.dat'
+      FileName = '/nbresponses.dat'
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
       call File%Export( String=ConvertToString(Value=NbOutputs) )
 
@@ -1115,17 +1114,17 @@ contains
 
       i = 1
       do i = 1, NbOutputs
-        call MakeDirectory( Path=Directory // '/output_' // ConvertToString(Value=i) , Options='-p' )
+        call MakeDirectory( Path=Directory // '/response_' // ConvertToString(Value=i) , Options='-p' )
 
         ResponsePointer => ModelInterface%GetResponsePointer(Num=i)
         NbCells = ResponsePointer%GetNbNodes()
         iEnd = iStart + NbCells
 
-        FileName = '/output_' // ConvertToString(Value=i) // '/nbcells.dat'
+        FileName = '/response_' // ConvertToString(Value=i) // '/nbcells.dat'
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
         call File%Export( String=ConvertToString(Value=NbCells) )
 
-        FileName = '/output_' // ConvertToString(Value=i) // '/coordinates.dat'
+        FileName = '/response_' // ConvertToString(Value=i) // '/coordinates.dat'
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
         call ExportArray( Array=ResponsePointer%GetCoordinatesPointer(), File=File, RowMajor=.true. )
 
@@ -1133,7 +1132,7 @@ contains
         ii = iStart+1
         do ii = iStart+1, iEnd
           iii = iii + 1
-          DirectoryLoc = '/output_' // ConvertToString(Value=i) // '/cell' // ConvertToString(Value=iii)
+          DirectoryLoc = '/response_' // ConvertToString(Value=i) // '/cell' // ConvertToString(Value=iii)
           call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
 
           FileName = DirectoryLoc // '/cverror.dat'

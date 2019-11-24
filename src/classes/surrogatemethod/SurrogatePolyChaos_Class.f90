@@ -260,9 +260,10 @@ contains
       call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
       if ( Found ) This%InputSamplesTransform=VarL0D
 
-      ParameterName = 'labels'
+      ParameterName = 'input_labels'
       call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-      This%InputSamplesLabels = ConvertToStrings(Value=VarC0D)
+      allocate(This%InputSamplesLabels, source=ConvertToStrings(Value=VarC0D), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InputSamplesLabels', ProcName=ProcName, stat=StatLoc )
 
       SubSectionName = SectionName // '>input'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
@@ -277,9 +278,12 @@ contains
       NbOutputs = InputSection%GetNumberOfSubSections()
       nullify( InputSection )
 
+      allocate(This%OutputSamples(NbOutputs), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OutputSamples', ProcName=ProcName, stat=StatLoc )
+
       i = 1
       do i = 1, NbOutputs
-        SubSectionName = SectionName // '>output>output' // ConvertToString(Value=i)
+        SubSectionName = SectionName // '>output>response' // ConvertToString(Value=i)
         call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
         call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc, RowMajor=.true. )
         nullify( InputSection )
@@ -384,6 +388,7 @@ contains
     integer                                                           ::    ii
     integer                                                           ::    iii
     real(rkp), allocatable, dimension(:)                              ::    X
+    character(:), allocatable                                         ::    Line
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -425,7 +430,7 @@ contains
             exit
           end if
         end do
-        if ( iii == 0 ) call Error%Raise( 'Did not find a corresponding label in the samples:' // SpaceTransform%GetLabel(Num=i), &
+        if ( iii == 0 ) call Error%Raise( 'Did not find a corresponding label in the samples :' // SpaceTransform%GetLabel(Num=i),&
                                                                                                                ProcName=ProcName )
         InputSamplesLoc(i,:) = This%InputSamples(iii,:)
       end do
@@ -454,13 +459,25 @@ contains
     allocate(PolyChaosModelLoc(size(Response,1)), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='PolyChaosModelLoc', ProcName=ProcName, stat=StatLoc )
 
+    if ( .not. This%Silent ) then
+      Line = 'Building polynomial chaos model input packages'
+      write(*,'(A)') ''
+      write(*,'(A)') Line
+    end if
+
     i = 1
     do i = 1, size(Response,1)
       call PolyChaosModelLoc(i)%Construct( Response=Response(i), SpaceTransf=SpaceTransform, Basis=Basis,                         &
                                                           Coefficients=Coefficients(i), Indices=Indices(i), CVErrors=CVErrors(i) )
       if ( present(OutputDirectory) ) then
+        if ( .not. This%Silent ) then
+          Line = 'Writing contents of polynomial chaos model and other files for postprocessing for response : ' //               &
+                                                                                                            Response(i)%GetLabel()
+          write(*,'(A)') ''
+          write(*,'(A)') Line
+        end if
         OutputDirectoryLoc = OutputDirectory // '/pce_models/' // Response(i)%GetLabel()
-        call This%WriteOutput( PolyChaosModel=PolyChaosModelLoc(i), Directory=OutputDirectory )
+        call This%WriteOutput( PolyChaosModel=PolyChaosModelLoc(i), Directory=OutputDirectoryLoc )
       end if
       call Coefficients(i)%Purge()
       call Indices(i)%Purge()
@@ -525,12 +542,6 @@ contains
 
       SilentLoc = This%Silent
 
-      if ( .not. SilentLoc ) then
-        Line = 'Building polynomial chaos model input package'
-        write(*,'(A)') ''
-        write(*,'(A)') Line
-      end if
-
       PrefixLoc = Directory // '/PCModelPackage'
       DirectoryLoc = '/PCModelInput'
 
@@ -541,12 +552,6 @@ contains
       call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
       call Input%Write( FileUnit=UnitLoc )
       call File%Close()
-
-      if ( .not. SilentLoc ) then
-        Line = 'Writing contents of polynomial chaos model and other files for postprocessing'
-        write(*,'(A)') ''
-        write(*,'(A)') Line
-      end if
 
     end if
 
