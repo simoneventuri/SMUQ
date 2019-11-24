@@ -216,26 +216,24 @@ contains
     call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
     This%Label = VarC0D
 
-    ParameterName = 'nb_nodes'
-    call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.true. )
-    This%NbNodes = VarI0D
-
-    ParameterName = 'nb_ind_coordinates'
-    call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.true. )
-    This%NbIndCoordinates = VarI0D
-
     SectionName = 'coordinates'
     ParameterName = 'labels'
     call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
     This%CoordinatesLabels = ConvertToStrings(Value=VarC0D)
 
-    SubSectionName = SectionName // '>source'
+    SubSectionName = SectionName // '>values'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
     call ImportArray( Input=InputSection, Array=VarR2D, RowMajor=.true.,Prefix=PrefixLoc )
     allocate(This%Coordinates, source=VarR2D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
     deallocate(VarR2D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+
+    This%NbNodes = size(This%Coordinates,1)
+    This%NbIndCoordinates = size(This%Coordinates,2)
+
+    if ( size(This%CoordinatesLabels,1) /= This%NbIndCoordinates ) call Error%Raise( 'Mismatch in the number of coordinate ' //   &
+                                                               'labels and number of independent coordinates', ProcName=ProcName )
 
     SectionName = 'data'
     if ( Input%HasSection(SubSectionName=SectionName) ) then
@@ -326,14 +324,11 @@ contains
     if ( len_trim(This%Label) /= 0 ) call GetInput%AddParameter( Name='label', Value=This%Label )
     if ( len_trim(This%Name) /= 0 ) call GetInput%AddParameter( Name='name', Value=This%Name )
 
-    call GetInput%AddParameter( Name='nb_nodes', Value=ConvertToString(Value=This%NbNodes) )
-    call GetInput%AddParameter( Name='nb_ind_coordinates', Value=ConvertToString(Value=This%NbIndCoordinates) )
-
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/coordinates'
     SectionName = 'coordinates'
     call GetInput%AddSection( SectionName=SectionName )
     call GetInput%AddParameter( Name='labels', Value=ConvertToString(This%CoordinatesLabels), SectionName=SectionName )
-    SubSectionName = 'source'
+    SubSectionName = 'values'
     call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
     call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
                                                                                                               Mandatory=.true. )

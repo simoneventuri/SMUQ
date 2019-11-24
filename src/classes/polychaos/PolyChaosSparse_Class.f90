@@ -47,6 +47,7 @@ use ModelInterface_Class                                          ,only:    Mode
 use Response_Class                                                ,only:    Response_Type
 use Restart_Class                                                 ,only:    RestartUtility
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use List2D_Class                                                  ,only:    List2D_Type
 
 implicit none
 
@@ -169,9 +170,6 @@ contains
     if ( allocated(This%ParamSample) ) deallocate(This%ParamSample, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%NbCellsOutput) ) deallocate(This%NbCellsOutput, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%NbCellsOutput', ProcName=ProcName, stat=StatLoc )
-
     if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
 
@@ -207,7 +205,7 @@ contains
     This%Silent = .false.
     This%SamplesObtained = .false.
     This%SamplesRan = .false.
-    This%SamplesProcessed = .false.
+    This%SamplesAnalyzed = .false.
     This%ParamSampleStep = 0
 
     if (DebugLoc) call Logger%Exiting()
@@ -425,7 +423,7 @@ contains
       call GetInput%AddSection( SectionName=SectionName )
 
       if ( ExternalFlag ) then
-        if ( allocated(This%ParamRecord) then
+        if ( allocated(This%ParamRecord) ) then
           SubSectionName = 'param_record'
           call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
           call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
@@ -459,7 +457,7 @@ contains
                                                                                                          SectionName=SectionName )
         end if
       else
-        if ( allocated(This%ParamRecord) then
+        if ( allocated(This%ParamRecord) ) then
           SubSectionName = 'param_record'
           call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
           call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
@@ -493,7 +491,7 @@ contains
       call GetInput%AddParameter( Name='samples_obtained', Value=ConvertToString(Value=This%SamplesObtained ),                    &
                                                                                                          SectionName=SectionName )
       call GetInput%AddParameter( Name='samples_ran', Value=ConvertToString(Value=This%SamplesRan ), SectionName=SectionName )
-      call GetInput%AddParameter( Name='samples_processed', Value=ConvertToString(Value=This%SamplesProcessed ),                  &
+      call GetInput%AddParameter( Name='samples_processed', Value=ConvertToString(Value=This%SamplesAnalyzed ),                  &
                                                                                                          SectionName=SectionName )
 
       SubSectionName = 'cells'
@@ -563,7 +561,7 @@ contains
     logical                                                           ::    SilentLoc
     character(:), allocatable                                         ::    Line
     type(Response_Type), pointer                                      ::    ResponsePointer=>null()
-    integer                                                           ::    MaxTruncationOrder
+    integer                                                           ::    MaxIndexOrder
     integer, allocatable, dimension(:)                                ::    NbCellsOutput
     integer                                                           ::    iMin
     integer                                                           ::    iMax
@@ -575,7 +573,7 @@ contains
     NbOutputs = ModelInterface%GetNbResponses()
     NbDim = SpaceInput%GetNbDim()
 
-    allocate(NbCellsOutput(NbOutputs)), stat=StatLoc)
+    allocate(NbCellsOutput(NbOutputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc )
 
     This%NbCells = 0
@@ -591,13 +589,13 @@ contains
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
       i = 1
       do i = 1, This%NbCells
-        This%Cells(i)%Construct()
+        call This%Cells(i)%Construct()
       end do 
     end if
 
     if ( This%Step == 0 ) then
-      if ( ( present(InputSamples) .and. .not. present(OutputSamples) ) .or.                                                  &
-                                                                       ( present(OutputSamples) .and. .not present(InputSamples) )&
+      if ( ( present(InputSamples) .and. .not. present(OutputSamples) ) .or.                                                      &
+                                                                    ( present(OutputSamples) .and. .not. present(InputSamples) ) )&
                 call Error%Raise( Line='Need both parameter and output samples to be passed at the same time', ProcName=ProcName )
 
       if ( present(InputSamples) ) then
@@ -638,13 +636,13 @@ contains
 
         This%SamplesObtained = .true.
         This%SamplesRan = .true.
-        This%SamplesProcessed = .false.
+        This%SamplesAnalyzed = .false.
       end if
     end if
 
     SilentLoc = This%Silent
     StepExceededFlag = .false.
-    MaxTruncationOrder = IndexSetScheme%GetMaxOrder()
+    MaxIndexOrder = IndexSetScheme%GetMaxOrder()
 
     do
 
@@ -652,7 +650,7 @@ contains
       ConvergedFlag = .true.
       i = 1
       do i = 1, This%NbCells
-        if ( Cells(i)%GetCVError() > This%StopError ) then
+        if ( This%Cells(i)%GetCVError() > This%StopError ) then
           ConvergedFlag = .false.
           exit
         end if
@@ -671,7 +669,7 @@ contains
       OrderExceededFlag = .true.
       i = 1
       do i = 1, This%NbCells
-        if ( Cells(i)%GetTruncationOrder() <= MaxTruncationOrder ) then
+        if ( This%Cells(i)%GetTruncationOrder() <= MaxIndexOrder ) then
           OrderExceededFlag = .false.
           exit
         end if
@@ -711,7 +709,7 @@ contains
                                                                                                         Exceeded=StepExceededFlag)
             if ( StepExceededFlag ) exit
           end if
-          allocate(This%ParamSampleRan(size(ParamSample,2)), stat=StatLoc)
+          allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
           This%ParamSampleRan = .false.
           iEnd = size(This%ParamSample,2)
@@ -741,7 +739,7 @@ contains
           end if
 
           This%ParamSampleStep = i
-          call Input%Construct( Input=ParamSample(:,This%ParamSampleStep), Labels=SpaceInput%GetLabel() )
+          call Input%Construct( Input=This%ParamSample(:,This%ParamSampleStep), Labels=SpaceInput%GetLabel() )
           call ModelInterface%Run( Input=Input, Output=Outputs, Stat=StatLoc )
 
           if ( StatLoc /= 0 ) then
@@ -759,14 +757,14 @@ contains
             im1 = 0
             ii = 1
             do ii = 1, ModelInterface%GetNbResponses()
-              VarR2DPointer => Output(ii)%GetOrdinatePointer()
+              VarR2DPointer => Outputs(ii)%GetValuesPointer()
               if ( Outputs(ii)%GetNbDegen() > 1 ) call Error%Raise( 'Polychaos procedure cant deal with stochastic responses',    &
                                                                                                                ProcName=ProcName )
               iv = 0
               iii = im1 + 1
-              do iii = im1+1, im1+size(VarR1DPointer,1)
+              do iii = im1+1, im1+size(VarR2DPointer,1)
                 iv = iv + 1
-                call This%Cells(iii)%AppendRecord( Entry=VarR1DPointer(iv,1) )
+                call This%Cells(iii)%AppendRecord( Entry=VarR2DPointer(iv,1) )
               end do
               im1 = im1 + size(VarR2DPointer,1)
               nullify(VarR2DPointer)
@@ -793,7 +791,7 @@ contains
         do i = iStart+1, size(VarR2D,2)
           ii = ii + 1
           if ( This%ParamSampleRan(ii) ) then
-            VarR2D(:,i) = This%ParamSample(ii)
+            VarR2D(:,i) = This%ParamSample(:,ii)
           end if
         end do
         call move_alloc(VarR2D, This%ParamRecord)
@@ -815,12 +813,12 @@ contains
 
       !***************************************************************************************************************************
       ! Updating coefficients
-      if ( .not. This%SamplesProcessed ) then
+      if ( .not. This%SamplesAnalyzed ) then
 
         i = 1
-        do i = 1, NbCells
+        do i = 1, This%NbCells
 
-          if ( This%Cell(i)%IsConverged(Goal=This%StopError) ) cycle
+          if ( This%Cells(i)%GetCVError() <= This%StopError ) cycle
 
           OrderExceededFlag = .false.
           OverfitCounter = 0
@@ -828,7 +826,7 @@ contains
           if ( iStart == 0 ) then
             IndexOrder = IndexSetScheme%GetOrder()
           else
-            IndexOrder = CellPointer%GetTruncationOrder()
+            IndexOrder = This%Cells(i)%GetTruncationOrder()
           end if
 
           CVErrorTrip = huge(VarR0D)
@@ -841,7 +839,7 @@ contains
             if ( OrderExceededFlag ) exit
 
             NbIndices = size(IndicesLoc,2)
-            VarR1D_1 = This%Cells(i)%GetRecord( UpTo=iEnd )
+            VarR1D_1 = This%Cells(i)%GetRecord()
 
             ! Constructing design space
             allocate( DesignSpace(iEnd,NbIndices), stat=StatLoc)
@@ -859,15 +857,15 @@ contains
             deallocate(DesignSpace, stat=StatLoc)
             if ( StatLoc /= 0 ) call Error%Deallocate( Name='DesignSpace', ProcName=ProcName, stat=StatLoc )
 
-            if ( CVError < CellPointer%GetCVError() ) then
-              call CellPointer%SetModel( Coefficients=VarR1D_2, Indices=IndicesLoc(:,VarI1D), CVError=CVError,                    &
+            if ( CVError < This%Cells(i)%GetCVError() ) then
+              call This%Cells(i)%SetModel( Coefficients=VarR1D_2, Indices=IndicesLoc(:,VarI1D), CVError=CVError,                  &
                                                                                                            IndexOrder=IndexOrder )
             end if
             
             if ( .not. SilentLoc ) then
               Line = 'Output ' // ConvertToString(Value=i) // ' Node ' // ConvertToString(Value=i) //                             &
                                                                                 ' -- CVError = ' // ConvertToString(Value=CVError)
-              if ( This%Cells(ii)%GetCVError <= This%StopError ) Line = Line // ' -- Converged'
+              if ( This%Cells(i)%GetCVError() <= This%StopError ) Line = Line // ' -- Converged'
               write(*,'(A)') Line
             end if
 
@@ -880,7 +878,7 @@ contains
 
             CVErrorTrip = CVError
 
-            if ( CellPointer%IsConverged(Goal=This%StopError) ) exit
+            if ( This%Cells(i)%GetCVError() <= This%StopError ) exit
 
             IndexOrder = IndexOrder + 1
 
@@ -888,13 +886,13 @@ contains
 
         end do
 
-        This%SamplesProcessed = .true.
+        This%SamplesAnalyzed = .true.
 
       end if
 
       This%SamplesObtained = .false.
       This%SamplesRan = .false.
-      This%SamplesProcessed = .false.
+      This%SamplesAnalyzed = .false.
 
       call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),          &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
@@ -903,7 +901,7 @@ contains
 
     This%SamplesObtained = .true.
     This%SamplesRan = .true.
-    This%SamplesProcessed = .true.
+    This%SamplesAnalyzed = .true.
 
     if ( StepExceededFlag ) then
       Line = 'Maximum sampling step exceeded'
@@ -911,7 +909,6 @@ contains
                                                                                                                ProcName=ProcName )
       write(*,'(A)') ''  
       write(*,'(A)') Line
-      exit
     end if
 
     if ( .not. ConvergedFlag ) then
@@ -963,7 +960,7 @@ contains
 
     deallocate(This%Cells, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
-    This%Cells = 0
+    This%NbCells = 0
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -992,6 +989,7 @@ contains
     type(Response_Type), pointer                                      ::    ResponsePointer=>null()
     integer                                                           ::    iStart
     integer                                                           ::    iEnd
+    integer                                                           ::    NbCells
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -1101,10 +1099,7 @@ contains
           LHS%Step = RHS%Step
           LHS%MaxNumOverfit = RHS%MaxNumOverfit
           LHS%CheckpointFreq = RHS%CheckpointFreq
-          if ( allocated(RHS%Sampler) ) then
-            allocate(LHS%Sampler, source=RHS%Sampler, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Sampler', ProcName=ProcName, stat=StatLoc )
-          end if
+          if ( RHS%Sampler%IsConstructed() ) LHS%Sampler = RHS%Sampler
         end if
 
       class default
@@ -1137,9 +1132,6 @@ contains
     
     if ( allocated(This%ParamSample) ) deallocate(This%ParamSample, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%NbCellsOutput) ) deallocate(This%NbCellsOutput, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%NbCellsOutput', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
@@ -1557,7 +1549,7 @@ contains
     if ( This%OutputRecord%GetLength() < 1 ) call Error%Raise( Line='Outputs not yet supplied', ProcName=ProcName )
 
     if ( present(UpTo) ) then
-      call This%OutputRecord%Get( Values=GetRecord_Cell, NodeMax=int(UpTo,8) )
+      call This%OutputRecord%Get( Values=GetRecord_Cell )
     else
       call This%OutputRecord%Get( Values=GetRecord_Cell )
     end if

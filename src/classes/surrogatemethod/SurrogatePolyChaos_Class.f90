@@ -20,6 +20,10 @@ module SurrogatePolyChaos_Class
 
 use Input_Library
 use Parameters_Library
+use ArrayRoutines_Module
+use ArrayIORoutines_Module
+use String_Library
+use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SurrogateMethod_Class                                         ,only:    SurrogateMethod_Type
@@ -60,6 +64,7 @@ use DistNorm_Class                                                ,only:    Dist
 use DistLogNorm_Class                                             ,only:    DistLogNorm_Type
 use DistLog10Norm_Class                                           ,only:    DistLog10Norm_Type
 use DistGamma_Class                                               ,only:    DistGamma_Type
+use List2D_Class                                                  ,only:    List2D_Type
 
 implicit none
 
@@ -174,7 +179,7 @@ contains
 
     This%BasisScheme = 'askey'
     This%SectionChain = ''
-    This%TransformInputSamples = .false.
+    This%InputSamplesTransform = .false.
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -183,9 +188,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput ( This, Input, SectionChain, Prefix, Debug )
-
-    use StringRoutines_Module
-    use ArrayRoutines_Module
 
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -260,7 +262,7 @@ contains
 
       ParameterName = 'labels'
       call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-      call Parse( Input=VarC0D, Separator=' ', This%InputSamplesLabels )
+      This%InputSamplesLabels = ConvertToStrings(Value=VarC0D)
 
       SubSectionName = SectionName // '>input'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
@@ -287,8 +289,7 @@ contains
         deallocate(VarR2D, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
       end do
-
-    else
+    end if
 
     This%Constructed = .true.
 
@@ -383,7 +384,6 @@ contains
     integer                                                           ::    ii
     integer                                                           ::    iii
     real(rkp), allocatable, dimension(:)                              ::    X
-    character(:), allocatable                                         ::    OutputDirectoryLoc
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -419,13 +419,13 @@ contains
       do i = 1, SpaceTransform%GetNbDim()
         ii = 1
         iii = 0
-        do ii = 1, size(This%InputSamplesLabel,1)
-          if ( SpaceTransform%GetLabel(Num=i) == This%InputSamplesLabel(ii)%GetValue() ) then
+        do ii = 1, size(This%InputSamplesLabels,1)
+          if ( SpaceTransform%GetLabel(Num=i) == This%InputSamplesLabels(ii)%GetValue() ) then
             iii = ii
             exit
           end if
         end do
-        if ( iii = 0 ) call Error%Raise( 'Did not find a corresponding label in the samples:' // SpaceTransform%GetLabel(Num=i),  &
+        if ( iii == 0 ) call Error%Raise( 'Did not find a corresponding label in the samples:' // SpaceTransform%GetLabel(Num=i), &
                                                                                                                ProcName=ProcName )
         InputSamplesLoc(i,:) = This%InputSamples(iii,:)
       end do
@@ -459,7 +459,7 @@ contains
       call PolyChaosModelLoc(i)%Construct( Response=Response(i), SpaceTransf=SpaceTransform, Basis=Basis,                         &
                                                           Coefficients=Coefficients(i), Indices=Indices(i), CVErrors=CVErrors(i) )
       if ( present(OutputDirectory) ) then
-        OutputDirectoryLoc = OutputDirectory // '/pce_models/' Response(i)%GetLabel()
+        OutputDirectoryLoc = OutputDirectory // '/pce_models/' // Response(i)%GetLabel()
         call This%WriteOutput( PolyChaosModel=PolyChaosModelLoc(i), Directory=OutputDirectory )
       end if
       call Coefficients(i)%Purge()

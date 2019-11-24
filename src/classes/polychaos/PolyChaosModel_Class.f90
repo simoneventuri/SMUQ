@@ -395,7 +395,7 @@ contains
     type(OrthoMultiVar_Type), intent(in)                              ::    Basis
     type(LinkedList1D_Type), intent(inout)                            ::    Coefficients
     type(LinkedList2D_Type), intent(inout)                            ::    Indices
-    real(rkp), dimension(:), optional, intent(in)                     ::    CVErrors
+    type(LinkedList0D_Type), optional, intent(inout)                  ::    CVErrors
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -407,6 +407,7 @@ contains
     integer, dimension(:,:), pointer                                  ::    VarI2DPointer=>null()
     real(rkp), dimension(:,:), pointer                                ::    VarR2DPointer=>null()
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    real(rkp)                                                         ::    VarR0D
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -443,7 +444,7 @@ contains
                                                                                          // 'number of nodes', ProcName=ProcName )
 
     if ( present(CVErrors) ) then
-      if ( This%NbCells /= size(CVErrors,1) ) call Error%Raise( Line='Mismatch between number of CV error records and '           &
+      if ( This%NbCells /= CVErrors%GetLength() ) call Error%Raise( Line='Mismatch between number of CV error records and '       &
                                                                                          // 'number of nodes', ProcName=ProcName )
     end if
 
@@ -462,7 +463,8 @@ contains
       call Indices%GetPointer( Node=i, Values=VarI2DPointer )
       VarR1D = VarR2DPointer(i,:)
       if ( present(CVErrors) ) then
-        call This%Cells(i)%Construct( Coefficients=VarR1DPointer, Indices=VarI2DPointer, Coordinate=VarR1D, CVError=CVErrors(i) )
+        call CVErrors%Get(Node=i, Value=VarR0D)
+        call This%Cells(i)%Construct( Coefficients=VarR1DPointer, Indices=VarI2DPointer, Coordinate=VarR1D, CVError=VarR0D )
       else
         call This%Cells(i)%Construct( Coefficients=VarR1DPointer, Indices=VarI2DPointer, Coordinate=VarR1D )
       end if

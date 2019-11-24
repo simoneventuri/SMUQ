@@ -107,7 +107,6 @@ contains
   procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, private                                                  ::    CheckInput
   procedure, public                                                   ::    BuildModel
   procedure, public                                                   ::    WriteOutput
   procedure, public                                                   ::    Copy
@@ -551,8 +550,14 @@ contains
     real(rkp)                                                         ::    CorrFactor
     integer                                                           ::    i, iStart, iEnd
     integer                                                           ::    ii
+    integer                                                           ::    iii
+    integer                                                           ::    iv
+    integer                                                           ::    im1
+    integer                                                           ::    iMax
+    integer                                                           ::    iMin
     integer                                                           ::    M, N
     integer                                                           ::    IndexStartOrder
+    integer                                                           ::    MaxIndexOrder
     logical                                                           ::    ConvergedFlag=.false.
     logical                                                           ::    OrderExceededFlag=.false.
     logical                                                           ::    StepExceededFlag=.false.
@@ -608,8 +613,7 @@ contains
           write(*,'(A)') Line
           write(*,'(A)') '' 
         end if
-        if ( size(OutputSamples,2) /= This%NbCells ) call Error%Raise( Line='Number of nodes in output samples does not match ' //& 
-                                                                          'number of nodes for all responses', ProcName=ProcName )
+
         if ( size(InputSamples,2) /= size(OutputSamples,1) ) call Error%Raise( Line='Number of samples from input space ' //      &
                                                                   'and number of output samples do not match', ProcName=ProcName )
         if ( size(InputSamples,1) /= NbDim ) call Error%Raise( Line='Dimensionality of provided samples does not match ' //       &
@@ -648,7 +652,7 @@ contains
 
     SilentLoc = This%Silent
     StepExceededFlag = .false.
-    MaxTruncationOrder = IndexSetScheme%GetMaxOrder()
+    MaxIndexOrder = IndexSetScheme%GetMaxOrder()
 
     if ( This%Step == 0 ) This%IndexOrder = IndexStartOrder
     call IndexSetScheme%GenerateIndices( Order=This%IndexOrder, TupleSize=NbDim, Indices=IndicesLoc, OrderError=.false.,        &
@@ -679,7 +683,7 @@ contains
       OrderExceededFlag = .true.
       i = 1
       do i = 1, This%NbCells
-        if ( This%IndexOrder <= MaxTruncationOrder ) then
+        if ( This%IndexOrder <= MaxIndexOrder ) then
           OrderExceededFlag = .false.
           exit
         end if
@@ -782,7 +786,7 @@ contains
             end if
             if ( StepExceededFlag ) exit
           end if
-          allocate(This%ParamSampleRan(size(ParamSample,2)), stat=StatLoc)
+          allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
           This%ParamSampleRan = .false.
           iEnd = size(This%ParamSample,2)
@@ -863,7 +867,7 @@ contains
         do i = iStart+1, size(VarR2D,2)
           ii = ii + 1
           if ( This%ParamSampleRan(ii) ) then
-            VarR2D(:,i) = This%ParamSample(ii)
+            VarR2D(:,i) = This%ParamSample(:,ii)
           end if
         end do
         call move_alloc(VarR2D, This%ParamRecord)
@@ -1040,7 +1044,7 @@ contains
 
     deallocate(This%Cells, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
-    This%Cells = 0
+    This%NbCells = 0
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -1178,10 +1182,7 @@ contains
           LHS%StopError = RHS%StopError
           LHS%Step = RHS%Step
           LHS%CheckpointFreq = RHS%CheckpointFreq
-          if ( allocated(RHS%Sampler) ) then
-            allocate(LHS%Sampler, source=RHS%Sampler, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Sampler', ProcName=ProcName, stat=StatLoc )
-          end if
+          if ( RHS%Sampler%IsConstructed() ) LHS%Sampler = RHS%Sampler
         end if
       
       class default
@@ -1611,7 +1612,6 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    GetRecord_Cell
 
     class(Cell_Type), intent(inout)                                   ::    This
-    integer, optional, intent(in)                                     ::    UpTo
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
