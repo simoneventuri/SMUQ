@@ -655,8 +655,7 @@ contains
     MaxIndexOrder = IndexSetScheme%GetMaxOrder()
 
     if ( This%Step == 0 ) This%IndexOrder = IndexStartOrder
-    call IndexSetScheme%GenerateIndices( Order=This%IndexOrder, TupleSize=NbDim, Indices=IndicesLoc, OrderError=.false.,        &
-                                                                                               OrderExceeded=OrderExceededFlag )
+    call IndexSetScheme%GenerateIndices( Order=This%IndexOrder, TupleSize=NbDim, Indices=IndicesLoc )
 
     do
 
@@ -706,24 +705,19 @@ contains
       ! Obtaining samples
       if ( .not. This%SamplesObtained ) then
 
-        if ( .not. SilentLoc ) then
-          if ( This%Step /= 0 ) then
-            Line = 'Performing enrichment'
-          else
-            Line = 'Initial population of the linear system'
-          end if
-          write(*,'(A)') '' 
-          write(*,'(A)') Line
-          write(*,'(A)') '' 
-        end if
-
         if ( This%Sampler%IsConstructed() ) then
           if ( This%Step == 0 ) then
+            if ( .not. SilentLoc ) then
+              Line = 'Initial population of the linear system'
+              write(*,'(A)') '' 
+              write(*,'(A)') Line
+              write(*,'(A)') '' 
+            end if
             This%ParamSample = This%Sampler%Draw(SpaceInput=SpaceInput)
             if ( This%DesignRatio > Zero ) then
               do
                 VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio - real(size(This%ParamSample,2),rkp))
-                if ( VarI0D > 0 ) exit
+                if ( VarI0D <= 0 ) exit
                 VarR2D = This%ParamSample
                 call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=VarR2D, EnrichmentSamples=ParamSampleTemp,             &
                                                                                                       Exceeded=StepExceededFlag)
@@ -750,46 +744,64 @@ contains
           else
             if ( This%DesignRatio > Zero ) then
               VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio-real(size(This%ParamRecord,2),rkp))
-              if ( VarI0D > 0 ) call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=This%ParamRecord,                        &
+              if ( VarI0D > 0 ) then
+                call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=This%ParamRecord,                        &
                                                                     EnrichmentSamples=This%ParamSample, Exceeded=StepExceededFlag)
-              if ( StepExceededFlag ) exit
-              do
-                VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio -                                                  &
-                                                          (real(size(This%ParamRecord,2)+real(size(This%ParamSample,2),rkp))))
-                if ( VarI0D <= 0 ) exit
-                allocate(VarR2D(NbDim,size(This%ParamSample,2)+size(This%ParamRecord,2)), stat=StatLoc)
-                if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-                VarR2D(:,1:size(This%ParamRecord,2)) = This%ParamRecord
-                VarR2D(:,size(This%ParamRecord,2)+1:) = This%ParamSample
-                deallocate(This%ParamSample, stat=StatLoc)
-                if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
-                call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=VarR2D, EnrichmentSamples=ParamSampleTemp,               &
+                if ( StepExceededFlag ) exit
+                if ( .not. SilentLoc ) then
+                  Line = 'Performing enrichment'
+                  write(*,'(A)') '' 
+                  write(*,'(A)') Line
+                  write(*,'(A)') '' 
+                end if
+                do
+                  VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio -                                                &
+                                                            (real(size(This%ParamRecord,2)+real(size(This%ParamSample,2),rkp))))
+                  if ( VarI0D <= 0 ) exit
+                  allocate(VarR2D(NbDim,size(This%ParamSample,2)+size(This%ParamRecord,2)), stat=StatLoc)
+                  if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+                  VarR2D(:,1:size(This%ParamRecord,2)) = This%ParamRecord
+                  VarR2D(:,size(This%ParamRecord,2)+1:) = This%ParamSample
+                  deallocate(This%ParamSample, stat=StatLoc)
+                  if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
+                  call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=VarR2D, EnrichmentSamples=ParamSampleTemp,             &
                                                                                                         Exceeded=StepExceededFlag)
-                if ( StepExceededFlag ) then
+                  if ( StepExceededFlag ) then
+                    deallocate(VarR2D, stat=StatLoc)
+                    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+                    exit
+                  end if
+                  VarI0D = size(VarR2D,2)-size(This%ParamRecord,2)
+                  allocate(This%ParamSample(NbDim,VarI0D+size(ParamSampleTemp,2)), stat=StatLoc)
+                  if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
+                  This%ParamSample(:,1:VarI0D) = VarR2D(:,size(This%ParamRecord,2)+1:)
+                  This%ParamSample(:,VarI0D+1:) = ParamSampleTemp
+                  deallocate(ParamSampleTemp, stat=StatLoc)
+                  if ( StatLoc /= 0 ) call Error%Deallocate( Name='ParamSampleTemp', ProcName=ProcName, stat=StatLoc )
                   deallocate(VarR2D, stat=StatLoc)
                   if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-                  exit
+                end do
+              else
+                if ( .not. SilentLoc ) then
+                  Line = 'Reusing samples with increased truncation order'
+                  write(*,'(A)') '' 
+                  write(*,'(A)') Line
+                  write(*,'(A)') '' 
                 end if
-                VarI0D = size(VarR2D,2)-size(This%ParamRecord,2)
-                allocate(This%ParamSample(NbDim,VarI0D+size(ParamSampleTemp,2)), stat=StatLoc)
-                if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
-                This%ParamSample(:,1:VarI0D) = VarR2D(:,size(This%ParamRecord,2)+1:)
-                This%ParamSample(:,VarI0D+1:) = ParamSampleTemp
-                deallocate(ParamSampleTemp, stat=StatLoc)
-                if ( StatLoc /= 0 ) call Error%Deallocate( Name='ParamSampleTemp', ProcName=ProcName, stat=StatLoc )
-                deallocate(VarR2D, stat=StatLoc)
-                if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-              end do
+                This%SamplesRan = .true.
+              end if
             else
               call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,      &
                                                                                                         Exceeded=StepExceededFlag)
             end if
             if ( StepExceededFlag ) exit
           end if
-          allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-          This%ParamSampleRan = .false.
-          iEnd = size(This%ParamSample,2)
+          if ( allocated(This%ParamSample) ) then
+            allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+            This%ParamSampleRan = .false.
+            iEnd = size(This%ParamSample,2)
+          end if
           This%SamplesObtained = .true.
         else
           if ( This%Step == 0 ) call Error%Raise( 'More samples were required but sampler was never defined', ProcName=ProcName )
@@ -944,9 +956,8 @@ contains
                                                                                              Indices=IndicesLoc, CVError=CVError )
 
           if ( .not. SilentLoc ) then
-            Line = 'Output ' // ConvertToString(Value=i) // ' Node ' // ConvertToString(Value=ii) //                          &
-                                                                             ' -- Error = ' // ConvertToString(Value=CVError)
-            if ( This%Cells(ii)%GetCVError() <= This%StopError ) Line = Line // ' -- Converged'
+            Line = ' Node ' // ConvertToString(Value=ii) // ' -- Error = ' // ConvertToString(Value=CVError)
+            if ( CVError <= This%StopError ) Line = Line // ' -- Converged'
             write(*,'(A)') Line
           end if
 
@@ -962,9 +973,6 @@ contains
 
         deallocate(VarR1D, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-      
-        deallocate(VarR2D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
 
         deallocate(QR, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='QR', ProcName=ProcName, stat=StatLoc )
@@ -1026,8 +1034,8 @@ contains
     i = 1
     do i = 1, NbOutputs
       iStart = 1
-      if ( i > 1 ) iStart = NbCellsOutput(i-1)+1
-      iEnd = NbCellsOutput(i)
+      if ( i > 1 ) iStart = sum(NbCellsOutput(1:(i-1)))+1
+      iEnd = sum(NbCellsOutput(1:i))
       ii = 1
       do ii = iStart, iEnd
         call CVErrors(i)%Append( Value=This%Cells(ii)%GetCVError() )
@@ -1122,29 +1130,31 @@ contains
         call ExportArray( Array=ResponsePointer%GetCoordinatesPointer(), File=File, RowMajor=.true. )
 
         iii = 0
-        ii = iStart
-        do ii = iStart, iEnd
+        ii = iStart+1
+        do ii = iStart+1, iEnd
           iii = iii + 1
           DirectoryLoc = '/output_' // ConvertToString(Value=i) // '/cell' // ConvertToString(Value=iii)
           call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
 
           FileName = DirectoryLoc // '/cverror.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call File%Export( String=ConvertToString(Value=This%Cells(ii)%GetCVError()) )
+          call File%Export( String=ConvertToString(Value=This%Cells(iii)%GetCVError()) )
 
           FileName = DirectoryLoc // '/coefficients.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(ii)%GetCoefficientsPointer(), File=File )
+          call ExportArray( Array=This%Cells(iii)%GetCoefficientsPointer(), File=File )
 
           FileName = DirectoryLoc // '/indices.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(ii)%GetIndicesPointer(), File=File )
+          call ExportArray( Array=This%Cells(iii)%GetIndicesPointer(), File=File )
 
           FileName = DirectoryLoc // '/sampled_output.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(ii)%GetRecord(), File=File )
+          call ExportArray( Array=This%Cells(iii)%GetRecord(), File=File )
 
         end do
+
+        iStart = iEnd
 
       end do
 

@@ -468,6 +468,8 @@ contains
       else
         call This%Cells(i)%Construct( Coefficients=VarR1DPointer, Indices=VarI2DPointer, Coordinate=VarR1D )
       end if
+      nullify(VarR1DPointer)
+      nullify(VarI2DPointer)
     end do
 
     deallocate(VarR1D, stat=StatLoc)

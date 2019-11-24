@@ -276,7 +276,7 @@ contains
       nullify( InputSection )
     end if
 
-    SectionName = "sparse_solver"
+    SectionName = "solver"
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     call LinSolverSparse_Factory%Construct( Object=This%Solver, Input=InputSection, Prefix=PrefixLoc )
     nullify( InputSection )
@@ -414,7 +414,7 @@ contains
     end if
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sparse_solver'
-    SectionName='sparse_solver'
+    SectionName='solver'
     call GetInput%AddSection( Section=LinSolverSparse_Factory%GetObjectInput( Object=This%Solver, MainSectionName=SectionName,  &
                                                                                      Prefix=PrefixLoc, Directory=DirectorySub) )
 
@@ -863,8 +863,7 @@ contains
             end if
             
             if ( .not. SilentLoc ) then
-              Line = 'Output ' // ConvertToString(Value=i) // ' Node ' // ConvertToString(Value=i) //                             &
-                                                                                ' -- CVError = ' // ConvertToString(Value=CVError)
+              Line = ' Node ' // ConvertToString(Value=i) // ' -- CVError = ' // ConvertToString(Value=CVError)
               if ( This%Cells(i)%GetCVError() <= This%StopError ) Line = Line // ' -- Converged'
               write(*,'(A)') Line
             end if
@@ -942,8 +941,8 @@ contains
     i = 1
     do i = 1, NbOutputs
       iStart = 1
-      if ( i > 1 ) iStart = NbCellsOutput(i-1)+1
-      iEnd = NbCellsOutput(i)
+      if ( i > 1 ) iStart = sum(NbCellsOutput(1:(i-1)))+1
+      iEnd = sum(NbCellsOutput(1:i))
       ii = 1
       do ii = iStart, iEnd
         call CVErrors(i)%Append( Value=This%Cells(ii)%GetCVError() )
@@ -1038,29 +1037,31 @@ contains
         call ExportArray( Array=ResponsePointer%GetCoordinatesPointer(), File=File, RowMajor=.true. )
 
         iii = 0
-        ii = iStart
-        do ii = iStart, iEnd
+        ii = iStart+1
+        do ii = iStart+1, iEnd
           iii = iii + 1
           DirectoryLoc = '/output_' // ConvertToString(Value=i) // '/cell' // ConvertToString(Value=iii)
           call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
 
           FileName = DirectoryLoc // '/cverror.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call File%Export( String=ConvertToString(Value=This%Cells(ii)%GetCVError()) )
+          call File%Export( String=ConvertToString(Value=This%Cells(iii)%GetCVError()) )
 
           FileName = DirectoryLoc // '/coefficients.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(ii)%GetCoefficientsPointer(), File=File )
+          call ExportArray( Array=This%Cells(iii)%GetCoefficientsPointer(), File=File )
 
           FileName = DirectoryLoc // '/indices.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(ii)%GetIndicesPointer(), File=File )
+          call ExportArray( Array=This%Cells(iii)%GetIndicesPointer(), File=File )
 
           FileName = DirectoryLoc // '/sampled_output.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(ii)%GetRecord(), File=File )
+          call ExportArray( Array=This%Cells(iii)%GetRecord(), File=File )
 
         end do
+
+        iStart = iEnd
 
       end do
 

@@ -219,7 +219,9 @@ contains
     SectionName = 'coordinates'
     ParameterName = 'labels'
     call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-    This%CoordinatesLabels = ConvertToStrings(Value=VarC0D)
+
+    allocate(This%Coordinateslabels, source=ConvertToStrings(Value=VarC0D), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Coordinateslabels', ProcName=ProcName, stat=StatLoc )
 
     SubSectionName = SectionName // '>values'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
