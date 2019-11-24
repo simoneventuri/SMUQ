@@ -177,7 +177,6 @@ contains
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    i
     real(rkp), dimension(2)                                           ::    TimeRange
-    integer                                                           ::    NbTimes
     logical                                                           ::    MandatoryLoc
 
     DebugLoc = DebugGlobal
@@ -199,14 +198,14 @@ contains
     ParameterName = 'time_range'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
     TimeRange = ConvertToReals(String=VarC0D)
-    if ( TimeRange(1) < 0 ) call Error%Raise( Line='Minimum time range below zero', ProcName=ProcName )
+    if ( TimeRange(1) <= 0 ) call Error%Raise( Line='Minimum time range at or below zero', ProcName=ProcName )
     if ( TimeRange(2) < TimeRange(1) ) call Error%Raise( Line='Minimum time larger than maximum', ProcName=ProcName )
         
     ParameterName = 'nb_times'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
     This%NbTimes = VarI0D
 
-    This%Time = LinSpace(TimeRange(1), TimeRange(2), NbTimes)
+    This%Time = LinSpace(TimeRange(1), TimeRange(2), This%NbTimes)
 
     ParameterName = 'location'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
@@ -336,7 +335,6 @@ contains
     character(*), parameter                                           ::    ProcName='ProcessInput'
     integer                                                           ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                            ::    Ordinate
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(rkp)                                                         ::    M
     real(rkp)                                                         ::    D
     real(rkp)                                                         ::    L
@@ -379,8 +377,8 @@ contains
         end if
         i = 1
         do i = 1, This%NbLocations
-          call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time, Concentration=VarR1D )
-          Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,1) = VarR1D
+          call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time,                              &
+                                                                   Concentration=Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,1) )
         end do
         call Output%Construct( Values=Ordinate, Label=This%Label )
       type is (InputStoch_Type)
@@ -411,8 +409,8 @@ contains
             else
               Tau = This%Tau
             end if
-            call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time, Concentration=VarR1D )
-            Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,ii) = VarR1D
+            call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time,                            &
+                                                                  Concentration=Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,ii) )
           end do
         end do
         call Output%Construct( Values=Ordinate, Label=This%Label )

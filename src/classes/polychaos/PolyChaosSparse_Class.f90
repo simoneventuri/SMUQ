@@ -874,9 +874,8 @@ contains
               if ( OverfitCounter >= This%MaxNumOverfit ) exit
             else
               OverfitCounter = 0
+              CVErrorTrip = CVError
             end if
-
-            CVErrorTrip = CVError
 
             if ( This%Cells(i)%GetCVError() <= This%StopError ) exit
 

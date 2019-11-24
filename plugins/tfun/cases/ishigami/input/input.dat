@@ -1,9 +1,8 @@
 start(main)
 
-  start(function)
+  start(function1)
     type = ishigami
     start(type)
-      response_name = output
       label = output
       a = 1.0
       b = 7.0
@@ -14,6 +13,6 @@ start(main)
         x3_dependency = p3
       end(parameters)
     end(type)
-  end(function)
+  end(function1)
 
 end(main)
