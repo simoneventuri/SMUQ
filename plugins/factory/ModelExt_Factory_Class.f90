@@ -27,6 +27,7 @@ use TFUN_Class                                                    ,only:    TFUN
 use SMD_Class                                                     ,only:    SMD_Type
 use PCESM_Class                                                   ,only:    PCESM_Type
 use PATOPI_Class                                                  ,only:    PATOPI_Type
+use NULLPI_Class                                                  ,only:    NULLPI_Type
 
 implicit none
 
@@ -82,6 +83,9 @@ contains
 
       case('patopi')
         allocate( PATOPI_Type :: Object )
+
+      case('null')
+        allocate( NULLPI_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -172,6 +176,9 @@ contains
       case('patopi')
         allocate( PATOPI_Type :: Object )
 
+      case('null')
+        allocate( NULLPI_Type :: Object )
+
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
 
@@ -259,6 +266,9 @@ contains
 
       type is (PATOPI_Type)
         GetOption = 'patopi'
+
+      type is (NULLPI_Type)
+        GetOption = 'null'
 
       class default
         call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )
