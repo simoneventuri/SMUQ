@@ -37,7 +37,6 @@ private
 public                                                                ::    TestBorehole_Type
 
 type, extends(TestFunction_Type)                                      ::    TestBorehole_Type
-  character(:), allocatable                                           ::    Label
   real(rkp)                                                           ::    R
   real(rkp)                                                           ::    RW
   real(rkp)                                                           ::    TU

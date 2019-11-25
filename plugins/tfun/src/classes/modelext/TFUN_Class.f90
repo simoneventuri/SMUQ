@@ -144,7 +144,9 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    i
+    integer                                                           ::    ii
     class(TestFunction_Type), allocatable                             ::    TestFunction
+    type(String_Type), allocatable, dimension(:)                      ::    Labels
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -161,6 +163,9 @@ contains
     allocate(This%TestFunctions(This%NbFunctions), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%TestFunctions', ProcName=ProcName, stat=StatLoc )
 
+    allocate(Labels(This%NbFunctions), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
+
     i = 1
     do i = 1, This%NbFunctions
       SectionName = 'function' // ConvertToString(Value=i)
@@ -168,8 +173,19 @@ contains
       call TestFunction_Factory%Construct( Object=TestFunction, Input=InputSection, Prefix=PrefixLoc )
       nullify(InputSection)
       call This%TestFunctions(i)%Set( Object=TestFunction )
+      Labels(i) = TestFunction%GetLabel()
       deallocate(TestFunction, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='TesetFunction', ProcName=ProcName, stat=StatLoc )
+    end do
+
+    i = 1
+    do i = 1, This%NbFunctions
+      ii = i
+      do ii = i, This%NbFunctions
+        if ( i == ii ) cycle
+        if ( Labels(i)%GetValue() == Labels(ii)%GetValue() ) call Error%Raise( 'Detected duplicate output label : ' //            &
+                                                                                         Labels(i)%GetValue(), ProcName=ProcName )
+      end do
     end do
 
     This%Constructed = .true.

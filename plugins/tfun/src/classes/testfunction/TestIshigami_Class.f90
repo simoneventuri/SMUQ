@@ -46,7 +46,6 @@ type, extends(TestFunction_Type)                                      ::    Test
   character(:), allocatable                                           ::    X1_Dependency
   character(:), allocatable                                           ::    X2_Dependency
   character(:), allocatable                                           ::    X3_Dependency
-  character(:), allocatable                                           ::    Label
 
 contains
   procedure, public                                                   ::    Initialize

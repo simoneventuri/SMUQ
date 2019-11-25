@@ -44,7 +44,6 @@ type, extends(TestFunction_Type)                                      ::    Test
   real(rkp), allocatable, dimension(:)                                ::    Time
   integer                                                             ::    NbTimes
   integer                                                             ::    NbLocations
-  character(:), allocatable                                           ::    Label
   real(rkp)                                                           ::    M
   real(rkp)                                                           ::    D
   real(rkp)                                                           ::    L

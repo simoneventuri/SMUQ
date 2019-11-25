@@ -601,7 +601,10 @@ contains
       end do 
     end if
 
+    IndexStartOrder = IndexSetScheme%GetOrder()
+
     if ( This%Step == 0 ) then
+      This%IndexOrder = IndexStartOrder
       if ( ( present(InputSamples) .and. .not. present(OutputSamples) ) .or.                                                      &
                                                                     ( present(OutputSamples) .and. .not. present(InputSamples) ) )&
                 call Error%Raise( Line='Need both parameter and output samples to be passed at the same time', ProcName=ProcName )
@@ -653,7 +656,6 @@ contains
     StepExceededFlag = .false.
     MaxIndexOrder = IndexSetScheme%GetMaxOrder()
 
-    if ( This%Step == 0 ) This%IndexOrder = IndexStartOrder
     call IndexSetScheme%GenerateIndices( Order=This%IndexOrder, TupleSize=NbDim, Indices=IndicesLoc )
 
     do
@@ -803,9 +805,32 @@ contains
           end if
           This%SamplesObtained = .true.
         else
-          if ( This%Step == 0 ) call Error%Raise( 'More samples were required but sampler was never defined', ProcName=ProcName )
-          StepExceededFlag = .true.
-          exit
+          VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio-real(size(This%ParamRecord,2),rkp))
+          if ( VarI0D > 0 ) then
+            if ( This%Step == 0 ) call Error%Raise( 'More samples were required but sampler was never defined',                 &
+                                                                                                             ProcName=ProcName )
+            StepExceededFlag = .true.
+            exit
+          else
+            if ( This%Step /= 0 ) then               
+              if ( .not. SilentLoc ) then
+                Line = 'Reusing samples with increased truncation order'
+                write(*,'(A)') '' 
+                write(*,'(A)') Line
+                write(*,'(A)') '' 
+              end if
+            else
+              if ( .not. SilentLoc ) then
+                Line = 'Processing precomputed samples'
+                write(*,'(A)') '' 
+                write(*,'(A)') Line
+                write(*,'(A)') '' 
+              end if
+            end if
+            This%SamplesObtained = .true.
+            This%SamplesRan = .true.
+            This%SamplesAnalyzed = .false.
+          end if
         end if
       else
         iEnd = size(This%ParamSample,2)
@@ -902,6 +927,9 @@ contains
       !***************************************************************************************************************************
       ! Updating coefficients
       if ( .not. This%SamplesAnalyzed ) then
+
+        if ( iEnd < NbIndices ) call Error%Raise( 'Initial number of samples must be greater than the number of indices',         &
+                                                                                                               ProcName=ProcName )
 
         ! Constructing design space
         allocate( DesignSpace(iEnd,NbIndices), stat=StatLoc)
@@ -1112,6 +1140,8 @@ contains
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
       call ExportArray( Array=This%ParamRecord, File=File )
 
+      iStart = 0
+
       i = 1
       do i = 1, NbOutputs
         call MakeDirectory( Path=Directory // '/response_' // ConvertToString(Value=i) , Options='-p' )
@@ -1137,19 +1167,19 @@ contains
 
           FileName = DirectoryLoc // '/cverror.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call File%Export( String=ConvertToString(Value=This%Cells(iii)%GetCVError()) )
+          call File%Export( String=ConvertToString(Value=This%Cells(ii)%GetCVError()) )
 
           FileName = DirectoryLoc // '/coefficients.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(iii)%GetCoefficientsPointer(), File=File )
+          call ExportArray( Array=This%Cells(ii)%GetCoefficientsPointer(), File=File )
 
           FileName = DirectoryLoc // '/indices.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(iii)%GetIndicesPointer(), File=File )
+          call ExportArray( Array=This%Cells(ii)%GetIndicesPointer(), File=File )
 
           FileName = DirectoryLoc // '/sampled_output.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(iii)%GetRecord(), File=File )
+          call ExportArray( Array=This%Cells(ii)%GetRecord(), File=File )
 
         end do
 

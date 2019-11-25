@@ -638,6 +638,10 @@ contains
         This%SamplesObtained = .true.
         This%SamplesRan = .true.
         This%SamplesAnalyzed = .false.
+        i = 1
+        do i = 1,  This%NbCells
+          This%Cells(i)%IndexOrder = IndexSetScheme%GetOrder()
+        end do
       end if
     end if
 
@@ -1045,19 +1049,19 @@ contains
 
           FileName = DirectoryLoc // '/cverror.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call File%Export( String=ConvertToString(Value=This%Cells(iii)%GetCVError()) )
+          call File%Export( String=ConvertToString(Value=This%Cells(ii)%GetCVError()) )
 
           FileName = DirectoryLoc // '/coefficients.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(iii)%GetCoefficientsPointer(), File=File )
+          call ExportArray( Array=This%Cells(ii)%GetCoefficientsPointer(), File=File )
 
           FileName = DirectoryLoc // '/indices.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(iii)%GetIndicesPointer(), File=File )
+          call ExportArray( Array=This%Cells(ii)%GetIndicesPointer(), File=File )
 
           FileName = DirectoryLoc // '/sampled_output.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(iii)%GetRecord(), File=File )
+          call ExportArray( Array=This%Cells(ii)%GetRecord(), File=File )
 
         end do
 

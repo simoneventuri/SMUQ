@@ -178,9 +178,9 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    This%BasisScheme = 'askey'
+    This%BasisScheme = 'numerical'
     This%SectionChain = ''
-    This%InputSamplesTransform = .false.
+    This%InputSamplesTransform = .true.
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -257,11 +257,12 @@ contains
 
     SectionName = 'initial_samples'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      ParameterName = 'transform_samples'
-      call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-      if ( Found ) This%InputSamplesTransform=VarL0D
 
       SubSectionName = SectionName // '>input'
+
+      ParameterName = 'transform'
+      call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.false., Found=Found )
+      if ( Found ) This%InputSamplesTransform=VarL0D
 
       ParameterName = 'labels'
       call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
@@ -469,11 +470,13 @@ contains
         ii = 1
         iii = 0
         do ii = 1, size(This%OutputSamples)
-          if ( Response(i)%GetLabel() == This%OutputSamplesLabels(i)%GetValue() ) then
+          if ( Response(i)%GetLabel() == This%OutputSamplesLabels(ii)%GetValue() ) then
             iii = ii
             exit
           end if
         end do
+        if ( iii == 0 ) call Error%Raise( 'Did not find matching label for initial output samples :' // Response(i)%GetLabel(),   &
+                                                                                                               ProcName=ProcName )
         OutputSamplesLoc(i) = This%OutputSamples(iii)
       end do
 

@@ -41,7 +41,6 @@ type, extends(TestFunction_Type)                                      ::    Test
   type(String_Type), allocatable, dimension(:)                        ::    InputLabel
   real(rkp), allocatable, dimension(:)                                ::    Parameters
   real(rkp), allocatable, dimension(:)                                ::    c
-  character(:), allocatable                                           ::    Label
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset

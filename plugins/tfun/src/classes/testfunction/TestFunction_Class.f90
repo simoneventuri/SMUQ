@@ -35,10 +35,12 @@ type, abstract                                                        ::    Test
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
+  character(:), allocatable                                           ::    Label
 contains
   procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
+  procedure, public                                                   ::    GetLabel
   procedure(Initialize_TestFunction), deferred, public                ::    Initialize
   procedure(Reset_TestFunction), deferred, public                     ::    Reset
   procedure(SetDefaults_TestFunction), deferred, public               ::    SetDefaults
@@ -139,10 +141,34 @@ contains
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
-    
-    if ( present(Debug) ) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( 'Object not yet constructed', ProcName=ProcName )
 
     GetName = This%Name
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!----------------------------------------------------------------------------------------------------------------------------!!
+
+  !!----------------------------------------------------------------------------------------------------------------------------!!
+  function GetLabel( This, Debug )
+
+    character(:), allocatable                                         ::    GetLabel
+
+    class(TestFunction_Type), intent(inout)                           ::    This
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetLabel'
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( 'Object not yet constructed', ProcName=ProcName )
+
+    GetLabel = This%Label
 
     if (DebugLoc) call Logger%Exiting()
 
