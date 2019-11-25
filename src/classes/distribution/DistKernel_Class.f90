@@ -26,6 +26,7 @@ use ComputingRoutines_Module
 use StringRoutines_Module
 use StatisticsRoutines_Module
 use ArrayIORoutines_Module
+use CommandRoutines_Module
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use DistProb_Class
 use DistNorm_Class                                                ,only:    DistNorm_Type
@@ -419,6 +420,8 @@ contains
     DirectorySub = DirectoryLoc
 
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+
+    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
     
