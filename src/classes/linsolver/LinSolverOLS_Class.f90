@@ -297,7 +297,7 @@ contains
     GoalMean = ComputeMean( Values=Goal )
     GoalVariance = ComputeSampleVar( Values=Goal )
 
-    if ( abs((GoalVariance*real(M-1,rkp))/real(M,rkp)) < 1e-10 ) then
+    if ( dsqrt(abs((GoalVariance*real(M-1,rkp))/real(M,rkp))) / abs(GoalMean) < 1e-10 ) then
       i = 1
       do i = 1, N
         MeanLoc = ComputeMean(Values=System(:,i))

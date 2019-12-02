@@ -203,7 +203,7 @@ contains
 
     if ( present(ConstantModel) ) ConstantModel = .false.
 
-    if ( abs((GoalVariance*real((M-1),rkp)/real(M,rkp))/GoalMean) < 1e-10 .and. ConstantIndex /= 0 ) then
+    if ( dsqrt((GoalVariance*(real((M-1),rkp)/real(M,rkp))))/abs(GoalMean) < 1e-10 .and. ConstantIndex /= 0 ) then
       if ( present(ModelSet) ) then
         allocate(ModelSet(1), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='ModelSet', ProcName=ProcName, stat=StatLoc )
