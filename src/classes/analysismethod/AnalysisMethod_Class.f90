@@ -22,6 +22,9 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use Model_Class                                                   ,only:    Model_Type
+use SpaceParam_Class                                              ,only:    SpaceParam_Type
+use Response_Class                                                ,only:    Response_Type
 
 implicit none
 
@@ -101,14 +104,14 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run_AnalysisMethod( This, SpaceInput, Response, Model, OutputDirectory, Debug )
-    use Model_Class                                               ,only:    Model_Type
-    use SpaceParam_Class                                          ,only:    SpaceParam_Type
-    use Response_Class                                            ,only:    Response_Type
+  subroutine Run_AnalysisMethod( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
+    import                                                            ::    SpaceParam_Type
+    import                                                            ::    Response_Type
+    import                                                            ::    Model_Type
     import                                                            ::    AnalysisMethod_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
     type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional ,intent(in)                                     ::    Debug

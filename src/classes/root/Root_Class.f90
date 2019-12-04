@@ -110,8 +110,8 @@ contains
     deallocate(This%AnalysisMethod, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%AnalysisMethod', ProcName=ProcName, stat=StatLoc )
 
-    deallocate(This%Response, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Response', ProcName=ProcName, stat=StatLoc )
+    deallocate(This%Responses, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Responses', ProcName=ProcName, stat=StatLoc )
 
     call This%ParameterSpace%Reset()
 
@@ -201,23 +201,23 @@ contains
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     NbResponses = InputSection%GetNumberofSubSections()
     if ( NbResponses < 1 ) call Error%Raise( Line='Number of specified responses below minimum of 1', ProcName=ProcName )
-    allocate( This%Response(NbResponses), stat=StatLoc )
+    allocate( This%Responses(NbResponses), stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Responses', ProcName=ProcName, stat=StatLoc )
 
     i = 1
     do i = 1, NbResponses
       SubSectionName = SectionName // ">response" // ConvertToString( Value=i )
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call This%Response(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
+      call This%Responses(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
       nullify ( InputSection )
     end do
 
     i = 1
     do i = 1, NbResponses
-      Label1 = This%Response(i)%GetLabel()
+      Label1 = This%Responses(i)%GetLabel()
       ii = i+1
       do ii = i + 1, NbResponses
-        Label2 = This%Response(ii)%GetLabel()
+        Label2 = This%Responses(ii)%GetLabel()
         if ( Label1 /= Label2 ) cycle
         call Error%Raise( 'Detected duplicate label: ' // Label1, ProcName=ProcName )
       end do
@@ -280,10 +280,10 @@ contains
 
     SectionName = 'responses'
     call GetInput%AddSection( SectionName=SectionName )
-    do i = 1, size(This%Response,1)
+    do i = 1, size(This%Responses,1)
       SubSectionName = 'response' // ConvertToString(Value=i)
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/response' // ConvertToString(i)
-      call GetInput%AddSection( Section=This%Response(i)%GetInput(MainSectionName=SubSectionName, Prefix=PrefixLoc,               &
+      call GetInput%AddSection( Section=This%Responses(i)%GetInput(MainSectionName=SubSectionName, Prefix=PrefixLoc,              &
                                                                               Directory=DirectorySub), To_SubSection=SectionName )
     end do
 
@@ -312,7 +312,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    call This%AnalysisMethod%Run( SpaceInput=This%ParameterSpace, Response=This%Response, Model=This%Model,                       &
+    call This%AnalysisMethod%Run( SpaceInput=This%ParameterSpace, Responses=This%Responses, Model=This%Model,                     &
                                                                                       OutputDirectory=ProgramDefs%GetOutputDir() )
 
     if (DebugLoc) call Logger%Exiting()
@@ -378,8 +378,8 @@ contains
     deallocate(This%AnalysisMethod, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%AnalysisMethod', ProcName=ProcName, stat=StatLoc )
 
-    deallocate(This%Response, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Response', ProcName=ProcName, stat=StatLoc )
+    deallocate(This%Responses, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Responses', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 

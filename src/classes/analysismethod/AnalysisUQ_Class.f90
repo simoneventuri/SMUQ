@@ -154,10 +154,7 @@ contains
 
     This%SectionChain = SectionChain
 
-    SectionName = 'method'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call UQMethod_Factory%Construct( Object=This%UQMethod, Input=InputSection, SectionChain=This%SectionChain // '>method',       &
-                                                                                                                Prefix=PrefixLoc )
+    call UQMethod_Factory%Construct( Object=This%UQMethod, Input=Input, SectionChain=This%SectionChain, Prefix=PrefixLoc )
 
     This%Constructed = .true.
 
@@ -197,9 +194,7 @@ contains
 
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
-    SectionName = 'method'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/method'
-    call GetInput%AddSection( Section=UQMethod_Factory%GetObjectInput(Object=This%UQMethod, MainSectionName=SectionName,          &
+    GetInput = UQMethod_Factory%GetObjectInput(Object=This%UQMethod, MainSectionName=MainSectionName,                             &
                                                                                          Prefix=PrefixLoc, Directory=DirectorySub)
 
     if (DebugLoc) call Logger%Exiting()
@@ -208,11 +203,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SpaceInput, Response, Model, OutputDirectory, Debug )
+  subroutine Run( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
 
     class(AnalysisUQ_Type), intent(inout)                             ::    This
     type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional ,intent(in)                                     ::    Debug
@@ -230,12 +225,10 @@ contains
     OutputDirectoryLoc = ''
     if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/solver'
 
-    call ModelInterface%Construct( Model=Model, Response=Response )
-
     if ( present(OutputDirectory) ) then
-      call This%UQMethod%Run( SpaceInput=SpaceInput, ModelInterface=ModelInterface, OutputDirectory=OutputDirectoryLoc )
+      call This%UQMethod%Run( SpaceInput=SpaceInput, Responses=Responses, Model=Model, OutputDirectory=OutputDirectoryLoc )
     else
-      call This%UQMethod%Run( SpaceInput=SpaceInput, ModelInterface=ModelInterface )
+      call This%UQMethod%Run( SpaceInput=SpaceInput, Responses=Responses, Model=Model )
     end if
 
     if (DebugLoc) call Logger%Exiting()

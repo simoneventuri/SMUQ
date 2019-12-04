@@ -105,7 +105,7 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Calibrate_BayesInvMethod( This, Model, SpaceInput, Response, OutputDirectory, Debug)
+  subroutine Calibrate_BayesInvMethod( This, Model, SpaceInput, Responses, OutputDirectory, Debug)
     import                                                            ::    BayesInvMethod_Type
     import                                                            ::    Response_Type
     import                                                            ::    SpaceInput_Type
@@ -113,7 +113,7 @@ abstract interface
     class(BayesInvMethod_Type), intent(inout)                         ::    This
     class(Model_Type), intent(inout)                                  ::    Model
     class(SpaceInput_Type), intent(in)                                ::    SpaceInput
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional ,intent(in)                                     ::    Debug
   end subroutine

@@ -39,6 +39,7 @@ use Restart_Class                                                 ,only:    Rest
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use Model_Class                                                   ,only:    Model_Type
 use List2D_Class                                                  ,only:    List2D_Type
+use Histogram1D_Class                                             ,only:    Histogram1D_Type, BinValues
 
 implicit none
 
@@ -137,6 +138,8 @@ contains
 
     if ( allocated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+
+    call This%Sampler%Reset()
 
     call This%SetDefaults()
 
@@ -453,11 +456,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SpaceInput, ModelInterface, OutputDirectory, Debug )
+  subroutine Run( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
 
     class(UQSampling_Type), intent(inout)                             ::    This
     class(SpaceInput_Type), intent(inout)                             ::    SpaceInput
-    type(ModelInterface_Type), intent(inout)                          ::    ModelInterface
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
+    class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional, intent(in)                                     ::    Debug
 
@@ -471,7 +475,6 @@ contains
     integer, dimension(:,:), pointer                                  ::    VarI2DPtr=>null()
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     real(rkp), dimension(:,:), pointer                                ::    VarR2DPtr=>null()
-    type(Response_Type), pointer                                      ::    ResponsePointer=>null()
     integer                                                           ::    NbDim
     logical                                                           ::    StepExceededFlag=.false.
     integer                                                           ::    i
@@ -489,6 +492,8 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
+    call ModelInterface%Construct( Model=Model, Responses=Responses )
+
     NbDim = SpaceInput%GetNbDim()
     SilentLoc = This%Silent
 
@@ -498,26 +503,24 @@ contains
   
       i = 1
       do i = 1, This%NbHistograms
-        ResponsePointer => ModelInterface%GetResponsePointer( Label=This%Labels(i)%GetValue() )
-        allocate(VarI2D(ResponsePointer%GetNbNodes(),This%Histograms(i)%GetNbBins()), stat=StatLoc)
+        allocate(VarI2D(ModelInterface%GetResponseNbNodes(Label=This%Labels(i)%GetValue()),This%Histograms(i)%GetNbBins()),       &
+                                                                                                                     stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
         VarI2D = 0
         call This%BinCounts(i)%Set(Values=VarI2D)
         deallocate(VarI2D, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
-        nullify(ResponsePointer)
       end do
     else
       i = 1
       do i = 1, This%NbHistograms
         call This%BinCounts(i)%GetPointer(Values=VarI2DPtr)
-        ResponsePointer => ModelInterface%GetResponsePointer( Label=This%Labels(i)%GetValue() )
-        if ( size(VarI2DPtr,1) /= This%Histograms(i)%GetNbBins() ) call Error%Raise( 'Mismatch in response number of bins ' //   &
-                                               ' and size of bin count array: ' // ResponsePointer%GetLabel(), ProcName=ProcName )
-        if ( size(VarI2DPtr,2) /= This%ResponsePointer%GetNbNodes() ) call Error%Raise( 'Mismatch in response number of nodes ' //&
-                                     ' and number of histograms for response: ' // ResponsePointer%GetLabel(), ProcName=ProcName )
+        if ( size(VarI2DPtr,1) /= This%Histograms(i)%GetNbBins() ) call Error%Raise( 'Mismatch in response number of bins ' //    &
+                                                ' and size of bin count array: ' // This%Labels(i)%GetValue(), ProcName=ProcName )
+        if ( size(VarI2DPtr,2) /= ModelInterface%GetResponseNbNodes(Label=This%Labels(i)%GetValue()) )                            &
+            call Error%Raise( 'Mismatch in response number of nodes and number of histograms for response: ' //                   &
+                                                                                    This%Labels(i)%GetValue(), ProcName=ProcName )
         nullify(VarI2DPtr)
-        nullify(ResponsePointer)
       end do
     end if
 
@@ -612,8 +615,7 @@ contains
               iii = 1
               do iii = 1, Outputs(iv)%GetNbNodes()
                 VarR1D = VarR2DPtr(iii,:)
-                call This%Histograms(ii)%Bin( Values=VarR1D )
-                VarI2DPtr(:,iii) = VarI2DPtr(:,iii) + This%Histograms(ii)%GetBinCountsPointer()
+                call BinValues( Values=VarR1D, BinEdges=This%Histograms(ii)%GetBinEdgesPointer(), BinCounts=VarI2DPtr(:,iii) )
               end do  
 
               deallocate(VarR1D, stat=StatLoc)
@@ -681,7 +683,7 @@ contains
     call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),             &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
 
-    if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, ModelInterface=ModelInterface )
+    if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, Responses=Responses )
 
     deallocate(This%ParamRecord, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
@@ -697,10 +699,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, Directory, Debug )
+  subroutine WriteOutput( This, Directory, Responses, Debug )
 
     class(UQSampling_Type), intent(inout)                             ::    This
     character(*), intent(in)                                          ::    Directory
+    type(Responses, dimension(:), intent(in)                          ::    Responses
     logical, intent(in), optional                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -709,6 +712,14 @@ contains
     character(:), allocatable                                         ::    Line
     character(:), allocatable                                         ::    PrefixLoc
     logical                                                           ::    SilentLoc
+    character(:), allocatable                                         ::    DirectoryLoc
+    type(SMUQFile_Type)                                               ::    File
+    integer                                                           ::    i
+    integer                                                           ::    ii
+    integer                                                           ::    iii
+    character(:), allocatable                                         ::    Line
+    integer, dimension(:,:), pointer                                  ::    VarI2DPtr=>null()
+
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -728,22 +739,41 @@ contains
 
       PrefixLoc = Directory
 
+      FileName = '/sampled_parameters.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Array=This%ParamRecord, File=File )
 
+      i = 1
+      do i = 1, This%NbHistograms
 
+        call MakeDirectory( Path=Directory // '/' // This%Labels(i)%GetValue(), Options='-p' )
 
+        call This%BinCounts(i)%GetPointer(Values=VarI2DPtr)
 
+        FileName = '/' // This%Labels(i)%GetValue() // '/bin_counts.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call ExportArray( Array=VarI2DPtr, File=File, RowMajor=.true. )
 
+        FileName = '/' //This%Labels(i)%GetValue() // '/bin_edges.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call ExportArray( Array=This%Histograms%GetBinEdgesPointer(), File=File )
 
+        ii = 1
+        iii = 0
+        do ii = 1, size(Responses,1)
+          if ( Responses(ii)%GetLabel() /= This%Labels(i)%GetValue() ) cycle
+          iii = ii
+          exit
+        end do
 
+        if ( iii == 0 ) call Error%Raise( 'Did not find required response: ' // This%Labels(i)%GetValue(), ProcName=ProcName )
+        FileName = '/' // This%Labels(i)%GetValue() // '/coordinates.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call ExportArray( Array=Responses(iii)%GetCoordinatesPointer(), File=File, RowMajor=.true. )
 
+        nullify(VarI2DPtr)
 
-
-
-
-
-
-
-
+      end do
 
     end if
 
@@ -774,7 +804,13 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-
+          LHS%Silent = RHS%Silent
+          LHS%NbHistograms = RHS%NbHistograms
+          LHS%Samples = RHS%Samples
+          allocate(LHS%Histograms, source=RHS%Histograms, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Histograms', ProcName=ProcName, stat=StatLoc )
+          allocate(LHS%Labels = RHS%Labels, source=name2, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Labels = RHS%Labels', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default

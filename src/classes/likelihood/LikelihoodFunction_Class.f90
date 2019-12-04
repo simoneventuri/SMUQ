@@ -158,12 +158,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvaluateDetPre( This, Response, Input, Output, LogValue, Debug )
+  function EvaluateDetPre( This, Responses, Input, Output, LogValue, Debug )
 
     real(rkp)                                                         ::    EvaluateDetPre
 
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     type(InputDet_Type), intent(in)                                   ::    Input
     type(Output_Type), dimension(:), intent(in)                       ::    Output
     logical, optional, intent(in)                                     ::    LogValue
@@ -186,7 +186,7 @@ contains
     iResponse = 0
 
     NbOutputs = size(Output,1)
-    NbResponses = size(Response,1)
+    NbResponses = size(Responses,1)
 
     i = 1
     do i = 1, NbOutputs
@@ -200,7 +200,7 @@ contains
 
     i = 1
     do i = 1, NbResponses
-      if ( Response(i)%GetLabel() == This%Label ) then
+      if ( Responses(i)%GetLabel() == This%Label ) then
         iResponse = i
         exit
       end if
@@ -209,9 +209,9 @@ contains
     if ( iResponse == 0 ) call Error%Raise( Line='Did not find required response : ' // This%Label, ProcName=ProcName )
 
     if ( present(LogValue) ) then
-      EvaluateDetPre = This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput), Logvalue=LogValue )
+      EvaluateDetPre = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput), Logvalue=LogValue )
     else
-      EvaluateDetPre = This%Evaluate( Response=Response(iResponse), Input=Input, Output=Output(iOutput) )
+      EvaluateDetPre = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput) )
     end if
 
     if (DebugLoc) call Logger%Exiting()

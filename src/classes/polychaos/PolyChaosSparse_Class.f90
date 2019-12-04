@@ -48,6 +48,7 @@ use Response_Class                                                ,only:    Resp
 use Restart_Class                                                 ,only:    RestartUtility
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use List2D_Class                                                  ,only:    List2D_Type
+use Model_Class                                                   ,only:    Model_Type
 
 implicit none
 
@@ -511,13 +512,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine BuildModel( This, ModelInterface, Basis, SpaceInput, IndexSetScheme, Coefficients, Indices, CVErrors,&
+  subroutine BuildModel( This, Basis, SpaceInput, Responses, Model, IndexSetScheme, Coefficients, Indices, CVErrors,              &
                                                                              OutputDirectory, InputSamples, OutputSamples, Debug )
 
     class(PolyChaosSparse_Type), intent(inout)                        ::    This
-    type(ModelInterface_Type), intent(inout)                          ::    ModelInterface
     type(OrthoMultiVar_Type), intent(inout)                           ::    Basis
     class(SpaceInput_Type), intent(inout)                             ::    SpaceInput
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
+    class(Model_Type), intent(inout)                                  ::    Model
     class(IndexSetScheme_Type), intent(inout)                         ::    IndexSetScheme
     type(LinkedList0D_Type), allocatable, dimension(:), intent(out)   ::    CVErrors
     type(LinkedList1D_Type), allocatable, dimension(:), intent(out)   ::    Coefficients
@@ -560,17 +562,19 @@ contains
     integer                                                           ::    StatLoc=0
     logical                                                           ::    SilentLoc
     character(:), allocatable                                         ::    Line
-    type(Response_Type), pointer                                      ::    ResponsePointer=>null()
     integer                                                           ::    MaxIndexOrder
     integer, allocatable, dimension(:)                                ::    NbCellsOutput
     integer                                                           ::    iMin
     integer                                                           ::    iMax
+    type(ModelInterface_Type)                                         ::    ModelInterface
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    NbOutputs = ModelInterface%GetNbResponses()
+    call ModelInterface%Construct( Model=Model, Responses=Responses )
+
+    NbOutputs = size(Responses,1)
     NbDim = SpaceInput%GetNbDim()
 
     allocate(NbCellsOutput(NbOutputs), stat=StatLoc)
@@ -579,8 +583,7 @@ contains
     This%NbCells = 0
     i = 1
     do i = 1, NbOutputs
-      ResponsePointer => ModelInterface%GetResponsePointer(Num=i)
-      NbCellsOutput(i) = ResponsePointer%GetNbNodes()
+      NbCellsOutput(i) = Responses(i)%GetNbNodes()
       This%NbCells = This%NbCells + NbCellsOutput(i)
     end do
 
@@ -761,7 +764,7 @@ contains
 
             im1 = 0
             ii = 1
-            do ii = 1, ModelInterface%GetNbResponses()
+            do ii = 1, NbOutputs
               VarR2DPointer => Outputs(ii)%GetValuesPointer()
               if ( Outputs(ii)%GetNbDegen() > 1 ) call Error%Raise( 'Polychaos procedure cant deal with stochastic responses',    &
                                                                                                                ProcName=ProcName )
@@ -934,7 +937,7 @@ contains
     call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),             &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
 
-    if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, ModelInterface=ModelInterface )
+    if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, Responses=Responses )
 
     ! Collecting results to construct polynomial chaos model object
     allocate( CVErrors(NbOutputs), stat=StatLoc )
@@ -973,11 +976,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, Directory, ModelInterface, Debug )
+  subroutine WriteOutput( This, Directory, Responses, Debug )
 
     class(PolyChaosSparse_Type), intent(inout)                        ::    This
     character(*), intent(in)                                          ::    Directory
-    type(ModelInterface_Type), intent(in)                             ::    ModelInterface
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     logical, intent(in), optional                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -991,7 +994,6 @@ contains
     type(SMUQFile_Type)                                               ::    File
     integer                                                           ::    i, ii, iii
     character(:), allocatable                                         ::    Line
-    type(Response_Type), pointer                                      ::    ResponsePointer=>null()
     integer                                                           ::    iStart
     integer                                                           ::    iEnd
     integer                                                           ::    NbCells
@@ -1014,9 +1016,9 @@ contains
 
       PrefixLoc = Directory
 
-      NbOutputs = ModelInterface%GetNbResponses()
+      NbOutputs = size(Responses,1)
 
-      FileName = '/nboutputs.dat'
+      FileName = '/nbresponses.dat'
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
       call File%Export( String=ConvertToString(Value=NbOutputs) )
 
@@ -1028,25 +1030,25 @@ contains
 
       i = 1
       do i = 1, NbOutputs
-        call MakeDirectory( Path=Directory // '/response_' // ConvertToString(Value=i) , Options='-p' )
 
-        ResponsePointer => ModelInterface%GetResponsePointer(Num=i)
-        NbCells = ResponsePointer%GetNbNodes()
+        call MakeDirectory( Path=Directory // '/' // Responses(i)%GetLabel() , Options='-p' )
+
+        NbCells = Responses(i)%GetNbNodes()
         iEnd = iStart + NbCells
 
-        FileName = '/response_' // ConvertToString(Value=i) // '/nbcells.dat'
+        FileName = '/' // Responses(i)%GetLabel() // '/nbcells.dat'
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
         call File%Export( String=ConvertToString(Value=NbCells) )
 
-        FileName = '/response_' // ConvertToString(Value=i) // '/coordinates.dat'
+        FileName = '/' // Responses(i)%GetLabel() // '/coordinates.dat'
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call ExportArray( Array=ResponsePointer%GetCoordinatesPointer(), File=File, RowMajor=.true. )
+        call ExportArray( Array=Responses(i)%GetCoordinatesPointer(), File=File, RowMajor=.true. )
 
         iii = 0
         ii = iStart+1
         do ii = iStart+1, iEnd
           iii = iii + 1
-          DirectoryLoc = '/response_' // ConvertToString(Value=i) // '/cell' // ConvertToString(Value=iii)
+          DirectoryLoc = '/' // Responses(i)%GetLabel() // '/cell' // ConvertToString(Value=iii)
           call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
 
           FileName = DirectoryLoc // '/cverror.dat'

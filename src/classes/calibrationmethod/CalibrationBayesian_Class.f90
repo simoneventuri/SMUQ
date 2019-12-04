@@ -230,11 +230,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run( This, SpaceInput, Response, Model, OutputDirectory, Debug )
+  subroutine Run( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
     class(SpaceInput_Type), intent(in)                                ::    SpaceInput
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, intent(in), optional                                     ::    Debug
@@ -248,9 +248,10 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( present(OutputDirectory) ) then
-      call This%BayesInvMethod%Calibrate( Model=Model, SpaceInput=SpaceInput, Response=Response, OutputDirectory=OutputDirectory )
+      call This%BayesInvMethod%Calibrate( Model=Model, SpaceInput=SpaceInput, Responses=Responses,                                &
+                                                                                                 OutputDirectory=OutputDirectory )
     else
-      call This%BayesInvMethod%Calibrate( Model=Model, SpaceInput=SpaceInput, Response=Response )
+      call This%BayesInvMethod%Calibrate( Model=Model, SpaceInput=SpaceInput, Responses=Responses )
     end if
     if (DebugLoc) call Logger%Exiting()
 

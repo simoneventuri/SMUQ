@@ -377,11 +377,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SpaceInput, Response, Model, SurrogateModel, OutputDirectory, Debug )
+  subroutine Run( This, SpaceInput, Responses, Model, SurrogateModel, OutputDirectory, Debug )
 
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
     type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     class(Model_Type), allocatable, dimension(:),optional,intent(out) ::    SurrogateModel
     character(*), optional, intent(in)                                ::    OutputDirectory
@@ -396,7 +396,6 @@ contains
     type(LinkedList0D_Type), allocatable, dimension(:)                ::    CVErrors
     type(LinkedList1D_Type), allocatable, dimension(:)                ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:)                ::    Indices
-    type(ModelInterface_Type)                                         ::    ModelInterface
     type(PolyChaosModel_Type), dimension(:), allocatable              ::    PolyChaosModelLoc
     character(:), allocatable                                         ::    OutputDirectoryLoc
     real(rkp), allocatable, dimension(:,:)                            ::    InputSamplesLoc
@@ -429,8 +428,6 @@ contains
     end select
 
     call ModelTransform%Construct( SpaceTransform=SpaceTransform, Model=Model )
-
-    call ModelInterface%Construct( Model=ModelTransform, Response=Response )
 
     if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/solver'
 
@@ -466,26 +463,26 @@ contains
       if ( StatLoc /= 0 ) call Error%Allocate( Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc )
 
       i = 1
-      do i = 1, size(Response,1)
+      do i = 1, size(Responses,1)
         ii = 1
         iii = 0
         do ii = 1, size(This%OutputSamples)
-          if ( Response(i)%GetLabel() == This%OutputSamplesLabels(ii)%GetValue() ) then
+          if ( Responses(i)%GetLabel() == This%OutputSamplesLabels(ii)%GetValue() ) then
             iii = ii
             exit
           end if
         end do
-        if ( iii == 0 ) call Error%Raise( 'Did not find matching label for initial output samples :' // Response(i)%GetLabel(),   &
+        if ( iii == 0 ) call Error%Raise( 'Did not find matching label for initial output samples :' // Responses(i)%GetLabel(),  &
                                                                                                                ProcName=ProcName )
         OutputSamplesLoc(i) = This%OutputSamples(iii)
       end do
       if ( present(OutputDirectory) ) then
-        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,         &
-             ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                        &
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, Responses=Responses, Model=ModelTransform,  &
+             IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
              OutputDirectory=OutputDirectoryLoc, InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc )
       else
-        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,         &
-             ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                        &
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, Responses=Responses, Model=ModelTransform,  &
+             IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
              InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc )
       end if
       deallocate(InputSamplesLoc, stat=StatLoc)
@@ -494,16 +491,16 @@ contains
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc )
     else
       if ( present(OutputDirectory) ) then
-        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,         &
-             ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                        &
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, Responses=Responses, Model=ModelTransform,  &
+             IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
              OutputDirectory=OutputDirectoryLoc )
       else
-        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,         &
-             ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors )
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, Responses=Responses, Model=ModelTransform,  &
+             IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors )
       end if
     end if
 
-    allocate(PolyChaosModelLoc(size(Response,1)), stat=StatLoc)
+    allocate(PolyChaosModelLoc(size(Responses,1)), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='PolyChaosModelLoc', ProcName=ProcName, stat=StatLoc )
 
     if ( .not. This%Silent ) then
@@ -513,17 +510,17 @@ contains
     end if
 
     i = 1
-    do i = 1, size(Response,1)
-      call PolyChaosModelLoc(i)%Construct( Response=Response(i), SpaceTransf=SpaceTransform, Basis=Basis,                         &
+    do i = 1, size(Responses,1)
+      call PolyChaosModelLoc(i)%Construct( Response=Responses(i), SpaceTransf=SpaceTransform, Basis=Basis,                        &
                                                           Coefficients=Coefficients(i), Indices=Indices(i), CVErrors=CVErrors(i) )
       if ( present(OutputDirectory) ) then
         if ( .not. This%Silent ) then
           Line = 'Writing contents of polynomial chaos model and other files for postprocessing for response : ' //               &
-                                                                                                            Response(i)%GetLabel()
+                                                                                                           Responses(i)%GetLabel()
           write(*,'(A)') ''
           write(*,'(A)') Line
         end if
-        OutputDirectoryLoc = OutputDirectory // '/pce_models/' // Response(i)%GetLabel()
+        OutputDirectoryLoc = OutputDirectory // '/pce_models/' // Responses(i)%GetLabel()
         call This%WriteOutput( PolyChaosModel=PolyChaosModelLoc(i), Directory=OutputDirectoryLoc )
       end if
       call Coefficients(i)%Purge()

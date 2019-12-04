@@ -323,10 +323,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Calibrate( This, Model, SpaceInput, Response, OutputDirectory, Debug )
+  subroutine Calibrate( This, Model, SpaceInput, Responses, OutputDirectory, Debug )
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(SpaceInput_Type), intent(in)                                ::    SpaceInput
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
@@ -378,7 +378,7 @@ contains
       Posterior => MCMCPosterior
     end if
 
-    call ModelInterface%Construct( Model=Model, Response=Response )
+    call ModelInterface%Construct( Model=Model, Responses=Responses )
 
     if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/posterior_sampler'
 
@@ -468,7 +468,7 @@ contains
             iLoc = 1
             do iLoc = 1, size(This%LikelihoodFunctionVec,1)
               LikelihoodPtr => This%LikelihoodFunctionVec(iLoc)%GetPointer()
-              Likelihood = Likelihood + LikelihoodPtr%Evaluate( Response=Response, Input=Input, Output=Output, LogValue=.true. )
+              Likelihood = Likelihood + LikelihoodPtr%Evaluate( Responses=Responses, Input=Input, Output=Output, LogValue=.true. )
               nullify(LikelihoodPtr)
             end do
             if ( Likelihood > TVarR0D .and. Likelihood < HVarR0D ) then
@@ -591,9 +591,9 @@ contains
             do iiLoc = 1, NbHierSamples
               Likelihood = Zero
               iLoc = 1
-              do iLoc = 1, size(Response,1)
+              do iLoc = 1, size(Responses,1)
                 LikelihoodPtr => This%LikelihoodFunctionVec(iLoc)%GetPointer()
-                Likelihood = Likelihood + LikelihoodPtr%Evaluate( Response=Response, Input=HierInput(iiLoc),                      &
+                Likelihood = Likelihood + LikelihoodPtr%Evaluate( Responses=Responses, Input=HierInput(iiLoc),                      &
                                                                                      Output=HierOutput(:,iiLoc), LogValue=.true. )
                 nullify(LikelihoodPtr)
               end do

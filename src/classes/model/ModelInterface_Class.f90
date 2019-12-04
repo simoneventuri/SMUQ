@@ -20,9 +20,11 @@ module ModelInterface_Class
 
 use Input_Library
 use Parameters_Library
+use ComputingRoutines_Module
+use StringRoutines_Module
+use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use ComputingRoutines_Module
 use Response_Class                                                ,only:    Response_Type
 use Model_Class                                                   ,only:    Model_Type
 use Output_Class                                                  ,only:    Output_Type
@@ -39,7 +41,8 @@ type                                                                  ::    Mode
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   class(Model_Type), allocatable                                      ::    Model
-  type(Response_Type), dimension(:), pointer                          ::    Response=>null()
+  type(String_Type), allocatable, dimension(:)                        ::    ResponseLabels
+  integer, allocatable, dimension(:)                                  ::    ResponseNbNodes
   integer                                                             ::    NbResponses=0
 contains
   procedure, public                                                   ::    Initialize
@@ -52,10 +55,7 @@ contains
   procedure, private                                                  ::    Run0D
   procedure, private                                                  ::    Run1D
   procedure, public                                                   ::    GetNbResponses
-  generic, public                                                     ::    GetResponsePointer      =>    GetResponsePointer_Num
-                                                                                                          GetResponsePointer_Label
-  procedure, public                                                   ::    GetResponsePointer_Num
-  procedure, public                                                   ::    GetResponsePointer_Label
+  procedure, public                                                   ::    GetResponseNbNodes
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -110,8 +110,11 @@ contains
     if ( allocated(This%Model) ) deallocate(This%Model, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Model', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Response) ) deallocate(This%Response, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Response', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%ResponseLabels) ) deallocate(This%ResponseLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseLabels', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%ResponseNbNodes) ) deallocate(This%ResponseNbNodes, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseNbNodes', ProcName=ProcName, stat=StatLoc )
 
     This%NbResponses=0
 
@@ -142,16 +145,17 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Model, Response, Debug )
+  subroutine ConstructCase1( This, Model, Responses, Debug )
 
     class(ModelInterface_Type), intent(inout)                         ::    This
     class(Model_Type), intent(in)                                     ::    Model
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -163,10 +167,19 @@ contains
     allocate(This%Model, source=Model, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Model', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%Response, source=Response, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Response', ProcName=ProcName, stat=StatLoc )
+    This%NbResponses = size(Responses,1)
 
-    This%NbResponses = size(Response,1)
+    allocate(This%ResponseNbNodes(This%NbResponses), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ResponseNbNodes', ProcName=ProcName, stat=StatLoc )
+
+    allocate(This%ResponseLabels(This%NbResponses), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ResponseLabels', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, This%NbResponses
+      This%ResponseLabels(i) = Responses(i)%GetLabel()
+      This%ResponseNbNodes(i) = Responses(i)%GetNbNodes()
+    end do
 
     This%Constructed = .true.
 
@@ -180,7 +193,7 @@ contains
 
     class(ModelInterface_Type), intent(inout)                         ::    This
     class(Input_Type), intent(in)                                     ::    Input
-    type(Output_Type), dimension(:), allocatable, intent(out)         ::    Output
+    type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat
     logical, optional ,intent(in)                                     ::    Debug
 
@@ -196,11 +209,25 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
+    if ( size(Output,1) /= This%NbResponses ) then
+      deallocate(Output, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+    end if
+
+    if ( .not. allocated(Output) ) then
+      allocate(Output(This%NbResponses), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+    end if
+
     call This%Model%Run( Input=Input, Output=OutputLoc, Stat=StatLoc )
     if ( present(Stat) ) Stat = StatLoc
 
     if ( StatLoc /= 0 ) then
-      continue
+      if ( present(Stat) ) then
+        Stat = StatLoc
+      else
+        call Error%Raise( 'Model returned a non-zero status indicator: ' // ConvertToString(Value=StatLoc), ProcName=ProcName )
+      end if
     else
       NbOutputs = size(OutputLoc,1)
 
@@ -208,7 +235,7 @@ contains
       if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
 
       do i = 1, This%NbResponses
-        LabelLoc = This%Response(i)%GetLabel()
+        LabelLoc = This%ResponseLabels(i)%GetValue()
 
         iii = 0
         ii = 1
@@ -219,9 +246,9 @@ contains
           end if
         end do
         if ( iii == 0 ) call Error%Raise( Line='Did not finding matching output label for response : ' //                         &
-                                                                                  This%Response(i)%GetLabel(), ProcName=ProcName )
+                                                                            This%ResponseLabels(i)%GetValue(), ProcName=ProcName )
 
-        if ( OutputLoc(iii)%GetNbNodes() /= This%Response(i)%GetNbNodes() ) call Error%Raise( Line='Mismatching number of ' //   &
+        if ( OutputLoc(iii)%GetNbNodes() /= This%ResponseNbNodes(i) ) call Error%Raise( Line='Mismatching number of ' //          &
                                                                        'output nodes with specified response', ProcName=ProcName )
         Output(i) = OutputLoc(iii)
 
@@ -266,9 +293,11 @@ contains
     do i = 1, NbInputs
       call This%Run(Input=Input(i), Output=OutputLoc, Stat=StatLoc )
       if ( StatLoc /= 0 ) then
-        if ( present(Stat) ) Stat=StatLoc
-        deallocate(OutputLoc, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )
+        if ( present(Stat) ) then
+          Stat=StatLoc
+        else
+          call Error%Raise( 'Model returned a non-zero status indicator: ' // ConvertToString(Value=StatLoc), ProcName=ProcName )
+        end if
         exit
       else
         if ( .not. allocated(Output) ) then
@@ -276,10 +305,11 @@ contains
           if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
         end if
         Output(:,i) = OutputLoc
-        deallocate(OutputLoc, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )
       end if
     end do
+
+    if ( allocated(OutputLoc) ) deallocate(OutputLoc, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -311,44 +341,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetResponsePointer_Num( This, Num, Debug )
+  function GetResponseNbNodes( This, Label, Debug )
 
-    type(Response_Type), pointer                                      ::    GetResponsePointer_Num
-
-    class(ModelInterface_Type), intent(in)                            ::    This
-    integer, intent(in)                                               ::    Num
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetResponsePointer_Num'
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
-    if ( Num < 1 .or. Num > This%NbResponses ) call Error%Raise( Line='Invalid num specifier', ProcName=ProcName )
-
-    GetResponsePointer_Num => This%Response(Num)
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetResponsePointer_Label( This, Label, Debug )
-
-    type(Response_Type), pointer                                      ::    GetResponsePointer_Label
+    integer                                                           ::    GetResponseNbNodes
 
     class(ModelInterface_Type), intent(in)                            ::    This
     character(*), intent(in)                                          ::    Label
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetResponsePointer_Label'
-    integer                                                           ::    StatLoc=0
+    character(*), parameter                                           ::    ProcName='GetResponseNbNodes'
     integer                                                           ::    i
     integer                                                           ::    ii
 
@@ -356,19 +358,19 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    ii = 0
     i = 1
-    do i = 1, size(This%Response,1)
-      if ( This%Response%GetLabel() /= Label ) cycle
+    ii = 0
+    do i = 1, This%NbResponses
+      if ( This%ResponseLabels(i)%GetValue() /= Label ) cycle
       ii = i
       exit
     end do
 
-    if ( ii == 0 ) call Error%Raise( 'Did not find required label : ' // Label, ProcName=ProcName )
+    if ( ii == 0 ) call Error%Raise( 'Did not find required response: ' // Label, ProcName=ProcName )
 
-    GetResponsePointer_Label => This%Response(ii)
+    GetResponseNbNodes = This%ResponseNbNodes(ii)
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -396,8 +398,10 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          allocate(LHS%Response, source=RHS%Response, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Response', ProcName=ProcName, stat=StatLoc )
+          allocate(LHS%ResponseLabels, source=RHS%ResponseLabels, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ResponseLabels', ProcName=ProcName, stat=StatLoc )
+          allocate(LHS%ResponseNbNodes, source=RHS%ResponseNbNodes, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ResponseNbNodes', ProcName=ProcName, stat=StatLoc )
           allocate(LHS%Model, source=RHS%Model, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Model', ProcName=ProcName, stat=StatLoc )
           LHS%NbResponses = RHS%NbResponses
@@ -428,8 +432,11 @@ contains
     if ( allocated(This%Model) ) deallocate(This%Model, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Model', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Response) ) deallocate(This%Response, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Response', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%ResponseLabels) ) deallocate(This%ResponseLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseLabels', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%ResponseNbNodes) ) deallocate(This%ResponseNbNodes, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseNbNodes', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 

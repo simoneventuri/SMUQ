@@ -101,14 +101,14 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_CalibrationMethod( This, SpaceInput, Response, Model, OutputDirectory, Debug )
+  subroutine Run_CalibrationMethod( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
     use SpaceInput_Class                                          ,only:    SpaceInput_Type
     use Response_Class                                            ,only:    Response_Type
     use Model_Class                                               ,only:    Model_Type
     import                                                            ::    CalibrationMethod_Type
     class(CalibrationMethod_Type), intent(inout)                      ::    This
     class(SpaceInput_Type), intent(in)                                ::    SpaceInput
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional, intent(in)                                     ::    Debug

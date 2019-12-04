@@ -41,15 +41,9 @@ public                                                                ::    Comp
 public                                                                ::    ComputeNorm
 public                                                                ::    ScrambleArray
 public                                                                ::    Transform
-public                                                                ::    Bin
 public                                                                ::    BernoulliNumbers
 
 logical, parameter                                                    ::    DebugGlobal = .false.
-
-interface Bin
-  module procedure                                                    ::    Bin_VarR0D
-  module procedure                                                    ::    Bin_VarR1D
-end interface
 
 interface Interpolate
   module procedure                                                    ::    Interpolate_R1D_R1D
@@ -1246,116 +1240,6 @@ contains
         case default
           call Error%Raise( Line='Did not recognize the transformation option', ProcName=ProcName )
       end select
-    end do
-
-    if (DebugLoc) call Logger%Exiting
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Bin_VarR0D( Value, BinEdges, BinCounts, Debug )
-
-    real(rkp), intent(in)                                             ::    Value
-    real(rkp), dimension(:), intent(in)                               ::    BinEdges
-    integer, allocatable, dimension(:), intent(inout)                 ::    BinCounts
-    logical, optional, intent(in)                                     ::    Debug
-
-    character(*), parameter                                           ::    ProcName='Bin_VarR0D'
-    logical                                                           ::    DebugLoc
-    integer                                                           ::    StatLoc
-    integer                                                           ::    NbBins
-    integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( allocated(BinCounts) ) then
-      if ( size(BinCounts) /= size(BinEdges)-1 ) then
-        deallocate(BinCounts, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='BinCounts', ProcName=ProcName, stat=StatLoc )
-      end if
-    end if
-
-    if ( .not. allocated(BinCounts) ) then
-      allocate(BinCounts(size(BinEdges)-1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='BinCounts', ProcName=ProcName, stat=StatLoc )
-    end if
-
-    NbBins = size(BinCounts)
-    BinCounts = 0
-
-    if ( Value < BinEdges(1) ) then
-      BinCounts(1) = BinCounts(1) + 1
-    elseif (Value > BinEdges(NbBins+1)) then
-      BinCounts(NbBins) = BinCounts(NbBins) + 1
-    else
-      i = 1
-      do i = 1, NbBins
-        if ( Value < BinEdges(i+1) .and. Value >= BinEdges(i) ) then
-          BinCounts(i) = BinCounts(i) + 1
-          exit
-        end if
-      end do
-    end if
-
-    if (DebugLoc) call Logger%Exiting
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Bin_VarR1D( Values, BinEdges, BinCounts, Debug )
-
-    real(rkp), dimension(:), intent(in)                               ::    Values
-    real(rkp), dimension(:), intent(in)                               ::    BinEdges
-    integer, allocatable, dimension(:), intent(inout)                 ::    BinCounts
-    logical, optional, intent(in)                                     ::    Debug
-
-    character(*), parameter                                           ::    ProcName='Bin_VarR1D'
-    logical                                                           ::    DebugLoc
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    NbBins
-    integer                                                           ::    NbValues
-    integer                                                           ::    i
-    integer                                                           ::    ii
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( allocated(BinCounts) ) then
-      if ( size(BinCounts) /= size(BinEdges)-1 ) then
-        deallocate(BinCounts, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='BinCounts', ProcName=ProcName, stat=StatLoc )
-      end if
-    end if
-
-    if ( .not. allocated(BinCounts) ) then
-      allocate(BinCounts(size(BinEdges)-1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='BinCounts', ProcName=ProcName, stat=StatLoc )
-    end if
-
-    NbBins = size(BinCounts)
-    NbValues = size(Values)
-    BinCounts = 0
-
-    ii = 1
-    do ii = 1, NbValues
-      if ( Values(ii) < BinEdges(1) ) then
-        BinCounts(1) = BinCounts(1) + 1
-      elseif ( Values(ii) > BinEdges(NbBins+1)) then
-        BinCounts(NbBins) = BinCounts(NbBins) + 1
-      else
-        i = 1
-        do i = 1, NbBins
-          if ( Values(ii) < BinEdges(i+1) .and. Values(ii) >= BinEdges(i) ) then
-            BinCounts(i) = BinCounts(i) + 1
-            exit
-          end if
-        end do
-      end if
     end do
 
     if (DebugLoc) call Logger%Exiting

@@ -23,6 +23,8 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SpaceParam_Class                                              ,only:    SpaceParam_Type
+use Response_Class                                                ,only:    Response_Type
+use Model_Class                                                   ,only:    Model_Type
 
 implicit none
 
@@ -102,14 +104,14 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_SurrogateMethod( This, SpaceInput, Response, Model, SurrogateModel, OutputDirectory, Debug )
-    use Response_Class                                            ,only:    Response_Type
-    use Model_Class                                               ,only:    Model_Type
+  subroutine Run_SurrogateMethod( This, SpaceInput, Responses, Model, SurrogateModel, OutputDirectory, Debug )
+    import                                                            ::    Response_Type
+    import                                                            ::    Model_Type
     import                                                            ::    SurrogateMethod_Type
     import                                                            ::    SpaceParam_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
     type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     class(Model_Type), allocatable, dimension(:),optional,intent(out) ::    SurrogateModel
     character(*), optional, intent(in)                                ::    OutputDirectory

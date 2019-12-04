@@ -32,6 +32,8 @@ use LinkedList1D_Class                                            ,only:    Link
 use LinkedList2D_Class                                            ,only:    LinkedList2D_Type
 use List2D_Class                                                  ,only:    List2D_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
+use Response_Class                                                ,only:    Response_Type
+use Model_Class                                                   ,only:    Model_Type
 
 implicit none
 
@@ -111,23 +113,25 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine BuildModel_PolyChaosMethod( This, ModelInterface, Basis, SpaceInput, IndexSetScheme, Coefficients, Indices, CVErrors,&
-                                                                              OutputDirectory, InputSamples, OutputSamples, Debug)
+  subroutine BuildModel_PolyChaosMethod( This, Basis, SpaceInput, Responses, Model, IndexSetScheme, Coefficients, Indices,        &
+                                                                    CVErrors, OutputDirectory, InputSamples, OutputSamples, Debug)
     use Parameters_Library
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    OrthoMultivar_Type
     import                                                            ::    SpaceInput_Type
     import                                                            ::    IndexSetScheme_Type
     import                                                            ::    PolyChaosModel_Type
-    import                                                            ::    ModelInterface_Type
     import                                                            ::    LinkedList0D_Type
     import                                                            ::    LinkedList2D_Type
     import                                                            ::    LinkedList1D_Type
     import                                                            ::    List2D_Type
+    import                                                            ::    Response_Type
+    import                                                            ::    Model_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
-    type(ModelInterface_Type), intent(inout)                          ::    ModelInterface
     type(OrthoMultiVar_Type), intent(inout)                           ::    Basis
     class(SpaceInput_Type), intent(inout)                             ::    SpaceInput
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
+    class(Model_Type), intent(inout)                                  ::    Model
     class(IndexSetScheme_Type), intent(inout)                         ::    IndexSetScheme
     type(LinkedList0D_Type), allocatable, dimension(:), intent(out)   ::    CVErrors
     type(LinkedList1D_Type), allocatable, dimension(:), intent(out)   ::    Coefficients

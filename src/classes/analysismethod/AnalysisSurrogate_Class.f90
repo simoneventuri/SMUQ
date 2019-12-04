@@ -203,11 +203,11 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run( This, SpaceInput, Response, Model, OutputDirectory, Debug )
+  subroutine Run( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
 
     class(AnalysisSurrogate_Type), intent(inout)                      ::    This
     type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional ,intent(in)                                     ::    Debug
@@ -221,9 +221,9 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( present(OutputDirectory) ) then
-      call This%SurrogateMethod%Run( SpaceInput=SpaceInput, Response=Response, Model=Model, OutputDirectory=OutputDirectory )
+      call This%SurrogateMethod%Run( SpaceInput=SpaceInput, Responses=Responses, Model=Model, OutputDirectory=OutputDirectory )
     else
-      call This%SurrogateMethod%Run( SpaceInput=SpaceInput, Response=Response, Model=Model )
+      call This%SurrogateMethod%Run( SpaceInput=SpaceInput, Responses=Responses, Model=Model )
     end if
 
     if (DebugLoc) call Logger%Exiting()
