@@ -4,7 +4,5 @@
  - change file readrecord to use non-predetermined length buffer
  - move up hierarchical stuff above the bayesian inference class, make it part of regular parameterspace?
  - allow for distribution to be obtained from parameter space using labels
-
- - Change output to have coordinates instead of 1d abscissa and everything that depends on it
- - Change bayesian covariance matrices to be restrcted to usage with bayesian stuff
+ - put in bounded to unbounded domain transform in mcmcbayesian routine
 

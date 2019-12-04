@@ -52,7 +52,10 @@ contains
   procedure, private                                                  ::    Run0D
   procedure, private                                                  ::    Run1D
   procedure, public                                                   ::    GetNbResponses
-  procedure, public                                                   ::    GetResponsePointer
+  generic, public                                                     ::    GetResponsePointer      =>    GetResponsePointer_Num
+                                                                                                          GetResponsePointer_Label
+  procedure, public                                                   ::    GetResponsePointer_Num
+  procedure, public                                                   ::    GetResponsePointer_Label
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -308,16 +311,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetResponsePointer( This, Num, Debug )
+  function GetResponsePointer_Num( This, Num, Debug )
 
-    type(Response_Type), pointer                                      ::    GetResponsePointer
+    type(Response_Type), pointer                                      ::    GetResponsePointer_Num
 
     class(ModelInterface_Type), intent(in)                            ::    This
     integer, intent(in)                                               ::    Num
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetResponsePointer'
+    character(*), parameter                                           ::    ProcName='GetResponsePointer_Num'
     integer                                                           ::    StatLoc=0
 
     DebugLoc = DebugGlobal
@@ -327,7 +330,45 @@ contains
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
     if ( Num < 1 .or. Num > This%NbResponses ) call Error%Raise( Line='Invalid num specifier', ProcName=ProcName )
 
-    GetResponsePointer => This%Response(Num)
+    GetResponsePointer_Num => This%Response(Num)
+
+    if (DebugLoc) call Logger%Exiting()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetResponsePointer_Label( This, Label, Debug )
+
+    type(Response_Type), pointer                                      ::    GetResponsePointer_Label
+
+    class(ModelInterface_Type), intent(in)                            ::    This
+    character(*), intent(in)                                          ::    Label
+    logical, optional ,intent(in)                                     ::    Debug
+
+    logical                                                           ::    DebugLoc
+    character(*), parameter                                           ::    ProcName='GetResponsePointer_Label'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    ii
+
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    ii = 0
+    i = 1
+    do i = 1, size(This%Response,1)
+      if ( This%Response%GetLabel() /= Label ) cycle
+      ii = i
+      exit
+    end do
+
+    if ( ii == 0 ) call Error%Raise( 'Did not find required label : ' // Label, ProcName=ProcName )
+
+    GetResponsePointer_Label => This%Response(ii)
 
     if (DebugLoc) call Logger%Exiting()
 

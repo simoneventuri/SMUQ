@@ -165,6 +165,9 @@ contains
     integer                                                           ::    VarI0D
     integer                                                           ::    NbResponses
     integer                                                           ::    i
+    integer                                                           ::    ii
+    character(:), allocatable                                         ::    Label1
+    character(:), allocatable                                         ::    Label2
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -207,6 +210,17 @@ contains
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
       call This%Response(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
       nullify ( InputSection )
+    end do
+
+    i = 1
+    do i = 1, NbResponses
+      Label1 = This%Response(i)%GetLabel()
+      ii = i+1
+      do ii = i + 1, NbResponses
+        Label2 = This%Response(ii)%GetLabel()
+        if ( Label1 /= Label2 ) cycle
+        call Error%Raise( 'Detected duplicate label: ' // Label1, ProcName=ProcName )
+      end do
     end do
 
     This%Constructed = .true.

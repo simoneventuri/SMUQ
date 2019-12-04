@@ -593,6 +593,8 @@ contains
       end do 
     end if
 
+    SilentLoc = This%Silent
+
     if ( This%Step == 0 ) then
       if ( ( present(InputSamples) .and. .not. present(OutputSamples) ) .or.                                                      &
                                                                     ( present(OutputSamples) .and. .not. present(InputSamples) ) )&
@@ -645,7 +647,6 @@ contains
       end if
     end if
 
-    SilentLoc = This%Silent
     StepExceededFlag = .false.
     MaxIndexOrder = IndexSetScheme%GetMaxOrder()
 
@@ -689,7 +690,7 @@ contains
         exit
       end if
 
-      iStart = This%Step
+      iStart = size(This%ParamRecord,2)+1
 
       !***************************************************************************************************************************
       ! Obtaining samples
@@ -725,7 +726,6 @@ contains
           exit
         end if
       else
-        if ( This%Step == 0 ) call Error%Raise( 'More samples were required but sampler was never defined', ProcName=ProcName )
         iEnd = size(This%ParamSample,2)
       end if
 
@@ -782,6 +782,8 @@ contains
           end if
     
         end do
+
+        This%SamplesRan = .true.
 
         allocate(VarR2D(NbDim,This%Step), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )

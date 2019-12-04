@@ -38,6 +38,7 @@ use Response_Class                                                ,only:    Resp
 use Restart_Class                                                 ,only:    RestartUtility
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use Model_Class                                                   ,only:    Model_Type
+use List2D_Class                                                  ,only:    List2D_Type
 
 implicit none
 
@@ -47,6 +48,18 @@ public                                                                ::    UQSa
 
 type, extends(UQMethod_Type)                                          ::    UQSampling_Type
   logical                                                             ::    Silent
+  type(SpaceSampler_Type)                                             ::    Sampler
+  type(Histogram1D_Type), allocatable, dimension(:)                   ::    Histograms
+  type(List2D_Type), allocatable, dimension(:)                        ::    BinCounts
+  type(String_Type), allocatable, dimension(:)                        ::    Labels
+  integer                                                             ::    NbHistograms
+  real(rkp), allocatable, dimension(:,:)                              ::    ParamRecord
+  real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
+  logical, allocatable, dimension(:)                                  ::    ParamSampleRan
+  integer                                                             ::    ParamSampleStep
+  logical                                                             ::    SamplesObtained
+  logical                                                             ::    SamplesRan
+  integer                                                             ::    Step
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -66,7 +79,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This, Debug )
 
-    class(UQSampling_Type), intent(inout)                        ::    This
+    class(UQSampling_Type), intent(inout)                             ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -90,7 +103,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This, Debug )
 
-    class(UQSampling_Type), intent(inout)                        ::    This
+    class(UQSampling_Type), intent(inout)                             ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -104,6 +117,27 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
+    This%Step = 0
+
+    if ( allocated(This%ParamRecord) ) deallocate(This%ParamRecord, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
+    
+    if ( allocated(This%ParamSample) ) deallocate(This%ParamSample, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%Labels) ) deallocate(This%Labels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Labels', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%Histograms) ) deallocate(This%Histograms, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Histograms', ProcName=ProcName, stat=StatLoc )
+    This%NbHistograms = 0
+
+    if ( allocated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+
     call This%SetDefaults()
 
     if (DebugLoc) call Logger%Exiting()
@@ -114,7 +148,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This, Debug )
 
-    class(UQSampling_Type), intent(inout)                        ::    This
+    class(UQSampling_Type), intent(inout)                             ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -124,6 +158,12 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
+    This%CheckpointFreq = -1
+    This%Silent = .false.
+    This%ParamSampleStep = 0
+    This%SamplesObtained = .false.
+    This%SamplesRan = .false.
+
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
@@ -132,7 +172,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, SectionChain, Prefix, Debug )
 
-    class(UQSampling_Type), intent(inout)                        ::    This
+    class(UQSampling_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
@@ -152,7 +192,9 @@ contains
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
-    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    integer, allocatable, dimension(:,:)                              ::    VarI2D
+    character(:), allocatable                                         ::    Label1
+    character(:), allocatable                                         ::    Label2
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -166,7 +208,118 @@ contains
 
     This%SectionChain = SectionChain
 
+    ParameterName= 'silent'
+    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%Silent=VarL0D
 
+    ParameterName = "checkpoint_frequency"
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%CheckpointFreq = VarI0D
+
+    SectionName = 'sampler'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call This%Sampler%Construct( Input=InputSection, Prefix=PrefixLoc )
+    nullify( InputSection )
+
+    SectionName = 'histograms'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    This%NbHistograms = InputSection%GetNumberofSubSections()
+    nullify(InputSection)
+
+    allocate(This%Histograms(This%NbHistograms), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Histograms', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Labels(This%NbHistograms), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Labels', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, This%NbHistograms
+      SubSectionName = SectionName  // '>histogram' // ConvertToString(Value=i)
+
+      ParameterName = 'label
+      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
+      This%Label(i) = VarC0D
+
+      SubSectionName = SectionName  // '>histogram' // ConvertToString(Value=i) // '>histogram'
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+      call This%Histograms(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
+      nullify(InputSection)
+    end do
+
+    i = 1
+    do i = 1, This%NbHistograms
+      Label1 = This%Labels(i)%GetValue()
+      ii = i+1
+      do ii = i + 1, NbResponses
+        Label2 = This%Labels(ii)%GetValue()
+        if ( Label1 /= Label2 ) cycle
+        call Error%Raise( 'Detected duplicate label: ' // Label1, ProcName=ProcName )
+      end do
+    end do
+
+    SectionName = 'param_record'
+    if ( Input%HasSection( SectionName=SectionName ) ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
+      nullify( InputSection )
+      This%ParamRecord = VarR2D
+      deallocate(VarR2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    end if
+
+    SectionName = 'param_sample'
+    if ( Input%HasSection( SubSectionName=SectionName ) ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
+      nullify( InputSection )
+      This%ParamSample = VarR2D
+      deallocate(VarR2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+      SectionName = 'param_sample_ran'
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call ImportArray( Input=InputSection, Array=VarL1D, Prefix=PrefixLoc )
+      nullify( InputSection )
+      This%ParamSampleRan = VarL1D
+
+      ParameterName = 'param_sample_step'
+      call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
+      This%ParamSampleStep = VarI0D
+    end if
+
+    SectionName = 'bin_counts'
+    if ( Input%HasSection( SubSectionName=SectionName ) ) then
+      allocate(This%BinCounts(This%NbHistograms), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      if ( This%NbHistograms =/ InputSection%GetNumberofSubSections() ) call Error%Raise( 'Supplied a number of bin count ' //    &
+                                                          'arrays that do not match the number of histograms', ProcName=ProcName )
+      nullify(InputSection)
+
+      i = 1
+      do i = 1, This%NbHistograms
+        SubSectionName = SectionName // 'bin_counts' // ConvertToString(Value=i)
+        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call ImportArray( Input=InputSection, Array=VarI2D, Prefix=PrefixLoc )
+        nullify(InputSection)
+        call This%BinCounts(i)%Set(Values=VarI2D)
+        deallocate(VarI2D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
+      end do
+
+      ParameterName = 'samples_obtained'
+      call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+      if ( Found ) This%SamplesObtained= VarL0D
+
+      ParameterName = 'samples_ran'
+      call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+      if ( Found ) This%SamplesRan = VarL0D
+
+      ParameterName = 'step'
+      call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+      if ( Found ) This%Step = VarI0D
+
+    end if
 
     This%Constructed = .true.
 
@@ -180,7 +333,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(UQSampling_Type), intent(inout)                        ::    This
+    class(UQSampling_Type), intent(inout)                             ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -196,7 +349,7 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    i
-    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    integer, dimension(:,:), pointer                                  ::    VarI2D=>null()
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     type(SMUQFile_Type)                                               ::    File
     character(:), allocatable                                         ::    FileName
@@ -219,7 +372,80 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
+    call GetInput%AddParameter( Name='silent', Value=ConvertToString(Value=This%Silent ) )
+    call GetInput%AddParameter( Name='checkpoint_frequency', Value=ConvertToString(Value=This%CheckpointFreq ) )
 
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
+    SectionName = 'sampler'
+    call GetInput%AddSection( Section=This%Sampler%GetInput( MainSectionName=SectionName,                                         &
+                                                                                        Prefix=PrefixLoc,Directory=DirectorySub) )
+
+    SectionName = 'histograms'
+    call Input%AddSection( SectionName=SectionName )
+    i = 1
+    do i = 1, This%NbHistograms
+      SubSectionName = SectionName // '>histogram' // ConvertToString(Value=i)
+      call GetInput%AddParameter( Name='label', Value=ConvertToString(Value=This%Labels(i)%GetValue() ),                          &
+                                                                                                      SectionName=SubSectionName )
+
+      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/histogram' // ConvertToString(Value=i)
+      call GetInput%AddSection( Section=This%Histograms(i)%GetInput( MainSectionName='histogram', Prefix=PrefixLoc,               &
+                                                                          Directory=DirectorySub ), To_SubSection=SubSectionName )
+    end do
+
+    if ( allocated(This%ParamRecord) ) then
+      SubSectionName = 'param_record'
+      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
+                                                                                                                Mandatory=.true. )
+      FileName = DirectoryLoc // '/param_record.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Input=InputSection, Array=This%ParamRecord, File=File )
+      nullify(InputSection)
+    end if
+
+    if ( allocated(This%ParamSample) ) then
+      SubSectionName = 'param_sample'
+      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
+                                                                                                                Mandatory=.true. )
+      FileName = DirectoryLoc // '/param_sample.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Input=InputSection, Array=This%ParamSample, File=File )
+      nullify(InputSection)
+
+      SubSectionName = 'param_sample_ran'
+      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
+                                                                                                                Mandatory=.true. )
+      FileName = DirectoryLoc // '/param_sample_ran.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Input=InputSection, Array=This%ParamSampleRan, File=File )
+      nullify(InputSection)
+
+      call GetInput%AddParameter( Name='param_sample_step', Value=ConvertToString(Value=This%ParamSampleStep),                    &
+                                                                                                     SectionName=SubSectionName )
+    end if
+
+    SectionName = 'bin_counts'
+    call Input%AddSection( SectionName=SectionName )
+    i = 1
+    do i = 1, This%NbHistograms
+      SubSectionName ='>bin_counts' // ConvertToString(Value=i)
+      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
+                                                                                                                Mandatory=.true. )
+      FileName = DirectoryLoc // '/bin_counts' // ConvertToString(Value=i) // '.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      VarI2D => This%BinCounts(i)%GetPointer()
+      call ExportArray( Input=InputSection, Array=VarI2D, File=File )
+      nullify(InputSection)
+      nullify(VarI2D)
+    end do
+
+    call GetInput%AddParameter( Name='samples_obtained', Value=ConvertToString(Value=This%SamplesObtained ) )
+    call GetInput%AddParameter( Name='samples_ran', Value=ConvertToString(Value=This%SamplesRan ) )
+    call GetInput%AddParameter( Name='step', Value=ConvertToString(Value=This%Step ) )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -227,22 +453,243 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SpaceInput, Response, Model, OutputDirectory, Debug )
+  subroutine Run( This, SpaceInput, ModelInterface, OutputDirectory, Debug )
 
     class(UQSampling_Type), intent(inout)                             ::    This
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
-    type(Response_Type), dimension(:), intent(in)                     ::    Response
-    class(Model_Type), intent(inout)                                  ::    Model
+    class(SpaceInput_Type), intent(inout)                             ::    SpaceInput
+    type(ModelInterface_Type), intent(inout)                          ::    ModelInterface
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    character(:), allocatable                                         ::    VarC0D
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    integer, allocatable, dimension(:,:)                              ::    VarI2D
+    integer, dimension(:,:), pointer                                  ::    VarI2DPtr=>null()
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    real(rkp), dimension(:,:), pointer                                ::    VarR2DPtr=>null()
+    type(Response_Type), pointer                                      ::    ResponsePointer=>null()
+    integer                                                           ::    NbDim
+    logical                                                           ::    StepExceededFlag=.false.
+    integer                                                           ::    i
+    integer                                                           ::    ii
+    integer                                                           ::    iii
+    integer                                                           ::    iv
+    integer                                                           ::    iStart
+    integer                                                           ::    iEnd
+    logical                                                           ::    SilentLoc
+    character(:), allocatable                                         ::    Line
+    type(Output_Type), allocatable, dimension(:)                      ::    Outputs
+    integer                                                           ::    NbOutputs
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
+
+    NbDim = SpaceInput%GetNbDim()
+    SilentLoc = This%Silent
+
+    if ( .not. allocated(This%BinCounts) ) then
+      allocate(This%BinCounts(This%NbHistograms), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+  
+      i = 1
+      do i = 1, This%NbHistograms
+        ResponsePointer => ModelInterface%GetResponsePointer( Label=This%Labels(i)%GetValue() )
+        allocate(VarI2D(ResponsePointer%GetNbNodes(),This%Histograms(i)%GetNbBins()), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
+        VarI2D = 0
+        call This%BinCounts(i)%Set(Values=VarI2D)
+        deallocate(VarI2D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
+        nullify(ResponsePointer)
+      end do
+    else
+      i = 1
+      do i = 1, This%NbHistograms
+        call This%BinCounts(i)%GetPointer(Values=VarI2DPtr)
+        ResponsePointer => ModelInterface%GetResponsePointer( Label=This%Labels(i)%GetValue() )
+        if ( size(VarI2DPtr,1) /= This%Histograms(i)%GetNbBins() ) call Error%Raise( 'Mismatch in response number of bins ' //   &
+                                               ' and size of bin count array: ' // ResponsePointer%GetLabel(), ProcName=ProcName )
+        if ( size(VarI2DPtr,2) /= This%ResponsePointer%GetNbNodes() ) call Error%Raise( 'Mismatch in response number of nodes ' //&
+                                     ' and number of histograms for response: ' // ResponsePointer%GetLabel(), ProcName=ProcName )
+        nullify(VarI2DPtr)
+        nullify(ResponsePointer)
+      end do
+    end if
+
+    StepExceededFlag = .false.
+
+    do
+
+      iStart = size(This%ParamRecord,2)+1
+
+      !***************************************************************************************************************************
+      ! Obtaining samples
+      if ( .not. This%SamplesObtained ) then
+
+        if ( .not. SilentLoc ) then
+          if ( This%Step /= 0 ) then
+            Line = 'Performing enrichment'
+          else
+            Line = 'Initial population of the linear system'
+          end if
+          write(*,'(A)') '' 
+          write(*,'(A)') Line
+          write(*,'(A)') '' 
+        end if
+
+        if ( This%Step == 0 ) then
+          This%ParamSample = This%Sampler%Draw(SpaceInput=SpaceInput)
+        else
+          call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,      &
+                                                                                                      Exceeded=StepExceededFlag)
+          if ( StepExceededFlag ) exit
+        end if
+        allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+        This%ParamSampleRan = .false.
+        iEnd = size(This%ParamSample,2)
+        This%SamplesObtained = .true.
+      else
+        iEnd = size(This%ParamSample,2)
+      end if
+ 
+      !***************************************************************************************************************************
+      ! Running samples
+      if ( .not. This%SamplesRan ) then
+        i = This%ParamSampleStep
+        do
+          i = i + 1
+          if ( i > iEnd ) exit
+          This%Step = This%Step + 1
+
+          if ( .not. SilentLoc ) then
+            Line = 'Model run #' // ConvertToString(Value=This%Step)
+            write(*,'(A)') Line
+          end if
+
+          This%ParamSampleStep = i
+          call Input%Construct( Input=This%ParamSample(:,This%ParamSampleStep), Labels=SpaceInput%GetLabel() )
+          call ModelInterface%Run( Input=Input, Output=Outputs, Stat=StatLoc )
+
+          if ( StatLoc /= 0 ) then
+            if ( .not. SilentLoc ) then
+              Line = 'Model run #' // ConvertToString(Value=This%Step) // ' -- Failed'
+              write(*,'(A)') Line
+            end if
+            StatLoc = 0
+            if ( allocated(Outputs) ) deallocate(Outputs, stat=StatLoc)
+            if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+            This%Step = This%Step - 1
+          else
+            ! Binning outputs
+            This%ParamSampleRan(i) = .true.
+            NbOutputs = size(Outputs,1)
+
+            ii = 1
+            do ii = 1, This%NbHistograms
+              VarC0D = This%Labels(ii)
+
+              iii = 1
+              iv = 0
+              do iii = 1, NbOutputs
+                if ( Outputs(i)%GetLabel() /= VarC0D ) cycle
+                iv = iii
+                exit
+              end do
+              if ( iv == 0 ) call Error%Raise( 'Did not find required output : ' // VarC0D, ProcName=ProcName )  
+
+              call This%BinCounts(ii)%GetPointer(Values=VarI2DPtr)
+              VarR2DPtr => Outputs(iv)%GetValuesPointer()
+              allocate(VarR1D(Outputs(iv)%GetNbDegen()), stat=StatLoc)
+              if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+              VarR1D = Zero
+
+              iii = 1
+              do iii = 1, Outputs(iv)%GetNbNodes()
+                VarR1D = VarR2DPtr(iii,:)
+                call This%Histograms(ii)%Bin( Values=VarR1D )
+                VarI2DPtr(:,iii) = VarI2DPtr(:,iii) + This%Histograms(ii)%GetBinCountsPointer()
+              end do  
+
+              deallocate(VarR1D, stat=StatLoc)
+              if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+              nullify(VarR2DPtr)
+              nullify(VarI2DPtr)
+
+            end do
+
+          end if
+
+          if ( This%CheckpointFreq > 0 .and. mod(i, abs(This%CheckpointFreq)) == 0 ) then
+            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
+                            Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+          end if
+    
+        end do
+
+        This%SamplesRan = .true.
+
+        allocate(VarR2D(NbDim,This%Step), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+        if ( allocated(This%ParamRecord) ) then
+          VarR2D(:,1:size(This%ParamRecord,2)) = This%ParamRecord
+          deallocate(This%ParamRecord, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
+        end if
+
+        i = iStart+1
+        ii = 0
+        do i = iStart+1, size(VarR2D,2)
+          ii = ii + 1
+          if ( This%ParamSampleRan(ii) ) then
+            VarR2D(:,i) = This%ParamSample(:,ii)
+          end if
+        end do
+        call move_alloc(VarR2D, This%ParamRecord)
+
+        deallocate(This%ParamSample, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
+        deallocate(This%ParamSampleRan, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+
+        This%ParamSampleStep = 0
+
+      end if
+
+      This%SamplesObtained = .false.
+      This%SamplesRan = .false.
+
+    end do
+
+    This%SamplesObtained = .true.
+    This%SamplesRan = .true.
+
+    if ( StepExceededFlag ) then
+      Line = 'Maximum sampling step exceeded'
+      if ( This%Step == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',             &
+                                                                                                               ProcName=ProcName )
+      write(*,'(A)') ''  
+      write(*,'(A)') Line
+    end if
+
+    call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),             &
+                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+
+    if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, ModelInterface=ModelInterface )
+
+    deallocate(This%ParamRecord, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(This%BinCounts, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+
+    This%Step = 0
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -280,6 +727,23 @@ contains
       end if
 
       PrefixLoc = Directory
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     end if
 
@@ -335,6 +799,23 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
 
+    if ( allocated(This%ParamRecord) ) deallocate(This%ParamRecord, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
+    
+    if ( allocated(This%ParamSample) ) deallocate(This%ParamSample, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%Labels) ) deallocate(This%Labels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Labels', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%Histograms) ) deallocate(This%Histograms, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Histograms', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 

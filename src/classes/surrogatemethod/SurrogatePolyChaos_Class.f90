@@ -479,18 +479,28 @@ contains
                                                                                                                ProcName=ProcName )
         OutputSamplesLoc(i) = This%OutputSamples(iii)
       end do
-
-      call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,           &
-           ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                          &
-           OutputDirectory=OutputDirectoryLoc, InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc )
+      if ( present(OutputDirectory) ) then
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,         &
+             ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                        &
+             OutputDirectory=OutputDirectoryLoc, InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc )
+      else
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,         &
+             ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                        &
+             InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc )
+      end if
       deallocate(InputSamplesLoc, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputSamplesLoc', ProcName=ProcName, stat=StatLoc )
       deallocate(OutputSamplesLoc, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc )
     else
-      call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,           &
-           ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                          &
-           OutputDirectory=OutputDirectoryLoc )
+      if ( present(OutputDirectory) ) then
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,         &
+             ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                        &
+             OutputDirectory=OutputDirectoryLoc )
+      else
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, IndexSetScheme=This%IndexSetScheme,         &
+             ModelInterface=ModelInterface, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors )
+      end if
     end if
 
     allocate(PolyChaosModelLoc(size(Response,1)), stat=StatLoc)

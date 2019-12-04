@@ -1286,8 +1286,10 @@ contains
     NbBins = size(BinCounts)
     BinCounts = 0
 
-    if ( Value < BinEdges(1) .or. Value > BinEdges(NbBins+1)) then
-      continue
+    if ( Value < BinEdges(1) ) then
+      BinCounts(1) = BinCounts(1) + 1
+    elseif (Value > BinEdges(NbBins+1)) then
+      BinCounts(NbBins) = BinCounts(NbBins) + 1
     else
       i = 1
       do i = 1, NbBins
@@ -1341,8 +1343,10 @@ contains
 
     ii = 1
     do ii = 1, NbValues
-      if ( Values(ii) < BinEdges(1) .or. Values(ii) > BinEdges(NbBins+1)) then
-        continue
+      if ( Values(ii) < BinEdges(1) ) then
+        BinCounts(1) = BinCounts(1) + 1
+      elseif ( Values(ii) > BinEdges(NbBins+1)) then
+        BinCounts(NbBins) = BinCounts(NbBins) + 1
       else
         i = 1
         do i = 1, NbBins

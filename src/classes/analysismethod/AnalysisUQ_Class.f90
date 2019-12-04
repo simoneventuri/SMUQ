@@ -46,6 +46,7 @@ contains
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run
   procedure, public                                                   ::    Copy
+  final                                                               ::    Finalizer
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -153,7 +154,10 @@ contains
 
     This%SectionChain = SectionChain
 
-    call UQMethod_Factory%Construct( Object=This%UQMethod, Input=Input, SectionChain=This%SectionChain, Prefix=PrefixLoc )
+    SectionName = 'method'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call UQMethod_Factory%Construct( Object=This%UQMethod, Input=InputSection, SectionChain=This%SectionChain // '>method',       &
+                                                                                                                Prefix=PrefixLoc )
 
     This%Constructed = .true.
 
@@ -193,7 +197,9 @@ contains
 
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
-    GetInput = UQMethod_Factory%GetObjectInput(Object=This%UQMethod, MainSectionName=MainSectionName,                             &
+    SectionName = 'method'
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/method'
+    call GetInput%AddSection( Section=UQMethod_Factory%GetObjectInput(Object=This%UQMethod, MainSectionName=SectionName,          &
                                                                                          Prefix=PrefixLoc, Directory=DirectorySub)
 
     if (DebugLoc) call Logger%Exiting()
@@ -214,15 +220,22 @@ contains
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    OutputDirectoryLoc
+    type(ModelInterface_Type)                                         ::    ModelInterface
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
+    OutputDirectoryLoc = ''
+    if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/solver'
+
+    call ModelInterface%Construct( Model=Model, Response=Response )
+
     if ( present(OutputDirectory) ) then
-      call This%UQMethod%Run( SpaceInput=SpaceInput, Response=Response, Model=Model, OutputDirectory=OutputDirectory )
+      call This%UQMethod%Run( SpaceInput=SpaceInput, ModelInterface=ModelInterface, OutputDirectory=OutputDirectoryLoc )
     else
-      call This%UQMethod%Run( SpaceInput=SpaceInput, Response=Response, Model=Model )
+      call This%UQMethod%Run( SpaceInput=SpaceInput, ModelInterface=ModelInterface )
     end if
 
     if (DebugLoc) call Logger%Exiting()
