@@ -216,7 +216,6 @@ contains
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    OutputDirectoryLoc
-    type(ModelInterface_Type)                                         ::    ModelInterface
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug

@@ -25,11 +25,11 @@ use StringRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module
+use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use UQMethod_Class                                                ,only:    UQMethod_Type
 use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 use Output_Class                                                  ,only:    Output_Type
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use SpaceInput_Class                                              ,only:    SpaceInput_Type
@@ -48,6 +48,7 @@ private
 public                                                                ::    UQSampling_Type
 
 type, extends(UQMethod_Type)                                          ::    UQSampling_Type
+  integer                                                             ::    CheckpointFreq
   logical                                                             ::    Silent
   type(SpaceSampler_Type)                                             ::    Sampler
   type(Histogram1D_Type), allocatable, dimension(:)                   ::    Histograms
@@ -192,10 +193,13 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
+    integer                                                           ::    ii
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     integer, allocatable, dimension(:,:)                              ::    VarI2D
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    logical, allocatable, dimension(:)                                ::    VarL1D
     character(:), allocatable                                         ::    Label1
     character(:), allocatable                                         ::    Label2
 
@@ -238,9 +242,9 @@ contains
     do i = 1, This%NbHistograms
       SubSectionName = SectionName  // '>histogram' // ConvertToString(Value=i)
 
-      ParameterName = 'label
+      ParameterName = 'label'
       call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-      This%Label(i) = VarC0D
+      This%Labels(i) = VarC0D
 
       SubSectionName = SectionName  // '>histogram' // ConvertToString(Value=i) // '>histogram'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
@@ -252,7 +256,7 @@ contains
     do i = 1, This%NbHistograms
       Label1 = This%Labels(i)%GetValue()
       ii = i+1
-      do ii = i + 1, NbResponses
+      do ii = i + 1, This%NbHistograms
         Label2 = This%Labels(ii)%GetValue()
         if ( Label1 /= Label2 ) cycle
         call Error%Raise( 'Detected duplicate label: ' // Label1, ProcName=ProcName )
@@ -260,7 +264,7 @@ contains
     end do
 
     SectionName = 'param_record'
-    if ( Input%HasSection( SectionName=SectionName ) ) then
+    if ( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
       nullify( InputSection )
@@ -295,7 +299,7 @@ contains
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
 
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      if ( This%NbHistograms =/ InputSection%GetNumberofSubSections() ) call Error%Raise( 'Supplied a number of bin count ' //    &
+      if ( This%NbHistograms /= InputSection%GetNumberofSubSections() ) call Error%Raise( 'Supplied a number of bin count ' //    &
                                                           'arrays that do not match the number of histograms', ProcName=ProcName )
       nullify(InputSection)
 
@@ -384,7 +388,7 @@ contains
                                                                                         Prefix=PrefixLoc,Directory=DirectorySub) )
 
     SectionName = 'histograms'
-    call Input%AddSection( SectionName=SectionName )
+    call GetInput%AddSection( SectionName=SectionName )
     i = 1
     do i = 1, This%NbHistograms
       SubSectionName = SectionName // '>histogram' // ConvertToString(Value=i)
@@ -431,7 +435,7 @@ contains
     end if
 
     SectionName = 'bin_counts'
-    call Input%AddSection( SectionName=SectionName )
+    call GetInput%AddSection( SectionName=SectionName )
     i = 1
     do i = 1, This%NbHistograms
       SubSectionName ='>bin_counts' // ConvertToString(Value=i)
@@ -440,7 +444,7 @@ contains
                                                                                                                 Mandatory=.true. )
       FileName = DirectoryLoc // '/bin_counts' // ConvertToString(Value=i) // '.dat'
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      VarI2D => This%BinCounts(i)%GetPointer()
+      call This%BinCounts(i)%GetPointer(Values=VarI2D)
       call ExportArray( Input=InputSection, Array=VarI2D, File=File )
       nullify(InputSection)
       nullify(VarI2D)
@@ -459,7 +463,7 @@ contains
   subroutine Run( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
 
     class(UQSampling_Type), intent(inout)                             ::    This
-    class(SpaceInput_Type), intent(inout)                             ::    SpaceInput
+    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
@@ -468,7 +472,6 @@ contains
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
     character(:), allocatable                                         ::    VarC0D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     integer, allocatable, dimension(:,:)                              ::    VarI2D
@@ -487,6 +490,8 @@ contains
     character(:), allocatable                                         ::    Line
     type(Output_Type), allocatable, dimension(:)                      ::    Outputs
     integer                                                           ::    NbOutputs
+    type(ModelInterface_Type)                                         ::    ModelInterface
+    type(InputDet_Type)                                               ::    Input
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -595,7 +600,7 @@ contains
 
             ii = 1
             do ii = 1, This%NbHistograms
-              VarC0D = This%Labels(ii)
+              VarC0D = This%Labels(ii)%GetValue()
 
               iii = 1
               iv = 0
@@ -703,13 +708,14 @@ contains
 
     class(UQSampling_Type), intent(inout)                             ::    This
     character(*), intent(in)                                          ::    Directory
-    type(Responses, dimension(:), intent(in)                          ::    Responses
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
     logical, intent(in), optional                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='WriteOutput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    Line
+    character(:), allocatable                                         ::    FileName
     character(:), allocatable                                         ::    PrefixLoc
     logical                                                           ::    SilentLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -717,7 +723,6 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii
-    character(:), allocatable                                         ::    Line
     integer, dimension(:,:), pointer                                  ::    VarI2DPtr=>null()
 
 
@@ -756,7 +761,7 @@ contains
 
         FileName = '/' //This%Labels(i)%GetValue() // '/bin_edges.dat'
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call ExportArray( Array=This%Histograms%GetBinEdgesPointer(), File=File )
+        call ExportArray( Array=This%Histograms(i)%GetBinEdgesPointer(), File=File )
 
         ii = 1
         iii = 0
@@ -806,10 +811,10 @@ contains
         if ( RHS%Constructed ) then
           LHS%Silent = RHS%Silent
           LHS%NbHistograms = RHS%NbHistograms
-          LHS%Samples = RHS%Samples
+          LHS%Sampler = RHS%Sampler
           allocate(LHS%Histograms, source=RHS%Histograms, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Histograms', ProcName=ProcName, stat=StatLoc )
-          allocate(LHS%Labels = RHS%Labels, source=name2, stat=StatLoc)
+          allocate(LHS%Labels, source=RHS%Labels, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Labels = RHS%Labels', ProcName=ProcName, stat=StatLoc )
         end if
       

@@ -43,7 +43,7 @@ type                                                                  ::    Root
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   class(AnalysisMethod_Type), allocatable                             ::    AnalysisMethod
-  type(Response_Type), allocatable, dimension(:)                      ::    Response
+  type(Response_Type), allocatable, dimension(:)                      ::    Responses
   type(SpaceParam_Type)                                               ::    ParameterSpace
   class(ModelExtTemplate_Type), allocatable                           ::    Model
   character(:), allocatable                                           ::    SectionChain                                             
@@ -346,7 +346,7 @@ contains
           LHS%ParameterSpace = RHS%ParameterSpace
           allocate(LHS%AnalysisMethod, source=RHS%AnalysisMethod, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%AnalysisMethod', ProcName=ProcName, stat=StatLoc )
-          allocate(LHS%Response, source=RHS%Response, stat=StatLoc)
+          allocate(LHS%Responses, source=RHS%Responses, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Response', ProcName=ProcName, stat=StatLoc )
         end if
       
