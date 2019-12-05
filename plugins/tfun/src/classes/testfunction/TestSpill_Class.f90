@@ -457,6 +457,7 @@ contains
         VarR0D = Zero
       end if
       Concentration(i) = M/dsqrt(Four*pi*D*Time(i))*dexp(-Location**2/(Four*D*Time(i))) + VarR0D
+      Concentration(i) = Concentration(i)*dsqrt(Four*pi)
     end do
 
     if (DebugLoc) call Logger%Exiting()
