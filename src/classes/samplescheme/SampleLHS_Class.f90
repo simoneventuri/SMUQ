@@ -216,6 +216,7 @@ contains
     ParameterName = 'nb_samples'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
     This%NbSamples = VarI0D
+    This%MaxNbSamples = This%NbSamples
 
     ParameterName = 'max_nb_samples'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
