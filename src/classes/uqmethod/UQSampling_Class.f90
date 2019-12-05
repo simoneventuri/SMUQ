@@ -392,8 +392,9 @@ contains
     i = 1
     do i = 1, This%NbHistograms
       SubSectionName = SectionName // '>histogram' // ConvertToString(Value=i)
-      call GetInput%AddParameter( Name='label', Value=ConvertToString(Value=This%Labels(i)%GetValue() ),                          &
-                                                                                                      SectionName=SubSectionName )
+      call GetInput%AddSection( SectionName='histogram' // ConvertToString(Value=i), To_SubSection=SectionName )
+
+      call GetInput%AddParameter( Name='label', Value=This%Labels(i)%GetValue(), SectionName=SubSectionName )
 
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/histogram' // ConvertToString(Value=i)
       call GetInput%AddSection( Section=This%Histograms(i)%GetInput( MainSectionName='histogram', Prefix=PrefixLoc,               &
@@ -434,21 +435,23 @@ contains
                                                                                                      SectionName=SubSectionName )
     end if
 
-    SectionName = 'bin_counts'
-    call GetInput%AddSection( SectionName=SectionName )
-    i = 1
-    do i = 1, This%NbHistograms
-      SubSectionName ='>bin_counts' // ConvertToString(Value=i)
-      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
-                                                                                                                Mandatory=.true. )
-      FileName = DirectoryLoc // '/bin_counts' // ConvertToString(Value=i) // '.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call This%BinCounts(i)%GetPointer(Values=VarI2D)
-      call ExportArray( Input=InputSection, Array=VarI2D, File=File )
-      nullify(InputSection)
-      nullify(VarI2D)
-    end do
+    if ( This%Step > 0 ) then
+      SectionName = 'bin_counts'
+      call GetInput%AddSection( SectionName=SectionName )
+      i = 1
+      do i = 1, This%NbHistograms
+        SubSectionName ='bin_counts' // ConvertToString(Value=i)
+        call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+        call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
+                                                                                                                  Mandatory=.true. )
+        FileName = DirectoryLoc // '/bin_counts' // ConvertToString(Value=i) // '.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call This%BinCounts(i)%GetPointer(Values=VarI2D)
+        call ExportArray( Input=InputSection, Array=VarI2D, File=File )
+        nullify(InputSection)
+        nullify(VarI2D)
+      end do
+    end if
 
     call GetInput%AddParameter( Name='samples_obtained', Value=ConvertToString(Value=This%SamplesObtained ) )
     call GetInput%AddParameter( Name='samples_ran', Value=ConvertToString(Value=This%SamplesRan ) )
@@ -508,7 +511,7 @@ contains
   
       i = 1
       do i = 1, This%NbHistograms
-        allocate(VarI2D(ModelInterface%GetResponseNbNodes(Label=This%Labels(i)%GetValue()),This%Histograms(i)%GetNbBins()),       &
+        allocate(VarI2D(This%Histograms(i)%GetNbBins(),ModelInterface%GetResponseNbNodes(Label=This%Labels(i)%GetValue())),       &
                                                                                                                      stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
         VarI2D = 0
@@ -533,8 +536,6 @@ contains
 
     do
 
-      iStart = size(This%ParamRecord,2)+1
-
       !***************************************************************************************************************************
       ! Obtaining samples
       if ( .not. This%SamplesObtained ) then
@@ -555,6 +556,7 @@ contains
         else
           call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,      &
                                                                                                       Exceeded=StepExceededFlag)
+
           if ( StepExceededFlag ) exit
         end if
         allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
@@ -605,7 +607,7 @@ contains
               iii = 1
               iv = 0
               do iii = 1, NbOutputs
-                if ( Outputs(i)%GetLabel() /= VarC0D ) cycle
+                if ( Outputs(iii)%GetLabel() /= VarC0D ) cycle
                 iv = iii
                 exit
               end do
@@ -645,9 +647,12 @@ contains
         allocate(VarR2D(NbDim,This%Step), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         if ( allocated(This%ParamRecord) ) then
+          iStart = size(This%ParamRecord,2)
           VarR2D(:,1:size(This%ParamRecord,2)) = This%ParamRecord
           deallocate(This%ParamRecord, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
+        else
+          iStart = 0
         end if
 
         i = iStart+1

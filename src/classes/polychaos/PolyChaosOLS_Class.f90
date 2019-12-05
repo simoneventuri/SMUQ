@@ -703,8 +703,6 @@ contains
 
       NbIndices = size(IndicesLoc,2)
 
-      iStart = This%Step
-
       !***************************************************************************************************************************
       ! Obtaining samples
       if ( .not. This%SamplesObtained ) then
@@ -896,9 +894,12 @@ contains
         allocate(VarR2D(NbDim,This%Step), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         if ( allocated(This%ParamRecord) ) then
+          iStart = size(This%ParamRecord,2)
           VarR2D(:,1:size(This%ParamRecord,2)) = This%ParamRecord
           deallocate(This%ParamRecord, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
+        else
+          iStart = 0
         end if
 
         i = iStart+1

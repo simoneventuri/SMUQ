@@ -317,7 +317,6 @@ contains
           DrawSpace(i,ii) = DistProb%InvCDF(P=DrawSpace(i,ii))
         end do
       end do
-
     else
 
       allocate(VarR1D(NbDim), stat=StatLoc)

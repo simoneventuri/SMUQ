@@ -209,9 +209,11 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( size(Output,1) /= This%NbResponses ) then
-      deallocate(Output, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(Output) ) then
+      if ( size(Output,1) /= This%NbResponses ) then
+        deallocate(Output, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+      end if
     end if
 
     if ( .not. allocated(Output) ) then
@@ -230,9 +232,6 @@ contains
       end if
     else
       NbOutputs = size(OutputLoc,1)
-
-      allocate(Output(This%NbResponses), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
 
       do i = 1, This%NbResponses
         LabelLoc = This%ResponseLabels(i)%GetValue()
@@ -269,7 +268,7 @@ contains
 
     class(ModelInterface_Type), intent(inout)                         ::    This
     class(Input_Type), dimension(:), intent(in)                       ::    Input
-    type(Output_Type), dimension(:,:), allocatable, intent(out)       ::    Output
+    type(Output_Type), dimension(:,:), allocatable, intent(inout)     ::    Output
     integer, optional, intent(out)                                    ::    Stat
     logical, optional ,intent(in)                                     ::    Debug
 
@@ -287,6 +286,18 @@ contains
 
     NbInputs = size(Input,1)
 
+    if ( allocated(Output) ) then
+      if ( size(Output,1) /= This%NbResponses .or. size(Output,2) /= NbInputs ) then
+        deallocate(Output, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+      end if
+    end if
+
+    if ( .not. allocated(Output) ) then
+      allocate(Output(This%NbResponses, NbInputs), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+    end if
+
     if ( present(Stat) ) Stat=StatLoc
 
     i = 1
@@ -300,10 +311,6 @@ contains
         end if
         exit
       else
-        if ( .not. allocated(Output) ) then
-          allocate(Output(size(OutputLoc,1),NbInputs), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-        end if
         Output(:,i) = OutputLoc
       end if
     end do

@@ -222,7 +222,7 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     OutputDirectoryLoc = ''
-    if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/solver'
+    if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/propagator'
 
     if ( present(OutputDirectory) ) then
       call This%UQMethod%Run( SpaceInput=SpaceInput, Responses=Responses, Model=Model, OutputDirectory=OutputDirectoryLoc )
