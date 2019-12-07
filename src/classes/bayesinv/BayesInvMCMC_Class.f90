@@ -64,6 +64,7 @@ type, extends(BayesInvMethod_Type)                                    ::    Baye
   type(SpaceHierParam_Type)                                           ::    HierarchicalSpace
   type(SpaceSampler_Type)                                             ::    HierarchicalSampler
   logical                                                             ::    Hierarchical
+  logical                                                             ::    TransformBounded
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -151,6 +152,7 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Hierarchical = .false.
+    This%TransformBounded = .false.
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -195,6 +197,10 @@ contains
     if ( present(Prefix) ) PrefixLoc = Prefix
 
     This%SectionChain = SectionChain
+
+    ParameterName = 'transform_bounded_distributions'
+    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%TransformBounded = VarL0D
 
     SectionName = 'mcmc'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -284,6 +290,8 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
+    call GetInput%AddParmaeter( Name='transform_bounded_distributions', Value=ConvertToString(Value=This%TransformBounded) )
+
     SectionName = 'mcmc'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/mcmc'
     call GetInput%AddSection( Section=MCMCMethod_Factory%GetObjectInput(Object=This%MCMC, MainSectionName=SectionName,            &
@@ -351,7 +359,9 @@ contains
     real(rkp)                                                         ::    VarR0D
     real(rkp)                                                         ::    HVarR0D
     real(rkp)                                                         ::    TVarR0D
-
+    class(SpaceTransf_Type), allocatable                              ::    TargetSpace
+    type(ModelTransf_Type)                                            ::    TargetModel
+    
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
@@ -362,16 +372,43 @@ contains
     if ( SpaceInput%IsCorrelated() ) call Error%Raise( Line='Bayesian inference does not support correlated spaces',              &
                                                                                                                ProcName=ProcName )    
 
+    ! transforming target space from bounded to unbounded if specified
+    if ( .not. This%TransformBounded ) then
+      call TargetSpace%Construct( Distributions=SpaceInput%GetDistribution(), CorrMat=SpaceInput%GetCorrMat(),                    &
+                                                                   Labels=SpaceInput%GetLabel(), Names=SpaceInput%GetParamName() )
+    else
+      if ( SpaceInput%IsCorrelated() ) call Error%Raise( 'Bounded to unbounded domain transformation not available for ' //       &
+                                                                                          'correlated spaces', ProcName=ProcName )
+      allocate(DistVecTarget(SpaceInput%GetNbDim()), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='DistVecTarget', ProcName=ProcName, stat=StatLoc )
+      i = 1
+      do i = 1, SpaceInput%GetNbDim()
+        DistProbTarget => SpaceInput%GetDistributionPointer( Num=i )
+        if ( DistProbTarget%IsTruncatedLeft() .or. DistProbTarget%IsTruncatedRight() ) then
+          call DistTransf%Construct( Distribution=DistProbTarget )
+          call DistVecTarget(i)%Set(Object=DistTransf)
+          call DistTransf%Reset()
+        else
+          call DistVecTarget(i)%Set(Object=DistProbTarget)
+        end if
+      end do
+      call TargetSpace%Construct( Distributions=DistVecTarget, CorrMat=SpaceInput%GetCorrMat(), Labels=SpaceInput%GetLabel(),     &
+                                                                                                 Names=SpaceInput%GetParamName() )
+      deallocate(DistVecTarget, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistVecTarget', ProcName=ProcName, stat=StatLoc )
+    end if
+
+    ! setting up posterior pointer for either hierarchical or non-hierarchical problem
     if ( This%Hierarchical ) then
       Posterior => MCMCPosteriorHier
-      allocate(Labels(This%HierarchicalSpace%GetNbDim()+SpaceInput%GetNbDim()), stat=StatLoc)
+      allocate(Labels(This%HierarchicalSpace%GetNbDim()+TargetSpace%GetNbDim()), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
       i = 1
       do i = 1, size(Labels)
-        if ( i <= SpaceInput%GetNbDim() ) then
-          Labels(i) = SpaceInput%GetLabel(Num=i)
+        if ( i <= TargetSpace%GetNbDim() ) then
+          Labels(i) = TargetSpace%GetLabel(Num=i)
         else
-          Labels(i) = This%HierarchicalSpace%GetLabel(Num=i-SpaceInput%GetNbDim())
+          Labels(i) = This%HierarchicalSpace%GetLabel(Num=i-TargetSpace%GetNbDim())
         end if
       end do
     else
@@ -382,7 +419,7 @@ contains
 
     if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/posterior_sampler'
 
-    call This%MCMC%GenerateChain( SamplingTarget=Posterior, SpaceInput=SpaceInput, ParameterChain=ParamChain,                     &
+    call This%MCMC%GenerateChain( SamplingTarget=Posterior, SpaceInput=TargetSpace, ParameterChain=ParamChain,                    &
                                              TargetChain=PosteriorChain, MiscChain=MiscChain, OutputDirectory=OutputDirectoryLoc )
 
     deallocate(Output, stat=StatLoc)
@@ -452,9 +489,9 @@ contains
 
         Prior = One
         iLoc = 1
-        do iLoc = 1, SpaceInput%GetNbDim()
-          DistProb => SpaceInput%GetDistributionPointer( Num=iLoc )
-          call Input%GetValue( Value=VarR0DLoc, Label=SpaceInput%GetLabel(Num=iLoc) )
+        do iLoc = 1, TargetSpace%GetNbDim()
+          DistProb => TargetSpace%GetDistributionPointer( Num=iLoc )
+          call Input%GetValue( Value=VarR0DLoc, Label=TargetSpace%GetLabel(Num=iLoc) )
           Prior = Prior * DistProb%PDF( X=VarR0DLoc )
         end do
         nullify( DistProb )

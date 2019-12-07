@@ -28,7 +28,6 @@ use DistLog10Norm_Class                                           ,only:    Dist
 use DistGamma_Class                                               ,only:    DistGamma_Type
 use DistLogistic_Class                                            ,only:    DistLogistic_Type
 use DistKernel_Class                                              ,only:    DistKernel_Type
-use DistInfBoundTransf_Class                                      ,only:    DistInfBoundTransf_Type
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
@@ -104,9 +103,6 @@ contains
 
       case('kernel')
         allocate( DistKernel_Type :: Object )
-
-      case('infinite_bound_transform')
-        allocate( DistInfBoundTransf_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -206,9 +202,6 @@ contains
       case('kernel')
         allocate( DistKernel_Type :: Object )
 
-      case('infinite_bound_transform')
-        allocate( DistInfBoundTransf_Type :: Object )
-
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
 
@@ -305,9 +298,6 @@ contains
 
       type is (DistKernel_Type)
         GetOption = 'kernel'
-
-      type is (DistInfBoundTransf_Type)
-        GetOption = 'infinite_bound_transform'
 
       class default
         call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )

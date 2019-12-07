@@ -5,4 +5,5 @@
  - move up hierarchical stuff above the bayesian inference class, make it part of regular parameterspace?
  - allow for distribution to be obtained from parameter space using labels
  - put in bounded to unbounded domain transform in mcmcbayesian routine
+ - figure out a way to do lars without scaling and centering
 
