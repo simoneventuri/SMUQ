@@ -27,7 +27,7 @@ use CalibrationMethod_Class                                       ,only:    Cali
 use CalibrationMethod_Factory_Class                               ,only:    CalibrationMethod_Factory
 use Response_Class                                                ,only:    Response_Type
 use Model_Class                                                   ,only:    Model_Type
-use SpaceParam_Class                                              ,only:    SpaceParam_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 
 implicit none
 
@@ -201,10 +201,10 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
+  subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory, Debug )
 
     class(AnalysisCalibration_Type), intent(inout)                    ::    This
-    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
@@ -219,9 +219,9 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( present(OutputDirectory) ) then
-      call This%CalibrationMethod%Run( SpaceInput=SpaceInput, Responses=Responses, Model=Model, OutputDirectory=OutputDirectory )
+      call This%CalibrationMethod%Run( SampleSpace=SampleSpace, Responses=Responses, Model=Model, OutputDirectory=OutputDirectory)
     else
-      call This%CalibrationMethod%Run( SpaceInput=SpaceInput, Responses=Responses, Model=Model )
+      call This%CalibrationMethod%Run( SampleSpace=SampleSpace, Responses=Responses, Model=Model )
     end if
 
     if (DebugLoc) call Logger%Exiting()

@@ -28,7 +28,7 @@ use DistProb_Vec_Class                                            ,only:    Dist
 use RandPseudo_Class                                              ,only:    RandPseudo_Type
 use SampleScheme_Factory_Class                                    ,only:    SampleScheme_Factory
 use SampleScheme_Class                                            ,only:    SampleScheme_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 
 implicit none
 
@@ -278,14 +278,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function DrawSpace( This, SpaceInput, Debug)
+  function DrawSpace( This, SampleSpace, Debug)
 
     use DistNorm_Class                                            ,only:    DistNorm_Type
 
     real(rkp), allocatable, dimension(:,:)                            ::    DrawSpace 
 
     class(SpaceSampler_Type), intent(inout)                           ::    This
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -303,17 +303,17 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
 
     DrawSpace = This%Sampler%Draw(NbDim=NbDim)
     NbSamples = size(DrawSpace,2)
 
-    if ( .not. SpaceInput%IsCorrelated() ) then
+    if ( .not. SampleSpace%IsCorrelated() ) then
       ii = 1
       do ii = 1, NbSamples
         i = 1
         do i = 1, NbDim
-          DistProb => SpaceInput%GetDistributionPointer(Num=i)
+          DistProb => SampleSpace%GetDistributionPointer(Num=i)
           DrawSpace(i,ii) = DistProb%InvCDF(P=DrawSpace(i,ii))
         end do
       end do
@@ -325,7 +325,7 @@ contains
       i = 1
       ii = 0
       do i = 1, NbDim
-        DistProb => SpaceInput%GetDistributionPointer(Num=i)
+        DistProb => SampleSpace%GetDistributionPointer(Num=i)
         select type ( DistProb )
           type is (DistNorm_Type)
             VarR1D(i) = DistProb%GetMu()
@@ -340,7 +340,7 @@ contains
 
       i = 1
       do i  = 1, NbSamples
-        DrawSpace(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=SpaceInput%GetCorrMat(), PVec=DrawSpace(:,i) )
+        DrawSpace(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=SampleSpace%GetCorrMat(), PVec=DrawSpace(:,i) )
       end do
 
     end if
@@ -351,12 +351,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine EnrichSpace( This, SpaceInput, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, Debug)
+  subroutine EnrichSpace( This, SampleSpace, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, Debug)
 
     use DistNorm_Class                                            ,only:    DistNorm_Type
 
     class(SpaceSampler_Type), intent(inout)                           ::    This
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     real(rkp), dimension(:,:), target, intent(in)                     ::    Samples
     real(rkp), allocatable, dimension(:,:), intent(out)               ::    EnrichmentSamples
     integer, optional, intent(in)                                     ::    NbEnrichmentSamples
@@ -382,12 +382,12 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
 
     call This%Sampler%Enrich( Samples=Samples, EnrichmentSamples=EnrichmentSamples, Exceeded=Exceeded,ReqNormalized=ReqNormalized)
 
     if ( ReqNormalized ) then
-      if ( .not. SpaceInput%IsCorrelated() ) then
+      if ( .not. SampleSpace%IsCorrelated() ) then
         allocate(NormalizedSamples, source=Samples, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='NormalizedSamples', ProcName=ProcName, stat=StatLoc )
         NbSamples = size(Samples,2)
@@ -395,7 +395,7 @@ contains
         do i = 1, NbSamples
           ii = 1
           do ii = 1, NbDim
-            DistProb => SpaceInput%GetDistributionPointer(Num=ii)
+            DistProb => SampleSpace%GetDistributionPointer(Num=ii)
             NormalizedSamples(ii,i) = DistProb%CDF(X=Samples(ii,i))
             nullify(DistProb)
           end do
@@ -420,12 +420,12 @@ contains
       continue
     else
       NbEnrichSamples = size(EnrichmentSamples,2)
-      if ( .not. SpaceInput%IsCorrelated() ) then
+      if ( .not. SampleSpace%IsCorrelated() ) then
         i = 1
         do i = 1, NbEnrichSamples
           ii = 1
           do ii = 1, NbDim
-            DistProb => SpaceInput%GetDistributionPointer(Num=ii)
+            DistProb => SampleSpace%GetDistributionPointer(Num=ii)
             EnrichmentSamples(ii,i) = DistProb%InvCDF(P=EnrichmentSamples(ii,i))
             nullify(DistProb)
           end do
@@ -437,7 +437,7 @@ contains
         i = 1
         ii = 0
         do i = 1, NbDim
-          DistProb => SpaceInput%GetDistributionPointer(Num=i)
+          DistProb => SampleSpace%GetDistributionPointer(Num=i)
           select type ( DistProb )
             type is (DistNorm_Type)
               VarR1D(i) = DistProb%GetMu()
@@ -451,7 +451,7 @@ contains
                                                                                                              ProcName=ProcName )
 
         do i = 1, NbEnrichSamples
-          EnrichmentSamples(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=SpaceInput%GetCorrMat(), PVec=EnrichmentSamples(:,i) )
+          EnrichmentSamples(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=SampleSpace%GetCorrMat(), PVec=EnrichmentSamples(:,i) )
         end do
 
         deallocate(VarR1D, stat=StatLoc)

@@ -22,8 +22,7 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use SpaceTransf_Class                                             ,only:    SpaceTransf_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use Model_Class                                                   ,only:    Model_Type
 use Response_Class                                                ,only:    Response_Type
 
@@ -105,14 +104,14 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Calibrate_BayesInvMethod( This, Model, SpaceInput, Responses, OutputDirectory, Debug)
+  subroutine Calibrate_BayesInvMethod( This, Model, SampleSpace, Responses, OutputDirectory, Debug)
     import                                                            ::    BayesInvMethod_Type
     import                                                            ::    Response_Type
-    import                                                            ::    SpaceInput_Type
+    import                                                            ::    SampleSpace_Type
     import                                                            ::    Model_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
     class(Model_Type), intent(inout)                                  ::    Model
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional ,intent(in)                                     ::    Debug

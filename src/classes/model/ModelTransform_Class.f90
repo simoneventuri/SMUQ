@@ -24,8 +24,8 @@ use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
-use SpaceTransf_Class                                             ,only:    SpaceTransf_Type
-use SpaceTransf_Factory_Class                                     ,only:    SpaceTransf_Factory
+use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
+use TransfSampleSpace_Factory_Class                               ,only:    TransfSampleSpace_Factory
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
 use InputDet_Class                                                ,only:    InputDet_Type
@@ -39,7 +39,7 @@ public                                                                ::    Mode
 
 type, extends(Model_Type)                                             ::    ModelTransform_Type
   class(Model_Type), allocatable                                      ::    Model
-  class(SpaceTransf_Type), allocatable                                ::    SpaceTransform
+  class(TransfSampleSpace_Type), allocatable                          ::    SpaceTransform
   type(String_Type), allocatable, dimension(:)                        ::    InputLabels
 contains
   procedure, public                                                   ::    Initialize
@@ -132,7 +132,7 @@ contains
   subroutine ConstructCase1( This, SpaceTransform, Model, Debug )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
-    class(SpaceTransf_Type), intent(in)                               ::    SpaceTransform
+    class(TransfSampleSpace_Type), intent(in)                         ::    SpaceTransform
     class(Model_Type), intent(in)                                     ::    Model
     logical, optional ,intent(in)                                     ::    Debug
 

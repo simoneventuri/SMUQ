@@ -23,7 +23,7 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
-use SpaceParam_Class                                              ,only:    SpaceParam_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use Response_Class                                                ,only:    Response_Type
 
 implicit none
@@ -104,13 +104,13 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run_AnalysisMethod( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
-    import                                                            ::    SpaceParam_Type
+  subroutine Run_AnalysisMethod( This, SampleSpace, Responses, Model, OutputDirectory, Debug )
+    import                                                            ::    SampleSpace_Type
     import                                                            ::    Response_Type
     import                                                            ::    Model_Type
     import                                                            ::    AnalysisMethod_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
-    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    type(SampleSpace_Type), intent(in)                                ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory

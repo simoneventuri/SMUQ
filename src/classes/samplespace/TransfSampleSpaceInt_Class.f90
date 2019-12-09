@@ -16,10 +16,11 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module SpaceParam_Class
+module TransfSampleSpaceInt_Class
 
-use Parameters_Library
 use Input_Library
+use String_Library
+use Parameters_Library
 use String_Library
 use StringRoutines_Module
 use ArrayRoutines_Module
@@ -27,52 +28,48 @@ use ArrayIORoutines_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistProb_Factory_Class                                        ,only:    DistProb_Factory
 use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
+use SampleSpace_Factory_Class                                     ,only:    SampleSpace_Factory
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
 private
 
-public                                                                ::    SpaceParam_Type
+public                                                                ::    TransfSampleSpaceInt_Type
 
-type, extends(SpaceInput_Type)                                        ::    SpaceParam_Type
-  type(DistProb_Vec_Type), allocatable, dimension(:)                  ::    DistProb
-  type(String_Type), allocatable, dimension(:)                        ::    ParamName
-  type(String_Type), allocatable, dimension(:)                        ::    Label
-  real(rkp), dimension(:,:), allocatable                              ::    CorrMat
+type, extends(TransfSampleSpace_Type)                                 ::    TransfSampleSpaceInt_Type
+  class(SampleSpace_Type), allocatable                                ::    OrigSampleSpace
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
-  generic, public                                                     ::    Construct                =>    ConstructInput,        &
-                                                                                                           ConstructCase1
-  procedure, private                                                  ::    ConstructInput              
+  generic, public                                                     ::    Construct               =>    ConstructCase1,         &
+                                                                                                          ConstructCase2,         &
+                                                                                                          ConstructCase3
   procedure, private                                                  ::    ConstructCase1
+  procedure, private                                                  ::    ConstructCase2
+  procedure, private                                                  ::    ConstructCase3
+  procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, private                                                  ::    GetParamName0D
-  procedure, private                                                  ::    GetParamName1D
-  procedure, private                                                  ::    GetLabel0D
-  procedure, private                                                  ::    GetLabel1D
-  procedure, private                                                  ::    GetDistribution0D
-  procedure, private                                                  ::    GetDistribution1D
-  procedure, public                                                   ::    GetDistributionPointer
-  procedure, public                                                   ::    GetCorrMat
+  procedure, public                                                   ::    Transform1D
+  procedure, public                                                   ::    InvTransform1D
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
 
-logical, parameter                                                    ::    DebugGlobal = .false.
+logical, parameter                                                    ::    DebugGlobal=.false.
 
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This, Debug )
 
-    class(SpaceParam_Type), intent(inout)                             ::    This
+    class(TransfSampleSpaceInt_Type), intent(inout)                   ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -85,7 +82,7 @@ contains
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
-      This%Name = 'SpaceParam'
+      This%Name = 'parameter_space'
       call This%SetDefaults()
     end if
 
@@ -97,7 +94,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This, Debug )
 
-    class(SpaceParam_Type), intent(inout)                             ::    This
+    class(TransfSampleSpaceInt_Type), intent(inout)                   ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -122,6 +119,9 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
     This%Correlated=.false.
 
+    if ( allocated(This%OrigSampleSpace) ) deallocate(This%OrigSampleSpace, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+
     This%Initialized=.false.
     This%Constructed=.false.
 
@@ -135,7 +135,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This, Debug )
 
-    class(SpaceParam_Type),intent(inout)                              ::    This
+    class(TransfSampleSpaceInt_Type),intent(inout)                    ::    This
     logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
@@ -153,7 +153,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------         
   subroutine ConstructInput( This, Input, Prefix, Debug )
 
-    class(SpaceParam_Type), intent(inout)                             ::    This
+    class(TransfSampleSpaceInt_Type), intent(inout)                   ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional ,intent(in)                                     ::    Debug
@@ -244,7 +244,14 @@ contains
     end if
 
     if ( size(This%Corrmat,1) /= This%NbDim .or. size(This%CorrMat,2) /= This%NbDim ) call Error%Raise(                           &
-                                                       Line='Improper sizes for the input correlation matrix', ProcName=ProcName ) 
+                                                       Line='Improper sizes for the input correlation matrix', ProcName=ProcName )
+
+    SectionName = 'original_sample_space'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call SampleSpace_Factory%Construct( Object=This%OrigSampleSpace, INput=InputSection, Prefix=PrefixLoc )
+
+    if ( This%Correlated() .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //               &
+                                                'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
 
     This%Constructed=.true.
 
@@ -254,18 +261,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructCase1( This, Distributions, CorrMat, Labels, Names, Debug )
+  subroutine ConstructCase1( This, SampleSpace, OriginalSampleSpace, Debug )
 
-    class(SpaceParam_Type), intent(inout)                             ::    This
-    type(DistProb_Vec_Type), dimension(:), intent(in)                 ::    Distributions
-    real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
-    type(String_Type), dimension(:), intent(in)                       ::    Labels
-    type(String_Type), dimension(:), optional, intent(in)             ::    Names
+    class(TransfSampleSpaceInt_Type), intent(inout)                   ::    This
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
+    class(SampleSpace_Type), intent(in)                               ::    OriginalSampleSpace
     logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     logical                                                           ::    DebugLoc
-    integer                                                           ::    i, ii
     integer                                                           ::    StatLoc=0
     
     DebugLoc = DebugGlobal
@@ -275,48 +279,140 @@ contains
     if ( This%Constructed ) call This%Reset
     if ( .not. This%Initialized ) call This%Initialize  
 
-    This%NbDim = size(Distributions,1)
+    This%NbDim = SampleSpace%GetNbDim()
 
-    allocate(This%ParamName(This%NbDim), stat=StatLoc)
+    allocate(This%ParamName, source=SampleSpace%GetName(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
+
+    allocate(This%DistProb, source=SampleSpace%GetDistProb(), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+
+    allocate(This%Label, source=SampleSpace%GetLabel(), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+
+    allocate(This%CorrMat, source=SampleSpace%GetCorrMat(), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+
+    This%Correlated = SampleSpace%IsCorrelated()
+
+    allocate(This%OrigSampleSpace, source=OriginalSampleSpace, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+
+    if ( This%Correlated() .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //               &
+                                                'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
+
+    This%Constructed=.true.
+
+    if (DebugLoc) call Logger%Exiting
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------         
+  subroutine ConstructCase2( This, Distributions, OriginalSampleSpace, Debug )
+
+    class(TransfSampleSpaceInt_Type), intent(inout)                   ::    This
+    type(DistProb_Vec_Type), dimension(:), intent(in)                 ::    Distributions
+    class(SampleSpace_Type), intent(in)                               ::    OriginalSampleSpace
+    logical, optional ,intent(in)                                     ::    Debug
+    
+    character(*), parameter                                           ::    ProcName='ConstructCase2'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+    
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( This%Constructed ) call This%Reset
+    if ( .not. This%Initialized ) call This%Initialize  
+
+    This%NbDim = OriginalSampleSpace%GetNbDim()
+
+    if ( This%NbDim /= size(Distributions,1) ) call Error%Raise( 'Size of distributions and dimensionality of original sample ' //&
+                                                                                         'space do not match', ProcName=ProcName )
 
     allocate(This%DistProb, source=Distributions, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%Label, source=Labels, stat=StatLoc)
+    allocate(This%ParamName, source=OriginalSampleSpace%GetName(), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
+
+    allocate(This%DistProb, source=OriginalSampleSpace%GetDistProb(), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+
+    allocate(This%Label, source=OriginalSampleSpace%GetLabel(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
 
-    if ( present(Names) ) then
-      do i = 1, This%NbDim
-        call This%ParamName(i)%Set_Value( Value=Names(i)%GetValue() )
-      end do
-    else
-      i = 1
-      do i = 1, This%NbDim
-        call This%ParamName(i)%Set_Value( Value='param' // ConvertToString(Value=i) )
-      end do
-    end if
-
-    i = 1
-    do i = 1, This%NbDim-1
-      ii = 1
-      do ii = i+1 ,This%NbDim
-        if ( This%Label(i)%GetValue() == This%Label(ii)%GetValue() ) call Error%Raise( Line='Duplicate labels', ProcName=ProcName)
-      end do
-    end do
-
-    allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
+    allocate(This%CorrMat, source=OriginalSampleSpace%GetCorrMat(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
 
-    if ( present(CorrMat) ) then
-      if ( size(CorrMat,1) /= This%NbDim .or. size(CorrMat,1) /= This%NbDim ) call Error%Raise( Line='Incorrect shape' //         &
-                                                                                 ' of the correlation matrix', ProcName=ProcName )
-      This%CorrMat = CorrMat
-      This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
-    else
-      This%CorrMat = EyeR(N=This%NbDim)
-      This%Correlated = .false.
-    end if
+    This%Correlated = OriginalSampleSpace%IsCorrelated()
+
+    allocate(This%OrigSampleSpace, source=OriginalSampleSpace, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+
+    if ( This%Correlated() .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //               &
+                                                'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
+
+    This%Constructed=.true.
+
+    if (DebugLoc) call Logger%Exiting
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------         
+  subroutine ConstructCase3( This, Distributions, OriginalSampleSpace, Debug )
+
+    class(TransfSampleSpaceInt_Type), intent(inout)                   ::    This
+    class(DistProb_Type), dimension(:), intent(in)                    ::    Distributions
+    class(SampleSpace_Type), intent(in)                               ::    OriginalSampleSpace
+    logical, optional ,intent(in)                                     ::    Debug
+    
+    character(*), parameter                                           ::    ProcName='ConstructCase2'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    StatLoc=0
+    
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( This%Constructed ) call This%Reset
+    if ( .not. This%Initialized ) call This%Initialize  
+
+    This%NbDim = OriginalSampleSpace%GetNbDim()
+
+    if ( This%NbDim /= size(Distributions,1) ) call Error%Raise( 'Size of distributions and dimensionality of original sample ' //&
+                                                                                         'space do not match', ProcName=ProcName )
+
+    allocate(This%DistProb(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, This%NbDim
+      This%DistProb(i)%Set(Object=Distributions(i))
+    end do
+
+    allocate(This%ParamName, source=OriginalSampleSpace%GetName(), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
+
+    allocate(This%DistProb, source=OriginalSampleSpace%GetDistProb(), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+
+    allocate(This%Label, source=OriginalSampleSpace%GetLabel(), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+
+    allocate(This%CorrMat, source=OriginalSampleSpace%GetCorrMat(), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+
+    This%Correlated = OriginalSampleSpace%IsCorrelated()
+
+    allocate(This%OrigSampleSpace, source=OriginalSampleSpace, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+
+    if ( This%Correlated() .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //               &
+                                                'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
 
     This%Constructed=.true.
 
@@ -330,7 +426,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(SpaceParam_Type), intent(in)                                ::    This
+    class(TransfSampleSpaceInt_Type), intent(in)                      ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -398,43 +494,26 @@ contains
     end if
     nullify(InputSection)
 
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/original_sample_space'
+    SectionName = 'original_sample_space'
+    call GetInput%AddSection( Section=SampleSpace_Factory%GetObjectInput( Object=This%OrigSampleSpace,                            &
+                                                         MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DIrectorySub ) )
+
     if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetParamName0D( This, Num, Debug )
-
-    character(:), allocatable                                         ::    GetParamName0D
-    class(SpaceParam_Type), intent(in)                                ::    This
-    integer, intent(in)                                               ::    Num
-    logical, optional, intent(in)                                     ::    Debug
-
-    character(*), parameter                                           ::    ProcName='GetParamName0D'
-    logical                                                           ::    DebugLoc
+  function Transform1D( This, X, Debug )
     
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
+    real(rkp), allocatable, dimension(:)                              ::    Transform1D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetParamName0D = This%ParamName(Num)%GetValue()      
-
-    if (DebugLoc) call Logger%Exiting
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetParamName1D( This, Debug )
-
-    type(String_Type), allocatable, dimension(:)                      ::    GetParamName1D
-    class(SpaceParam_Type), intent(in)                                ::    This
+    class(TransfSampleSpaceInt_Type), intent(inout)                        ::    This
+    real(rkp), dimension(:), intent(in)                               ::    X
     logical, optional, intent(in)                                     ::    Debug
 
-    character(*), parameter                                           ::    ProcName='GetParamName1D'
+    character(*), parameter                                           ::    ProcName='Transform1D'
     logical                                                           ::    DebugLoc
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
@@ -445,8 +524,8 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    allocate(GetParamName1D, source=This%ParamName, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetParamName1D', ProcName=ProcName, stat=StatLoc )
+    allocate( Transform1D, source=X, stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Transform1D', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 
@@ -454,37 +533,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel0D( This, Num, Debug )
-
-    character(:), allocatable                                         ::    GetLabel0D
-    class(SpaceParam_Type), intent(in)                                ::    This
-    integer, intent(in)                                               ::    Num
-    logical, optional, intent(in)                                     ::    Debug
-
-    character(*), parameter                                           ::    ProcName='GetLabel0D'
-    logical                                                           ::    DebugLoc
+  function InvTransform1D( This, Z, Debug )
     
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
+    real(rkp), allocatable, dimension(:)                              ::    InvTransform1D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetLabel0D = This%Label(Num)%GetValue()      
-
-    if (DebugLoc) call Logger%Exiting
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel1D( This, Debug )
-
-    type(String_Type), allocatable, dimension(:)                      ::    GetLabel1D
-    class(SpaceParam_Type), intent(in)                                ::    This
+    class(TransfSampleSpaceInt_Type), intent(inout)                        ::    This
+    real(rkp), dimension(:), intent(in)                               ::    Z
     logical, optional, intent(in)                                     ::    Debug
 
-    character(*), parameter                                           ::    ProcName='GetLabel1D'
+    character(*), parameter                                           ::    ProcName='InvTransform1D'
     logical                                                           ::    DebugLoc
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
@@ -495,119 +552,10 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    allocate(GetLabel1D, source=This%Label, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetLabel1D', ProcName=ProcName, stat=StatLoc )
+    allocate( InvTransform1D, source=Z, stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='InvTransform1D', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistribution0D( This, Num, Debug )
-
-    class(DistProb_Type), allocatable                                 ::    GetDistribution0D
-
-    class(SpaceParam_Type), intent(in)                                ::    This
-    integer, intent(in)                                               ::    Num
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetDistribution0D'
-    integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    if ( Num > This%NbDim ) call Error%Raise( Line='Num specifier above maximum number of distributions', ProcName=ProcName )
-    if ( Num < 1 ) call Error%Raise( Line='Num specifier below minimum of 1', ProcName=ProcName )
-
-    allocate(GetDistribution0D, source=This%DistProb(Num)%GetPointer(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetDistribution0D', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistribution1D( This, Debug )
-
-    type(DistProb_Vec_Type), allocatable, dimension(:)                ::    GetDistribution1D
-
-    class(SpaceParam_Type), intent(in)                                ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetDistribution1D'
-    integer                                                           ::    i
-    integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    allocate(GetDistribution1D, source=This%DistProb, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetDistribution1D', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistributionPointer( This, Num, Debug )
-
-    class(DistProb_Type), pointer                                     ::    GetDistributionPointer
-
-    class(SpaceParam_Type), intent(in)                                ::    This
-    integer, intent(in)                                               ::    Num
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetDistributionPointer'
-    integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    if ( Num > This%NbDim ) call Error%Raise( Line='Num specifier above maximum number of distributions', ProcName=ProcName )
-    if ( Num < 1 ) call Error%Raise( Line='Num specifier below minimum of 1', ProcName=ProcName )
-
-    GetDistributionPointer => This%DistProb(Num)%GetPointer()
-
-    if (DebugLoc) call Logger%Exiting()
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCorrMat( This, Debug )
-
-    real(rkp), allocatable, dimension(:,:)                            ::    GetCorrMat
-    class(SpaceParam_Type), intent(in)                                ::    This
-    logical, optional, intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetCorrMat'
-    integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    allocate(GetCorrMat, source=This%CorrMat, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCorrMat', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -615,8 +563,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy( LHS, RHS )
 
-    class(SpaceParam_Type), intent(out)                               ::    LHS
-    class(SpaceInput_Type), intent(in)                                ::    RHS
+    class(TransfSampleSpaceInt_Type), intent(out)                     ::    LHS
+    class(SampleSpace_Type), intent(in)                               ::    RHS
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
@@ -628,7 +576,7 @@ contains
 
     select type ( RHS )
 
-      type is (SpaceParam_Type)
+      type is (TransfSampleSpaceInt_Type, ParamSpace_Type)
         call LHS%Reset()
 
         LHS%Initialized = RHS%Initialized
@@ -645,6 +593,8 @@ contains
           if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
           allocate(LHS%Label, source=RHS%Label, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Label', ProcName=ProcName, stat=StatLoc )
+          allocate(LHS%OrigSampleSpace, source=RHS%OrigSampleSpace, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
         end if
 
       class default
@@ -657,11 +607,10 @@ contains
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
-
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Finalizer( This )
 
-    type(SpaceParam_Type),intent(inout)                               ::    This
+    type(TransfSampleSpaceInt_Type),intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     logical                                                           ::    DebugLoc
@@ -678,6 +627,12 @@ contains
 
     if ( allocated(This%DistProb) ) deallocate(This%DistProb, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%OrigSampleSpace) ) deallocate(This%OrigSampleSpace, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 

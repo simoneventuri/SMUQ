@@ -29,7 +29,7 @@ use CalibrationMethod_Class                                       ,only:    Cali
 use BayesInvMethod_Class                                          ,only:    BayesInvMethod_Type
 use BayesInvMethod_Factory_Class                                  ,only:    BayesInvMethod_Factory
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use Response_Class                                                ,only:    Response_Type
 use Model_Class                                                   ,only:    Model_Type
 
@@ -230,10 +230,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
+  subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory, Debug )
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
@@ -248,10 +248,10 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( present(OutputDirectory) ) then
-      call This%BayesInvMethod%Calibrate( Model=Model, SpaceInput=SpaceInput, Responses=Responses,                                &
+      call This%BayesInvMethod%Calibrate( Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
                                                                                                  OutputDirectory=OutputDirectory )
     else
-      call This%BayesInvMethod%Calibrate( Model=Model, SpaceInput=SpaceInput, Responses=Responses )
+      call This%BayesInvMethod%Calibrate( Model=Model, SampleSpace=SampleSpace, Responses=Responses )
     end if
     if (DebugLoc) call Logger%Exiting()
 

@@ -49,15 +49,15 @@ contains
   procedure, private                                                  ::    PDF_R0D
   procedure, public                                                   ::    CDF_R0D
   procedure, public                                                   ::    InvCDF_R0D
-  generic, private                                                    ::    Transform               =>    Transform_0D,           &
+  generic, public                                                     ::    Transform               =>    Transform_0D,           &
                                                                                                           Transform_1D
   procedure, private                                                  ::    Transform_0D
   procedure, private                                                  ::    Transform_1D
-  generic, private                                                    ::    InvTransform            =>    InvTransform_0D,        &
+  generic, public                                                     ::    InvTransform            =>    InvTransform_0D,        &
                                                                                                           InvTransform_1D
   procedure, private                                                  ::    InvTransform_0D
   procedure, private                                                  ::    InvTransform_1D
-  generic, private                                                    ::    fInvTransform           =>    fInvTransform_0D
+  generic, public                                                     ::    fInvTransform           =>    fInvTransform_0D
   procedure, private                                                  ::    fInvTransform_0D
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer     

@@ -42,13 +42,11 @@ use PolyChaosMethod_Factory_Class                                 ,only:    Poly
 use PolyChaosMethod_Class                                         ,only:    PolyChaosMethod_Type
 use Response_Class                                                ,only:    Response_Type
 use PolyChaosModel_Class                                          ,only:    PolyChaosModel_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
-use SpaceParam_Class                                              ,only:    SpaceParam_Type
-use SpaceTransf_Class                                             ,only:    SpaceTransf_Type
-use SpaceTransf_Factory_Class                                     ,only:    SpaceTransf_Factory
-use SpaceTransfCustom_Class                                       ,only:    SpaceTransfCustom_Type
-use SpaceTransfNone_Class                                         ,only:    SpaceTransfNone_Type
-use SpaceTransfStdNormal_Class                                    ,only:    SpaceTransfStdNormal_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
+use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
+use TransfSampleSpace_Factory_Class                               ,only:    TransfSampleSpace_Factory
+use TransfSampleSpaceInt_Class                                    ,only:    TransfSampleSpaceInt_Type
+use TransfSampleSpaceNone_Class                                   ,only:    TransfSampleSpaceNone_Type
 use Model_Class                                                   ,only:    Model_Type
 use ModelTransform_Class                                          ,only:    ModelTransform_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
@@ -377,10 +375,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SpaceInput, Responses, Model, SurrogateModel, OutputDirectory, Debug )
+  subroutine Run( This, SampleSPace, Responses, Model, SurrogateModel, OutputDirectory, Debug )
 
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
-    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    type(SampleSpace_Type), intent(in)                                ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     class(Model_Type), allocatable, dimension(:),optional,intent(out) ::    SurrogateModel
@@ -390,7 +388,7 @@ contains
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
-    class(SpaceTransf_Type), allocatable                              ::    SpaceTransform
+    class(TransfSampleSpace_Type), allocatable                        ::    SpaceTransform
     type(ModelTransform_Type)                                         ::    ModelTransform
     type(OrthoMultiVar_Type)                                          ::    Basis
     type(LinkedList0D_Type), allocatable, dimension(:)                ::    CVErrors
@@ -414,15 +412,15 @@ contains
 
     select case (This%BasisScheme)
       case('weiner')
-        call This%ConstructWeinerScheme( SpaceInput, Basis, SpaceTransform )
+        call This%ConstructWeinerScheme( SampleSpace, Basis, SpaceTransform )
       case('askey')
-        call This%ConstructAskeyScheme( SpaceInput, Basis, SpaceTransform )
+        call This%ConstructAskeyScheme( SampleSpace, Basis, SpaceTransform )
       case('askey_numerical')
-        call This%ConstructAskeyNumericalScheme( SpaceInput, Basis, SpaceTransform )
+        call This%ConstructAskeyNumericalScheme( SampleSpace, Basis, SpaceTransform )
       case('askey_numerical_extended')
-        call This%ConstructAskeyNumericalExtendedScheme( SpaceInput, Basis, SpaceTransform )
+        call This%ConstructAskeyNumericalExtendedScheme( SampleSpace, Basis, SpaceTransform )
       case('numerical')
-        call This%ConstructNumericalScheme( SpaceInput, Basis, SpaceTransform )
+        call This%ConstructNumericalScheme( SampleSpace, Basis, SpaceTransform )
       case default
         call Error%Raise( Line='Unrecognized orthogonal polynomial basis scheme: ' // This%BasisScheme, ProcName=ProcName )
     end select
@@ -477,11 +475,11 @@ contains
         OutputSamplesLoc(i) = This%OutputSamples(iii)
       end do
       if ( present(OutputDirectory) ) then
-        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, Responses=Responses, Model=ModelTransform,  &
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
              IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
              OutputDirectory=OutputDirectoryLoc, InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc )
       else
-        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, Responses=Responses, Model=ModelTransform,  &
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
              IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
              InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc )
       end if
@@ -491,11 +489,11 @@ contains
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc )
     else
       if ( present(OutputDirectory) ) then
-        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, Responses=Responses, Model=ModelTransform,  &
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
              IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
              OutputDirectory=OutputDirectoryLoc )
       else
-        call This%PolyChaosMethod%BuildModel( Basis=Basis, SpaceInput=SpaceTransform, Responses=Responses, Model=ModelTransform,  &
+        call This%PolyChaosMethod%BuildModel( Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
              IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors )
       end if
     end if
@@ -511,7 +509,7 @@ contains
 
     i = 1
     do i = 1, size(Responses,1)
-      call PolyChaosModelLoc(i)%Construct( Response=Responses(i), SpaceTransf=SpaceTransform, Basis=Basis,                        &
+      call PolyChaosModelLoc(i)%Construct( Response=Responses(i), TransformedSpace=SpaceTransform, Basis=Basis,                   &
                                                           Coefficients=Coefficients(i), Indices=Indices(i), CVErrors=CVErrors(i) )
       if ( present(OutputDirectory) ) then
         if ( .not. This%Silent ) then
@@ -542,6 +540,9 @@ contains
 
     deallocate(PolyChaosModelLoc, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='PolyChaosModelLoc', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(SpaceTransform, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -605,11 +606,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructAskeyScheme( SpaceInput, Basis, SpaceTransform, Debug )
+  subroutine ConstructAskeyScheme( SampleSpace, Basis, SpaceTransform, Debug )
 
-    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
-    class(SpaceTransf_Type), allocatable, intent(out)                 ::    SpaceTransform
+    class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
     logical, intent(in), optional                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -629,7 +630,7 @@ contains
 
     NbDim = SpaceInput%GetNbDim()
 
-    allocate( SpaceTransfCustom_Type :: SpaceTransform, stat=StatLoc )
+    allocate( TransfSampleSpaceInt_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
     
     allocate(OrthoPolyVec(NbDim), stat=StatLoc)
@@ -640,7 +641,7 @@ contains
 
     i = 1
     do i = 1, NbDim
-      DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
+      DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
 
       select type ( Object => DistProbPointer )
 
@@ -721,7 +722,7 @@ contains
 
     select type ( Object => SpaceTransform )
       type is (SpaceTransfCustom_Type)
-        call Object%Construct( SpaceInput=SpaceInput, Distributions=DistProbVec )
+        call Object%Construct( Distributions=DistProbVec, OriginalSampleSpace=SampleSpace )
       class default
         call Error%Raise( Line='Something went wrong', ProcName=ProcName )
     end select
@@ -738,21 +739,20 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructWeinerScheme( SpaceInput, Basis, SpaceTransform, Debug )
+  subroutine ConstructWeinerScheme( SampleSpace, Basis, SpaceTransform, Debug )
 
-    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
-    class(SpaceTransf_Type), allocatable, intent(out)                 ::    SpaceTransform
+    class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
     logical, intent(in), optional                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructWeinerScheme'
     integer                                                           ::    StatLoc=0
-    class(DistProb_Type), allocatable                                 ::    DistProb
-    type(DistProb_Vec_Type), allocatable, dimension(:)                ::    DistProbVec
     class(DistProb_Type), allocatable                                 ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
     type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    type(DistNorm_Type), allocatable, dimension(:)                    ::    DistNormal
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
 
@@ -762,7 +762,7 @@ contains
 
     NbDim = SpaceInput%GetNbDim()
 
-    allocate( SpaceTransfStdNormal_Type :: SpaceTransform, stat=StatLoc )
+    allocate( TransfSampleSpaceInt_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
 
     allocate(OrthoPolyVec(NbDim), stat=StatLoc)
@@ -778,16 +778,20 @@ contains
         call Error%Raise( Line='Something went wrong', ProcName=ProcName )
     end select
 
+    allocate(DistNormal(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='DistNormal', ProcName=ProcName, stat=StatLoc )
+
     i = 1
     do i = 1, NbDim
       call OrthoPolyVec(i)%Set( Object=OrthoPoly )
+      call DistNormal%Construct( Mu=One, Sigma=Zero )
     end do
 
     call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
   
     select type ( Object => SpaceTransform )
       type is (SpaceTransfStdNormal_Type)
-        call Object%Construct( SpaceInput=SpaceInput )
+        call Object%Construct( Distributions=DistNormal, OriginalSampleSpace=SampleSpace )
       class default
         call Error%Raise( Line='Something went wrong', ProcName=ProcName )
     end select
@@ -798,17 +802,20 @@ contains
     deallocate(OrthoPoly, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
 
+    deallocate(DistNormal, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistNormal', ProcName=ProcName, stat=StatLoc )
+
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructAskeyNumericalScheme( SpaceInput, Basis, SpaceTransform, Debug )
+  subroutine ConstructAskeyNumericalScheme( SampleSpace, Basis, SpaceTransform, Debug )
 
-    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
-    class(SpaceTransf_Type), allocatable, intent(out)                 ::    SpaceTransform
+    class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
     logical, intent(in), optional                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -828,7 +835,7 @@ contains
 
     NbDim = SpaceInput%GetNbDim()
 
-    allocate( SpaceTransfCustom_Type :: SpaceTransform, stat=StatLoc )
+    allocate( TransfSampleSpaceInt_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
     
     allocate(OrthoPolyVec(NbDim), stat=StatLoc)
@@ -839,7 +846,7 @@ contains
 
     i = 1
     do i = 1, NbDim
-      DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
+      DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
 
       select type ( Object => DistProbPointer )
 
@@ -933,7 +940,7 @@ contains
 
     select type ( Object => SpaceTransform )
       type is (SpaceTransfCustom_Type)
-        call Object%Construct( SpaceInput=SpaceInput, Distributions=DistProbVec )
+        call Object%Construct( Distributions=DistProbVec, OriginalSampleSpace=SampleSpace )
       class default
         call Error%Raise( Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName )
     end select
@@ -950,11 +957,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructAskeyNumericalExtendedScheme( SpaceInput, Basis, SpaceTransform, Debug )
+  subroutine ConstructAskeyNumericalExtendedScheme( SampleSpace, Basis, SpaceTransform, Debug )
 
-    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
-    class(SpaceTransf_Type), allocatable, intent(out)                 ::    SpaceTransform
+    class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
     logical, intent(in), optional                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -972,7 +979,7 @@ contains
 
     NbDim = SpaceInput%GetNbDim()
 
-    allocate( SpaceTransfNone_Type :: SpaceTransform, stat=StatLoc )
+    allocate( TransfSampleSpaceNone_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
     
     allocate(OrthoPolyVec(NbDim), stat=StatLoc)
@@ -1075,8 +1082,8 @@ contains
     call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
 
     select type ( Object => SpaceTransform )
-      type is (SpaceTransfNone_Type)
-        call Object%Construct( SpaceInput=SpaceInput )
+      type is (TransfSampleSpaceNone_Type)
+        call Object%Construct( OriginalSampleSpace=SampleSpace )
       class default
         call Error%Raise( Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName )
     end select
@@ -1090,11 +1097,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructNumericalScheme( SpaceInput, Basis, SpaceTransform, Debug )
+  subroutine ConstructNumericalScheme( SampleSpace, Basis, SpaceTransform, Debug )
 
-    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
-    class(SpaceTransf_Type), allocatable, intent(out)                 ::    SpaceTransform
+    class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
     logical, intent(in), optional                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -1113,7 +1120,7 @@ contains
 
     NbDim = SpaceInput%GetNbDim()
     
-    allocate( SpaceTransfNone_Type :: SpaceTransform, stat=StatLoc )
+    allocate( TransfSampleSpaceNone_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
 
     allocate(OrthoPolyVec(NbDim), stat=StatLoc)
@@ -1143,8 +1150,8 @@ contains
     call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
 
     select type ( Object => SpaceTransform )
-      type is (SpaceTransfNone_Type)
-        call Object%Construct( SpaceInput=SpaceInput )
+      type is (TransfSampleSpaceNone_Type)
+        call Object%Construct( OriginalSampleSpace=SampleSpace )
       class default
         call Error%Raise( Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName )
     end select

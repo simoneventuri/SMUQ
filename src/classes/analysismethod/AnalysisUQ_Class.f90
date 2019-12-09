@@ -27,8 +27,7 @@ use UQMethod_Class                                                ,only:    UQMe
 use UQMethod_Factory_Class                                        ,only:    UQMethod_Factory
 use Response_Class                                                ,only:    Response_Type
 use Model_Class                                                   ,only:    Model_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
-use SpaceParam_Class                                              ,only:    SpaceParam_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 
 implicit none
 
@@ -206,7 +205,7 @@ contains
   subroutine Run( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
 
     class(AnalysisUQ_Type), intent(inout)                             ::    This
-    type(SpaceParam_Type), intent(in)                                 ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
@@ -225,9 +224,9 @@ contains
     if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/propagator'
 
     if ( present(OutputDirectory) ) then
-      call This%UQMethod%Run( SpaceInput=SpaceInput, Responses=Responses, Model=Model, OutputDirectory=OutputDirectoryLoc )
+      call This%UQMethod%Run( SampleSpace=SampleSpace, Responses=Responses, Model=Model, OutputDirectory=OutputDirectoryLoc )
     else
-      call This%UQMethod%Run( SpaceInput=SpaceInput, Responses=Responses, Model=Model )
+      call This%UQMethod%Run( SampleSpace=SampleSpace, Responses=Responses, Model=Model )
     end if
 
     if (DebugLoc) call Logger%Exiting()

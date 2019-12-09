@@ -22,7 +22,7 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 use InputDet_Class                                                ,only:    InputDet_Type
 
@@ -107,15 +107,15 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateChain_MCMCMethod( This, SamplingTarget, SpaceInput, ParameterChain, TargetChain, MiscChain, OutputDirectory, &
+  subroutine GenerateChain_MCMCMethod( This, SamplingTarget, SampleSpace, ParameterChain, TargetChain, MiscChain, OutputDirectory,&
                                                                                                                            Debug )
     use                                                               ::    Parameters_Library
     import                                                            ::    MCMCMethod_Type
-    import                                                            ::    SpaceInput_Type
+    import                                                            ::    SampleSpace_Type
     import                                                            ::    MCMCSamplingTarget
     class(MCMCMethod_Type), intent(inout)                             ::    This
     procedure(MCMCSamplingTarget), pointer                            ::    SamplingTarget
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     character(*), optional, intent(in)                                ::    OutputDirectory
     real(rkp), allocatable, dimension(:,:), optional, intent(out)     ::    ParameterChain
     real(rkp), allocatable, dimension(:,:), optional, intent(out)     ::    MiscChain

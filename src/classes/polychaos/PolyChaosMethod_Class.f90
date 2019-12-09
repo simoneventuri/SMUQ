@@ -23,10 +23,9 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use OrthoMultiVar_Class                                           ,only:    OrthoMultiVar_Type
-use SpaceTransf_Class                                             ,only:    SpaceTransf_Type
 use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
 use PolyChaosModel_Class                                          ,only:    PolyChaosModel_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use LinkedList1D_Class                                            ,only:    LinkedList1D_Type
 use LinkedList2D_Class                                            ,only:    LinkedList2D_Type
@@ -113,12 +112,12 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine BuildModel_PolyChaosMethod( This, Basis, SpaceInput, Responses, Model, IndexSetScheme, Coefficients, Indices,        &
+  subroutine BuildModel_PolyChaosMethod( This, Basis, SampleSpace, Responses, Model, IndexSetScheme, Coefficients, Indices,       &
                                                                     CVErrors, OutputDirectory, InputSamples, OutputSamples, Debug)
     use Parameters_Library
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    OrthoMultivar_Type
-    import                                                            ::    SpaceInput_Type
+    import                                                            ::    SampleSpace_Type_Type
     import                                                            ::    IndexSetScheme_Type
     import                                                            ::    PolyChaosModel_Type
     import                                                            ::    LinkedList0D_Type
@@ -129,7 +128,7 @@ abstract interface
     import                                                            ::    Model_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
     type(OrthoMultiVar_Type), intent(inout)                           ::    Basis
-    class(SpaceInput_Type), intent(inout)                             ::    SpaceInput
+    class(SampleSpace_Type), intent(inout)                            ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     class(IndexSetScheme_Type), intent(inout)                         ::    IndexSetScheme

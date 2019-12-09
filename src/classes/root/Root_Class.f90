@@ -26,7 +26,7 @@ use AnalysisMethod_Class                                          ,only:    Anal
 use AnalysisMethod_Factory_Class                                  ,only:    AnalysisMethod_Factory
 use Response_Class                                                ,only:    Response_Type
 use ProgramDefs_Class                                             ,only:    ProgramDefs
-use SpaceParam_Class                                              ,only:    SpaceParam_Type
+use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use Model_Class                                                   ,only:    Model_Type
 use ModelExtTemplate_Class                                        ,only:    ModelExtTemplate_Type
 use ModelExt_Factory_Class                                        ,only:    ModelExt_Factory

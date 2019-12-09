@@ -36,7 +36,7 @@ use DistNorm_Class                                                ,only:    Dist
 use InputDet_Class                                                ,only:    InputDet_Type
 use MCMCMethod_Class
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use Restart_Class                                                 ,only:    RestartUtility
 
 implicit none
@@ -634,11 +634,11 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Delayed Rejection schemes for efficient Markov chainMonte Carlo sampling of multimodal distributions
-  subroutine GenerateChain( This, SamplingTarget, SpaceInput, ParameterChain, TargetChain, MiscChain, OutputDirectory, Debug )
+  subroutine GenerateChain( This, SamplingTarget, SampleSpace, ParameterChain, TargetChain, MiscChain, OutputDirectory, Debug )
 
     class(MCMCDRAM_Type), intent(inout)                               ::    This
     procedure(MCMCSamplingTarget), pointer                            ::    SamplingTarget
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     character(*), optional, intent(in)                                ::    OutputDirectory
     real(rkp), allocatable, dimension(:,:), optional, intent(out)     ::    ParameterChain
     real(rkp), allocatable, dimension(:), optional, intent(out)       ::    TargetChain
@@ -701,13 +701,13 @@ contains
 
     MiscValuesFlag = .false.
 
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
 
     allocate(Labels(NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
     i = 1
     do i = 1, NbDim
-      Labels(i) = SpaceInput%GetLabel(Num=i)
+      Labels(i) = SampleSpace%GetLabel(Num=i)
     end do
 
     allocate(SpaceSample(NbDim), stat=StatLoc)
@@ -834,7 +834,7 @@ contains
 
         if ( .not. allocated(This%IniCov) ) then
           do i = 1, NbDim
-            DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
+            DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
             This%Cov(i,i) = DistProbPointer%GetVariance()
           end do
         else
@@ -847,7 +847,7 @@ contains
           SpaceSample = This%RNG%DrawVec( Size1=NbDim )
           i = 1
           do i = 1, NbDim
-            DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
+            DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
             SpaceSample(i) = DistProbPointer%InvCDF(P=SpaceSample(i))
           end do
         else
@@ -882,7 +882,7 @@ contains
             SpaceSample = This%RNG%DrawVec( Size1=NbDim )
             i = 1
             do i = 1, NbDim
-              DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
+              DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
               SpaceSample(i) = DistProbPointer%InvCDF(P=SpaceSample(i))
             end do
 
@@ -1032,14 +1032,14 @@ contains
           write(*,'(A)') Line
           ii = 1
           do ii = 1, NbDim
-            write(*,'(3X,A," = ", A)') SpaceInput%GetLabel(Num=ii), ConvertToString(Value=This%ParameterChain(ii,This%Step-1))
+            write(*,'(3X,A," = ", A)') SampleSpace%GetLabel(Num=ii), ConvertToString(Value=This%ParameterChain(ii,This%Step-1))
           end do
 
           Line = 'Proposed Sample : '
           write(*,'(A)') Line
           ii = 1
           do ii = 1, NbDim
-            write(*,'(3X,A," = ", A)') SpaceInput%GetLabel(Num=ii), ConvertToString(Value=SpaceSample(ii))
+            write(*,'(3X,A," = ", A)') SampleSpace%GetLabel(Num=ii), ConvertToString(Value=SpaceSample(ii))
           end do
 
           Line = 'Action = FAILED'

@@ -16,26 +16,24 @@
 !!
 !!!-------------------------------------------------------------------------------------------------------------------------------
 
-module SpaceTransf_Factory_Class
+module TransfSampleSpace_Factory_Class
 
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use SpaceTransf_Class                                             ,only:    SpaceTransf_Type
-use SpaceTransfStdNormal_Class                                    ,only:    SpaceTransfStdNormal_Type
-use SpaceTransfCustom_Class                                       ,only:    SpaceTransfCustom_Type
-use SpaceTransfNone_Class                                         ,only:    SpaceTransfNone_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
-use SpaceParam_Class                                              ,only:    SpaceParam_Type
+use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
+use TransfSampleSpaceCustom_Class                                 ,only:    TransfSampleSpaceInt_Type
+use TransfSampleSpaceNone_Class                                   ,only:    TransfSampleSpaceNone_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 
 implicit none
 
 private
 
-public                                                                ::    SpaceTransf_Factory
+public                                                                ::    TransfSampleSpace_Factory
 
-type                                                                  ::    SpaceTransf_Factory_Type
+type                                                                  ::    TransfSampleSpace_Factory_Type
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D,          &
                                                                                                           Construct_Input
@@ -49,7 +47,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 End Type
 
-type(SpaceTransf_Factory_Type)                                        ::    SpaceTransf_Factory
+type(TransfSampleSpace_Factory_Type)                                  ::    TransfSampleSpace_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -57,7 +55,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_C0D( Object, DesiredType, Debug )
 
-    class(SpaceTransf_Type), allocatable, intent(inout)               ::    Object                                            
+    class(SampleSpace_Type), allocatable, intent(inout)               ::    Object                                            
     character(*), intent(in)                                          ::    DesiredType
     logical, optional, intent(in)                                     ::    Debug                                               
 
@@ -72,14 +70,11 @@ contains
 
     select case ( LowerCase(DesiredType) )
 
-      case('stdnormal')
-        allocate( SpaceTransfStdNormal_Type :: Object )
-
-      case('custom')
-        allocate( SpaceTransfCustom_Type :: Object )
+      case('integral')
+        allocate( TransfSampleSpaceInt_Type :: Object )
 
       case('None')
-        allocate( SpaceTransfNone_Type :: Object )
+        allocate( TransfSampleSpaceNone_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -94,14 +89,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_Input( This, Object, Input, SpaceInput, Prefix, Debug )
+  subroutine Construct_Input( This, Object, Input, Prefix, Debug )
     
     use Input_Library
 
-    class(SpaceTransf_Factory_Type), intent(in)                       ::    This
-    class(SpaceTransf_Type), allocatable, intent(inout)               ::    Object
+    class(TransfSampleSpace_Factory_Type), intent(in)                 ::    This
+    class(SampleSpace_Type), allocatable, intent(inout)               ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
-    type(SpaceParam_Type), optional, intent(in)                       ::    SpaceInput
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    Debug
 
@@ -127,11 +121,7 @@ contains
 
     SectionName = 'type'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    if ( present(SpaceInput) ) then
-      call Object%Construct( Input=InputSection, SpaceInput=SpaceInput, Prefix=PrefixLoc )
-    else
-      call Object%Construct( Input=InputSection, Prefix=PrefixLoc )
-    end if
+    call Object%Construct( Input=InputSection, Prefix=PrefixLoc )
 
     nullify( InputSection )
 
@@ -143,7 +133,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructPointer_C0D( Object, DesiredType, Debug )
 
-    class(SpaceTransf_Type), pointer, intent(inout)                   ::    Object                                            
+    class(TransfSampleSpace_Type), pointer, intent(inout)             ::    Object                                            
     character(*), intent(in)                                          ::    DesiredType
     logical, optional, intent(in)                                     ::    Debug                                               
 
@@ -158,14 +148,11 @@ contains
 
     select case ( LowerCase(DesiredType) )
 
-      case('stdnormal')
-        allocate( SpaceTransfStdNormal_Type ::Object )
-
-      case('custom')
-        allocate( SpaceTransfCustom_Type :: Object )
+      case('integral')
+        allocate( TransfSampleSpaceInt_Type :: Object )
 
       case('None')
-        allocate( SpaceTransfNone_Type :: Object )
+        allocate( TransfSampleSpaceNone_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -180,14 +167,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructPointer_Input( This, Object, Input, SpaceInput, Prefix, Debug )
+  subroutine ConstructPointer_Input( This, Object, Input, Prefix, Debug )
     
     use Input_Library
 
-    class(SpaceTransf_Factory_Type), intent(in)                       ::    This
-    class(SpaceTransf_Type), pointer, intent(inout)                   ::    Object
+    class(TransfSampleSpace_Factory_Type), intent(in)                 ::    This
+    class(SampleSpace_Type), pointer, intent(inout)                   ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
-    type(SpaceParam_Type), optional, intent(in)                       ::    SpaceInput
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    Debug
 
@@ -213,11 +199,7 @@ contains
 
     SectionName = 'type'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    if ( present(SpaceInput) ) then
-      call Object%Construct( Input=InputSection, SpaceInput=SpaceInput, Prefix=PrefixLoc )
-    else
-      call Object%Construct( Input=InputSection, Prefix=PrefixLoc )
-    end if
+    call Object%Construct( Input=InputSection, Prefix=PrefixLoc )
     nullify( InputSection )
 
     if (DebugLoc) call Logger%Exiting()
@@ -230,7 +212,7 @@ contains
 
     character(:), allocatable                                         ::    GetOption
 
-    class(SpaceTransf_Type), intent(in)                               ::    Object                                             
+    class(SampleSpace_Type), intent(in)                               ::    Object                                             
     logical, optional, intent(in)                                     ::    Debug                                               
 
     logical                                                           ::    DebugLoc
@@ -242,13 +224,10 @@ contains
 
     select type (Object)
 
-      type is (SpaceTransfStdNormal_Type)
-        GetOption = 'stdnormal'
+      type is (TransfSampleSpaceInt_Type)
+        GetOption = 'integral'
 
-      type is (SpaceTransfCustom_Type)
-        GetOption = 'custom'
-
-      type is (SpaceTransfNone_Type)
+      type is (TransfSampleSpaceNone_Type)
         GetOption = 'none'
 
       class default
@@ -268,8 +247,8 @@ contains
 
     type(InputSection_Type)                                           ::    GetObjectInput
 
-    class(SpaceTransf_Factory_Type), intent(in)                       ::    This
-    class(SpaceTransf_Type), intent(in)                               ::    Object
+    class(TransfSampleSpace_Factory_Type), intent(in)                 ::    This
+    class(SampleSpace_Type), intent(in)                               ::    Object
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory

@@ -34,13 +34,13 @@ use LinkedList1D_Class                                            ,only:    Link
 use LinkedList2D_Class                                            ,only:    LinkedList2D_Type
 use OrthoPoly_Factory_Class                                       ,only:    OrthoPoly_Factory
 use OrthoMultiVar_Class                                           ,only:    OrthoMultiVar_Type
-use SpaceTransf_Class                                             ,only:    SpaceTransf_Type
-use SpaceTransf_Factory_Class                                     ,only:    SpaceTransf_Factory
+use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
+use TransfSampleSpace_Factory_Class                               ,only:    TransfSampleSpace_Factory
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
 use InputDet_Class                                                ,only:    InputDet_Type
 use InputStoch_Class                                              ,only:    InputStoch_Type
-use SMUQFile_Class                                                ,only:     SMUQFile_Type
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
@@ -75,7 +75,7 @@ end type
 
 type, extends(Model_Type)                                             ::    PolyChaosModel_Type
   type(OrthoMultiVar_Type)                                            ::    Basis
-  class(SpaceTransf_Type), allocatable                                ::    SpaceTransf
+  class(TransfSampleSpace_Type), allocatable                          ::    TransformedSpace
   integer                                                             ::    NbDim=0
   type(String_Type), allocatable, dimension(:)                        ::    InputLabel
   integer                                                             ::    NbCells=0
@@ -159,8 +159,8 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
     This%NbCells = 0
 
-    if ( allocated(This%SpaceTransf) ) deallocate(This%SpaceTransf, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%SpaceTransf', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%TransformedSpace) ) deallocate(This%TransformedSpace, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TransformedSpace', ProcName=ProcName, stat=StatLoc )
     This%NbDim = 0
 
     if ( allocated(This%CoordinateLabels) ) deallocate(This%CoordinateLabels, stat=StatLoc)
@@ -235,16 +235,16 @@ contains
 
     SectionName = 'space_transform'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call SpaceTransf_Factory%Construct( Object=This%SpaceTransf, Input=InputSection, Prefix=PrefixLoc )
+    call TransfSampleSpace_Factory%Construct( Object=This%TransformedSpace, Input=InputSection, Prefix=PrefixLoc )
     nullify( InputSection )
-    This%NbDim = This%SpaceTransf%GetNbDim()
+    This%NbDim = This%TransformedSpace%GetNbDim()
     if ( This%NbDim < 1 ) call Error%Raise( Line='Dimensionality of parameter space below minimum of 1', ProcName=ProcName )
 
     allocate(This%InputLabel(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
     i = 1
     do i = 1, This%NbDim
-      This%InputLabel(i) = This%SpaceTransf%GetLabel(Num=i)
+      This%InputLabel(i) = This%TransformedSpace%GetLabel(Num=i)
     end do
 
     SectionName = 'basis'
@@ -330,16 +330,16 @@ contains
 
     SectionName = 'space_transform'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call SpaceTransf_Factory%Construct( Object=This%SpaceTransf, Input=InputSection, Prefix=PrefixLoc )
+    call TransfSampleSpace_Factory%Construct( Object=This%TransformedSpace, Input=InputSection, Prefix=PrefixLoc )
     nullify( InputSection )
-    This%NbDim = This%SpaceTransf%GetNbDim()
+    This%NbDim = This%TransformedSpace%GetNbDim()
     if ( This%NbDim < 1 ) call Error%Raise( Line='Dimensionality of parameter space below minimum of 1', ProcName=ProcName )
 
     allocate(This%InputLabel(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
     i = 1
     do i = 1, This%NbDim
-      This%InputLabel(i) = This%SpaceTransf%GetLabel(Num=i)
+      This%InputLabel(i) = This%TransformedSpace%GetLabel(Num=i)
     end do
 
     SectionName = 'basis'
@@ -387,11 +387,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Response, SpaceTransf, Basis, Coefficients, Indices, CVErrors, Debug )
+  subroutine ConstructCase1( This, Response, TransformedSpace, Basis, Coefficients, Indices, CVErrors, Debug )
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     type(Response_Type), intent(in)                                   ::    Response
-    class(SpaceTransf_Type), intent(in)                               ::    SpaceTransf
+    class(TransfSampleSpace_Type), intent(in)                         ::    TransformedSpace
     type(OrthoMultiVar_Type), intent(in)                              ::    Basis
     type(LinkedList1D_Type), intent(inout)                            ::    Coefficients
     type(LinkedList2D_Type), intent(inout)                            ::    Indices
@@ -418,17 +418,17 @@ contains
 
     This%Basis = Basis
 
-    allocate(This%SpaceTransf, source=SpaceTransf, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%SpaceTransf', ProcName=ProcName, stat=StatLoc )
+    allocate(This%TransformedSpace, source=TransformedSpace, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%TransformedSpace', ProcName=ProcName, stat=StatLoc )
 
-    This%NbDim = This%SpaceTransf%GetNbDim()
+    This%NbDim = This%TransformedSpace%GetNbDim()
     
     allocate(This%InputLabel(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
 
     i = 1
     do i = 1, This%NbDim
-      This%InputLabel(i) = SpaceTransf%GetLabel(i)
+      This%InputLabel(i) = TransformedSpace%GetLabel(i)
     end do
 
     This%OutputLabel = Response%GetLabel()
@@ -526,8 +526,8 @@ contains
 
     SectionName = 'space_transform'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/space_transform'
-    call GetInput%AddSection( Section=SpaceTransf_Factory%GetObjectInput( Object=This%SpaceTransf, MainSectionName=SectionName,   &
-                                                                                      Prefix=PrefixLoc, Directory=DirectorySub ) )
+    call GetInput%AddSection( Section=TransfSampleSpace_Factory%GetObjectInput( Object=This%TransformedSpace,                     &
+                                                         MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ) )
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/basis'
     call GetInput%AddSection( Section=This%Basis%GetInput( MainSectionName='basis', Prefix=PrefixLoc, Directory=DirectorySub ) )
@@ -634,7 +634,7 @@ contains
           CoefficientsPointer => This%Cells(i)%GetCoefficientsPointer()
           IndicesPointer => This%Cells(i)%GetIndicesPointer()
           NbCoefficients = size(CoefficientsPointer,1)
-          Basis = This%Basis%Eval( X=This%SpaceTransf%Transform(X=VarR1D), Indices=IndicesPointer )
+          Basis = This%Basis%Eval( X=This%TransformedSpace%Transform(X=VarR1D), Indices=IndicesPointer )
           Ordinate(i,1) = dot_product(CoefficientsPointer, Basis )
           nullify( IndicesPointer )
           nullify( CoefficientsPointer )
@@ -662,7 +662,7 @@ contains
           do ii = 1, Input%GetNbDegen()
             InputDetLoc = Input%GetDetInput(Num=ii)
             call InputDetLoc%GetValue( Values=VarR1D, Labels=This%InputLabel )
-            Basis = This%Basis%Eval( X=This%SpaceTransf%Transform(X=VarR1D), Indices=IndicesPointer )
+            Basis = This%Basis%Eval( X=This%TransformedSpace%Transform(X=VarR1D), Indices=IndicesPointer )
             Ordinate(i,ii) = DDOT( NbCoefficients, CoefficientsPointer, 1, Basis, 1 )
           end do
         end do
@@ -894,8 +894,8 @@ contains
           LHS%Basis = RHS%Basis
           LHS%InputLabel = RHS%InputLabel
           LHS%OutputLabel = RHS%OutputLabel
-          allocate(LHS%SpaceTransf, source=RHS%SpaceTransf, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%SpaceTransf', ProcName=ProcName, stat=StatLoc )
+          allocate(LHS%TransformedSpace, source=RHS%TransformedSpace, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%TransformedSpace', ProcName=ProcName, stat=StatLoc )
           allocate(LHS%Cells, source=RHS%Cells, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Cells', ProcName=ProcName, stat=StatLoc )
           LHS%NbCells = RHS%NbCells
@@ -923,8 +923,8 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( allocated(This%SpaceTransf) ) deallocate(This%SpaceTransf, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%SpaceTransf', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%TransformedSpace) ) deallocate(This%TransformedSpace, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TransformedSpace', ProcName=ProcName, stat=StatLoc )
 
     if ( associated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )

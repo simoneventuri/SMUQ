@@ -32,7 +32,7 @@ use UQMethod_Class                                                ,only:    UQMe
 use InputDet_Class                                                ,only:    InputDet_Type
 use Output_Class                                                  ,only:    Output_Type
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
 use Restart_Class                                                 ,only:    RestartUtility
@@ -463,10 +463,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
+  subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory, Debug )
 
     class(UQSampling_Type), intent(inout)                             ::    This
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
@@ -502,7 +502,7 @@ contains
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
     SilentLoc = This%Silent
 
     if ( .not. allocated(This%BinCounts) ) then
@@ -552,10 +552,10 @@ contains
         end if
 
         if ( This%Step == 0 ) then
-          This%ParamSample = This%Sampler%Draw(SpaceInput=SpaceInput)
+          This%ParamSample = This%Sampler%Draw(SampleSpace=SampleSpace)
         else
-          call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,      &
-                                                                                                      Exceeded=StepExceededFlag)
+          call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,        &
+                                                                                                        Exceeded=StepExceededFlag)
 
           if ( StepExceededFlag ) exit
         end if
@@ -583,7 +583,7 @@ contains
           end if
 
           This%ParamSampleStep = i
-          call Input%Construct( Input=This%ParamSample(:,This%ParamSampleStep), Labels=SpaceInput%GetLabel() )
+          call Input%Construct( Input=This%ParamSample(:,This%ParamSampleStep), Labels=SampleSpace%GetLabel() )
           call ModelInterface%Run( Input=Input, Output=Outputs, Stat=StatLoc )
 
           if ( StatLoc /= 0 ) then

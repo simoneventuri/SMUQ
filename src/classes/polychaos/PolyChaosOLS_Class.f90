@@ -34,11 +34,9 @@ use LinkedList2D_Class                                            ,only:    Link
 use PolyChaosModel_Class                                          ,only:    PolyChaosModel_Type
 use OrthoPoly_Factory_Class                                       ,only:    OrthoPoly_Factory
 use OrthoMultiVar_Class                                           ,only:    OrthoMultiVar_Type
-use SpaceTransf_Class                                             ,only:    SpaceTransf_Type
-use SpaceTransf_Factory_Class                                     ,only:    SpaceTransf_Factory
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
-use SpaceInput_CLass                                              ,only:    SpaceInput_Type
+use SampleSpace_CLass                                             ,only:    SampleSpace_Type
 use InputDet_Class                                                ,only:    InputDet_Type
 use Output_Class                                                  ,only:    Output_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
@@ -510,12 +508,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine BuildModel( This, Basis, SpaceInput, Responses, Model, IndexSetScheme, Coefficients, Indices, CVErrors,              &
+  subroutine BuildModel( This, Basis, SampleSpace, Responses, Model, IndexSetScheme, Coefficients, Indices, CVErrors,              &
                                                                              OutputDirectory, InputSamples, OutputSamples, Debug )
 
     class(PolyChaosOLS_Type), intent(inout)                           ::    This
     type(OrthoMultiVar_Type), intent(inout)                           ::    Basis
-    class(SpaceInput_Type), intent(inout)                             ::    SpaceInput
+    class(SampleSpace_Type), intent(inout)                            ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     class(IndexSetScheme_Type), intent(inout)                         ::    IndexSetScheme
@@ -582,7 +580,7 @@ contains
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
     NbOutputs = size(Responses,1)
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
 
     allocate(NbCellsOutput(NbOutputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc )
@@ -715,13 +713,13 @@ contains
               write(*,'(A)') Line
               write(*,'(A)') '' 
             end if
-            This%ParamSample = This%Sampler%Draw(SpaceInput=SpaceInput)
+            This%ParamSample = This%Sampler%Draw(SampleSpace=SampleSpace)
             if ( This%DesignRatio > Zero ) then
               do
                 VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio - real(size(This%ParamSample,2),rkp))
                 if ( VarI0D <= 0 ) exit
                 VarR2D = This%ParamSample
-                call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=VarR2D, EnrichmentSamples=ParamSampleTemp,             &
+                call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=VarR2D, EnrichmentSamples=ParamSampleTemp,             &
                                                                                                       Exceeded=StepExceededFlag)
                 if ( StepExceededFlag ) then
                   deallocate(VarR2D, stat=StatLoc)
@@ -747,7 +745,7 @@ contains
             if ( This%DesignRatio > Zero ) then
               VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio-real(size(This%ParamRecord,2),rkp))
               if ( VarI0D > 0 ) then
-                call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=This%ParamRecord,                        &
+                call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord,                                      &
                                                                     EnrichmentSamples=This%ParamSample, Exceeded=StepExceededFlag)
                 if ( StepExceededFlag ) exit
                 if ( .not. SilentLoc ) then
@@ -766,7 +764,7 @@ contains
                   VarR2D(:,size(This%ParamRecord,2)+1:) = This%ParamSample
                   deallocate(This%ParamSample, stat=StatLoc)
                   if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
-                  call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=VarR2D, EnrichmentSamples=ParamSampleTemp,             &
+                  call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=VarR2D, EnrichmentSamples=ParamSampleTemp,           &
                                                                                                         Exceeded=StepExceededFlag)
                   if ( StepExceededFlag ) then
                     deallocate(VarR2D, stat=StatLoc)
@@ -793,7 +791,7 @@ contains
                 This%SamplesRan = .true.
               end if
             else
-              call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,      &
+              call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,    &
                                                                                                         Exceeded=StepExceededFlag)
             end if
             if ( StepExceededFlag ) exit
@@ -852,7 +850,7 @@ contains
           end if
 
           This%ParamSampleStep = i
-          call Input%Construct( Input=This%ParamSample(:,This%ParamSampleStep), Labels=SpaceInput%GetLabel() )
+          call Input%Construct( Input=This%ParamSample(:,This%ParamSampleStep), Labels=SampleSpace%GetLabel() )
           call ModelInterface%Run( Input=Input, Output=Outputs, Stat=StatLoc )
 
           if ( StatLoc /= 0 ) then

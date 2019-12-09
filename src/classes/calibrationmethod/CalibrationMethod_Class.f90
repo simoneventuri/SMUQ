@@ -22,6 +22,9 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
+use Response_Class                                                ,only:    Response_Type
+use Model_Class                                                   ,only:    Model_Type
 
 implicit none
 
@@ -101,13 +104,13 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_CalibrationMethod( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
-    use SpaceInput_Class                                          ,only:    SpaceInput_Type
-    use Response_Class                                            ,only:    Response_Type
-    use Model_Class                                               ,only:    Model_Type
+  subroutine Run_CalibrationMethod( This, SampleSpace, Responses, Model, OutputDirectory, Debug )
+    import                                                            ::    SampleSpace_Type
+    import                                                            ::    Response_Type
+    import                                                            ::    ModelType
     import                                                            ::    CalibrationMethod_Type
     class(CalibrationMethod_Type), intent(inout)                      ::    This
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory

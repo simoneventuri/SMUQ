@@ -27,10 +27,7 @@ use StringRoutines_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use SpaceParam_Class                                              ,only:    SpaceParam_Type
 use Output_Class                                                  ,only:    Output_Type
-use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
 use Restart_Class                                                 ,only:    RestartUtility
@@ -42,14 +39,17 @@ use LikelihoodFunction_Vec_Class                                  ,only:    Like
 use LikelihoodGauss_Class                                         ,only:    LikelihoodGauss_Type
 use LikelihoodFunction_Factory_Class                              ,only:    LikelihoodFunction_Factory
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
 use DistProb_Class                                                ,only:    DistProb_Type 
 use BayesInvMethod_Class                                          ,only:    BayesInvMethod_Type
 use InputDet_Class                                                ,only:    InputDet_Type
 use InputStoch_Class                                              ,only:    InputStoch_Type
 use Model_Class                                                   ,only:    Model_Type
-use SpaceParam_Class                                              ,only:    SpaceParam_Type
-use SpaceHierParam_Class                                          ,only:    SpaceHierParam_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
+use ParamSpace_Class                                              ,only:    ParamSpace_Type
+use HierParamSpace_Class                                          ,only:    HierParamSpace_Type
+use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
+use TransfSampleSpaceUnbound_Class                                ,only:    TransfSampleSpaceUnbound_Type
+use TransfSampleSpaceNone_Class                                   ,only:    TransfSampleSpaceNone_Type
 
 implicit none
 
@@ -61,7 +61,7 @@ type, extends(BayesInvMethod_Type)                                    ::    Baye
   logical                                                             ::    Silent=.false.
   type(LikelihoodFunction_Vec_Type), allocatable, dimension(:)        ::    LikelihoodFunctionVec
   class(MCMCMethod_Type), allocatable                                 ::    MCMC
-  type(SpaceHierParam_Type)                                           ::    HierarchicalSpace
+  type(HierParamSpace_Type)                                           ::    HierarchicalSpace
   type(SpaceSampler_Type)                                             ::    HierarchicalSampler
   logical                                                             ::    Hierarchical
   logical                                                             ::    TransformBounded
@@ -331,11 +331,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Calibrate( This, Model, SpaceInput, Responses, OutputDirectory, Debug )
+  subroutine Calibrate( This, Model, SampleSpace, Responses, OutputDirectory, Debug )
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional ,intent(in)                                     ::    Debug
@@ -355,12 +355,12 @@ contains
     type(Output_Type), allocatable, dimension(:,:)                    ::    HierOutput
     real(rkp), allocatable, dimension(:,:)                            ::    HierSamples
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
-    type(SpaceParam_Type)                                             ::    SpaceParamRealization
+    real(rkp), allocatable, dimension(:)                              ::    OrigInputValues
+    type(ParamSpace_Type)                                             ::    ParamSpaceRealization
     real(rkp)                                                         ::    VarR0D
     real(rkp)                                                         ::    HVarR0D
     real(rkp)                                                         ::    TVarR0D
-    class(SpaceTransf_Type), allocatable                              ::    TargetSpace
-    type(ModelTransf_Type)                                            ::    TargetModel
+    class(TransfSampleSpace_Type), allocatable                        ::    TargetSpace
     
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -369,34 +369,25 @@ contains
     HVarR0D = dlog(huge(VarR0D))
     TVarR0D = dlog(tiny(VarR0D))
 
-    if ( SpaceInput%IsCorrelated() ) call Error%Raise( Line='Bayesian inference does not support correlated spaces',              &
-                                                                                                               ProcName=ProcName )    
-
     ! transforming target space from bounded to unbounded if specified
-    if ( .not. This%TransformBounded ) then
-      call TargetSpace%Construct( Distributions=SpaceInput%GetDistribution(), CorrMat=SpaceInput%GetCorrMat(),                    &
-                                                                   Labels=SpaceInput%GetLabel(), Names=SpaceInput%GetParamName() )
+    if ( This%TransformBounded ) then
+      allocate( TransfSampleSpaceUnBound_Type :: TargetSpace )
     else
-      if ( SpaceInput%IsCorrelated() ) call Error%Raise( 'Bounded to unbounded domain transformation not available for ' //       &
-                                                                                          'correlated spaces', ProcName=ProcName )
-      allocate(DistVecTarget(SpaceInput%GetNbDim()), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='DistVecTarget', ProcName=ProcName, stat=StatLoc )
-      i = 1
-      do i = 1, SpaceInput%GetNbDim()
-        DistProbTarget => SpaceInput%GetDistributionPointer( Num=i )
-        if ( DistProbTarget%IsTruncatedLeft() .or. DistProbTarget%IsTruncatedRight() ) then
-          call DistTransf%Construct( Distribution=DistProbTarget )
-          call DistVecTarget(i)%Set(Object=DistTransf)
-          call DistTransf%Reset()
-        else
-          call DistVecTarget(i)%Set(Object=DistProbTarget)
-        end if
-      end do
-      call TargetSpace%Construct( Distributions=DistVecTarget, CorrMat=SpaceInput%GetCorrMat(), Labels=SpaceInput%GetLabel(),     &
-                                                                                                 Names=SpaceInput%GetParamName() )
-      deallocate(DistVecTarget, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistVecTarget', ProcName=ProcName, stat=StatLoc )
+      allocate( TransfSampleSpaceNone_Type :: TargetSpace )
     end if
+
+    allocate(OrigInputValues(TargetSpace%GetNbDim()), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='OrigInputValues', ProcName=ProcName, stat=StatLoc )
+    OrigInputValues = Zero
+
+    select type( TargetSpace )
+      type is ( TransfSampleSpaceNone_Type ) 
+        call TargetSpace%Construct( OriginalSampleSpace=SampleSpace )
+      type is ( TransfSampleSpaceUnbound_Type )
+        call TargetSpace%Construct( OriginalSampleSpace=SampleSpace )
+      class default
+        call Error%Raise( 'Something went wrong', ProcName=ProcName )
+    end select
 
     ! setting up posterior pointer for either hierarchical or non-hierarchical problem
     if ( This%Hierarchical ) then
@@ -419,8 +410,10 @@ contains
 
     if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/posterior_sampler'
 
-    call This%MCMC%GenerateChain( SamplingTarget=Posterior, SpaceInput=TargetSpace, ParameterChain=ParamChain,                    &
+    call This%MCMC%GenerateChain( SamplingTarget=Posterior, SampleSpace=TargetSpace, ParameterChain=ParamChain,                   &
                                              TargetChain=PosteriorChain, MiscChain=MiscChain, OutputDirectory=OutputDirectoryLoc )
+
+    ParamChain = TargetSpace%InvTransform( Values=ParamChain )
 
     deallocate(Output, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
@@ -434,8 +427,7 @@ contains
       deallocate(VarR1D, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
     end if
-
-    if ( present(OutputDirectory) ) call This%WriteOutput( SpaceInput=SpaceInput, PosteriorChain=PosteriorChain,                  &
+    if ( present(OutputDirectory) ) call This%WriteOutput( SampleSpace=SampleSpace, PosteriorChain=PosteriorChain,                &
                                                            ParamChain=ParamChain, MiscChain=MiscChain, Directory=OutputDirectory )
 
     deallocate(PosteriorChain, stat=StatLoc)
@@ -446,6 +438,12 @@ contains
 
     deallocate(MiscChain, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='MiscChain', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(OrigLabels, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrigLabels', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(OrigInputValues, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrigInputValues', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -468,6 +466,7 @@ contains
         integer                                                           ::    RunStat
         integer                                                           ::    iLoc
         class(LikelihoodFunction_Type), pointer                           ::    LikelihoodPtr=>null()
+        type(InputDet_Type)                                               ::    InputLoc
         
         DebugLoc = DebugGlobal
         if ( present(Debug) ) DebugLoc = Debug
@@ -496,16 +495,24 @@ contains
         end do
         nullify( DistProb )
 
+        iLoc = 1
+        do iLoc = 1, NbDimOrig
+          call InputGetValue( Value=OrigInputValues(iLoc), Label=Labels(iLoc)%GetValue() )
+        end do
+        OrigInputValues = TargetSpace%InvTransform( Z=OrigInputValues )
+        call InputLoc%Construct( Values=OrigInputValues, Labels=Labels(1:NbDimOrig) )
+
         MiscValues(1) = Prior
 
         if ( Prior > Zero ) then
-          call ModelInterface%Run( Input=Input, Output=Output, Stat=RunStat )
+          call ModelInterface%Run( Input=InputLoc, Output=Output, Stat=RunStat )
           if ( RunStat == 0 ) then
             Likelihood = Zero
             iLoc = 1
             do iLoc = 1, size(This%LikelihoodFunctionVec,1)
               LikelihoodPtr => This%LikelihoodFunctionVec(iLoc)%GetPointer()
-              Likelihood = Likelihood + LikelihoodPtr%Evaluate( Responses=Responses, Input=Input, Output=Output, LogValue=.true. )
+              Likelihood = Likelihood + LikelihoodPtr%Evaluate( Responses=Responses, Input=InputLoc, Output=Output,               &
+                                                                                                                 LogValue=.true. )
               nullify(LikelihoodPtr)
             end do
             if ( Likelihood > TVarR0D .and. Likelihood < HVarR0D ) then
@@ -585,13 +592,20 @@ contains
         end do
         nullify( DistProb )
 
+        iLoc = 1
+        do iLoc = 1, NbDimOrig
+          call InputGetValue( Value=OrigInputValues(iLoc), Label=Labels(iLoc)%GetValue() )
+        end do
+        OrigInputValues = TargetSpace%InvTransform( Z=OrigInputValues )
+        call InputLoc%Construct( Values=OrigInputValues, Labels=Labels(1:NbDimOrig) )
+
         MiscValues(1) = Prior
 
         if ( Prior > Zero ) then
 
-          call This%HierarchicalSpace%Generate( Input=Input, SpaceParam=SpaceParamRealization )
-          NbDimHier = SpaceParamRealization%GetNbDim()
-          HierSamples = This%HierarchicalSampler%Draw( SpaceInput=SpaceParamRealization )
+          call This%HierarchicalSpace%Generate( Input=InputLoc, ParamSpace=ParamSpaceRealization )
+          NbDimHier = ParamSpaceRealization%GetNbDim()
+          HierSamples = This%HierarchicalSampler%Draw( SampleSpace=ParamSpaceRealization )
           NbHierSamples = size(HierSamples,2)
 
           if ( allocated(VarR1D) ) then
@@ -608,7 +622,7 @@ contains
 
           iLoc = 1
           do iLoc = 1, NbDimOrig
-            call Input%GetValue( Value=VarR1D(iLoc), Label=Labels(iLoc)%GetValue() )
+            call InputLoc%GetValue( Value=VarR1D(iLoc), Label=Labels(iLoc)%GetValue() )
           end do
 
           allocate(HierInput(NbHierSamples), stat=StatLoc)
@@ -668,10 +682,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, SpaceInput, PosteriorChain, ParamChain, MiscChain, Directory, Debug )
+  subroutine WriteOutput( This, SampleSpace, PosteriorChain, ParamChain, MiscChain, Directory, Debug )
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
-    class(SpaceInput_Type), intent(in)                                ::    SpaceInput
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     real(rkp), dimension(:,:),  intent(in)                            ::    ParamChain
     real(rkp), dimension(:,:),  intent(in)                            ::    MiscChain
     real(rkp),dimension(:), optional, intent(in)                      ::    PosteriorChain
@@ -706,7 +720,7 @@ contains
 
       FileName = '/parameter_names.dat'
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Array=SpaceInput%GetParamName(), File=File )
+      call ExportArray( Array=SampleSpace%GetName(), File=File )
 
       FileName = '/prior_chain.dat'
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )

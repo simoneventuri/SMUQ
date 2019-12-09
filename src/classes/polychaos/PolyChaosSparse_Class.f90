@@ -33,16 +33,13 @@ use LinkedList1D_Class                                            ,only:    Link
 use LinkedList2D_Class                                            ,only:    LinkedList2D_Type
 use OrthoPoly_Factory_Class                                       ,only:    OrthoPoly_Factory
 use OrthoMultiVar_Class                                           ,only:    OrthoMultiVar_Type
-use SpaceTransf_Class                                             ,only:    SpaceTransf_Type
-use SpaceTransf_Factory_Class                                     ,only:    SpaceTransf_Factory
 use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
-use SpaceParam_Class                                              ,only:    SpaceParam_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use InputDet_Class                                                ,only:    InputDet_Type
 use Output_Class                                                  ,only:    Output_Type
 use LinSolverSparse_Class                                         ,only:    LinSolverSparse_Type
 use LinSolverSparse_Factory_Class                                 ,only:    LinSolverSparse_Factory
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
-use SpaceInput_Class                                              ,only:    SpaceInput_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
 use Restart_Class                                                 ,only:    RestartUtility
@@ -512,12 +509,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine BuildModel( This, Basis, SpaceInput, Responses, Model, IndexSetScheme, Coefficients, Indices, CVErrors,              &
+  subroutine BuildModel( This, Basis, SampleSpace, Responses, Model, IndexSetScheme, Coefficients, Indices, CVErrors,              &
                                                                              OutputDirectory, InputSamples, OutputSamples, Debug )
 
     class(PolyChaosSparse_Type), intent(inout)                        ::    This
     type(OrthoMultiVar_Type), intent(inout)                           ::    Basis
-    class(SpaceInput_Type), intent(inout)                             ::    SpaceInput
+    class(SampleSpace_Type), intent(inout)                            ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     class(IndexSetScheme_Type), intent(inout)                         ::    IndexSetScheme
@@ -575,7 +572,7 @@ contains
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
     NbOutputs = size(Responses,1)
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
 
     allocate(NbCellsOutput(NbOutputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc )
@@ -710,9 +707,9 @@ contains
 
         if ( This%Sampler%IsConstructed() ) then
           if ( This%Step == 0 ) then
-            This%ParamSample = This%Sampler%Draw(SpaceInput=SpaceInput)
+            This%ParamSample = This%Sampler%Draw(SampleSpace=SampleSpace)
           else
-            call This%Sampler%Enrich( SpaceInput=SpaceInput, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,      &
+            call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,      &
                                                                                                         Exceeded=StepExceededFlag)
             if ( StepExceededFlag ) exit
           end if
@@ -745,7 +742,7 @@ contains
           end if
 
           This%ParamSampleStep = i
-          call Input%Construct( Input=This%ParamSample(:,This%ParamSampleStep), Labels=SpaceInput%GetLabel() )
+          call Input%Construct( Input=This%ParamSample(:,This%ParamSampleStep), Labels=SampleSpace%GetLabel() )
           call ModelInterface%Run( Input=Input, Output=Outputs, Stat=StatLoc )
 
           if ( StatLoc /= 0 ) then
