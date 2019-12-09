@@ -271,6 +271,7 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
     
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -281,25 +282,36 @@ contains
 
     This%NbDim = SampleSpace%GetNbDim()
 
-    allocate(This%ParamName, source=SampleSpace%GetName(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%DistProb, source=SampleSpace%GetDistribution(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%Label, source=SampleSpace%GetLabel(), stat=StatLoc)
+    allocate(This%Label(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    This%Label = SampleSpace%GetLabel()
 
-    allocate(This%CorrMat, source=SampleSpace%GetCorrMat(), stat=StatLoc)
+    allocate(This%ParamName(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Paramname', ProcName=ProcName, stat=StatLoc )
+    This%ParamName = SampleSpace%GetName()
+
+    allocate(This%DistProb(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    This%DistProb = SampleSpace%GetDistribution()
+
+    allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    This%CorrMat = SampleSpace%GetCorrMat()
 
     This%Correlated = SampleSpace%IsCorrelated()
 
-    call This%OrigSampleSpace%Construct( Distributions=OriginalSampleSpace%GetDistribution(),                                     &
-            CorrMat=OriginalSampleSpace%GetCorrMat(), Names=OriginalSampleSpace%GetName(), Labels=OriginalSampleSpace%GetLabel() )
+    call This%OrigSampleSpace%Construct( SampleSpace=OriginalSampleSpace )
 
     if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
+
+    i = 1
+    do i = 1, This%NbDim
+      if ( This%OrigSampleSpace%GetName(Num=i) /= This%ParamName(i)%GetValue() ) call Error%Raise( 'Mismatch in names',           &
+                                                                                                               ProcName=ProcName )
+      if ( This%OrigSampleSpace%GetLabel(Num=i) /= This%Label(i)%GetValue() ) call Error%Raise( 'Mismatch in labels',             &
+                                                                                                               ProcName=ProcName )
+    end do
 
     This%Constructed=.true.
 
@@ -309,11 +321,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructCase2( This, Distributions, OriginalSampleSpace, Debug )
+  subroutine ConstructCase2( This, Distributions, CorrMat, OriginalSampleSpace, Debug )
 
     class(TransfSampleSpaceInt_Type), intent(inout)                   ::    This
     type(DistProb_Vec_Type), dimension(:), intent(in)                 ::    Distributions
     class(SampleSpace_Type), intent(in)                               ::    OriginalSampleSpace
+    real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
     logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='ConstructCase2'
@@ -332,25 +345,30 @@ contains
     if ( This%NbDim /= size(Distributions,1) ) call Error%Raise( 'Size of distributions and dimensionality of original sample ' //&
                                                                                          'space do not match', ProcName=ProcName )
 
-    allocate(This%DistProb, source=Distributions, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%ParamName, source=OriginalSampleSpace%GetName(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%DistProb, source=OriginalSampleSpace%GetDistribution(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%Label, source=OriginalSampleSpace%GetLabel(), stat=StatLoc)
+    allocate(This%Label(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    This%Label = OriginalSampleSpace%GetLabel()
 
-    allocate(This%CorrMat, source=OriginalSampleSpace%GetCorrMat(), stat=StatLoc)
+    allocate(This%ParamName(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Paramname', ProcName=ProcName, stat=StatLoc )
+    This%ParamName = OriginalSampleSpace%GetName()
+
+    allocate(This%DistProb(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    This%DistProb = Distributions
+
+    allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
 
-    This%Correlated = OriginalSampleSpace%IsCorrelated()
+    if ( present(CorrMat) ) then
+      This%CorrMat = CorrMat
+      This%Correlated = IsDiagonal(Array=This%CorrMat)
+    else
+      call Eye(Array=This%CorrMat)
+      This%Correlated = .false.
+    end if
 
-    call This%OrigSampleSpace%Construct( Distributions=OriginalSampleSpace%GetDistribution(),                                     &
-            CorrMat=OriginalSampleSpace%GetCorrMat(), Names=OriginalSampleSpace%GetName(), Labels=OriginalSampleSpace%GetLabel() )
+    call This%OrigSampleSpace%Construct( SampleSpace=OriginalSampleSpace )
 
     if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
@@ -363,11 +381,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructCase3( This, Distributions, OriginalSampleSpace, Debug )
+  subroutine ConstructCase3( This, Distributions, CorrMat, OriginalSampleSpace, Debug )
 
     class(TransfSampleSpaceInt_Type), intent(inout)                   ::    This
     class(DistProb_Type), dimension(:), intent(in)                    ::    Distributions
     class(SampleSpace_Type), intent(in)                               ::    OriginalSampleSpace
+    real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
     logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='ConstructCase2'
@@ -395,22 +414,26 @@ contains
       call This%DistProb(i)%Set(Object=Distributions(i))
     end do
 
-    allocate(This%ParamName, source=OriginalSampleSpace%GetName(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%DistProb, source=OriginalSampleSpace%GetDistribution(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%Label, source=OriginalSampleSpace%GetLabel(), stat=StatLoc)
+    allocate(This%Label(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    This%Label = OriginalSampleSpace%GetLabel()
 
-    allocate(This%CorrMat, source=OriginalSampleSpace%GetCorrMat(), stat=StatLoc)
+    allocate(This%ParamName(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Paramname', ProcName=ProcName, stat=StatLoc )
+    This%ParamName = OriginalSampleSpace%GetName()
+
+    allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
 
-    This%Correlated = OriginalSampleSpace%IsCorrelated()
+    if ( present(CorrMat) ) then
+      This%CorrMat = CorrMat
+      This%Correlated = IsDiagonal(Array=This%CorrMat)
+    else
+      call Eye(Array=This%CorrMat)
+      This%Correlated = .false.
+    end if
 
-    call This%OrigSampleSpace%Construct( Distributions=OriginalSampleSpace%GetDistribution(),                                     &
-            CorrMat=OriginalSampleSpace%GetCorrMat(), Names=OriginalSampleSpace%GetName(), Labels=OriginalSampleSpace%GetLabel() )
+    call This%OrigSampleSpace%Construct( SampleSpace=OriginalSampleSpace )
 
     if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )

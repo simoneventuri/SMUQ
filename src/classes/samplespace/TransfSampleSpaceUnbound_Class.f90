@@ -281,8 +281,7 @@ contains
     integer                                                           ::    i, ii
     integer                                                           ::    StatLoc=0
     type(DistInfBoundTransf_Type), allocatable                        ::    DistProb
-    class(DistProb_Vec_Type), allocatable, dimension(:)               ::    DistProbVec
-    class(DistProb_Type), pointer                                     ::    DistProbPtr
+    class(DistProb_Type), pointer                                     ::    DistProbPtr=>null()
     
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -293,30 +292,28 @@ contains
 
     This%NbDim = OriginalSampleSpace%GetNbDim()
 
-    allocate(This%ParamName, source=OriginalSampleSpace%GetName(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%Label, source=OriginalSampleSpace%GetLabel(), stat=StatLoc)
+    allocate(This%Label(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    This%Label = OriginalSampleSpace%GetLabel()
 
-    allocate(This%CorrMat, source=OriginalSampleSpace%GetCorrMat(), stat=StatLoc)
+    allocate(This%ParamName(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Paramname', ProcName=ProcName, stat=StatLoc )
+    This%ParamName = OriginalSampleSpace%GetName()
+
+    allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%DistProb, source=OriginalSampleSpace%GetDistribution(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    call Eye(Array=This%CorrMat)
+    This%Correlated = .false.
 
     i = 1
     do i = 1, This%NbDim
-      DistProbPtr => OriginalSampleSpace%GetDistributionPointer( Label=This%Label(i)%GetValue() )
+      DistProbPtr => OriginalSampleSpace%GetDistributionPointer(Label=This%Label(i)%GetValue())
       call DistProb%Construct( Distribution=DistProbPtr )
       call This%DistProb(i)%Set( Object=DistProb )
       call DistProb%Reset()
     end do
 
-    This%Correlated = OriginalSampleSpace%IsCorrelated()
-
-    call This%OrigSampleSpace%Construct( Distributions=OriginalSampleSpace%GetDistribution(),                                     &
-            CorrMat=OriginalSampleSpace%GetCorrMat(), Names=OriginalSampleSpace%GetName(), Labels=OriginalSampleSpace%GetLabel() )
+    call This%OrigSampleSpace%Construct( SampleSpace=OriginalSampleSpace )
 
     if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )

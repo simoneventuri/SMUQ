@@ -46,10 +46,12 @@ contains
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1,         &
-                                                                                                          ConstructCase2
+                                                                                                          ConstructCase2,         &
+                                                                                                          ConstructCase3
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
   procedure, private                                                  ::    ConstructCase2
+  procedure, private                                                  ::    ConstructCase3
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -384,6 +386,52 @@ contains
       This%CorrMat = EyeR(N=This%NbDim)
       This%Correlated = .false.
     end if
+
+    This%Constructed=.true.
+
+    if (DebugLoc) call Logger%Exiting
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------         
+  subroutine ConstructCase3( This, SampleSpace, Debug )
+
+    class(ParamSpace_Type), intent(inout)                             ::    This
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
+    logical, optional ,intent(in)                                     ::    Debug
+    
+    character(*), parameter                                           ::    ProcName='ConstructCase3'
+    logical                                                           ::    DebugLoc
+    integer                                                           ::    i, ii
+    integer                                                           ::    StatLoc=0
+    
+    DebugLoc = DebugGlobal
+    if ( present(Debug) ) DebugLoc = Debug
+    if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( This%Constructed ) call This%Reset
+    if ( .not. This%Initialized ) call This%Initialize  
+
+    This%NbDim = SampleSpace%GetNbDim()
+
+    allocate(This%Label(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    This%Label = SampleSpace%GetLabel()
+
+    allocate(This%ParamName(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Paramname', ProcName=ProcName, stat=StatLoc )
+    This%ParamName = SampleSpace%GetName()
+
+    allocate(This%DistProb(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    This%DistProb = SampleSpace%GetDistribution()
+
+    allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    This%CorrMat = SampleSpace%GetCorrMat()
+
+    This%Correlated = SampleSpace%IsCorrelated()
 
     This%Constructed=.true.
 

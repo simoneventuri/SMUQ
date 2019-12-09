@@ -266,17 +266,21 @@ contains
 
     This%NbDim = OriginalSampleSpace%GetNbDim()
 
-    allocate(This%ParamName, source=OriginalSampleSpace%GetName(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%DistProb, source=OriginalSampleSpace%GetDistribution(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%Label, source=OriginalSampleSpace%GetLabel(), stat=StatLoc)
+    allocate(This%Label(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    This%Label = OriginalSampleSpace%GetLabel()
 
-    allocate(This%CorrMat, source=OriginalSampleSpace%GetCorrMat(), stat=StatLoc)
+    allocate(This%ParamName(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Paramname', ProcName=ProcName, stat=StatLoc )
+    This%ParamName = OriginalSampleSpace%GetName()
+
+    allocate(This%DistProb(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    This%DistProb = OriginalSampleSpace%GetDistribution()
+
+    allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    This%CorrMat = OriginalSampleSpace%GetCorrMat()
 
     This%Correlated = OriginalSampleSpace%IsCorrelated()
 
