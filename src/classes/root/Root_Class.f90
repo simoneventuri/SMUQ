@@ -44,7 +44,7 @@ type                                                                  ::    Root
   logical                                                             ::    Constructed=.false.
   class(AnalysisMethod_Type), allocatable                             ::    AnalysisMethod
   type(Response_Type), allocatable, dimension(:)                      ::    Responses
-  type(SpaceParam_Type)                                               ::    ParameterSpace
+  type(ParamSpace_Type)                                               ::    ParameterSpace
   class(ModelExtTemplate_Type), allocatable                           ::    Model
   character(:), allocatable                                           ::    SectionChain                                             
 contains
@@ -312,7 +312,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    call This%AnalysisMethod%Run( SpaceInput=This%ParameterSpace, Responses=This%Responses, Model=This%Model,                     &
+    call This%AnalysisMethod%Run( SampleSpace=This%ParameterSpace, Responses=This%Responses, Model=This%Model,                    &
                                                                                       OutputDirectory=ProgramDefs%GetOutputDir() )
 
     if (DebugLoc) call Logger%Exiting()

@@ -202,7 +202,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SpaceInput, Responses, Model, OutputDirectory, Debug )
+  subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory, Debug )
 
     class(AnalysisUQ_Type), intent(inout)                             ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace

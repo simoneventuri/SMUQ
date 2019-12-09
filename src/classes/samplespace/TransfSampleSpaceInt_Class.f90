@@ -33,7 +33,7 @@ use DistProb_Class                                                ,only:    Dist
 use DistProb_Factory_Class                                        ,only:    DistProb_Factory
 use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
-use SampleSpace_Factory_Class                                     ,only:    SampleSpace_Factory
+use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
@@ -43,7 +43,7 @@ private
 public                                                                ::    TransfSampleSpaceInt_Type
 
 type, extends(TransfSampleSpace_Type)                                 ::    TransfSampleSpaceInt_Type
-  class(SampleSpace_Type), allocatable                                ::    OrigSampleSpace
+  type(ParamSpace_Type), allocatable                                  ::    OrigSampleSpace
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -248,9 +248,9 @@ contains
 
     SectionName = 'original_sample_space'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call SampleSpace_Factory%Construct( Object=This%OrigSampleSpace, INput=InputSection, Prefix=PrefixLoc )
+    call This%OrigSampleSpace%Construct( Input=InputSection, Prefix=PrefixLoc )
 
-    if ( This%Correlated() .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //               &
+    if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
 
     This%Constructed=.true.
@@ -284,7 +284,7 @@ contains
     allocate(This%ParamName, source=SampleSpace%GetName(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%DistProb, source=SampleSpace%GetDistProb(), stat=StatLoc)
+    allocate(This%DistProb, source=SampleSpace%GetDistribution(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
 
     allocate(This%Label, source=SampleSpace%GetLabel(), stat=StatLoc)
@@ -295,10 +295,10 @@ contains
 
     This%Correlated = SampleSpace%IsCorrelated()
 
-    allocate(This%OrigSampleSpace, source=OriginalSampleSpace, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+    call This%OrigSampleSpace%Construct( Distributions=OriginalSampleSpace%GetDistribution(),                                     &
+            CorrMat=OriginalSampleSpace%GetCorrMat(), Names=OriginalSampleSpace%GetName(), Labels=OriginalSampleSpace%GetLabel() )
 
-    if ( This%Correlated() .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //               &
+    if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
 
     This%Constructed=.true.
@@ -338,7 +338,7 @@ contains
     allocate(This%ParamName, source=OriginalSampleSpace%GetName(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%DistProb, source=OriginalSampleSpace%GetDistProb(), stat=StatLoc)
+    allocate(This%DistProb, source=OriginalSampleSpace%GetDistribution(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
 
     allocate(This%Label, source=OriginalSampleSpace%GetLabel(), stat=StatLoc)
@@ -349,10 +349,10 @@ contains
 
     This%Correlated = OriginalSampleSpace%IsCorrelated()
 
-    allocate(This%OrigSampleSpace, source=OriginalSampleSpace, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+    call This%OrigSampleSpace%Construct( Distributions=OriginalSampleSpace%GetDistribution(),                                     &
+            CorrMat=OriginalSampleSpace%GetCorrMat(), Names=OriginalSampleSpace%GetName(), Labels=OriginalSampleSpace%GetLabel() )
 
-    if ( This%Correlated() .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //               &
+    if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
 
     This%Constructed=.true.
@@ -373,6 +373,7 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase2'
     logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
     
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -391,13 +392,13 @@ contains
 
     i = 1
     do i = 1, This%NbDim
-      This%DistProb(i)%Set(Object=Distributions(i))
+      call This%DistProb(i)%Set(Object=Distributions(i))
     end do
 
     allocate(This%ParamName, source=OriginalSampleSpace%GetName(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%DistProb, source=OriginalSampleSpace%GetDistProb(), stat=StatLoc)
+    allocate(This%DistProb, source=OriginalSampleSpace%GetDistribution(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
 
     allocate(This%Label, source=OriginalSampleSpace%GetLabel(), stat=StatLoc)
@@ -408,10 +409,10 @@ contains
 
     This%Correlated = OriginalSampleSpace%IsCorrelated()
 
-    allocate(This%OrigSampleSpace, source=OriginalSampleSpace, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+    call This%OrigSampleSpace%Construct( Distributions=OriginalSampleSpace%GetDistribution(),                                     &
+            CorrMat=OriginalSampleSpace%GetCorrMat(), Names=OriginalSampleSpace%GetName(), Labels=OriginalSampleSpace%GetLabel() )
 
-    if ( This%Correlated() .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //               &
+    if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
 
     This%Constructed=.true.
@@ -496,8 +497,8 @@ contains
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/original_sample_space'
     SectionName = 'original_sample_space'
-    call GetInput%AddSection( Section=SampleSpace_Factory%GetObjectInput( Object=This%OrigSampleSpace,                            &
-                                                         MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DIrectorySub ) )
+    call GetInput%AddSection( Section=This%OrigSampleSpace%GetInput(MainSectionName=SectionName, Prefix=PrefixLoc,                &
+                                                                                                        Directory=DirectorySub ) )
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -576,7 +577,7 @@ contains
 
     select type ( RHS )
 
-      type is (TransfSampleSpaceInt_Type, ParamSpace_Type)
+      type is (TransfSampleSpaceInt_Type)
         call LHS%Reset()
 
         LHS%Initialized = RHS%Initialized
@@ -593,8 +594,7 @@ contains
           if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
           allocate(LHS%Label, source=RHS%Label, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Label', ProcName=ProcName, stat=StatLoc )
-          allocate(LHS%OrigSampleSpace, source=RHS%OrigSampleSpace, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+          LHS%OrigSampleSpace = RHS%OrigSampleSpace
         end if
 
       class default
@@ -630,9 +630,6 @@ contains
 
     if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%OrigSampleSpace) ) deallocate(This%OrigSampleSpace, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 

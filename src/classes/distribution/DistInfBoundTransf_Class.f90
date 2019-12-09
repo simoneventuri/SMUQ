@@ -21,6 +21,7 @@ module DistInfBoundTransf_Class
 use Prob_Library
 use Input_Library
 use Parameters_Library
+use CommandRoutines_Module
 use DistProb_Class                                                ,only:    DistProb_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -173,7 +174,7 @@ contains
 
     SectionName = 'distribution'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call BaseDistProb_Factory( Object=This%DistProb, Input=InputSection, Prefix=PrefixLoc )
+    call BaseDistProb_Factory%Construct( Object=This%DistProb, Input=InputSection, Prefix=PrefixLoc )
 
     This%DistTLeft = This%DistProb%IsTruncatedLeft()
     This%DistTRIght = This%DistProb%IsTruncatedRight()
@@ -198,17 +199,6 @@ contains
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    ParameterName
-    logical                                                           ::    Found
-    real(rkp)                                                         ::    VarR0D
-    logical                                                           ::    VarL0D
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    i
-    type(DistNorm_Type)                                               ::    DistNorm
-    real(rkp)                                                         ::    SampleMin
-    real(rkp)                                                         ::    SampleMax
-    real(rkp), allocatable, dimension(:)                              ::    SamplesLoc
-    integer                                                           ::    NbSamples
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -336,7 +326,7 @@ contains
     XLoc = X
     call This%Transform( Value=XLoc )
 
-    call This%DistProb%CDF( X=XLoc )
+    CDF_R0D = This%DistProb%CDF( X=XLoc )
       
     if (DebugLoc) call Logger%Exiting()
 
@@ -414,11 +404,11 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%DistTLeft .and. This%DistTRight ) then
-      Value = ( This%DistB*dexp(Values)+This%DistA ) / ( One+dexp(Values) )
+      Values = ( This%DistB*dexp(Values)+This%DistA ) / ( One+dexp(Values) )
     elseif ( This%DistTLeft ) then
-      Value = dexp(Values) + This%DistA
+      Values = dexp(Values) + This%DistA
     elseif ( This%DistTRight ) then
-      Value = This%DistB - One / dexp(Values)
+      Values = This%DistB - One / dexp(Values)
     end if
 
     if (DebugLoc) call Logger%Exiting()
@@ -470,11 +460,11 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%DistTLeft .and. This%DistTRight ) then
-      Value = dlog((Values-This%DistA)/(This%DistB-Values))
+      Values = dlog((Values-This%DistA)/(This%DistB-Values))
     elseif ( This%DistTLeft ) then
-      Value = dlog((Values-This%DistA))
+      Values = dlog((Values-This%DistA))
     elseif ( This%DistTRight ) then
-      Value = dlog(One/(This%DistB-Values))
+      Values = dlog(One/(This%DistB-Values))
     end if
 
     if (DebugLoc) call Logger%Exiting()

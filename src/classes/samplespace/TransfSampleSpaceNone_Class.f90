@@ -269,7 +269,7 @@ contains
     allocate(This%ParamName, source=OriginalSampleSpace%GetName(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%DistProb, source=OriginalSampleSpace%GetDistProb(), stat=StatLoc)
+    allocate(This%DistProb, source=OriginalSampleSpace%GetDistribution(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
 
     allocate(This%Label, source=OriginalSampleSpace%GetLabel(), stat=StatLoc)
@@ -437,7 +437,7 @@ contains
 
     select type ( RHS )
 
-      type is (TransfSampleSpaceNone_Type, ParamSpace_Type)
+      type is (TransfSampleSpaceNone_Type)
         call LHS%Reset()
 
         LHS%Initialized = RHS%Initialized

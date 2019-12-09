@@ -23,9 +23,8 @@ use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
-use TransfSampleSpaceCustom_Class                                 ,only:    TransfSampleSpaceInt_Type
+use TransfSampleSpaceInt_Class                                    ,only:    TransfSampleSpaceInt_Type
 use TransfSampleSpaceNone_Class                                   ,only:    TransfSampleSpaceNone_Type
-use SampleSpace_Class                                             ,only:    SampleSpace_Type
 
 implicit none
 
@@ -55,7 +54,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_C0D( Object, DesiredType, Debug )
 
-    class(SampleSpace_Type), allocatable, intent(inout)               ::    Object                                            
+    class(TransfSampleSpace_Type), allocatable, intent(inout)         ::    Object                                            
     character(*), intent(in)                                          ::    DesiredType
     logical, optional, intent(in)                                     ::    Debug                                               
 
@@ -94,7 +93,7 @@ contains
     use Input_Library
 
     class(TransfSampleSpace_Factory_Type), intent(in)                 ::    This
-    class(SampleSpace_Type), allocatable, intent(inout)               ::    Object
+    class(TransfSampleSpace_Type), allocatable, intent(inout)         ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    Debug
@@ -172,7 +171,7 @@ contains
     use Input_Library
 
     class(TransfSampleSpace_Factory_Type), intent(in)                 ::    This
-    class(SampleSpace_Type), pointer, intent(inout)                   ::    Object
+    class(TransfSampleSpace_Type), pointer, intent(inout)             ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    Debug
@@ -212,7 +211,7 @@ contains
 
     character(:), allocatable                                         ::    GetOption
 
-    class(SampleSpace_Type), intent(in)                               ::    Object                                             
+    class(TransfSampleSpace_Type), intent(in)                         ::    Object                                             
     logical, optional, intent(in)                                     ::    Debug                                               
 
     logical                                                           ::    DebugLoc
@@ -248,7 +247,7 @@ contains
     type(InputSection_Type)                                           ::    GetObjectInput
 
     class(TransfSampleSpace_Factory_Type), intent(in)                 ::    This
-    class(SampleSpace_Type), intent(in)                               ::    Object
+    class(TransfSampleSpace_Type), intent(in)                         ::    Object
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory

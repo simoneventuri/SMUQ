@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module DistProb_Factory_Class
+module BaseDistProb_Factory_Class
 
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistUnif_Class                                                ,only:    DistUnif_Type
@@ -37,10 +37,10 @@ implicit none
 
 private
 
-public                                                                ::    DistProb_Factory
-public                                                                ::    DistProb_Factory_Type
+public                                                                ::    BaseDistProb_Factory
+public                                                                ::    BaseDistProb_Factory_Type
 
-type                                                                  ::    DistProb_Factory_Type
+type                                                                  ::    BaseDistProb_Factory_Type
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D,          &
                                                                                                           Construct_Input
@@ -54,7 +54,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 End Type
 
-type(DistProb_Factory_Type)                                           ::    DistProb_Factory
+type(BaseDistProb_Factory_Type)                                       ::    BaseDistProb_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -121,7 +121,7 @@ contains
     
     use Input_Library
 
-    class(DistProb_Factory_Type), intent(in)                          ::    This
+    class(BaseDistProb_Factory_Type), intent(in)                      ::    This
     class(DistProb_Type), allocatable, intent(inout)                  ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
@@ -219,7 +219,7 @@ contains
     
     use Input_Library
 
-    class(DistProb_Factory_Type), intent(in)                          ::    This
+    class(BaseDistProb_Factory_Type), intent(in)                      ::    This
     class(DistProb_Type), pointer, intent(inout)                      ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
@@ -316,7 +316,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetObjectInput
 
-    class(DistProb_Factory_Type), intent(in)                          ::    This
+    class(BaseDistProb_Factory_Type), intent(in)                      ::    This
     class(DistProb_Type), intent(in)                                  ::    Object
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix

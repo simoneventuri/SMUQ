@@ -117,7 +117,7 @@ abstract interface
     use Parameters_Library
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    OrthoMultivar_Type
-    import                                                            ::    SampleSpace_Type_Type
+    import                                                            ::    SampleSpace_Type
     import                                                            ::    IndexSetScheme_Type
     import                                                            ::    PolyChaosModel_Type
     import                                                            ::    LinkedList0D_Type

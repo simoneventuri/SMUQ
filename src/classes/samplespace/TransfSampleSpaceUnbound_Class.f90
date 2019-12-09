@@ -34,7 +34,7 @@ use DistInfBoundTransf_Class                                      ,only:    Dist
 use DistProb_Factory_Class                                        ,only:    DistProb_Factory
 use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
-use SampleSpace_Factory_Class                                     ,only:    SampleSpace_Factory
+use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
@@ -44,7 +44,7 @@ private
 public                                                                ::    TransfSampleSpaceUnbound_Type
 
 type, extends(TransfSampleSpace_Type)                                 ::    TransfSampleSpaceUnbound_Type
-  class(SampleSpace_Type), allocatable                                ::    OrigSampleSpace
+  type(ParamSpace_Type), allocatable                                  ::    OrigSampleSpace
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -258,7 +258,7 @@ contains
     allocate(This%OrigSampleSpace, source=OrigSampleSpace, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
 
-    if ( This%Correlated() .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //               &
+    if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
 
 
@@ -291,7 +291,7 @@ contains
     if ( This%Constructed ) call This%Reset
     if ( .not. This%Initialized ) call This%Initialize  
 
-    This%NbDim = SampleSpace%GetNbDim()
+    This%NbDim = OriginalSampleSpace%GetNbDim()
 
     allocate(This%ParamName, source=OriginalSampleSpace%GetName(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
@@ -302,7 +302,7 @@ contains
     allocate(This%CorrMat, source=OriginalSampleSpace%GetCorrMat(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%DistProb, source=SampleSpace%GetDistProb(), stat=StatLoc)
+    allocate(This%DistProb, source=OriginalSampleSpace%GetDistribution(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
 
     i = 1
@@ -313,12 +313,12 @@ contains
       call DistProb%Reset()
     end do
 
-    This%Correlated = SampleSpace%IsCorrelated()
+    This%Correlated = OriginalSampleSpace%IsCorrelated()
 
-    allocate(This%OrigSampleSpace, source=OriginalSampleSpace, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+    call This%OrigSampleSpace%Construct( Distributions=OriginalSampleSpace%GetDistribution(),                                     &
+            CorrMat=OriginalSampleSpace%GetCorrMat(), Names=OriginalSampleSpace%GetName(), Labels=OriginalSampleSpace%GetLabel() )
 
-    if ( This%Correlated() .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //               &
+    if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )
 
     This%Constructed=.true.
@@ -435,10 +435,9 @@ contains
       DistProbPtr => This%DistProb(i)%GetPointer()
       select type ( DistProbPtr )
         type is (DistInfBoundTransf_Type)
-          Transform1D(i) = DistProb%Transform(Value=Transform1D(i))
+          call DistProbPtr%Transform(Value=Transform1D(i))
         class default
           call Error%Raise( 'Something went wrong', ProcName=ProcName )
-        end if
       end select
       nullify(DistProbPtr)
     end do
@@ -461,6 +460,7 @@ contains
     logical                                                           ::    DebugLoc
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
+    class(DistProb_Type), pointer                                     ::    DistProbPtr=>null()
     
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -476,10 +476,9 @@ contains
       DistProbPtr => This%DistProb(i)%GetPointer()
       select type ( DistProbPtr )
         type is (DistInfBoundTransf_Type)
-          InvTransform1D(i) = DistProb%InvTransform(Value=Transform1D(i))
+          call DistProbPtr%InvTransform(Value=InvTransform1D(i))
         class default
           call Error%Raise( 'Something went wrong', ProcName=ProcName )
-        end if
       end select
       nullify(DistProbPtr)
     end do
@@ -505,7 +504,7 @@ contains
 
     select type ( RHS )
 
-      type is (TransfSampleSpaceUnbound_Type, ParamSpace_Type)
+      type is (TransfSampleSpaceUnbound_Type)
         call LHS%Reset()
 
         LHS%Initialized = RHS%Initialized
@@ -522,8 +521,7 @@ contains
           if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
           allocate(LHS%Label, source=RHS%Label, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Label', ProcName=ProcName, stat=StatLoc )
-          allocate(LHS%OrigSampleSpace, source=RHS%OrigSampleSpace, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+          LHS%OrigSampleSpace = RHS%OrigSampleSpace
         end if
 
       class default
@@ -559,9 +557,6 @@ contains
 
     if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%OrigSampleSpace) ) deallocate(This%OrigSampleSpace, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting
 

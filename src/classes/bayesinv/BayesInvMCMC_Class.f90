@@ -290,7 +290,7 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    call GetInput%AddParmaeter( Name='transform_bounded_distributions', Value=ConvertToString(Value=This%TransformBounded) )
+    call GetInput%AddParameter( Name='transform_bounded_distributions', Value=ConvertToString(Value=This%TransformBounded) )
 
     SectionName = 'mcmc'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/mcmc'
@@ -361,6 +361,8 @@ contains
     real(rkp)                                                         ::    HVarR0D
     real(rkp)                                                         ::    TVarR0D
     class(TransfSampleSpace_Type), allocatable                        ::    TargetSpace
+    integer                                                           ::    NbDimOrig
+    integer                                                           ::    NbDimHier
     
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -389,8 +391,12 @@ contains
         call Error%Raise( 'Something went wrong', ProcName=ProcName )
     end select
 
+    NbDimOrig = TargetSpace%GetNbDim()
+    NbDimHier = 0
+
     ! setting up posterior pointer for either hierarchical or non-hierarchical problem
     if ( This%Hierarchical ) then
+      NbDimHier = This%HierarchicalSpace%GetNbDim()
       Posterior => MCMCPosteriorHier
       allocate(Labels(This%HierarchicalSpace%GetNbDim()+TargetSpace%GetNbDim()), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
@@ -413,7 +419,7 @@ contains
     call This%MCMC%GenerateChain( SamplingTarget=Posterior, SampleSpace=TargetSpace, ParameterChain=ParamChain,                   &
                                              TargetChain=PosteriorChain, MiscChain=MiscChain, OutputDirectory=OutputDirectoryLoc )
 
-    ParamChain = TargetSpace%InvTransform( Values=ParamChain )
+    ParamChain = TargetSpace%InvTransform( Z=ParamChain )
 
     deallocate(Output, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
@@ -438,9 +444,6 @@ contains
 
     deallocate(MiscChain, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='MiscChain', ProcName=ProcName, stat=StatLoc )
-
-    deallocate(OrigLabels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrigLabels', ProcName=ProcName, stat=StatLoc )
 
     deallocate(OrigInputValues, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrigInputValues', ProcName=ProcName, stat=StatLoc )
@@ -472,6 +475,8 @@ contains
         if ( present(Debug) ) DebugLoc = Debug
         if (DebugLoc) call Logger%Entering( ProcName )
 
+        NbDimOrig = Input%GetNbInputs()
+
         Likelihood = Zero
         Prior = Zero
 
@@ -497,10 +502,10 @@ contains
 
         iLoc = 1
         do iLoc = 1, NbDimOrig
-          call InputGetValue( Value=OrigInputValues(iLoc), Label=Labels(iLoc)%GetValue() )
+          call Input%GetValue( Value=OrigInputValues(iLoc), Label=Labels(iLoc)%GetValue() )
         end do
         OrigInputValues = TargetSpace%InvTransform( Z=OrigInputValues )
-        call InputLoc%Construct( Values=OrigInputValues, Labels=Labels(1:NbDimOrig) )
+        call InputLoc%Construct( Input=OrigInputValues, Labels=Labels(1:NbDimOrig) )
 
         MiscValues(1) = Prior
 
@@ -551,7 +556,7 @@ contains
         logical                                                           ::    DebugLoc
         character(*), parameter                                           ::    ProcName='MCMCPosterior'
         real(rkp)                                                         ::    Prior
-        class(DistProb_Type), pointer                                     ::    DistProb
+        class(DistProb_Type), pointer                                     ::    DistProb=>null()
         type(InputDet_Type), allocatable, dimension(:)                    ::    HierInput
         real(rkp)                                                         ::    VarR0DLoc
         integer                                                           ::    RunStat
@@ -559,9 +564,8 @@ contains
         integer                                                           ::    iLoc
         integer                                                           ::    iiLoc
         class(LikelihoodFunction_Type), pointer                           ::    LikelihoodPtr=>null()
-        integer                                                           ::    NbDimOrig
-        integer                                                           ::    NbDimHier
         integer                                                           ::    NbHierSamples
+        type(InputDet_Type)                                               ::    InputLoc
 
         DebugLoc = DebugGlobal
         if ( present(Debug) ) DebugLoc = Debug
@@ -569,8 +573,6 @@ contains
 
         Likelihood = Zero
         Prior = Zero
-
-        NbDimOrig = Input%GetNbInputs()
 
         if ( allocated(MiscValues) ) then
           if ( size(MiscValues) /= 2 ) then
@@ -585,26 +587,25 @@ contains
 
         Prior = One
         iLoc = 1
-        do iLoc = 1, SpaceInput%GetNbDim()
-          DistProb => SpaceInput%GetDistributionPointer( Num=iLoc )
-          call Input%GetValue( Value=VarR0DLoc, Label=SpaceInput%GetLabel(Num=iLoc) )
+        do iLoc = 1, TargetSpace%GetNbDim()
+          DistProb => TargetSpace%GetDistributionPointer( Num=iLoc )
+          call Input%GetValue( Value=VarR0DLoc, Label=TargetSpace%GetLabel(Num=iLoc) )
           Prior = Prior * DistProb%PDF( X=VarR0DLoc )
         end do
         nullify( DistProb )
 
         iLoc = 1
         do iLoc = 1, NbDimOrig
-          call InputGetValue( Value=OrigInputValues(iLoc), Label=Labels(iLoc)%GetValue() )
+          call Input%GetValue( Value=OrigInputValues(iLoc), Label=Labels(iLoc)%GetValue() )
         end do
         OrigInputValues = TargetSpace%InvTransform( Z=OrigInputValues )
-        call InputLoc%Construct( Values=OrigInputValues, Labels=Labels(1:NbDimOrig) )
+        call InputLoc%Construct( Input=OrigInputValues, Labels=Labels(1:NbDimOrig) )
 
         MiscValues(1) = Prior
 
         if ( Prior > Zero ) then
 
           call This%HierarchicalSpace%Generate( Input=InputLoc, ParamSpace=ParamSpaceRealization )
-          NbDimHier = ParamSpaceRealization%GetNbDim()
           HierSamples = This%HierarchicalSampler%Draw( SampleSpace=ParamSpaceRealization )
           NbHierSamples = size(HierSamples,2)
 

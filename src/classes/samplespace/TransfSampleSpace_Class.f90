@@ -22,7 +22,7 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use SpaceParam_Class                                              ,only:    SpaceParam_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 
 implicit none
 
@@ -31,7 +31,7 @@ private
 public                                                                ::    TransfSampleSpace_Type
 
 type, abstract, extends(SampleSpace_Type)                             ::    TransfSampleSpace_Type
-  type(ParamSpace_Type)                                               ::    OrigSampleSpace
+
 contains
   generic, public                                                     ::    Transform               =>    Transform1D,            &
                                                                                                           Transform2D

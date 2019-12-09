@@ -110,7 +110,7 @@ abstract interface
     import                                                            ::    SurrogateMethod_Type
     import                                                            ::    SampleSpace_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
-    type(SampleSpace_Type), intent(in)                                ::    SampleSpace
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     class(Model_Type), allocatable, dimension(:),optional,intent(out) ::    SurrogateModel

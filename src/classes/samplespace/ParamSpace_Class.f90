@@ -39,7 +39,7 @@ private
 
 public                                                                ::    ParamSpace_Type
 
-type                                                                  ::    ParamSpace_Type
+type, extends(SampleSpace_Type)                                       ::    ParamSpace_Type
 
 contains
   procedure, public                                                   ::    Initialize

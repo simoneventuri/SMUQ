@@ -378,7 +378,7 @@ contains
   subroutine Run( This, SampleSPace, Responses, Model, SurrogateModel, OutputDirectory, Debug )
 
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
-    type(SampleSpace_Type), intent(in)                                ::    SampleSpace
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     class(Model_Type), allocatable, dimension(:),optional,intent(out) ::    SurrogateModel
@@ -628,7 +628,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
 
     allocate( TransfSampleSpaceInt_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
@@ -721,7 +721,7 @@ contains
     call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
 
     select type ( Object => SpaceTransform )
-      type is (SpaceTransfCustom_Type)
+      type is (TransfSampleSpaceInt_Type)
         call Object%Construct( Distributions=DistProbVec, OriginalSampleSpace=SampleSpace )
       class default
         call Error%Raise( Line='Something went wrong', ProcName=ProcName )
@@ -760,7 +760,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
 
     allocate( TransfSampleSpaceInt_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
@@ -784,13 +784,13 @@ contains
     i = 1
     do i = 1, NbDim
       call OrthoPolyVec(i)%Set( Object=OrthoPoly )
-      call DistNormal%Construct( Mu=One, Sigma=Zero )
+      call DistNormal(i)%Construct( Mu=One, Sigma=Zero )
     end do
 
     call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
   
     select type ( Object => SpaceTransform )
-      type is (SpaceTransfStdNormal_Type)
+      type is (TransfSampleSpaceInt_Type)
         call Object%Construct( Distributions=DistNormal, OriginalSampleSpace=SampleSpace )
       class default
         call Error%Raise( Line='Something went wrong', ProcName=ProcName )
@@ -833,7 +833,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
 
     allocate( TransfSampleSpaceInt_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
@@ -939,7 +939,7 @@ contains
     call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
 
     select type ( Object => SpaceTransform )
-      type is (SpaceTransfCustom_Type)
+      type is (TransfSampleSpaceInt_Type)
         call Object%Construct( Distributions=DistProbVec, OriginalSampleSpace=SampleSpace )
       class default
         call Error%Raise( Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName )
@@ -977,7 +977,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
 
     allocate( TransfSampleSpaceNone_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
@@ -988,7 +988,7 @@ contains
     i = 1
     do i = 1, NbDim
 
-      DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
+      DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
 
       select type ( Object => DistProbPointer )
 
@@ -1118,7 +1118,7 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    NbDim = SpaceInput%GetNbDim()
+    NbDim = SampleSpace%GetNbDim()
     
     allocate( TransfSampleSpaceNone_Type :: SpaceTransform, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
@@ -1128,7 +1128,7 @@ contains
 
     i = 1
     do i = 1, NbDim
-      DistProbPointer => SpaceInput%GetDistributionPointer(Num=i)
+      DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
 
       allocate( OrthoNumerical_Type :: OrthoPoly, stat=StatLoc )
       if ( StatLoc /= 0 ) call Error%Allocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )

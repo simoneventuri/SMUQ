@@ -107,7 +107,7 @@ abstract interface
   subroutine Run_CalibrationMethod( This, SampleSpace, Responses, Model, OutputDirectory, Debug )
     import                                                            ::    SampleSpace_Type
     import                                                            ::    Response_Type
-    import                                                            ::    ModelType
+    import                                                            ::    Model_Type
     import                                                            ::    CalibrationMethod_Type
     class(CalibrationMethod_Type), intent(inout)                      ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace

@@ -52,7 +52,7 @@ contains
   procedure, public                                                   ::    GetNbDim
   procedure, public                                                   ::    IsCorrelated
   generic, public                                                     ::    GetDistribution         =>    GetDist0D_Label,        &
-                                                                                                          GetDist0D_Num
+                                                                                                          GetDist0D_Num,          &
                                                                                                           GetDist1D
   procedure, private                                                  ::    GetDist0D_Label
   procedure, private                                                  ::    GetDist0D_Num
@@ -67,10 +67,10 @@ contains
   procedure, private                                                  ::    GetName0D_Label
   procedure, private                                                  ::    GetName0D_Num
   procedure, private                                                  ::    GetName1D
-  generic, public                                                     ::    GetDistributionPointer  =>    GetDistPtr_Label,       &
-                                                                                                          GetDistPtr_Num
-  procedure, public                                                   ::    GetDistPtr_Label
-  procedure, public                                                   ::    GetDistPtr_Num
+  generic, public                                                     ::    GetDistributionPointer  =>    GetDistPointer_Label,   &
+                                                                                                          GetDistPointer_Num
+  procedure, public                                                   ::    GetDistPointer_Label
+  procedure, public                                                   ::    GetDistPointer_Num
   procedure, public                                                   ::    GetCorrMat
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure(Copy_SampleSpace), deferred, public                       ::    Copy
@@ -170,12 +170,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetName0D_Label( This, Label, Debug )
 
-    character(:), allocatable                                         ::    GetName0D
+    character(:), allocatable                                         ::    GetName0D_Label
     class(SampleSpace_Type), intent(in)                               ::    This
     character(*), intent(in)                                          ::    Label
     logical, optional, intent(in)                                     ::    Debug
 
-    character(*), parameter                                           ::    ProcName='GetName0D'
+    character(*), parameter                                           ::    ProcName='GetName0D_Label'
     logical                                                           ::    DebugLoc
     integer                                                           ::    i
     integer                                                           ::    ii
@@ -469,7 +469,7 @@ contains
   function GetName( This, Debug )
 
     character(:), allocatable                                         ::    GetName
-    class(SpaceInput_Type), intent(in)                                ::    This
+    class(SampleSpace_Type), intent(in)                               ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -492,7 +492,7 @@ contains
   function GetNbDim( This, Debug )
 
     integer                                                           ::    GetNbDim
-    class(SpaceInput_Type), intent(in)                                ::    This
+    class(SampleSpace_Type), intent(in)                               ::    This
     logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='GetNbDim'
@@ -515,7 +515,7 @@ contains
   function IsCorrelated( This, Debug )
 
     logical                                                           ::    IsCorrelated
-    class(SpaceInput_Type), intent(in)                                ::    This
+    class(SampleSpace_Type), intent(in)                               ::    This
     logical, optional, intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
