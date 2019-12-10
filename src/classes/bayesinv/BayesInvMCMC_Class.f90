@@ -338,7 +338,7 @@ contains
       allocate( TransfSampleSpaceNone_Type :: TargetSpace )
     end if
 
-    allocate(OrigInputValues(TargetSpace%GetNbDim()), stat=StatLoc)
+    allocate(OrigInputValues(SampleSpace%GetNbDim()), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='OrigInputValues', ProcName=ProcName, stat=StatLoc )
     OrigInputValues = Zero
 
@@ -358,23 +358,25 @@ contains
 
     ! setting up posterior pointer for either hierarchical or non-hierarchical problem
     if ( This%Hierarchical ) then
+      NbDimHier = This%HierarchicalSpace%GetNbDim()
       allocate(HierSamplesRealization(NbDimOrig + NbDimHier), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='HierSamplesRealization', ProcName=ProcName, stat=StatLoc )
-      NbDimHier = This%HierarchicalSpace%GetNbDim()
       Posterior => MCMCPosteriorHier
-      allocate(Labels(This%HierarchicalSpace%GetNbDim()+TargetSpace%GetNbDim()), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
-      i = 1
-      do i = 1, size(Labels)
-        if ( i <= TargetSpace%GetNbDim() ) then
-          Labels(i) = TargetSpace%GetLabel(Num=i)
-        else
-          Labels(i) = This%HierarchicalSpace%GetLabel(Num=i-TargetSpace%GetNbDim())
-        end if
-      end do
     else
       Posterior => MCMCPosterior
     end if
+
+    allocate(Labels(NbDimHier+NbDimOrig), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, size(Labels)
+      if ( i <= NbDimOrig ) then
+        Labels(i) = TargetSpace%GetLabel(Num=i)
+      else
+        Labels(i) = This%HierarchicalSpace%GetLabel(Num=i-TargetSpace%GetNbDim())
+      end if
+    end do
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 

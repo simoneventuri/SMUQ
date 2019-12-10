@@ -226,6 +226,7 @@ contains
     SubSectionName = SectionName // '>values'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
     call ImportArray( Input=InputSection, Array=VarR2D, RowMajor=.true.,Prefix=PrefixLoc )
+    nullify(InputSection)
     allocate(This%Coordinates, source=VarR2D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
     deallocate(VarR2D, stat=StatLoc)
@@ -239,7 +240,7 @@ contains
 
     SectionName = 'data'
     if ( Input%HasSection(SubSectionName=SectionName) ) then
-      SubSectionName = SectionName // '>source'
+      SubSectionName = SectionName // '>values'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
       call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc, RowMajor=.true. )
       
@@ -350,7 +351,7 @@ contains
       call GetInput%AddParameter( Name='column', Value=ConvertToString(LinSequence(SeqStart=1,SeqEnd=This%NbDataSets)),           &
                                                                                                          SectionName=SectionName )
 
-      SubSectionName = 'source'
+      SubSectionName = 'values'
       call GetInput%AddSection( SectionName=SubSectionName, To_Subsection=SectionName )
       call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
                                                                                                                 Mandatory=.true. )
