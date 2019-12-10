@@ -35,14 +35,10 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use MCMCMethod_Class
 use MCMCMethod_Factory_Class                                      ,only:    MCMCMethod_Factory
 use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
-use LikelihoodFunction_Vec_Class                                  ,only:    LikelihoodFunction_Vec_Type
-use LikelihoodGauss_Class                                         ,only:    LikelihoodGauss_Type
-use LikelihoodFunction_Factory_Class                              ,only:    LikelihoodFunction_Factory
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use DistProb_Class                                                ,only:    DistProb_Type 
 use BayesInvMethod_Class                                          ,only:    BayesInvMethod_Type
 use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 use Model_Class                                                   ,only:    Model_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use ParamSpace_Class                                              ,only:    ParamSpace_Type
@@ -50,6 +46,7 @@ use HierParamSpace_Class                                          ,only:    Hier
 use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
 use TransfSampleSpaceUnbound_Class                                ,only:    TransfSampleSpaceUnbound_Type
 use TransfSampleSpaceNone_Class                                   ,only:    TransfSampleSpaceNone_Type
+use MultiVarDist_Class                                            ,only:    MultiVarDist_Type
 
 implicit none
 
@@ -59,7 +56,6 @@ public                                                                ::    Baye
 
 type, extends(BayesInvMethod_Type)                                    ::    BayesInvMCMC_Type
   logical                                                             ::    Silent=.false.
-  type(LikelihoodFunction_Vec_Type), allocatable, dimension(:)        ::    LikelihoodFunctionVec
   class(MCMCMethod_Type), allocatable                                 ::    MCMC
   type(HierParamSpace_Type)                                           ::    HierarchicalSpace
   type(SpaceSampler_Type)                                             ::    HierarchicalSampler
@@ -122,9 +118,6 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%LikelihoodFunctionVec) ) deallocate(This%LikelihoodFunctionVec, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LikelihoodFunctionVec', ProcName=ProcName, stat=StatLoc )
-
     if ( allocated(This%MCMC) ) deallocate(This%MCMC, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MCMC', ProcName=ProcName, stat=StatLoc )
 
@@ -182,9 +175,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
-    class(LikelihoodFunction_Type), allocatable                       ::    LikelihoodFunction
-    integer                                                           ::    NbLikelihoods
-
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -207,25 +197,6 @@ contains
     call MCMCMethod_Factory%Construct( Object=This%MCMC, Input=InputSection, SectionChain=SectionChain // '>mcmc',                &
                                                                                                                 Prefix=PrefixLoc )
     nullify( InputSection )
-
-    SectionName = 'likelihood'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    NbLikelihoods = InputSection%GetNumberofSubSections()
-    nullify( InputSection )
-    if ( NbLikelihoods <= 0 ) call Error%Raise( 'Must specify at least one likelihood function', ProcName=ProcName )
-    allocate(This%LikelihoodFunctionVec(NbLikelihoods), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%LikelihoodFunctionVec', ProcName=ProcName, stat=StatLoc )
-    i = 1
-    do i = 1, NbLikelihoods
-      SubSectionName = SectionName // '>likelihood' // ConvertToString(Value=i)
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call LikelihoodFunction_Factory%Construct( Object=LikelihoodFunction, Input=InputSection, Prefix=PrefixLoc )
-      nullify( InputSection )
-      call This%LikelihoodFunctionVec(i)%Set( Object=LikelihoodFunction )
-    end do
-
-    deallocate(LikelihoodFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='LikelihoodFunction', ProcName=ProcName, stat=StatLoc )
 
     SectionName = 'hierarchical'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
@@ -297,19 +268,6 @@ contains
     call GetInput%AddSection( Section=MCMCMethod_Factory%GetObjectInput(Object=This%MCMC, MainSectionName=SectionName,            &
                                                                                        Prefix=PrefixLoc, Directory=DirectorySub) )
 
-    SectionName = 'likelihood'
-    call GetInput%AddSection( SectionName=SectionName )
-    NbLikelihoods = size(This%LikelihoodFunctionVec,1)
-    i = 1
-    do i = 1, NbLikelihoods
-      SubSectionName = 'likelihood' // ConvertToString(Value=i) 
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/likelihood' // ConvertToString(Value=i) 
-      LikelihoodPtr => This%LikelihoodFunctionVec(i)%GetPointer()
-      call GetInput%AddSection( Section=LikelihoodFunction_Factory%GetObjectInput(Object=LikelihoodPtr,                           &
-                            MainSectionName=SubSectionName, Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SectionName )
-      nullify(LikelihoodPtr)
-    end do
-
     if ( This%Hierarchical ) then
       call GetInput%AddSection( SectionName='hierarchical' )
 
@@ -331,12 +289,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Calibrate( This, Model, SampleSpace, Responses, OutputDirectory, Debug )
+  subroutine Calibrate( This, Model, SampleSpace, Responses, LikelihoodFunction, OutputDirectory, Debug )
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     class(Model_Type), intent(inout)                                  ::    Model
+    class(LikelihoodFunction_Type), intent(inout)                     ::    LikelihoodFunction
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional ,intent(in)                                     ::    Debug
 
@@ -354,7 +313,7 @@ contains
     type(Output_Type), allocatable, dimension(:)                      ::    Output
     type(Output_Type), allocatable, dimension(:,:)                    ::    HierOutput
     real(rkp), allocatable, dimension(:,:)                            ::    HierSamples
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    real(rkp), allocatable, dimension(:)                              ::    HierSamplesRealization
     real(rkp), allocatable, dimension(:)                              ::    OrigInputValues
     type(ParamSpace_Type)                                             ::    ParamSpaceRealization
     real(rkp)                                                         ::    VarR0D
@@ -363,6 +322,7 @@ contains
     class(TransfSampleSpace_Type), allocatable                        ::    TargetSpace
     integer                                                           ::    NbDimOrig
     integer                                                           ::    NbDimHier
+    type(MultiVarDist_Type)                                           ::    PriorDistribution
     
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -391,11 +351,15 @@ contains
         call Error%Raise( 'Something went wrong', ProcName=ProcName )
     end select
 
+    call PriorDistribution%Construct( SampleSpace=TargetSpace )
+
     NbDimOrig = TargetSpace%GetNbDim()
     NbDimHier = 0
 
     ! setting up posterior pointer for either hierarchical or non-hierarchical problem
     if ( This%Hierarchical ) then
+      allocate(HierSamplesRealization(NbDimOrig + NbDimHier), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='HierSamplesRealization', ProcName=ProcName, stat=StatLoc )
       NbDimHier = This%HierarchicalSpace%GetNbDim()
       Posterior => MCMCPosteriorHier
       allocate(Labels(This%HierarchicalSpace%GetNbDim()+TargetSpace%GetNbDim()), stat=StatLoc)
@@ -429,10 +393,6 @@ contains
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierSamples', ProcName=ProcName, stat=StatLoc )
     end if
 
-    if ( allocated(VarR1D) ) then
-      deallocate(VarR1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-    end if
     if ( present(OutputDirectory) ) call This%WriteOutput( SampleSpace=SampleSpace, PosteriorChain=PosteriorChain,                &
                                                            ParamChain=ParamChain, MiscChain=MiscChain, Directory=OutputDirectory )
 
@@ -461,14 +421,9 @@ contains
 
         logical                                                           ::    DebugLoc
         character(*), parameter                                           ::    ProcName='MCMCPosterior'
-        integer                                                           ::    i
         real(rkp)                                                         ::    Likelihood
         real(rkp)                                                         ::    Prior
-        class(DistProb_Type), pointer                                     ::    DistProb
-        real(rkp)                                                         ::    VarR0DLoc
         integer                                                           ::    RunStat
-        integer                                                           ::    iLoc
-        class(LikelihoodFunction_Type), pointer                           ::    LikelihoodPtr=>null()
         type(InputDet_Type)                                               ::    InputLoc
 
         
@@ -492,20 +447,12 @@ contains
           if ( StatLoc /= 0 ) call Error%Allocate( Name='MiscValues', ProcName=ProcName, stat=StatLoc )
         end if
 
-        Prior = One
-        iLoc = 1
-        do iLoc = 1, TargetSpace%GetNbDim()
-          DistProb => TargetSpace%GetDistributionPointer( Num=iLoc )
-          call Input%GetValue( Value=VarR0DLoc, Label=TargetSpace%GetLabel(Num=iLoc) )
-          Prior = Prior * DistProb%PDF( X=VarR0DLoc )
-        end do
-        nullify( DistProb )
+        call Input%GetValue( Values=OrigInputValues ) 
 
-        iLoc = 1
-        do iLoc = 1, NbDimOrig
-          call Input%GetValue( Value=OrigInputValues(iLoc), Label=Labels(iLoc)%GetValue() )
-        end do
+        Prior = PriorDistribution%PDF( X=OrigInputValues )
+
         OrigInputValues = TargetSpace%InvTransform( Z=OrigInputValues )
+
         call InputLoc%Construct( Input=OrigInputValues, Labels=Labels(1:NbDimOrig) )
 
         MiscValues(1) = Prior
@@ -513,26 +460,7 @@ contains
         if ( Prior > Zero ) then
           call ModelInterface%Run( Input=InputLoc, Output=Output, Stat=RunStat )
           if ( RunStat == 0 ) then
-            Likelihood = Zero
-            iLoc = 1
-            do iLoc = 1, size(This%LikelihoodFunctionVec,1)
-              LikelihoodPtr => This%LikelihoodFunctionVec(iLoc)%GetPointer()
-              VarR0DLoc = LikelihoodPtr%Evaluate( Responses=Responses, Input=InputLoc, Output=Output, LogValue=.true. )
-              nullify(LikelihoodPtr)
-              if ( VarR0DLoc <= -huge(One) ) then
-                Likelihood = VarR0DLoc
-                exit
-              end if
-              Likelihood = Likelihood + VarR0D
-            end do
-            if ( Likelihood > TVarR0D .and. Likelihood < HVarR0D ) then
-              Likelihood = dexp(Likelihood)
-            elseif (Likelihood < TVarR0D ) then
-              Likelihood = Zero
-            else
-              call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                     &
-                   ConvertToString(Value=Likelihood) // '. Consider changing value of the scalar modifier of responses' )
-            end if
+            Likelihood = LikelihoodFunction%Evaluate( Responses=Responses, Input=InputLoc, Output=Output )
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
           else
@@ -561,15 +489,10 @@ contains
         logical                                                           ::    DebugLoc
         character(*), parameter                                           ::    ProcName='MCMCPosterior'
         real(rkp)                                                         ::    Prior
-        class(DistProb_Type), pointer                                     ::    DistProb=>null()
         type(InputDet_Type), allocatable, dimension(:)                    ::    HierInput
-        real(rkp)                                                         ::    VarR0DLoc
-        real(rkp)                                                         ::    VarR0DLoc_2
         integer                                                           ::    RunStat
         real(rkp)                                                         ::    Likelihood
         integer                                                           ::    iLoc
-        integer                                                           ::    iiLoc
-        class(LikelihoodFunction_Type), pointer                           ::    LikelihoodPtr=>null()
         integer                                                           ::    NbHierSamples
         type(InputDet_Type)                                               ::    InputLoc
 
@@ -591,20 +514,10 @@ contains
           if ( StatLoc /= 0 ) call Error%Allocate( Name='MiscValues', ProcName=ProcName, stat=StatLoc )
         end if
 
-        Prior = One
-        iLoc = 1
-        do iLoc = 1, TargetSpace%GetNbDim()
-          DistProb => TargetSpace%GetDistributionPointer( Num=iLoc )
-          call Input%GetValue( Value=VarR0DLoc, Label=TargetSpace%GetLabel(Num=iLoc) )
-          Prior = Prior * DistProb%PDF( X=VarR0DLoc )
-        end do
-        nullify( DistProb )
+        call Input%GetValue( Values=OrigInputValues ) 
 
-        iLoc = 1
-        do iLoc = 1, NbDimOrig
-          call Input%GetValue( Value=OrigInputValues(iLoc), Label=Labels(iLoc)%GetValue() )
-        end do
-        OrigInputValues = TargetSpace%InvTransform( Z=OrigInputValues )
+        Prior = PriorDistribution%PDF( X=OrigInputValues )
+
         call InputLoc%Construct( Input=OrigInputValues, Labels=Labels(1:NbDimOrig) )
 
         MiscValues(1) = Prior
@@ -615,62 +528,27 @@ contains
           HierSamples = This%HierarchicalSampler%Draw( SampleSpace=ParamSpaceRealization )
           NbHierSamples = size(HierSamples,2)
 
-          if ( allocated(VarR1D) ) then
-            if ( size(VarR1D,1) /= NbDimOrig + NbDimHier ) then
-              deallocate(VarR1D, stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-            end if
-          end if
-
-          if ( .not. allocated(VarR1D) ) then
-            allocate(VarR1D(NbDimOrig + NbDimHier), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-          end if
-
-          iLoc = 1
-          do iLoc = 1, NbDimOrig
-            call InputLoc%GetValue( Value=VarR1D(iLoc), Label=Labels(iLoc)%GetValue() )
-          end do
+          HierSamplesRealization(1:NbDimOrig) = OrigInputValues
 
           allocate(HierInput(NbHierSamples), stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='HierInput', ProcName=ProcName, stat=StatLoc )
 
           iLoc = 1
           do iLoc = 1, NbHierSamples
-            VarR1D(NbDimOrig+1:) = HierSamples(:,iLoc)
-            call HierInput(iLoc)%Construct( Input=VarR1D, Labels=Labels )
+            HierSamplesRealization(NbDimOrig+1:) = HierSamples(:,iLoc)
+            call HierInput(iLoc)%Construct( Input=HierSamplesRealization, Labels=Labels )
           end do
 
           call ModelInterface%Run( Input=HierInput, Output=HierOutput, Stat=RunStat )
 
           if ( RunStat == 0 ) then
-            VarR0DLoc = Zero
-            iiLoc = 1
-            do iiLoc = 1, NbHierSamples
-              Likelihood = Zero
-              iLoc = 1
-              do iLoc = 1, size(This%LikelihoodFunctionVec,1)
-                LikelihoodPtr => This%LikelihoodFunctionVec(iLoc)%GetPointer()
-                VarR0DLoc_2 = LikelihoodPtr%Evaluate( Responses=Responses, Input=HierInput(iiLoc),                                &
-                                                                                     Output=HierOutput(:,iiLoc), LogValue=.true. )
-                nullify(LikelihoodPtr)
-                if ( VarR0DLoc_2 <= -huge(One) ) then
-                  Likelihood = VarR0DLoc_2
-                  exit
-                end if
-                Likelihood = Likelihood + VarR0DLoc_2
-              end do
-              if ( Likelihood > TVarR0D .and. Likelihood < HVarR0D ) then
-                Likelihood = dexp(Likelihood)
-              elseif (Likelihood < TVarR0D ) then
-                Likelihood = Zero
-              else
-                call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                     &
-                     ConvertToString(Value=Likelihood) // '. Consider changing value of the scalar modifier of responses' )
-              end if
-              VarR0DLoc = VarR0DLoc + Likelihood
+            Likelihood = Zero
+            iLoc = 1
+            do iLoc = 1, NbHierSamples
+              Likelihood = Likelihood + LikelihoodFunction%Evaluate( Responses=Responses, Input=HierInput(iLoc),                  &
+                                                                                                       Output=HierOutput(:,iLoc) )
             end do
-            Likelihood = VarR0DLoc / real(NbHierSamples,rkp)
+            Likelihood = Likelihood / real(NbHierSamples,rkp)
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
           else
@@ -780,8 +658,6 @@ contains
 
         if ( RHS%Constructed ) then
           LHS%Hierarchical = RHS%Hierarchical
-          allocate(LHS%LikelihoodFunctionVec, source=RHS%LikelihoodFunctionVec, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%LikelihoodFunctionVec', ProcName=ProcName, stat=StatLoc )
           allocate(LHS%MCMC, source=RHS%MCMC, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MCMC', ProcName=ProcName, stat=StatLoc )
           if ( LHS%Hierarchical ) then
@@ -811,9 +687,6 @@ contains
 
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
-  
-    if ( allocated(This%LikelihoodFunctionVec) ) deallocate(This%LikelihoodFunctionVec, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LikelihoodFunctionVec', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%MCMC) ) deallocate(This%MCMC, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MCMC', ProcName=ProcName, stat=StatLoc )

@@ -88,7 +88,7 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
-      This%Name = 'normal'
+      This%Name = 'multivariate_normal'
       This%Initialized = .true.
       call This%SetDefaults()
     end if

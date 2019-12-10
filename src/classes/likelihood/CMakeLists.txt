@@ -3,6 +3,7 @@ add_target_sources ( smuqApp
   LikelihoodFunction_Class.f90
   LikelihoodFunction_Vec_Class.f90
   LikelihoodGauss_Class.f90
+  LikelihoodProduct_Class.f90
   CovarianceConstructor_Class.f90
   CovarianceConstructor_Factory_Class.f90
   CovarianceGExp1L_Class.f90

@@ -32,7 +32,7 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use Response_Class                                                ,only:    Response_Type
 use Model_Class                                                   ,only:    Model_Type
-
+use LikelihoodProduct_Class                                       ,only:    LikelihoodProduct_Type
 implicit none
 
 private
@@ -41,6 +41,7 @@ public                                                                ::    Cali
 
 type, extends(CalibrationMethod_Type)                                 ::    CalibrationBayesian_Type
   class(BayesInvMethod_Type), allocatable                             ::    BayesInvMethod
+  type(LikelihoodProduct_Type)                                        ::    Likelihood
   logical                                                             ::    Silent
 contains
   procedure, public                                                   ::    Initialize
@@ -99,6 +100,11 @@ contains
 
     This%Initialized=.false.
     This%Constructed=.false.
+
+    if ( allocated(This%BayesInvMethod) ) deallocate(This%BayesInvMethod, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc )
+
+    call This%Likelihood%Reset()
 
     call This%Initialize()
 
@@ -166,8 +172,12 @@ contains
     call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%Silent=VarL0D
 
-    VarC0D = SectionChain // '>type'
-    SectionName = 'type'
+    SectionName = 'likelihood'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call This%Likelihood%Construct( Input=InputSection, Prefix=PrefixLoc )
+
+    VarC0D = SectionChain // '>method'
+    SectionName = 'method'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     call BayesInvMethod_Factory%Construct( Object=This%BayesInvMethod, Input=InputSection,                                        &
                                                                                            SectionChain=VarC0D, Prefix=PrefixLoc )
@@ -219,6 +229,11 @@ contains
 
     call GetInput%AddParameter( Name='silent', Value=ConvertToString( Value=This%Silent ) )
 
+    SectionName = 'likelihood'
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/likelihood'
+    call GetInput%AddSection( Section=This%Likelihood%GetInput( MainSectionName=SectioNName, Prefix=PrefixLoc,                    &
+                                                                                                        Directory=DirectorySub ) )
+
     SectionName = 'method'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/method'
     call GetInput%AddSection( Section=BayesInvMethod_Factory%GetObjectInput( Object=This%BayesInvMethod,                          &
@@ -249,9 +264,10 @@ contains
 
     if ( present(OutputDirectory) ) then
       call This%BayesInvMethod%Calibrate( Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
-                                                                                                 OutputDirectory=OutputDirectory )
+                                                             LikelihoodFunction=This%Likelihood, OutputDirectory=OutputDirectory )
     else
-      call This%BayesInvMethod%Calibrate( Model=Model, SampleSpace=SampleSpace, Responses=Responses )
+      call This%BayesInvMethod%Calibrate( Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
+                                                                                              LikelihoodFunction=This%Likelihood )
     end if
     if (DebugLoc) call Logger%Exiting()
 
@@ -315,7 +331,10 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-
+          allocate(LHS%BayesInvMethod, source=RHS%BayesInvMethod, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%BayesInvMethod', ProcName=ProcName, stat=StatLoc )
+          LHS%Likelihood = RHS%Likelihood
+          LHS%Silent = RHS%Silent
         end if
       
       class default
@@ -339,6 +358,9 @@ contains
 
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
+
+    if ( allocated(This%BayesInvMethod) ) deallocate(This%BayesInvMethod, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 

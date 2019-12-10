@@ -25,6 +25,7 @@ use Error_Class                                                   ,only:    Erro
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use Model_Class                                                   ,only:    Model_Type
 use Response_Class                                                ,only:    Response_Type
+use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
 
 implicit none
 
@@ -104,15 +105,17 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Calibrate_BayesInvMethod( This, Model, SampleSpace, Responses, OutputDirectory, Debug)
+  subroutine Calibrate_BayesInvMethod( This, Model, SampleSpace, Responses, LikelihoodFunction, OutputDirectory, Debug)
     import                                                            ::    BayesInvMethod_Type
     import                                                            ::    Response_Type
     import                                                            ::    SampleSpace_Type
     import                                                            ::    Model_Type
+    import                                                            ::    LikelihoodFunction_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
     class(Model_Type), intent(inout)                                  ::    Model
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
+    class(LikelihoodFunction_Type), intent(inout)                     ::    LikelihoodFunction
     character(*), optional, intent(in)                                ::    OutputDirectory
     logical, optional ,intent(in)                                     ::    Debug
   end subroutine

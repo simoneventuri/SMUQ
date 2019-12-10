@@ -15,4 +15,5 @@ add_target_sources ( smuqApp
   DistKernel_Class.f90
   DistInfBoundTransf_Class.f90
   MultiVarDistNorm_Class.f90
+  MultiVarDist_Class.f90
 )

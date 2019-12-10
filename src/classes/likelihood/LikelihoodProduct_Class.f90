@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module LikelihoodGauss_Class
+module LikelihoodProduct_Class
 
 use Input_Library
 use Parameters_Library
@@ -25,28 +25,21 @@ use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 use Response_Class                                                ,only:    Response_Type
 use Output_Class                                                  ,only:    Output_Type
 use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
-use CovarianceConstructor_Class                                   ,only:    CovarianceConstructor_Type
-use CovarianceConstructor_Factory_Class                           ,only:    CovarianceConstructor_Factory
-use List2DAllocReal_Class                                         ,only:    List2DAllocReal_Type
+use LikelihoodFunction_Vec_Class                                  ,only:    LikelihoodFunction_Vec_Type
+use LikelihoodFunction_Factory_Class                              ,only:    LikelihoodFunction_Factory
 
 implicit none
 
 private
 
-public                                                                ::    LikelihoodGauss_Type
+public                                                                ::    LikelihoodProduct_Type
 
-type, extends(LikelihoodFunction_Type)                                ::    LikelihoodGauss_Type
-  logical                                                             ::    MultiplicativeError
-  real(rkp)                                                           ::    Scalar=Zero
-  class(CovarianceConstructor_Type), allocatable                      ::    CovarianceConstructor
-  real(rkp), allocatable, dimension(:,:)                              ::    L
-  real(rkp), allocatable, dimension(:,:)                              ::    XmMean
-  logical                                                             ::    StochCovFlag
-  real(rkp)                                                           ::    lnPreExp
+type, extends(LikelihoodFunction_Type)                                ::    LikelihoodProduct_Type
+  type(LikelihoodFunction_Vec_Type), allocatable, dimension(:)        ::    Likelihoods
+  integer                                                             ::    NbLikelihoods
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -66,7 +59,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This, Debug )
 
-    class(LikelihoodGauss_Type), intent(inout)                        ::    This
+    class(LikelihoodProduct_Type), intent(inout)                      ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -77,7 +70,7 @@ contains
     if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
-      This%Name = 'LikelihoodGauss'
+      This%Name = 'LikelihoodProduct'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -90,7 +83,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This, Debug )
 
-    class(LikelihoodGauss_Type), intent(inout)                        ::    This
+    class(LikelihoodProduct_Type), intent(inout)                      ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -104,14 +97,9 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%CovarianceConstructor) ) deallocate(This%CovarianceConstructor, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CovarianceConstructor', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%XmMean) ) deallocate(This%XmMean, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%L) ) deallocate(This%L, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Likelihoods) ) deallocate(This%Likelihoods, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Likelihoods', ProcName=ProcName, stat=StatLoc )
+    This%NbLikelihoods = 0
 
     call This%SetDefaults()
 
@@ -123,7 +111,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This, Debug )
 
-    class(LikelihoodGauss_Type), intent(inout)                        ::    This
+    class(LikelihoodProduct_Type), intent(inout)                        ::    This
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
@@ -133,10 +121,6 @@ contains
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    This%MultiplicativeError = .false.
-    This%Scalar = Zero
-    This%Label = ''
-
     if (DebugLoc) call Logger%Exiting()
 
   end subroutine
@@ -145,7 +129,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix, Debug )
 
-    class(LikelihoodGauss_Type), intent(inout)                        ::    This
+    class(LikelihoodProduct_Type), intent(inout)                      ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional ,intent(in)                                     ::    Debug
@@ -161,8 +145,8 @@ contains
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    i
     character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    class(LikelihoodFunction_Type), allocatable                       ::    LikelihoodFunction
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -174,22 +158,20 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    ParameterName = 'multiplicative_error'
-    call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
-    if ( Found ) This%MultiplicativeError = VarL0D
-    
-    ParameterName = 'scalar'
-    call Input%GetValue( Value=VarR0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
-    if ( Found ) This%Scalar = VarR0D
+    This%NbLikelihoods = Input%GetNumberofSubSections()
 
-    ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
-    This%Label = VarC0D
+    allocate(This%Likelihoods(This%NbLikelihoods), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Likelihoods', ProcName=ProcName, stat=StatLoc )
 
-    SectionName = 'covariance'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call CovarianceConstructor_Factory%Construct( Object=This%CovarianceConstructor, Input=InputSection, Prefix=PrefixLoc )
-    nullify(InputSection)
+    i = 1
+    do i = 1, This%NbLikelihoods
+      SectionName = 'likelihood' // ConvertToString(Value=i)
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call LikelihoodFunction_Factory%Construct( Object=LikelihoodFunction, Input=InputSection, Prefix=PrefixLoc )
+      call This%Likelihoods(i)%Set( Object=LikelihoodFunction )
+      deallocate(LikelihoodFunction, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='LikelihoodFunction', ProcName=ProcName, stat=StatLoc )
+    end do
 
     This%Constructed = .true.
 
@@ -203,7 +185,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(LikelihoodGauss_Type), intent(inout)                        ::    This
+    class(LikelihoodProduct_Type), intent(inout)                      ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -219,6 +201,7 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    i
+    class(LikelihoodFunction_Type), pointer                           ::    LFunctionPtr=>null()
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -235,15 +218,15 @@ contains
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-
-    call GetInput%AddParameter( Name='multiplicative_error', Value=ConvertToString(Value=This%MultiplicativeError) )
-    call GetInput%AddParameter( Name='scalar', Value=ConvertToString(Value=This%Scalar) )
-    call GetInput%AddParameter( Name='label', Value=This%Label )
   
-    SectionName = 'covariance'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/covariance'
-    call GetInput%AddSection( Section=CovarianceConstructor_Factory%GetObjectInput( Object=This%CovarianceConstructor,            &
-                              MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
+    i = 1
+    do i = 1, This%NbLikelihoods
+      SectionName = 'likelihood' // ConvertToString(Value=i)
+      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/likelihood' // ConvertToString(Value=i)
+      LFunctionPtr => This%Likelihoods(i)%GetPointer()
+      call GetInput%AddSection( Section=LikelihoodFunction_Factory%GetObjectInput( Object=LFunctionPtr,                           &
+                                                         MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ) )
+    end do
 
     if (DebugLoc) call Logger%Exiting()
 
@@ -255,7 +238,7 @@ contains
 
     real(rkp)                                                         ::    Evaluate_1D
 
-    class(LikelihoodGauss_Type), intent(inout)                        ::    This
+    class(LikelihoodProduct_Type), intent(inout)                      ::    This
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     type(InputDet_Type), intent(in)                                   ::    Input
     type(Output_Type), dimension(:), intent(in)                       ::    Output
@@ -265,46 +248,51 @@ contains
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Evaluate_1D'
     integer                                                           ::    StatLoc=0
-    integer                                                           ::    iOutput
-    integer                                                           ::    iResponse
-    integer                                                           ::    NbOutputs
-    integer                                                           ::    NbResponses
     integer                                                           ::    i
+    class(LikelihoodFunction_Type), pointer                           ::    LFunctionPtr=>null()
+    character(:), allocatable                                         ::    LabelLoc
+    real(rkp)                                                         ::    VarR0D
+    logical                                                           ::    LogValueLoc
+    real(rkp)                                                         ::    HVarR0D
+    real(rkp)                                                         ::    TVarR0D
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    iOutput = 0
-    iResponse = 0
+    HVarR0D = dlog(huge(VarR0D))
+    TVarR0D = dlog(tiny(VarR0D))
 
-    NbOutputs = size(Output,1)
-    NbResponses = size(Responses,1)
+    LogValueLoc = .false.
+    if ( present(LogValue) ) LogValueLoc = LogValue
 
-    i = 1
-    do i = 1, NbOutputs
-      if ( Output(i)%GetLabel() == This%Label ) then
-        iOutput = i
+    Evaluate_1D = Zero
+
+    do i = 1, This%NbLikelihoods
+
+      LFunctionPtr => This%Likelihoods(i)%GetPointer()
+
+      VarR0D = LFunctionPtr%Evaluate( Responses=Responses, Input=Input, Output=Output, LogValue=.true. )
+      nullify(LFunctionPtr)
+
+      if ( VarR0D <= -huge(One) ) then
+        Evaluate_1D = VarR0D
         exit
       end if
+
+      Evaluate_1D = Evaluate_1D + VarR0D
+      
     end do
 
-    if ( iOutput == 0 ) call Error%Raise( Line='Did not find required output : ' // This%Label, ProcName=ProcName )
-
-    i = 1
-    do i = 1, NbResponses
-      if ( Responses(i)%GetLabel() == This%Label ) then
-        iResponse = i
-        exit
+    if ( .not. LogValueLoc ) then
+      if ( Evaluate_1D > TVarR0D .and. Evaluate_1D < HVarR0D ) then
+        Evaluate_1D = dexp(Evaluate_1D)
+      elseif (Evaluate_1D < TVarR0D ) then
+        Evaluate_1D= Zero
+      else
+        call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
+                           ConvertToString(Value=Evaluate_1D) // '. Consider changing value of the scalar modifier of responses' )
       end if
-    end do
-
-    if ( iResponse == 0 ) call Error%Raise( Line='Did not find required response : ' // This%Label, ProcName=ProcName )
-
-    if ( present(LogValue) ) then
-      Evaluate_1D = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput), Logvalue=LogValue )
-    else
-      Evaluate_1D = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput) )
     end if
 
     if (DebugLoc) call Logger%Exiting()
@@ -317,7 +305,7 @@ contains
 
     real(rkp)                                                         ::    Evaluate_0D
 
-    class(LikelihoodGauss_Type), intent(inout)                        ::    This
+    class(LikelihoodProduct_Type), intent(inout)                      ::    This
     type(Response_Type), intent(in)                                   ::    Response
     type(InputDet_Type), intent(in)                                   ::    Input
     type(Output_Type), intent(in)                                     ::    Output
@@ -327,141 +315,51 @@ contains
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Evaluate_0D'
     integer                                                           ::    StatLoc=0
-    integer                                                           ::    NbDataSets
     integer                                                           ::    i
-    integer                                                           ::    ii
-    integer                                                           ::    iii
-    real(rkp), pointer, dimension(:,:)                                ::    OutputPtr=>null()
-    real(rkp), pointer, dimension(:,:)                                ::    DataPtr=>null()
-    logical                                                           ::    IsDiagonalFlag
-    logical                                                           ::    Found
-    integer                                                           ::    NbDegen
-    real(rkp)                                                         ::    lnPreExp
-    real(rkp)                                                         ::    lnExp
+    class(LikelihoodFunction_Type), pointer                           ::    LFunctionPtr=>null()
+    character(:), allocatable                                         ::    LabelLoc
     real(rkp)                                                         ::    VarR0D
+    logical                                                           ::    LogValueLoc
     real(rkp)                                                         ::    HVarR0D
     real(rkp)                                                         ::    TVarR0D
-    logical                                                           ::    ExitFlag
-    integer                                                           ::    NbNodes
-    real(rkp)                                                         ::    ln2pi
-    logical                                                           ::    LogValueLoc
-    logical                                                           ::    ZeroExit
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
     if (DebugLoc) call Logger%Entering( ProcName )
 
-    if ( Response%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect response', ProcName=ProcName )
-    if ( Output%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect output', ProcName=ProcName )
+    HVarR0D = dlog(huge(VarR0D))
+    TVarR0D = dlog(tiny(VarR0D))
 
     LogValueLoc = .false.
     if ( present(LogValue) ) LogValueLoc = LogValue
 
-    ln2pi = dlog(Two*pi)
-
     Evaluate_0D = Zero
 
-    HVarR0D = dlog(huge(VarR0D))
-    TVarR0D = dlog(tiny(VarR0D))
+    do i = 1, This%NbLikelihoods
 
-    ExitFlag = .false.
+      LFunctionPtr => This%Likelihoods(i)%GetPointer()
 
-    NbNodes = 0
-  
-    ! computing ln(likelihood) values first before transforming them back to linear scale
-    lnPreExp = Zero
-    lnExp = Zero
+      VarR0D = LFunctionPtr%Evaluate( Response=Response, Input=Input, Output=Output, LogValue=.true. )
+      nullify(LFunctionPtr)
 
-    if ( .not. Response%IsDataDefined() ) call Error%Raise( Line='Data not defined for the response', ProcName=ProcName )
-
-    NbNodes = Response%GetNbNodes()
-
-    if ( allocated(This%L) ) then
-      if ( size(This%L,1) /= NbNodes ) then
-        deallocate(This%L, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
-        deallocate(This%XmMean, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
+      if ( VarR0D <= -huge(One) ) then
+        Evaluate_0D = VarR0D
+        exit
       end if
-    end if
 
-    if ( .not. allocated(This%L) ) then
-      allocate(This%L(NbNodes,NbNodes), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
-      This%L = Zero
-      allocate(This%XmMean(NbNodes,1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
-      This%XmMean = Zero
-    end if
+      Evaluate_0D = Evaluate_0D + VarR0D
+      
+    end do
 
-    OutputPtr => Output%GetValuesPointer()
-    DataPtr => Response%GetDataPointer()
-    NbDegen = size(OutputPtr,2)
-    NbDataSets = size(DataPtr,2)
-
-    call This%CovarianceConstructor%AssembleCov( Input=Input, Coordinates=Response%GetCoordinatesPointer(),                       &
-                                                                     CoordinateLabels=Response%GetCoordinateLabels(), Cov=This%L )
-
-    IsDiagonalFlag = IsDiagonal( Array=This%L )
-
-    ZeroExit = .false.
-    if ( .not. IsDiagonalFlag ) then
-      call DPOTRF( 'L', NbNodes, This%L, NbNodes, StatLoc )
-      ZeroExit = .true.
-!      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DPOTRF', ProcName=ProcName )
-    else
-      This%L = dsqrt(This%L)
-    end if
-
-    if ( ZeroExit ) then
-      if ( LogValueLoc ) then
-        Evaluate_0D = -huge(One)
+    if ( .not. LogValueLoc ) then
+      if ( Evaluate_0D > TVarR0D .and. Evaluate_0D < HVarR0D ) then
+        Evaluate_0D = dexp(Evaluate_0D)
+      elseif (Evaluate_0D < TVarR0D ) then
+        Evaluate_0D= Zero
       else
-        Evaluate_0D = Zero
+        call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
+                           ConvertToString(Value=Evaluate_0D) // '. Consider changing value of the scalar modifier of responses' )
       end if
-    else
-      VarR0D = Zero
-      ii = 1
-      do ii = 1, NbNodes
-        VarR0D = VarR0D + dlog(This%L(ii,ii))
-      end do
-      lnPreExp = (-real(NbNodes,rkp)/Two*ln2pi - VarR0D)*NbDegen*NbDataSets + lnPreExp
-
-      VarR0D = Zero
-      ii = 1
-      do ii = 1, NbDataSets
-        iii = 1
-        do iii = 1, NbDegen
-          if ( This%MultiplicativeError ) then
-            This%XmMean(:,1) = DataPtr(:,ii) / OutputPtr(:,iii)
-            This%XmMean(:,1) = dlog(This%XmMean(:,1))
-          else
-            This%XmMean(:,1) = DataPtr(:,ii) - OutputPtr(:,iii)
-          end if
-          call DTRTRS( 'L', 'N', 'N', NbNodes, 1, This%L, NbNodes, This%XmMean(:,:), NbNodes, StatLoc )
-          if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DTRTRS with code: '//ConvertToString(Value=StatLoc),&
-                                                                                                               ProcName=ProcName )
-          VarR0D = VarR0D - 0.5 * dot_product(This%XmMean(:,1), This%XmMean(:,1))
-        end do
-      end do
-      lnExp = VarR0D
-
-      Evaluate_0D = lnPreExp + lnExp + This%Scalar
-
-      if ( .not. LogValueLoc ) then
-        if ( Evaluate_0D > TVarR0D .and. Evaluate_0D < HVarR0D ) then
-          Evaluate_0D = dexp(Evaluate_0D)
-        elseif (Evaluate_0D < TVarR0D ) then
-          Evaluate_0D = Zero
-        else
-          call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                          &
-               ConvertToString(Value=Evaluate_0D) // '. Consider changing value of the scalar modifier and rerun for response: '//&
-                                                                                                   This%Label, ProcName=ProcName )
-        end if
-      end if
-
-      nullify(OutputPtr)
-      nullify(DataPtr)
     end if
 
     if (DebugLoc) call Logger%Exiting()
@@ -472,7 +370,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Copy( LHS, RHS )
 
-    class(LikelihoodGauss_Type), intent(out)                          ::    LHS
+    class(LikelihoodProduct_Type), intent(out)                        ::    LHS
     class(LikelihoodFunction_Type), intent(in)                        ::    RHS
 
     logical                                                           ::    DebugLoc
@@ -485,17 +383,17 @@ contains
 
     select type (RHS)
   
-      type is (LikelihoodGauss_Type)
+      type is (LikelihoodProduct_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          LHS%Scalar = RHS%Scalar
-          LHS%MultiplicativeError = RHS%MultiplicativeError
+          LHS%Name = RHS%Name
           LHS%Label = RHS%Label
-          allocate(LHS%CovarianceConstructor, source=RHS%CovarianceConstructor, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CovarianceConstructor', ProcName=ProcName, stat=StatLoc )
+          LHS%NbLikelihoods = RHS%NbLikelihoods
+          allocate(LHS%Likelihoods, source=RHS%Likelihoods, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Likelihoods', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -511,7 +409,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Finalizer( This )
 
-    type(LikelihoodGauss_Type), intent(inout)                         ::    This
+    type(LikelihoodProduct_Type), intent(inout)                       ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     logical                                                           ::    DebugLoc
@@ -520,14 +418,8 @@ contains
     DebugLoc = DebugGlobal
     if (DebugLoc) call Logger%Entering( ProcName )
   
-    if ( allocated(This%CovarianceConstructor) ) deallocate(This%CovarianceConstructor, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CovarianceConstructor', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%XmMean) ) deallocate(This%XmMean, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%L) ) deallocate(This%L, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Likelihoods) ) deallocate(This%Likelihoods, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Likelihoods', ProcName=ProcName, stat=StatLoc )
 
     if (DebugLoc) call Logger%Exiting()
 

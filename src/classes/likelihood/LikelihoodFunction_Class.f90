@@ -37,21 +37,21 @@ type, abstract                                                        ::    Like
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  character(:), allocatable                                           ::    SectionChain
   character(:), allocatable                                           ::    Label
 contains
   procedure, public                                                   ::    GetName
+  procedure, public                                                   ::    GetLabel
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  generic, public                                                     ::    Evaluate                =>    EvaluateDet,            &
-                                                                                                          EvaluateDetPre
-  procedure, public                                                   ::    EvaluateDetPre
+  generic, public                                                     ::    Evaluate                =>    Evaluate_0D,            &
+                                                                                                          Evaluate_1D
   procedure(Initialize_LikelihoodFunction), deferred, public          ::    Initialize
   procedure(Reset_LikelihoodFunction), deferred, public               ::    Reset
   procedure(SetDefaults_LikelihoodFunction), deferred, public         ::    SetDefaults
   procedure(ConstructInput_LikelihoodFunction), deferred, private     ::    ConstructInput
   procedure(GetInput_LikelihoodFunction), deferred, public            ::    GetInput
-  procedure(Evaluate_LikelihoodFunction), deferred, public            ::    EvaluateDet
+  procedure(Evaluate_0D_LikelihoodFunction), deferred, private        ::    Evaluate_0D
+  procedure(Evaluate_1D_LikelihoodFunction), deferred, private        ::    Evaluate_1D
   procedure(Copy_LikelihoodFunction), deferred, public                ::    Copy
 end type
 
@@ -108,13 +108,30 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_LikelihoodFunction( This, Response, Input, Output, LogValue, Debug )
+  function Evaluate_1D_LikelihoodFunction( This, Responses, Input, Output, LogValue, Debug )
     use                                                               ::    Parameters_Library
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    Response_Type
     import                                                            ::    InputDet_Type
     import                                                            ::    Output_Type
-    real(rkp)                                                         ::    Evaluate_LikelihoodFunction
+    real(rkp)                                                         ::    Evaluate_1D_LikelihoodFunction
+    class(LikelihoodFunction_Type), intent(inout)                     ::    This
+    type(Response_Type), dimension(:), intent(in)                     ::    Responses
+    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Output_Type), dimension(:), intent(in)                       ::    Output
+    logical, optional, intent(in)                                     ::    LogValue
+    logical, optional ,intent(in)                                     ::    Debug
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Evaluate_0D_LikelihoodFunction( This, Response, Input, Output, LogValue, Debug )
+    use                                                               ::    Parameters_Library
+    import                                                            ::    LikelihoodFunction_Type
+    import                                                            ::    Response_Type
+    import                                                            ::    InputDet_Type
+    import                                                            ::    Output_Type
+    real(rkp)                                                         ::    Evaluate_0D_LikelihoodFunction
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
     type(Response_Type), intent(in)                                   ::    Response
     type(InputDet_Type), intent(in)                                   ::    Input
@@ -158,61 +175,20 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvaluateDetPre( This, Responses, Input, Output, LogValue, Debug )
+  function GetLabel( This, Debug )
 
-    real(rkp)                                                         ::    EvaluateDetPre
-
+    character(:), allocatable                                         ::    GetLabel
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    type(Response_Type), dimension(:), intent(in)                     ::    Responses
-    type(InputDet_Type), intent(in)                                   ::    Input
-    type(Output_Type), dimension(:), intent(in)                       ::    Output
-    logical, optional, intent(in)                                     ::    LogValue
     logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='EvaluateDetPre'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    iOutput
-    integer                                                           ::    iResponse
-    integer                                                           ::    NbOutputs
-    integer                                                           ::    NbResponses
-    integer                                                           ::    i
+    character(*), parameter                                           ::    ProcName='GetLabel'
 
+    call Logger%Entering( ProcName )
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
-    iOutput = 0
-    iResponse = 0
-
-    NbOutputs = size(Output,1)
-    NbResponses = size(Responses,1)
-
-    i = 1
-    do i = 1, NbOutputs
-      if ( Output(i)%GetLabel() == This%Label ) then
-        iOutput = i
-        exit
-      end if
-    end do
-
-    if ( iOutput == 0 ) call Error%Raise( Line='Did not find required output : ' // This%Label, ProcName=ProcName )
-
-    i = 1
-    do i = 1, NbResponses
-      if ( Responses(i)%GetLabel() == This%Label ) then
-        iResponse = i
-        exit
-      end if
-    end do
-
-    if ( iResponse == 0 ) call Error%Raise( Line='Did not find required response : ' // This%Label, ProcName=ProcName )
-
-    if ( present(LogValue) ) then
-      EvaluateDetPre = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput), Logvalue=LogValue )
-    else
-      EvaluateDetPre = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput) )
-    end if
+    GetLabel = This%Label
 
     if (DebugLoc) call Logger%Exiting()
 
