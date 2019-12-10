@@ -282,6 +282,7 @@ contains
     integer                                                           ::    NbNodes
     real(rkp)                                                         ::    ln2pi
     logical                                                           ::    LogValueLoc
+    logical                                                           ::    ZeroExit
 
     DebugLoc = DebugGlobal
     if ( present(Debug) ) DebugLoc = Debug
@@ -340,55 +341,65 @@ contains
 
     IsDiagonalFlag = IsDiagonal( Array=This%L )
 
+    ZeroExit = .false.
     if ( .not. IsDiagonalFlag ) then
       call DPOTRF( 'L', NbNodes, This%L, NbNodes, StatLoc )
-      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DPOTRF', ProcName=ProcName )
+      ZeroExit = .true.
+!      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DPOTRF', ProcName=ProcName )
     else
       This%L = dsqrt(This%L)
     end if
 
-    VarR0D = Zero
-    ii = 1
-    do ii = 1, NbNodes
-      VarR0D = VarR0D + dlog(This%L(ii,ii))
-    end do
-    lnPreExp = (-real(NbNodes,rkp)/Two*ln2pi - VarR0D)*NbDegen*NbDataSets + lnPreExp
-
-    VarR0D = Zero
-    ii = 1
-    do ii = 1, NbDataSets
-      iii = 1
-      do iii = 1, NbDegen
-        if ( This%MultiplicativeError ) then
-          This%XmMean(:,1) = DataPtr(:,ii) / OutputPtr(:,iii)
-          This%XmMean(:,1) = dlog(This%XmMean(:,1))
-        else
-          This%XmMean(:,1) = DataPtr(:,ii) - OutputPtr(:,iii)
-        end if
-        call DTRTRS( 'L', 'N', 'N', NbNodes, 1, This%L, NbNodes, This%XmMean(:,:), NbNodes, StatLoc )
-        if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DTRTRS with code: '//ConvertToString(Value=StatLoc),&
-                                                                                                             ProcName=ProcName )
-        VarR0D = VarR0D - 0.5 * dot_product(This%XmMean(:,1), This%XmMean(:,1))
-      end do
-    end do
-    lnExp = VarR0D
-
-    EvaluateDet = lnPreExp + lnExp + This%Scalar
-
-    if ( .not. LogValueLoc ) then
-      if ( EvaluateDet > TVarR0D .and. EvaluateDet < HVarR0D ) then
-        EvaluateDet = dexp(EvaluateDet)
-      elseif (EvaluateDet < TVarR0D ) then
-        EvaluateDet = Zero
+    if ( ZeroExit ) then
+      if ( LogValueLoc ) then
+        EvaluateDet = -huge(One)
       else
-        call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
-             ConvertToString(Value=EvaluateDet) // '. Consider changing value of the scalar modifier and rerun for response: ' // &
-                                                                                                   This%Label, ProcName=ProcName )
+        EvaluateDet = Zero
       end if
-    end if
+    else
+      VarR0D = Zero
+      ii = 1
+      do ii = 1, NbNodes
+        VarR0D = VarR0D + dlog(This%L(ii,ii))
+      end do
+      lnPreExp = (-real(NbNodes,rkp)/Two*ln2pi - VarR0D)*NbDegen*NbDataSets + lnPreExp
 
-    nullify(OutputPtr)
-    nullify(DataPtr)
+      VarR0D = Zero
+      ii = 1
+      do ii = 1, NbDataSets
+        iii = 1
+        do iii = 1, NbDegen
+          if ( This%MultiplicativeError ) then
+            This%XmMean(:,1) = DataPtr(:,ii) / OutputPtr(:,iii)
+            This%XmMean(:,1) = dlog(This%XmMean(:,1))
+          else
+            This%XmMean(:,1) = DataPtr(:,ii) - OutputPtr(:,iii)
+          end if
+          call DTRTRS( 'L', 'N', 'N', NbNodes, 1, This%L, NbNodes, This%XmMean(:,:), NbNodes, StatLoc )
+          if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DTRTRS with code: '//ConvertToString(Value=StatLoc),&
+                                                                                                               ProcName=ProcName )
+          VarR0D = VarR0D - 0.5 * dot_product(This%XmMean(:,1), This%XmMean(:,1))
+        end do
+      end do
+      lnExp = VarR0D
+
+      EvaluateDet = lnPreExp + lnExp + This%Scalar
+
+      if ( .not. LogValueLoc ) then
+        if ( EvaluateDet > TVarR0D .and. EvaluateDet < HVarR0D ) then
+          EvaluateDet = dexp(EvaluateDet)
+        elseif (EvaluateDet < TVarR0D ) then
+          EvaluateDet = Zero
+        else
+          call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                          &
+               ConvertToString(Value=EvaluateDet) // '. Consider changing value of the scalar modifier and rerun for response: '//&
+                                                                                                   This%Label, ProcName=ProcName )
+        end if
+      end if
+
+      nullify(OutputPtr)
+      nullify(DataPtr)
+    end if
 
     if (DebugLoc) call Logger%Exiting()
 

@@ -470,6 +470,7 @@ contains
         integer                                                           ::    iLoc
         class(LikelihoodFunction_Type), pointer                           ::    LikelihoodPtr=>null()
         type(InputDet_Type)                                               ::    InputLoc
+
         
         DebugLoc = DebugGlobal
         if ( present(Debug) ) DebugLoc = Debug
@@ -516,9 +517,13 @@ contains
             iLoc = 1
             do iLoc = 1, size(This%LikelihoodFunctionVec,1)
               LikelihoodPtr => This%LikelihoodFunctionVec(iLoc)%GetPointer()
-              Likelihood = Likelihood + LikelihoodPtr%Evaluate( Responses=Responses, Input=InputLoc, Output=Output,               &
-                                                                                                                 LogValue=.true. )
+              VarR0DLoc = LikelihoodPtr%Evaluate( Responses=Responses, Input=InputLoc, Output=Output, LogValue=.true. )
               nullify(LikelihoodPtr)
+              if ( VarR0DLoc <= -huge(One) ) then
+                Likelihood = VarR0DLoc
+                exit
+              end if
+              Likelihood = Likelihood + VarR0D
             end do
             if ( Likelihood > TVarR0D .and. Likelihood < HVarR0D ) then
               Likelihood = dexp(Likelihood)
@@ -559,6 +564,7 @@ contains
         class(DistProb_Type), pointer                                     ::    DistProb=>null()
         type(InputDet_Type), allocatable, dimension(:)                    ::    HierInput
         real(rkp)                                                         ::    VarR0DLoc
+        real(rkp)                                                         ::    VarR0DLoc_2
         integer                                                           ::    RunStat
         real(rkp)                                                         ::    Likelihood
         integer                                                           ::    iLoc
@@ -643,11 +649,16 @@ contains
             do iiLoc = 1, NbHierSamples
               Likelihood = Zero
               iLoc = 1
-              do iLoc = 1, size(Responses,1)
+              do iLoc = 1, size(This%LikelihoodFunctionVec,1)
                 LikelihoodPtr => This%LikelihoodFunctionVec(iLoc)%GetPointer()
-                Likelihood = Likelihood + LikelihoodPtr%Evaluate( Responses=Responses, Input=HierInput(iiLoc),                      &
+                VarR0DLoc_2 = LikelihoodPtr%Evaluate( Responses=Responses, Input=HierInput(iiLoc),                                &
                                                                                      Output=HierOutput(:,iiLoc), LogValue=.true. )
                 nullify(LikelihoodPtr)
+                if ( VarR0DLoc_2 <= -huge(One) ) then
+                  Likelihood = VarR0DLoc_2
+                  exit
+                end if
+                Likelihood = Likelihood + VarR0DLoc_2
               end do
               if ( Likelihood > TVarR0D .and. Likelihood < HVarR0D ) then
                 Likelihood = dexp(Likelihood)
