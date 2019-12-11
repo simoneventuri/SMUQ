@@ -118,7 +118,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_PolyCoeff( LHS, RHS )
+  impure elemental subroutine Copy_PolyCoeff( LHS, RHS )
     import                                                            ::    PolyCoeff_Type
     class(PolyCoeff_Type), intent(out)                                ::    LHS
     class(PolyCoeff_Type), intent(in)                                 ::    RHS

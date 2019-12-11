@@ -106,7 +106,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_OFileFormated( LHS, RHS )
+  impure elemental subroutine Copy_OFileFormated( LHS, RHS )
     import                                                            ::    OFileFormated_Type  
     class(OFileFormated_Type), intent(out)                            ::    LHS
     class(OFileFormated_Type), intent(in)                             ::    RHS

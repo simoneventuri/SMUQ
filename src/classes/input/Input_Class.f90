@@ -81,7 +81,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_Input( LHS, RHS )
+  impure elemental subroutine Copy_Input( LHS, RHS )
     import                                                            ::    Input_Type
     class(Input_Type), intent(out)                                    ::    LHS
     class(Input_Type), intent(in)                                     ::    RHS

@@ -850,7 +850,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy( LHS, RHS )
 
     class(LinSolverOLS_Type), intent(out)                             ::    LHS
     class(LinSolverMethod_Type), intent(in)                           ::    RHS

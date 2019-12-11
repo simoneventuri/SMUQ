@@ -135,7 +135,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_LikelihoodFunction( LHS, RHS )
+  impure elemental subroutine Copy_LikelihoodFunction( LHS, RHS )
     import                                                            ::    LikelihoodFunction_Type
     class(LikelihoodFunction_Type), intent(out)                       ::    LHS
     class(LikelihoodFunction_Type), intent(in)                        ::    RHS

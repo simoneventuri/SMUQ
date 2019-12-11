@@ -347,7 +347,7 @@ contains
 
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy( LHS, RHS )
 
     class(TestGFun_Type), intent(out)                                 ::    LHS
     class(TestFunction_Type), intent(in)                              ::    RHS
@@ -378,7 +378,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Finalizer( This )
+  impure elemental subroutine Finalizer( This )
 
     type(TestGFun_Type), intent(inout)                                ::    This
 

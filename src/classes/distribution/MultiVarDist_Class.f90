@@ -388,7 +388,7 @@ contains
 
     real(rkp)                                                         ::    GetNbDim
 
-    class(MultiVarDist_Type), intent(in)                          ::    This
+    class(MultiVarDist_Type), intent(in)                              ::    This
 
     character(*), parameter                                           ::    ProcName='GetNbDim'
     integer                                                           ::    StatLoc=0
@@ -405,7 +405,7 @@ contains
 
     logical                                                           ::    IsConstructed
 
-    class(MultiVarDist_Type), intent(in)                          ::    This
+    class(MultiVarDist_Type), intent(in)                              ::    This
 
     character(*), parameter                                           ::    ProcName='IsConstructed'
     integer                                                           ::    StatLoc=0
@@ -416,10 +416,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy( LHS, RHS )
 
-    class(MultiVarDist_Type), intent(out)                         ::    LHS
-    class(MultiVarDist_Type), intent(in)                          ::    RHS
+    class(MultiVarDist_Type), intent(out)                             ::    LHS
+    class(MultiVarDist_Type), intent(in)                              ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
@@ -450,9 +450,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Finalizer( This )
+  impure elemental subroutine Finalizer( This )
 
-    type(MultiVarDist_Type), intent(inout)                        ::    This
+    type(MultiVarDist_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0

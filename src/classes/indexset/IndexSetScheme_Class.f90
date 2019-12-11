@@ -115,7 +115,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_IndexSetScheme( LHS, RHS )
+  impure elemental subroutine Copy_IndexSetScheme( LHS, RHS )
     import                                                            ::    IndexSetScheme_Type
     class(IndexSetScheme_Type), intent(out)                           ::    LHS
     class(IndexSetScheme_Type), intent(in)                            ::    RHS

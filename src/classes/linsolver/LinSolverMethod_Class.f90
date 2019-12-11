@@ -106,7 +106,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_LinSolverMethod( LHS, RHS )
+  impure elemental subroutine Copy_LinSolverMethod( LHS, RHS )
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(out)                          ::    LHS
     class(LinSolverMethod_Type), intent(in)                           ::    RHS

@@ -197,7 +197,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy( LHS, RHS )
 
     class(MParamScalarDirect_Type), intent(out)                       ::    LHS
     class(MParamScalar_Type), intent(in)                              ::    RHS

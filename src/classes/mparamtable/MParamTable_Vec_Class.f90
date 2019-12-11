@@ -88,8 +88,35 @@ contains
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Copy( LHS, RHS )
+
+    class(MParamTable_Vec_Type), intent(inout)                        ::    LHS
+    class(MParamTable_Vec_Type), intent(in)                           ::    RHS
+
+    character(*), parameter                                           ::    ProcName='Copy'
+    integer                                                           ::    StatLoc=0
+
+    select type (RHS)
+  
+      type is (MParamTable_Vec_Type)
+        if ( associated(RHS%MParamTable) ) then
+          if ( associated(LHS%MParamTable) ) deallocate( LHS%MParamTable, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%MParamTable', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%MParamTable, source=RHS%MParamTable, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MParamTable', ProcName=ProcName, stat=StatLoc )
+        end if
+      
+      class default
+        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+
+    end select
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Finalizer( This )
+  impure elemental subroutine Finalizer( This )
 
     type(MParamTable_Vec_Type), intent(inout)                         ::    This
 

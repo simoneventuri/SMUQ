@@ -42,7 +42,7 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
     class(MParamScalar_Vec_Type), intent(inout)                       ::    This
@@ -54,9 +54,9 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MParamScalar', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
     class(MParamScalar_Type), allocatable                             ::    Get
@@ -71,9 +71,9 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
     class(MParamScalar_Type), pointer                                 ::    GetPointer
@@ -86,10 +86,37 @@ contains
     GetPointer => This%MParamScalar
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Finalizer( This )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Copy( LHS, RHS )
+
+    class(MParamScalar_Vec_Type), intent(inout)                       ::    LHS
+    class(MParamScalar_Vec_Type), intent(in)                          ::    RHS
+
+    character(*), parameter                                           ::    ProcName='Copy'
+    integer                                                           ::    StatLoc=0
+
+    select type (RHS)
+  
+      type is (MParamScalar_Vec_Type)
+        if ( associated(RHS%MParamScalar) ) then
+          if ( associated(LHS%MParamScalar) ) deallocate( LHS%MParamScalar, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%MParamScalar', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%MParamScalar, source=RHS%MParamScalar, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MParamScalar', ProcName=ProcName, stat=StatLoc )
+        end if
+      
+      class default
+        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+
+    end select
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Finalizer( This )
 
     type(MParamScalar_Vec_Type), intent(inout)                        ::    This
 
@@ -100,6 +127,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( name='This%MParamScalar', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -114,7 +114,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_HierDistProb( LHS, RHS )
+  impure elemental subroutine Copy_HierDistProb( LHS, RHS )
     import                                                            ::    HierDistProb_Type
     class(HierDistProb_Type), intent(out)                             ::    LHS
     class(HierDistProb_Type), intent(in)                              ::    RHS

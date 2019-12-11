@@ -55,7 +55,6 @@ contains
   procedure, public                                                   ::    GetSigma
   procedure, public                                                   ::    GetMoment
   procedure, public                                                   ::    Copy
-  final                                                               ::    Finalizer     
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -654,7 +653,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy( LHS, RHS )
 
     class(DistNorm_Type), intent(out)                                 ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
@@ -682,17 +681,6 @@ contains
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
 
     end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Finalizer( This )
-
-    type(DistNorm_Type), intent(inout)                                ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

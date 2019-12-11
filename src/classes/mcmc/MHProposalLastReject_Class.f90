@@ -35,6 +35,7 @@ type, extends(MHProposalMethod_Type)                                  ::    MHPr
 contains
   private
   procedure, private                                                  ::    ConstructProp_Case1
+  final                                                               ::    Finalizer     
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -52,6 +53,23 @@ contains
     integer                                                           ::    StatLoc=0
 
     call This%Construct( Mu=X(:,size(X,2)), Cov=Cov )
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Finalizer( This )
+
+    type(MHProposalLastReject_Type), intent(inout)                    ::    This
+
+    character(*), parameter                                           ::    ProcName='Finalizer'
+    integer                                                           ::    StatLoc=0
+
+    if ( allocated(This%Mu) ) deallocate(This%Mu, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Mu', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%Cov) ) deallocate(This%Cov, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cov', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

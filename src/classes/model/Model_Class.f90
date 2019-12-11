@@ -84,7 +84,7 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Copy_Model( LHS, RHS )
+  impure elemental subroutine Copy_Model( LHS, RHS )
     import                                                            ::    Model_Type
     class(Model_Type), intent(out)                                    ::    LHS
     class(Model_Type), intent(in)                                     ::    RHS

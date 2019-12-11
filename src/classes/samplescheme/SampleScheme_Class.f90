@@ -147,7 +147,7 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Copy_SampleScheme( LHS, RHS )
+  impure elemental subroutine Copy_SampleScheme( LHS, RHS )
     import                                                            ::    SampleScheme_Type
     class(SampleScheme_Type), intent(out)                             ::    LHS
     class(SampleScheme_Type), intent(in)                              ::    RHS

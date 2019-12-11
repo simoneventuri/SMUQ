@@ -110,7 +110,7 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Copy_TestFunction( LHS, RHS )
+  impure elemental subroutine Copy_TestFunction( LHS, RHS )
     import                                                            ::    TestFunction_Type
     class(TestFunction_Type), intent(out)                             ::    LHS
     class(TestFunction_Type), intent(in)                              ::    RHS

@@ -125,7 +125,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_OrthoPoly( LHS, RHS )
+  impure elemental subroutine Copy_OrthoPoly( LHS, RHS )
     import                                                            ::    OrthoPoly_Type
     class(OrthoPoly_Type), intent(out)                                ::    LHS
     class(OrthoPoly_Type), intent(in)                                 ::    RHS

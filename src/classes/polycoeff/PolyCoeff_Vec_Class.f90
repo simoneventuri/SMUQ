@@ -42,7 +42,7 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
     class(PolyCoeff_Vec_Type), intent(inout)                          ::    This
@@ -55,9 +55,9 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
     class(PolyCoeff_Type), allocatable                                ::    Get
@@ -73,9 +73,9 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
     class(PolyCoeff_Type), pointer                                    ::    GetPointer
@@ -89,10 +89,37 @@ contains
     GetPointer => This%PolyCoeff
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Finalizer( This )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Copy( LHS, RHS )
+
+    class(PolyCoeff_Vec_Type), intent(inout)                          ::    LHS
+    class(PolyCoeff_Vec_Type), intent(in)                             ::    RHS
+
+    character(*), parameter                                           ::    ProcName='Copy'
+    integer                                                           ::    StatLoc=0
+
+    select type (RHS)
+  
+      type is (PolyCoeff_Vec_Type)
+        if ( associated(RHS%PolyCoeff) ) then
+          if ( associated(LHS%PolyCoeff) ) deallocate( LHS%PolyCoeff, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%PolyCoeff', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%PolyCoeff, source=RHS%PolyCoeff, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PolyCoeff', ProcName=ProcName, stat=StatLoc )
+        end if
+      
+      class default
+        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+
+    end select
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Finalizer( This )
 
     type(PolyCoeff_Vec_Type), intent(inout)                           ::    This
 
@@ -103,6 +130,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -422,7 +422,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy( LHS, RHS )
 
     class(TransfSampleSpaceUnbound_Type), intent(out)                 ::    LHS
     class(SampleSpace_Type), intent(in)                               ::    RHS
@@ -462,7 +462,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Finalizer( This )
+  impure elemental subroutine Finalizer( This )
 
     type(TransfSampleSpaceUnbound_Type),intent(inout)                 ::    This
 

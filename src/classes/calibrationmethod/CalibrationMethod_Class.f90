@@ -113,7 +113,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_CalibrationMethod( LHS, RHS )
+  impure elemental subroutine Copy_CalibrationMethod( LHS, RHS )
     import                                                            ::    CalibrationMethod_Type
     class(CalibrationMethod_Type), intent(out)                        ::    LHS
     class(CalibrationMethod_Type), intent(in)                         ::    RHS

@@ -114,7 +114,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_SurrogateMethod( LHS, RHS )
+  impure elemental subroutine Copy_SurrogateMethod( LHS, RHS )
     import                                                            ::    SurrogateMethod_Type
     class(SurrogateMethod_Type), intent(out)                          ::    LHS
     class(SurrogateMethod_Type), intent(in)                           ::    RHS

@@ -42,7 +42,7 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
     class(OFileFormated_Vec_Type), intent(inout)                      ::    This
@@ -54,9 +54,9 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OFileFormated', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
     class(OFileFormated_Type), allocatable                            ::    Get
@@ -71,9 +71,9 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
     class(OFileFormated_Type), pointer                                ::    GetPointer
@@ -87,10 +87,37 @@ contains
     GetPointer => This%OFileFormated
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Finalizer( This )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Copy( LHS, RHS )
+
+    class(OFileFormated_Vec_Type), intent(inout)                      ::    LHS
+    class(OFileFormated_Vec_Type), intent(in)                         ::    RHS
+
+    character(*), parameter                                           ::    ProcName='Copy'
+    integer                                                           ::    StatLoc=0
+
+    select type (RHS)
+  
+      type is (OFileFormated_Vec_Type)
+        if ( associated(RHS%OFileFormated) ) then
+          if ( associated(LHS%OFileFormated) ) deallocate( LHS%OFileFormated, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%OFileFormated', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%OFileFormated, source=RHS%OFileFormated, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OFileFormated', ProcName=ProcName, stat=StatLoc )
+        end if
+      
+      class default
+        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+
+    end select
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Finalizer( This )
 
     type(OFileFormated_Vec_Type), intent(inout)                       ::    This
 
@@ -101,6 +128,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( name='This%OFileFormated', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

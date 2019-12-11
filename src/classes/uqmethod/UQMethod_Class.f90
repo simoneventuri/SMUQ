@@ -113,7 +113,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_UQMethod( LHS, RHS )
+  impure elemental subroutine Copy_UQMethod( LHS, RHS )
     import                                                            ::    UQMethod_Type
     class(UQMethod_Type), intent(out)                                 ::    LHS
     class(UQMethod_Type), intent(in)                                  ::    RHS

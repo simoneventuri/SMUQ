@@ -41,7 +41,7 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  elemental subroutine Initialize( This )
+  subroutine Initialize( This )
 
     class(Output_Type), intent(inout)                                 ::    This
 
@@ -57,16 +57,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  elemental subroutine Reset( This )
+  subroutine Reset( This )
 
     class(Output_Type), intent(inout)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
+    integer                                                           ::    StatLoc=0
 
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%Values) ) deallocate(This%Values)
+    if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
     This%NbNodes = 0
     This%NbDegen = 0
@@ -77,7 +79,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  elemental subroutine SetDefaults( This )
+  subroutine SetDefaults( This )
 
     class(Output_Type),intent(inout)                                  ::    This
 
@@ -241,12 +243,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy( LHS, RHS )
 
     class(Output_Type), intent(inout)                                 ::    LHS
     class(Output_Type), intent(in)                                    ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
+    integer                                                           ::    StatLoc=0
 
     call LHS%Reset()
 
@@ -256,7 +259,8 @@ contains
     if ( RHS%Constructed ) then
       LHS%Name = RHS%Name
       LHS%Label = RHS%Label
-      allocate(LHS%Values, source=RHS%Values)
+      allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Values', ProcName=ProcName, stat=StatLoc )
       LHS%NbNodes = RHS%NbNodes
       LHS%NbDegen = RHS%NbDegen
     end if
@@ -265,7 +269,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Finalizer( This )
+  impure elemental subroutine Finalizer( This )
 
     type(Output_Type),intent(inout)                                   ::    This
 

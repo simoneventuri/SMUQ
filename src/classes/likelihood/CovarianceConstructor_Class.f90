@@ -125,7 +125,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_CovarianceConstructor( LHS, RHS )
+  impure elemental subroutine Copy_CovarianceConstructor( LHS, RHS )
     import                                                            ::    CovarianceConstructor_Type
     class(CovarianceConstructor_Type), intent(out)                    ::    LHS
     class(CovarianceConstructor_Type), intent(in)                     ::    RHS

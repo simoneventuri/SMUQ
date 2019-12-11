@@ -137,7 +137,7 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Copy_PolyChaosMethod( LHS, RHS )
+  impure elemental subroutine Copy_PolyChaosMethod( LHS, RHS )
     import                                                            ::    PolyChaosMethod_Type
     class(PolyChaosMethod_Type), intent(out)                          ::    LHS
     class(PolyChaosMethod_Type), intent(in)                           ::    RHS

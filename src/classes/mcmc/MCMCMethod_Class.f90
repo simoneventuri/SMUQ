@@ -118,7 +118,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_MCMCMethod( LHS, RHS )
+  impure elemental subroutine Copy_MCMCMethod( LHS, RHS )
     import                                                            ::    MCMCMethod_Type
     class(MCMCMethod_Type), intent(out)                               ::    LHS
     class(MCMCMethod_Type), intent(in)                                ::    RHS

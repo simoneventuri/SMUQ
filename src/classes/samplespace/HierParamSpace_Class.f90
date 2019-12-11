@@ -329,6 +329,9 @@ contains
 
     call ParamSpace%Construct( Distributions=DistProbVec, CorrMat=This%CorrMat, Labels=This%Label, Names=This%ParamName )
 
+    deallocate(DistProbVec, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistProbVec', ProcName=ProcName, stat=StatLoc )
+
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -430,7 +433,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy( LHS, RHS )
 
     class(HierParamSpace_Type), intent(out)                           ::    LHS
     class(HierParamSpace_Type), intent(in)                            ::    RHS
@@ -470,7 +473,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Finalizer( This )
+  impure elemental subroutine Finalizer( This )
 
     type(HierParamSpace_Type),intent(inout)                               ::    This
 

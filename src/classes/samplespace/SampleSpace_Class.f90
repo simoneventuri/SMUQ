@@ -124,7 +124,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_SampleSpace( LHS, RHS )
+  impure elemental subroutine Copy_SampleSpace( LHS, RHS )
     import                                                            ::    SampleSpace_Type
     class(SampleSpace_Type), intent(out)                              ::    LHS
     class(SampleSpace_Type), intent(in)                               ::    RHS

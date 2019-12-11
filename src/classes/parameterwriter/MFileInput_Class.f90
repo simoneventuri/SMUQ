@@ -108,7 +108,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_MFileInput( LHS, RHS )
+  impure elemental subroutine Copy_MFileInput( LHS, RHS )
     import                                                            ::    MFileInput_Type
     class(MFileInput_Type), intent(out)                               ::    LHS
     class(MFileInput_Type), intent(in)                                ::    RHS

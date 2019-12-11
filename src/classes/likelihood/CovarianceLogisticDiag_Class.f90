@@ -342,7 +342,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy( LHS, RHS )
 
     class(CovarianceLogisticDiag_Type), intent(out)                   ::    LHS
     class(CovarianceConstructor_Type), intent(in)                     ::    RHS
@@ -381,7 +381,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Finalizer( This )
+  impure elemental subroutine Finalizer( This )
 
     type(CovarianceLogisticDiag_Type), intent(inout)                  ::    This
 

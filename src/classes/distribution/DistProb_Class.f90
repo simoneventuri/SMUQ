@@ -152,7 +152,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_DistProb( LHS, RHS )
+  impure elemental subroutine Copy_DistProb( LHS, RHS )
     import                                                            ::    DistProb_Type
     class(DistProb_Type), intent(out)                                 ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS

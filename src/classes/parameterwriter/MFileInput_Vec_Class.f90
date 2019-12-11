@@ -42,7 +42,7 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
     class(MFileInput_Vec_Type), intent(inout)                         ::    This
@@ -55,9 +55,9 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MFileInput', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
     class(MFileInput_Type), allocatable                               ::    Get
@@ -73,9 +73,9 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
     class(MFileInput_Type), pointer                                   ::    GetPointer
@@ -89,10 +89,37 @@ contains
     GetPointer => This%MFileInput
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Finalizer( This )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Copy( LHS, RHS )
+
+    class(MFileInput_Vec_Type), intent(inout)                         ::    LHS
+    class(MFileInput_Vec_Type), intent(in)                            ::    RHS
+
+    character(*), parameter                                           ::    ProcName='Copy'
+    integer                                                           ::    StatLoc=0
+
+    select type (RHS)
+  
+      type is (MFileInput_Vec_Type)
+        if ( associated(RHS%MFileInput) ) then
+          if ( associated(LHS%MFileInput) ) deallocate( LHS%MFileInput, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%MFileInput', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%MFileInput, source=RHS%MFileInput, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MFileInput', ProcName=ProcName, stat=StatLoc )
+        end if
+      
+      class default
+        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+
+    end select
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Finalizer( This )
 
     type(MFileInput_Vec_Type), intent(inout)                          ::    This
 
@@ -103,6 +130,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( name='This%MFileInput', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

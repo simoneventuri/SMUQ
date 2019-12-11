@@ -119,7 +119,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_MParamScalar( LHS, RHS )
+  impure elemental subroutine Copy_MParamScalar( LHS, RHS )
     import                                                            ::    MParamScalar_Type
     class(MParamScalar_Type), intent(out)                             ::    LHS
     class(MParamScalar_Type), intent(in)                              ::    RHS

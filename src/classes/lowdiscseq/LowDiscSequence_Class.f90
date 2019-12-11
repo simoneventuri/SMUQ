@@ -169,7 +169,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy_LowDiscSequence( LHS, RHS )
+  impure elemental subroutine Copy_LowDiscSequence( LHS, RHS )
     import                                                            ::    LowDiscSequence_Type
     class(LowDiscSequence_Type), intent(out)                          ::    LHS
     class(LowDiscSequence_Type), intent(in)                           ::    RHS

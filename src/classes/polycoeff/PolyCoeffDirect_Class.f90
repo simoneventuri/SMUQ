@@ -212,7 +212,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy( LHS, RHS )
 
     class(PolyCoeffDirect_Type), intent(out)                          ::    LHS
     class(PolyCoeff_Type), intent(in)                                 ::    RHS
