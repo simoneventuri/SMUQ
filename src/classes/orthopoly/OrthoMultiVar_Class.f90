@@ -67,17 +67,11 @@ logical, parameter                                                    ::    Debu
 contains
 
  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name         =   'multivariate'
@@ -85,24 +79,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -113,40 +99,28 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     use StringRoutines_Module
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     type(InputSection_Type), pointer                                  ::    InputSection
     character(:), allocatable                                         ::    ParameterName
@@ -159,10 +133,6 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -189,26 +159,18 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, OrthoPolyVec, Debug )
+  subroutine ConstructCase1( This, OrthoPolyVec )
     
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
-    type(OrthoPoly_Vec_Type), dimension(:), intent(in)                ::    OrthoPolyVec
-    logical, optional ,intent(in)                                     ::    Debug 
+    type(OrthoPoly_Vec_Type), dimension(:), intent(in)                ::    OrthoPolyVec 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -220,13 +182,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -236,9 +196,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -248,10 +206,6 @@ contains
     integer                                                           ::    i
     class(OrthoPoly_Type), pointer                                    ::    OrthoPolyPointer=>null()
 
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -275,29 +229,21 @@ contains
       nullify(OrthoPolyPointer)
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Precompute( This, X, MaxOrder, Values, Debug )
+  subroutine Precompute( This, X, MaxOrder, Values )
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
     integer, dimension(:), intent(in)                                 ::    MaxOrder
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Precompute'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
     class(OrthoPoly_Type), pointer                                    ::    OrthoPolyPointer=>null()
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The OrthoMultiVar object was never constructed', ProcName=ProcName )
 
@@ -321,29 +267,21 @@ contains
       nullify(OrthoPolyPointer)
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvalObject0D( This, X, Indices, Debug )
+  function EvalObject0D( This, X, Indices )
 
     real(rkp)                                                         ::    EvalObject0D
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
     integer, dimension(:), intent(in)                                 ::    Indices
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='EvalObject0D'
     integer                                                           ::    i
     class(OrthoPoly_Type), pointer                                    ::    OrthoPolyPointer=>null()
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -358,32 +296,24 @@ contains
       nullify(OrthoPolyPointer)
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvalObject1D( This, X, Indices, Debug )
+  function EvalObject1D( This, X, Indices )
 
     real(rkp), allocatable, dimension(:)                              ::    EvalObject1D
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
     integer, dimension(:,:), intent(in)                               ::    Indices
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='EvalObject1D'
     integer                                                           ::    NbTuples
     integer                                                           ::    i, ii
     integer, allocatable, dimension(:)                                ::    MaxOrder
     real(rkp), allocatable, dimension(:,:)                            ::    Values0D
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -417,27 +347,19 @@ contains
     deallocate(Values0D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Values0D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOrthoPoly0D( This, Num, Debug )
+  function GetOrthoPoly0D( This, Num )
 
     class(OrthoPoly_Type), allocatable                                ::    GetOrthoPoly0D
 
     class(OrthoMultiVar_Type), intent(in)                             ::    This
     integer, intent(in)                                               ::    Num
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetOrthoPoly0D'
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -447,58 +369,40 @@ contains
     allocate(GetOrthoPoly0D, source=This%OrthoPoly(Num)%GetPointer(), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetOrthoPoly0D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOrthoPoly1D( This, Debug )
+  function GetOrthoPoly1D( This )
 
     class(OrthoPoly_Vec_Type), allocatable, dimension(:)              ::    GetOrthoPoly1D
 
     class(OrthoMultiVar_Type), intent(in)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetOrthoPoly1D'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     allocate(GetOrthoPoly1D, source=This%OrthoPoly, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetOrthoPoly1D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDim( This, Debug )
+  function GetNbDim( This )
 
     integer                                                           ::    GetNbDim
 
     class(OrthoMultiVar_Type), intent(in)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbDim'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetNbDim = This%NbDim
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -509,13 +413,9 @@ contains
     class(OrthoMultiVar_Type), intent(out)                            ::    LHS
     class(OrthoMultiVar_Type), intent(in)                             ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call LHS%Reset()
 
@@ -528,8 +428,6 @@ contains
       if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -539,16 +437,10 @@ contains
     type(OrthoMultiVar_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if( allocated(This%OrthoPoly) ) deallocate( This%OrthoPoly, stat=StatLoc )
     if( StatLoc /= 0 ) call Error%Deallocate( Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -112,17 +112,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'polychaosmodel'
@@ -130,24 +124,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -168,41 +154,29 @@ contains
 
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%OutputLabel = '<undefined>'
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Prefix, Debug )
+  subroutine ConstructInput( This, Prefix )
 
     use StringRoutines_Module
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     type(InputReader_Type)                                            ::    Input
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
@@ -219,10 +193,6 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
     integer                                                           ::    IOLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()  
@@ -286,22 +256,18 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput2( This, Input, Prefix, Debug )
+  subroutine ConstructInput2( This, Input, Prefix )
 
     use StringRoutines_Module
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     class(InputSection_Type), intent(in)                              ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput2'
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
@@ -317,10 +283,6 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
     integer                                                           ::    IOLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()  
@@ -381,13 +343,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Response, TransformedSpace, Basis, Coefficients, Indices, CVErrors, Debug )
+  subroutine ConstructCase1( This, Response, TransformedSpace, Basis, Coefficients, Indices, CVErrors )
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     type(Response_Type), intent(in)                                   ::    Response
@@ -396,9 +356,7 @@ contains
     type(LinkedList1D_Type), intent(inout)                            ::    Coefficients
     type(LinkedList2D_Type), intent(inout)                            ::    Indices
     type(LinkedList0D_Type), optional, intent(inout)                  ::    CVErrors
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase'
     integer                                                           ::    NbOutputs
     integer                                                           ::    i
@@ -408,10 +366,6 @@ contains
     real(rkp), dimension(:,:), pointer                                ::    VarR2DPointer=>null()
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(rkp)                                                         ::    VarR0D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -480,13 +434,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -496,9 +448,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -507,10 +457,6 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -546,26 +492,18 @@ contains
                                                                              Directory=DirectorySub ), To_SubSection=SectionName )
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  subroutine RunCase1( This, Input, Output, Stat, Debug )
+  subroutine RunCase1( This, Input, Output, Stat )
     
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     class(Input_Type), intent(in)                                     ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
-    integer, optional, intent(out)                                    ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug 
+    integer, optional, intent(out)                                    ::    Stat 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='RunCase1'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(Output) ) then
       if ( size(Output,1) /= 1 ) then
@@ -584,21 +522,17 @@ contains
       call This%Run( Input, Output(1) )
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RunCase2( This, Input, Output, Stat, Debug )
+  subroutine RunCase2( This, Input, Output, Stat )
     
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     class(Input_Type), intent(in)                                     ::    Input
     type(Output_Type), intent(inout)                                  ::    Output
-    integer, optional, intent(out)                                    ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug 
+    integer, optional, intent(out)                                    ::    Stat 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='RunCase1'
     real(rkp), dimension(:), pointer                                  ::    CoefficientsPointer=>null()
     integer, dimension(:,:), pointer                                  ::    IndicesPointer=>null()
@@ -611,10 +545,6 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(8), external                                                 ::    DDOT
     character(:), allocatable                                         ::    VarC0D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -685,26 +615,18 @@ contains
 
     if ( present(Stat) ) Stat = 0
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReplaceInputLabel( This, OldLabel, NewLabel, Debug )
+  subroutine ReplaceInputLabel( This, OldLabel, NewLabel )
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     character(*), intent(in)                                          ::    OldLabel
     character(*), intent(in)                                          ::    NewLabel
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ReplaceInputLabel'
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -716,156 +638,106 @@ contains
       end if
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbInputs( This, Debug )
+  function GetNbInputs( This )
 
     integer                                                           ::    GetNbInputs
 
     class(PolyChaosModel_Type), intent(in)                            ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbInputs'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetNbInputs = This%NbDim
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbNodes( This, Debug )
+  function GetNbNodes( This )
 
     integer                                                           ::    GetNbNodes
 
     class(PolyChaosModel_Type), intent(in)                            ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbNodes'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetNbNodes = This%NbCells
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoefficientsPointer( This, Node, Debug )
+  function GetCoefficientsPointer( This, Node )
 
     real(rkp), dimension(:), pointer                                  ::    GetCoefficientsPointer
 
     class(PolyChaosModel_Type), intent(in)                            ::    This
     integer, intent(in)                                               ::    Node
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCoefficientsPointer'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
     if ( Node < 1 .or. Node > This%NbCells) call Error%Raise( Line='Node specifier outside of bounds', ProcName=ProcName )
 
     GetCoefficientsPointer => This%Cells(Node)%GetCoefficientsPointer()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetIndicesPointer( This, Node, Debug )
+  function GetIndicesPointer( This, Node )
 
     integer, dimension(:,:), pointer                                  ::    GetIndicesPointer
 
     class(PolyChaosModel_Type), intent(in)                            ::    This
     integer, intent(in)                                               ::    Node
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetIndicesPointer'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
     if ( Node < 1 .or. Node > This%NbCells) call Error%Raise( Line='Node specifier outside of bounds', ProcName=ProcName )
 
     GetIndicesPointer => This%Cells(Node)%GetIndicesPointer()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCVError( This, Node, Debug )
+  function GetCVError( This, Node )
 
     real(rkp)                                                         ::    GetCVError
 
     class(PolyChaosModel_Type), intent(in)                            ::    This
     integer, intent(in)                                               ::    Node
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCVError'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
     if ( Node < 1 .or. Node > This%NbCells) call Error%Raise( Line='Node specifier outside of bounds', ProcName=ProcName )
 
     GetCVError = This%Cells(Node)%GetCVError()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReplaceOutputLabel( This, NewLabel, Debug )
+  subroutine ReplaceOutputLabel( This, NewLabel )
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     character(*), intent(in)                                          ::    NewLabel
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ReplaceOutputLabel'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     This%OutputLabel = NewLabel
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -876,13 +748,9 @@ contains
     class(PolyChaosModel_Type), intent(out)                           ::    LHS
     class(Model_Type), intent(in)                                     ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
       type is (PolyChaosModel_Type)
@@ -906,8 +774,6 @@ contains
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -917,11 +783,7 @@ contains
     type(PolyChaosModel_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%TransformedSpace) ) deallocate(This%TransformedSpace, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TransformedSpace', ProcName=ProcName, stat=StatLoc )
@@ -935,8 +797,6 @@ contains
     if ( allocated(This%CoordinateLabels) ) deallocate(This%CoordinateLabels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CoordinateLabels', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -945,41 +805,27 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_Cell( This, Debug )
+  subroutine Initialize_Cell( This )
 
     class(Cell_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize_Cell'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_Cell( This, Debug )
+  subroutine Reset_Cell( This )
 
     class(Cell_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset_Cell'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -995,41 +841,29 @@ contains
 
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_Cell( This, Debug )
+  subroutine SetDefaults_Cell( This )
 
     class(Cell_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults_Cell'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     THis%CVError = huge(One)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_Cell( This, Input, Prefix, Debug )
+  subroutine ConstructInput_Cell( This, Input, Prefix )
 
     class(Cell_Type), intent(inout)                                   ::    This
 
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput_Cell'
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    VarC0D
@@ -1043,10 +877,6 @@ contains
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -1086,13 +916,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1_Cell( This, Coefficients, Indices, Coordinate, CVError, Debug )
+  subroutine ConstructCase1_Cell( This, Coefficients, Indices, Coordinate, CVError )
 
     use String_Library
 
@@ -1101,16 +929,10 @@ contains
     integer, dimension(:,:), intent(in)                               ::    Indices
     real(rkp), dimension(:), intent(in)                               ::    Coordinate
     real(rkp), optional, intent(in)                                   ::    CVError
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1_Cell'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -1128,13 +950,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_Cell( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_Cell( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput_Cell
 
@@ -1142,9 +962,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput_Cell'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -1161,10 +979,6 @@ contains
     integer                                                           ::    mtuplesize=0
     integer                                                           ::    nbindices=0
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -1213,107 +1027,73 @@ contains
       nullify(InputSection)
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordPointer_Cell( This, Debug )
+  function GetCoordPointer_Cell( This )
 
     real(rkp), pointer, dimension(:)                                  ::    GetCoordPointer_Cell
 
     class(Cell_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCoordPointer_Cell'
     integer                                                           ::    StatLoc=0    
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetCoordPointer_Cell => This%Coordinate
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCVError_Cell( This, Debug )
+  function GetCVError_Cell( This )
 
     real(rkp)                                                         ::    GetCVError_Cell
 
     class(Cell_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCVError_Cell'
     integer                                                           ::    StatLoc=0    
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetCVError_Cell = This%CVError
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoeffsPointer_Cell( This, Debug )
+  function GetCoeffsPointer_Cell( This )
 
     real(rkp), dimension(:), pointer                                  ::    GetCoeffsPointer_Cell
 
     class(Cell_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCoeffsPointer_Cell'
     integer                                                           ::    StatLoc=0    
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetCoeffsPointer_Cell => This%Coefficients
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetIndicesPointer_Cell( This, Debug )
+  function GetIndicesPointer_Cell( This )
 
     integer, dimension(:,:), pointer                                  ::    GetIndicesPointer_Cell
 
     class(Cell_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetIndicesPointer_Cell'
     integer                                                           ::    StatLoc=0    
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetIndicesPointer_Cell => This%Indices
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1324,13 +1104,9 @@ contains
     class(Cell_Type), intent(out)                                     ::    LHS
     class(Cell_Type), intent(in)                                      ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy_Cell'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call LHS%Reset()
     LHS%Initialized = RHS%Initialized
@@ -1346,8 +1122,6 @@ contains
       LHS%CVError = RHS%CVError
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -1357,11 +1131,7 @@ contains
     type(Cell_Type), intent(inout)                                    ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer_Cell'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( associated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coefficients', ProcName=ProcName, stat=StatLoc )
@@ -1371,8 +1141,6 @@ contains
 
     if ( associated(This%Coordinate) ) deallocate(This%Coordinate, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coordinate', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

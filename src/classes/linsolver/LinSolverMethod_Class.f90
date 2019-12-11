@@ -51,42 +51,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_LinSolverMethod( This, Debug )
+  subroutine Initialize_LinSolverMethod( This )
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_LinSolverMethod( This, Debug )
+  subroutine Reset_LinSolverMethod( This )
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_LinSolverMethod( This, Debug )
+  subroutine SetDefaults_LinSolverMethod( This )
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_LinSolverMethod( This, Input, Prefix, Debug )
+  subroutine ConstructInput_LinSolverMethod( This, Input, Prefix )
     import                                                            ::    LinSolverMethod_Type
     import                                                            ::    InputSection_Type
     class(LinSolverMethod_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSystem_LinSolverMethod( This, System, Goal, Coefficients, CVError, Debug )
+  subroutine SolveSystem_LinSolverMethod( This, System, Goal, Coefficients, CVError )
     use Parameters_Library
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(in)                           ::    This
@@ -94,12 +90,11 @@ abstract interface
     real(rkp), dimension(:), intent(inout)                            ::    Goal
     real(rkp), allocatable, dimension(:), intent(out)                 ::    Coefficients
     real(rkp), optional, intent(out)                                  ::    CVError
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_LinSolverMethod( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_LinSolverMethod( This, MainSectionName, Prefix, Directory )
     import                                                            ::    LinSolverMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_LinSolverMethod
@@ -107,7 +102,6 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -124,25 +118,15 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
 
     class(LinSolverMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-    
-    if ( present(Debug) ) call Logger%Entering( ProcName )
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

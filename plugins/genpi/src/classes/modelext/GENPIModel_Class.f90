@@ -55,17 +55,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(GENPIModel_Type), intent(inout)                             ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'GENPIModel'
@@ -73,72 +67,48 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(GENPIModel_Type), intent(inout)                             ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     call This%SetDefaults()
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(GENPIModel_Type), intent(inout)                             ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%FullRunDir = '<undefined>'
     This%RunDir = '<undefined>'
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     use String_Library
 
     class(GENPIModel_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    VarC0D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -153,27 +123,19 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, RunDir, Debug )
+  subroutine ConstructCase1( This, RunDir )
 
     use String_Library
 
     class(GENPIModel_Type), intent(inout)                             ::    This
     character(*), intent(in)                                          ::    RunDir
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -183,13 +145,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use String_Library
 
@@ -199,18 +159,12 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -226,25 +180,17 @@ contains
 
     call GetInput%AddParameter( Name='run_directory', Value=This%RunDir )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, Stat, Debug )
+  subroutine Run( This, Stat )
 
     class(GENPIModel_Type), intent(inout)                             ::    This
     integer, intent(out)                                              ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run'
     character(:), allocatable                                         ::    Line
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call Error%Raise( 'GENPI is a template plug in and is not meant to be ran', ProcName=ProcName )
 
@@ -253,8 +199,6 @@ contains
     call system( Line )
 
     Stat = 0
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -265,12 +209,8 @@ contains
     class(GENPIModel_Type), intent(out)                               ::    LHS
     class(GENPIModel_Type), intent(in)                                ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -287,8 +227,6 @@ contains
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
 
     end select
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

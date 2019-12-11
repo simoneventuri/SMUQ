@@ -60,17 +60,11 @@ type(Restart_Type)                                                    ::    Rest
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(Restart_Type), intent(inout)                                ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'restart'
@@ -78,24 +72,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(Restart_Type), intent(inout)                                ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized = .false.
     This%Constructed = .false.
@@ -104,50 +90,34 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(Restart_Type), intent(inout)                                ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Prefix = ''
     This%RestartSection = ''
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase1( This, Input, Prefix, Debug )
+  subroutine ConstructCase1( This, Input, Prefix )
     
     class(Restart_Type), intent(inout)                                ::    This
     type(InputSection_Type), intent(in)                               ::    Input
-    character(*), intent(in)                                          ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug 
+    character(*), intent(in)                                          ::    Prefix 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc=0
     character(:), allocatable                                         ::    VarC0D
 
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -174,55 +144,39 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetPrefix( This, Debug )
+  function GetPrefix( This )
     
     character(:), allocatable                                         ::    GetPrefix
 
-    class(Restart_Type), intent(inout)                                ::    This
-    logical, optional ,intent(in)                                     ::    Debug 
+    class(Restart_Type), intent(inout)                                ::    This 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetPrefix'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     GetPrefix = This%Prefix
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetDirectory( This, SectionChain, Debug )
+  function GetDirectory( This, SectionChain )
     
     use String_Library
 
     character(:), allocatable                                         ::    GetDirectory
 
     class(Restart_Type), intent(inout)                                ::    This
-    character(*), intent(in)                                          ::    SectionChain
-    logical, optional ,intent(in)                                     ::    Debug 
+    character(*), intent(in)                                          ::    SectionChain 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetDirectory'
     integer                                                           ::    StatLoc=0
     character(:), allocatable, dimension(:)                           ::    SectionNames
     integer                                                           ::    NbSections=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call Parse( Input=SectionChain, Separator='>', Output=SectionNames )
     NbSections = size(SectionNames,1)
@@ -236,32 +190,24 @@ contains
     deallocate(SectionNames, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SectionNames', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Update( This, InputSection, SectionChain, Debug )
+  subroutine Update( This, InputSection, SectionChain )
     
     use String_Library
 
     class(Restart_Type), intent(inout)                                ::    This
     type(InputSection_Type), intent(in)                               ::    InputSection
-    character(*), intent(in)                                          ::    SectionChain
-    logical, optional ,intent(in)                                     ::    Debug 
+    character(*), intent(in)                                          ::    SectionChain 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSectionPointer=>null()
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    UnitLoc=0
     character(:), allocatable                                         ::    Line
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call This%Input%FindTargetSection( TargetSection=InputSectionPointer, FromSubSection=SectionChain, Mandatory=.true. )
 
@@ -281,8 +227,6 @@ contains
 
     call This%RestartFile%Close()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -292,12 +236,8 @@ contains
     class(Restart_Type), intent(out)                                  ::    LHS
     class(Restart_Type), intent(in)                                   ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call LHS%Reset()
     LHS%Initialized = RHS%Initialized
@@ -310,8 +250,6 @@ contains
       LHS%RestartSection = RHS%RestartSection
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -321,13 +259,7 @@ contains
     type(Restart_Type), intent(inout)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

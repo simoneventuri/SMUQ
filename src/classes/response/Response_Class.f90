@@ -89,18 +89,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(Response_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
@@ -108,24 +102,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(Response_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -144,42 +130,30 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(Response_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Label = '<undefined>'
     This%NbNodes = 0
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(Response_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
@@ -197,10 +171,6 @@ contains
     integer                                                           ::    i
     integer                                                           ::    AbscissaColumn
     character(:), allocatable                                         ::    AbscissaSource
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -277,13 +247,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -291,9 +259,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -305,10 +271,6 @@ contains
     type(SMUQFile_Type)                                               ::    File
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -365,29 +327,21 @@ contains
       nullify(InputSection)
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordsLabel_R1D( This, Label, Debug )
+  function GetCoordsLabel_R1D( This, Label )
 
     real(rkp), allocatable, dimension(:)                              ::    GetCoordsLabel_R1D
 
     class(Response_Type), intent(in)                                  ::    This
     character(*), intent(in)                                          ::    Label
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCoordsLabel_R1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    ii
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -404,31 +358,23 @@ contains
     allocate(GetCoordsLabel_R1D, source=This%Coordinates(:,ii), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCoordsLabel_R1D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordsLabels_R2D( This, Labels, Debug )
+  function GetCoordsLabels_R2D( This, Labels )
 
     real(rkp), allocatable, dimension(:,:)                            ::    GetCoordsLabels_R2D
 
     class(Response_Type), intent(in)                                  ::    This
     type(String_Type), dimension(:), intent(in)                       ::    Labels
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCoordsLabels_R2D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbLabels
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -450,55 +396,39 @@ contains
       GetCoordsLabels_R2D(:,iii) = This%Coordinates(:,iii)
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoords_R2D( This, Debug )
+  function GetCoords_R2D( This )
 
     real(rkp), allocatable, dimension(:,:)                            ::    GetCoords_R2D
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCoords_R2D'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     allocate(GetCoords_R2D, source=This%Coordinates, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCoords_R2D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordsLabelPtr_R1D( This, Label, Debug )
+  function GetCoordsLabelPtr_R1D( This, Label )
 
     real(rkp), pointer, dimension(:)                                  ::    GetCoordsLabelPtr_R1D
 
     class(Response_Type), intent(in)                                  ::    This
     character(*), intent(in)                                          ::    Label
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCoordsLabel_R1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    ii
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -514,51 +444,35 @@ contains
 
     GetCoordsLabelPtr_R1D => This%Coordinates(:,ii)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordsPtr_R2D( This, Debug )
+  function GetCoordsPtr_R2D( This )
 
     real(rkp), pointer, dimension(:,:)                                ::    GetCoordsPtr_R2D
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCoordsPtr_R2D'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     GetCoordsPtr_R2D => This%Coordinates
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetData( This, Debug )
+  function GetData( This )
 
     real(rkp), allocatable, dimension(:,:)                            ::    GetData
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetData'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -567,26 +481,18 @@ contains
     allocate(GetData, source=This%ResponseData, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetData', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDataPointer( This, Debug )
+  function GetDataPointer( This )
 
     real(rkp), dimension(:,:), pointer                                ::    GetDataPointer
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetDataPointer'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -594,184 +500,126 @@ contains
 
     GetDataPointer => This%ResponseData
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordinateLabels( This, Debug )
+  function GetCoordinateLabels( This )
 
     type(String_Type), allocatable, dimension(:)                      ::    GetCoordinateLabels
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCoordinateLabels'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     allocate(GetCoordinateLabels, source=This%CoordinatesLabels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCoordinatesLabels', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel( This, Debug )
+  function GetLabel( This )
 
     character(:), allocatable                                         ::    GetLabel
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetLabel'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     GetLabel = This%Label
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     GetName = This%Name
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDataSets( This, Debug )
+  function GetNbDataSets( This )
 
     integer                                                           ::    GetNbDataSets
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbDataSets'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     GetNbDataSets = This%NbDataSets
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbIndCoordinates( This, Debug )
+  function GetNbIndCoordinates( This )
 
     integer                                                           ::    GetNbIndCoordinates
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbIndCoordinates'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     GetNbIndCoordinates = This%NbIndCoordinates
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbNodes( This, Debug )
+  function GetNbNodes( This )
 
     integer                                                           ::    GetNbNodes
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbNodes'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     GetNbNOdes = This%NbNodes
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsDataDefined( This, Debug )
+  function IsDataDefined( This )
 
     logical                                                           ::    IsDataDefined
 
     class(Response_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IsDataDefined'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     IsDataDefined = .false.
     if ( This%NbDataSets > 0 ) IsDataDefined = .true.
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -782,12 +630,8 @@ contains
     class(Response_Type), intent(out)                                 ::    LHS
     class(Response_Type), intent(in)                                  ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -816,8 +660,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -827,11 +669,7 @@ contains
     type(Response_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( associated(This%Coordinates) ) deallocate(This%Coordinates, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
@@ -841,8 +679,6 @@ contains
 
     if ( associated(This%ResponseData) ) deallocate(This%ResponseData, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseData', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

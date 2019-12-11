@@ -58,17 +58,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(PATOPI_Type), intent(inout)                                 ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'PATOPIModel'
@@ -76,70 +70,46 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(PATOPI_Type), intent(inout)                                 ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(PATOPI_Type), intent(inout)                                 ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     use String_Library
 
     class(PATOPI_Type), intent(inout)                                 ::    This
     class(InputSection_Type), intent(in)                              ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    SectionName
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -164,31 +134,23 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase( This, CaseDir, Prefix, Debug )
+  subroutine ConstructCase( This, CaseDir, Prefix )
 
     use String_Library
 
     class(PATOPI_Type), intent(inout)                                 ::    This
     character(*), intent(in)                                          ::    CaseDir
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FileName
     type(InputReader_Type)                                            ::    Input
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -199,13 +161,11 @@ contains
 
     call This%Construct( Input=Input, Prefix=PrefixLoc // CaseDir )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use String_Library
 
@@ -215,18 +175,12 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -246,21 +200,17 @@ contains
     call GetInput%AddSection( Section=This%OutputReader%GetInput(MainSectionName='output_reader', Prefix=PrefixLoc,               &
                                                                                                          Directory=DirectorySub) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RunCase1( This, Input, Output, Stat, Debug )
+  subroutine RunCase1( This, Input, Output, Stat )
 
     class(PATOPI_Type), intent(inout)                                 ::    This
     class(Input_Type), intent(in)                                     ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='RunCase1'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    StatRun=0
@@ -273,10 +223,6 @@ contains
     type(InputDet_Type)                                               ::    InputLoc
     type(Output_Type), allocatable, dimension(:)                      ::    OutputLoc
     integer                                                           ::    NbOutputsLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbOutputsLoc = This%OutputReader%GetNbOutputs()
 
@@ -358,8 +304,6 @@ contains
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -369,12 +313,8 @@ contains
     class(PATOPI_Type), intent(out)                                   ::    LHS
     class(Model_Type), intent(in)                                     ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -393,8 +333,6 @@ contains
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
 
     end select
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

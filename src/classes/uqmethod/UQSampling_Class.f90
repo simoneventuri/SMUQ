@@ -79,17 +79,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(UQSampling_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'uqsampling'
@@ -97,24 +91,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(UQSampling_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc = 0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -144,23 +130,15 @@ contains
 
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(UQSampling_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%CheckpointFreq = -1
     This%Silent = .false.
@@ -168,21 +146,17 @@ contains
     This%SamplesObtained = .false.
     This%SamplesRan = .false.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, SectionChain, Prefix, Debug )
+  subroutine ConstructInput( This, Input, SectionChain, Prefix )
 
     class(UQSampling_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     real(rkp)                                                         ::    VarR0D
@@ -202,10 +176,6 @@ contains
     logical, allocatable, dimension(:)                                ::    VarL1D
     character(:), allocatable                                         ::    Label1
     character(:), allocatable                                         ::    Label2
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -330,13 +300,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -344,9 +312,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
@@ -360,10 +326,6 @@ contains
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     type(SMUQFile_Type)                                               ::    File
     character(:), allocatable                                         ::    FileName
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -457,22 +419,18 @@ contains
     call GetInput%AddParameter( Name='samples_ran', Value=ConvertToString(Value=This%SamplesRan ) )
     call GetInput%AddParameter( Name='step', Value=ConvertToString(Value=This%Step ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory, Debug )
+  subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory )
 
     class(UQSampling_Type), intent(inout)                             ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    VarC0D
@@ -495,10 +453,6 @@ contains
     integer                                                           ::    NbOutputs
     type(ModelInterface_Type)                                         ::    ModelInterface
     type(InputDet_Type)                                               ::    Input
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
@@ -703,20 +657,16 @@ contains
 
     This%Step = 0
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, Directory, Responses, Debug )
+  subroutine WriteOutput( This, Directory, Responses )
 
     class(UQSampling_Type), intent(inout)                             ::    This
     character(*), intent(in)                                          ::    Directory
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='WriteOutput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    Line
@@ -730,10 +680,6 @@ contains
     integer                                                           ::    iii
     integer, dimension(:,:), pointer                                  ::    VarI2DPtr=>null()
 
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( len_trim(Directory) /= 0 ) then
 
@@ -787,8 +733,6 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -798,13 +742,9 @@ contains
     class(UQSampling_Type), intent(out)                               ::    LHS
     class(UQMethod_Type), intent(in)                                  ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -828,8 +768,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -839,11 +777,7 @@ contains
     type(UQSampling_Type), intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%ParamRecord) ) deallocate(This%ParamRecord, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
@@ -862,8 +796,6 @@ contains
 
     if ( allocated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

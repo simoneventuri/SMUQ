@@ -46,28 +46,26 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput_ModelExtTemplate( This, Input, Prefix, Debug )
+  subroutine ConstructInput_ModelExtTemplate( This, Input, Prefix )
     import                                                            ::    ModelExtTemplate_Type
     import                                                            ::    InputSection_Type
     class(ModelExtTemplate_Type), intent(inout)                       ::    This
     class(InputSection_Type), intent(in)                              ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase_ModelExtTemplate( This, CaseDir, Prefix, Debug )
+  subroutine ConstructCase_ModelExtTemplate( This, CaseDir, Prefix )
     import                                                            ::    ModelExtTemplate_Type
     class(ModelExtTemplate_Type), intent(inout)                       ::    This
     character(*), intent(in)                                          ::    CaseDir
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput_ModelExtTemplate( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_ModelExtTemplate( This, MainSectionName, Prefix, Directory )
     import                                                            ::    ModelExtTemplate_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_ModelExtTemplate
@@ -75,7 +73,6 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 

@@ -60,54 +60,49 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_HierDistProb( This, Debug )
+  subroutine Initialize_HierDistProb( This )
     import                                                            ::    HierDistProb_Type
     class(HierDistProb_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_HierDistProb( This, Debug )
+  subroutine Reset_HierDistProb( This )
     import                                                            ::    HierDistProb_Type
     class(HierDistProb_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_HierDistProb( This, Debug )
+  subroutine SetDefaults_HierDistProb( This )
     import                                                            ::    HierDistProb_Type
     class(HierDistProb_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_HierDistProb( This, Input, Prefix, Debug )
+  subroutine ConstructInput_HierDistProb( This, Input, Prefix )
     import                                                            ::    HierDistProb_Type
     import                                                            ::    InputSection_Type
     class(HierDistProb_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate_HierDistProb( This, Input, Distribution, Debug )
+  subroutine Generate_HierDistProb( This, Input, Distribution )
     import                                                            ::    HierDistProb_Type
     import                                                            ::    DistProb_Type
     import                                                            ::    InputDet_Type
     class(HierDistProb_Type), intent(in)                              ::    This
     type(InputDet_Type), intent(in)                                   ::    Input
     class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_HierDistProb( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_HierDistProb( This, MainSectionName, Prefix, Directory )
     import                                                            ::    HierDistProb_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_HierDistProb
@@ -115,7 +110,6 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Directory
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -132,22 +126,14 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(HierDistProb_Type), intent(in)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -58,42 +58,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_CovarianceConstructor( This, Debug )
+  subroutine Initialize_CovarianceConstructor( This )
     import                                                            ::    CovarianceConstructor_Type
     class(CovarianceConstructor_Type), intent(inout)                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_CovarianceConstructor( This, Debug )
+  subroutine Reset_CovarianceConstructor( This )
     import                                                            ::    CovarianceConstructor_Type
     class(CovarianceConstructor_Type), intent(inout)                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_CovarianceConstructor( This, Debug )
+  subroutine SetDefaults_CovarianceConstructor( This )
     import                                                            ::    CovarianceConstructor_Type
     class(CovarianceConstructor_Type), intent(inout)                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_CovarianceConstructor( This, Input, Prefix, Debug )
+  subroutine ConstructInput_CovarianceConstructor( This, Input, Prefix )
     import                                                            ::    CovarianceConstructor_Type
     import                                                            ::    InputSection_Type
     class(CovarianceConstructor_Type), intent(inout)                  ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_CovarianceConstructor( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_CovarianceConstructor( This, MainSectionName, Prefix, Directory )
     import                                                            ::    CovarianceConstructor_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_CovarianceConstructor
@@ -101,12 +97,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AssembleCov_CovarianceConstructor( This, Coordinates, CoordinateLabels, Input, Cov, Debug)
+  subroutine AssembleCov_CovarianceConstructor( This, Coordinates, CoordinateLabels, Input, Cov)
     use                                                               ::    Parameters_Library
     import                                                            ::    CovarianceConstructor_Type
     import                                                            ::    InputDet_Type
@@ -116,18 +111,16 @@ abstract interface
     type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
     type(InputDet_Type), intent(in)                                   ::    Input
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsStochastic_CovarianceConstructor( This, Input, Debug )
+  function IsStochastic_CovarianceConstructor( This, Input )
     import                                                            ::    CovarianceConstructor_Type
     import                                                            ::    Input_Type
     logical                                                           ::    IsStochastic_CovarianceConstructor
     class(CovarianceConstructor_Type), intent(in)                     ::    This
     class(Input_Type), intent(in)                                     ::    Input
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -144,43 +137,25 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(CovarianceConstructor_Type), intent(inout)                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This, Debug )
+  function IsConstructed( This )
 
     logical                                                           ::    IsConstructed
     class(CovarianceConstructor_Type), intent(inout)                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IsConstructed'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     IsConstructed = This%Constructed
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

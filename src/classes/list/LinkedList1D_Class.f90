@@ -94,20 +94,14 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListAppend1D( This, Values, Debug )
+  subroutine ListAppend1D( This, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     class(*), dimension(:), intent(in)                                ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListAppend1D'
     type(ListNode1D_Type), pointer                                    ::    TempNext
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( associated(This%Tail) ) then
       allocate( This%Tail%Next )
@@ -127,27 +121,19 @@ contains
 
     This%NbNodes = This%NbNodes + 1
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListAppend2D( This, Values, Debug )
+  subroutine ListAppend2D( This, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     class(*), dimension(:,:), intent(in)                              ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListAppend2D'
     integer                                                           ::    i
     integer                                                           ::    Length
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     Length = int(size(Values,2),8)
 
@@ -156,27 +142,19 @@ contains
       call This%Append( Values=Values(:,i) )
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetR1D( This, Node, Values, Debug )
+  subroutine ListGetR1D( This, Node, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     real(rkp), dimension(:), allocatable, intent(out)                 ::    Values
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetR1D'
     type(ListNode1D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     call This%GetNode( Node, NodePointerLoc )
 
@@ -190,29 +168,21 @@ contains
 
     nullify(NodePointerLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetR2D( This, Values, NodeMin, NodeMax, Debug )
+  subroutine ListGetR2D( This, Values, NodeMin, NodeMax )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     real(rkp), allocatable, dimension(:,:), intent(out)               ::    Values
     integer, optional, intent(in)                                     ::    NodeMin
     integer, optional, intent(in)                                     ::    NodeMax
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetR2D'
     integer                                                           ::    i, NodeMinLoc, NodeMaxLoc
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     integer                                                           ::    StatLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     NodeMinLoc = 1
     if ( present(NodeMin) ) NodeMinLoc = NodeMin
@@ -238,27 +208,19 @@ contains
     deallocate(VarR1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetR1DPointer( This, Node, Values, Debug )
+  subroutine ListGetR1DPointer( This, Node, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     real(rkp), dimension(:), pointer, intent(inout)                   ::    Values
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetR1DPointer'
     type(ListNode1D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
 
@@ -273,27 +235,19 @@ contains
 
     nullify(NodePointerLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetI1D( This, Node, Values, Debug )
+  subroutine ListGetI1D( This, Node, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     integer, dimension(:), allocatable, intent(out)                   ::    Values
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetI1D'
     type(ListNode1D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     call This%GetNode( Node, NodePointerLoc )
 
@@ -307,29 +261,21 @@ contains
 
     nullify(NodePointerLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetI2D( This, Values, NodeMin, NodeMax, Debug )
+  subroutine ListGetI2D( This, Values, NodeMin, NodeMax )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     integer, allocatable, dimension(:,:), intent(out)                 ::    Values
     integer, optional, intent(in)                                     ::    NodeMin
     integer, optional, intent(in)                                     ::    NodeMax
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetI2D'
     integer                                                           ::    i, NodeMinLoc, NodeMaxLoc
     integer, allocatable, dimension(:)                                ::    VarI1D
     integer                                                           ::    StatLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     NodeMinLoc = 1
     if ( present(NodeMin) ) NodeMinLoc = NodeMin
@@ -355,27 +301,19 @@ contains
     deallocate(VarI1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetI1DPointer( This, Node, Values, Debug )
+  subroutine ListGetI1DPointer( This, Node, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     integer, dimension(:), pointer, intent(inout)                     ::    Values
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetI1DPointer'
     type(ListNode1D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
 
@@ -390,27 +328,19 @@ contains
 
     nullify(NodePointerLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetC1D( This, Node, Values, Debug )
+  subroutine ListGetC1D( This, Node, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     character(:), dimension(:), allocatable, intent(out)              ::    Values
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetC1D'
     type(ListNode1D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     call This%GetNode( Node, NodePointerLoc )
 
@@ -424,29 +354,21 @@ contains
 
     nullify(NodePointerLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetC2D( This, Values, NodeMin, NodeMax, Debug )
+  subroutine ListGetC2D( This, Values, NodeMin, NodeMax )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     character(100), allocatable, dimension(:,:), intent(out)          ::    Values
     integer, optional, intent(in)                                     ::    NodeMin
     integer, optional, intent(in)                                     ::    NodeMax
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetC2D'
     integer                                                           ::    i, NodeMinLoc, NodeMaxLoc
     character(:), allocatable, dimension(:)                           ::    VarC1D
     integer                                                           ::    StatLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     NodeMinLoc = 1
     if ( present(NodeMin) ) NodeMinLoc = NodeMin
@@ -472,27 +394,19 @@ contains
     deallocate(VarC1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetC1DPointer( This, Node, Values, Debug )
+  subroutine ListGetC1DPointer( This, Node, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     character(:), dimension(:), pointer, intent(inout)                ::    Values
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetC1DPointer'
     type(ListNode1D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
 
@@ -507,27 +421,19 @@ contains
 
     nullify(NodePointerLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetL1D( This, Node, Values, Debug )
+  subroutine ListGetL1D( This, Node, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     logical, dimension(:), allocatable, intent(out)                   ::    Values
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetL1D'
     type(ListNode1D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     call This%GetNode( Node, NodePointerLoc )
 
@@ -541,29 +447,21 @@ contains
 
     nullify(NodePointerLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetL2D( This, Values, NodeMin, NodeMax, Debug )
+  subroutine ListGetL2D( This, Values, NodeMin, NodeMax )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     logical, allocatable, dimension(:,:), intent(out)                 ::    Values
     integer, optional, intent(in)                                     ::    NodeMin
     integer, optional, intent(in)                                     ::    NodeMax
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetL2D'
     integer                                                           ::    i, NodeMinLoc, NodeMaxLoc
     logical, allocatable, dimension(:)                                ::    VarL1D
     integer                                                           ::    StatLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     NodeMinLoc = 1
     if ( present(NodeMin) ) NodeMinLoc = NodeMin
@@ -589,27 +487,19 @@ contains
     deallocate(VarL1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarL1D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetL1DPointer( This, Node, Values, Debug )
+  subroutine ListGetL1DPointer( This, Node, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     logical, dimension(:), pointer, intent(inout)                     ::    Values
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetL1DPointer'
     type(ListNode1D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
 
@@ -624,27 +514,19 @@ contains
 
     nullify(NodePointerLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetCX1D( This, Node, Values, Debug )
+  subroutine ListGetCX1D( This, Node, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     complex, dimension(:), allocatable, intent(out)                   ::    Values
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetCX1D'
     type(ListNode1D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     call This%GetNode( Node, NodePointerLoc )
 
@@ -658,29 +540,21 @@ contains
 
     nullify(NodePointerLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetCX2D( This, Values, NodeMin, NodeMax, Debug )
+  subroutine ListGetCX2D( This, Values, NodeMin, NodeMax )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     complex, allocatable, dimension(:,:), intent(out)                 ::    Values
     integer, optional, intent(in)                                     ::    NodeMin
     integer, optional, intent(in)                                     ::    NodeMax
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetCX2D'
     integer                                                           ::    i, NodeMinLoc, NodeMaxLoc
     complex, allocatable, dimension(:)                                ::    VarCX1D
     integer                                                           ::    StatLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     NodeMinLoc = 1
     if ( present(NodeMin) ) NodeMinLoc = NodeMin
@@ -706,27 +580,19 @@ contains
     deallocate(VarCX1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarCX1D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetCX1DPointer( This, Node, Values, Debug )
+  subroutine ListGetCX1DPointer( This, Node, Values )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     complex, dimension(:), pointer, intent(inout)                     ::    Values
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetCX1DPointer'
     type(ListNode1D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
 
@@ -741,25 +607,17 @@ contains
 
     nullify(NodePointerLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetNode1D( This, Node, NodePointer, Debug )
+  subroutine ListGetNode1D( This, Node, NodePointer )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    Node
     type(ListNode1D_Type), pointer, intent(inout)                     ::    NodePointer
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListGetNode1D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( Node < 1 ) call Error%Raise("Requested node index is below 0")
     if ( Node > This%NbNodes ) call Error%Raise("Requested node index is above the maximum")
@@ -768,25 +626,17 @@ contains
 
     NodePointer => This%Browser
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine MoveBrowser( This, Node, Debug )
+  subroutine MoveBrowser( This, Node )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='MoveBrowser'
     integer                                                           ::    i, i_Max
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( Node > This%BrowserLoc ) then
       i = 1
@@ -804,48 +654,32 @@ contains
       end do
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ListLength( This, Debug )
+  function ListLength( This )
 
     integer                                                           ::    ListLength
     class(LinkedList1D_Type), intent(in)                              ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ListLength'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
-
     ListLength = This%NbNodes
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine PurgeList( This, Debug )
+  subroutine PurgeList( This )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PurgeList'
     type(ListNode1D_Type), pointer                                    ::    TempCurrent => null()
     type(ListNode1D_Type), pointer                                    ::    TempNext => null()
     integer                                                           ::    i
     integer                                                           ::    NbNodesLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( .not. associated(This%Head) ) return
 
@@ -869,28 +703,20 @@ contains
     This%BrowserLoc=0
     This%NbNodes=0
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RemoveNode( This, Node, Debug )
+  subroutine RemoveNode( This, Node )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    Node
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PurgeList'
     type(ListNode1D_Type), pointer                                    ::    TempNext => null()
     type(ListNode1D_Type), pointer                                    ::    TempBack => null()
     type(ListNode1D_Type), pointer                                    ::    TempCurrent => null()
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( This%NbNodes == 0 ) call Error%Raise( Line='Linked list contains 0 nodes', ProcName=ProcName )
 
@@ -933,26 +759,18 @@ contains
       This%NbNodes = This%NbNodes - 1
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RemoveNodeRange( This, NodeMin, NodeMax, Debug )
+  subroutine RemoveNodeRange( This, NodeMin, NodeMax )
 
     class(LinkedList1D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    NodeMin
     integer, intent(in)                                               ::    NodeMax
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='RemoveNodeRange'
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( NodeMax > This%NbNodes .or. NodeMin < 1 ) call Error%Raise( Line='Invalid node number removal spec', ProcName=ProcName )
 
@@ -965,8 +783,6 @@ contains
       end do
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -976,13 +792,9 @@ contains
     class(LinkedList1D_Type), intent(out)                             ::    LHS
     class(LinkedList1D_Type), intent(in)                              ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
     type(ListNode1D_Type), pointer                                    ::    NodePointer=>null()
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call LHS%Purge()
 
@@ -1000,8 +812,6 @@ contains
       nullify( NodePointer )
     end if
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -1011,15 +821,11 @@ contains
     type(LinkedList1D_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     type(ListNode1D_Type), pointer                                    ::    TempCurrent => null()
     type(ListNode1D_Type), pointer                                    ::    TempNext => null()
     integer                                                           ::    i
     integer                                                           ::    NbNodesLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. associated(This%Head) ) return
 
@@ -1041,8 +847,6 @@ contains
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='TempCurrent', ProcName=ProcName, stat=StatLoc )
       if ( associated(TempNext) ) TempCurrent => Tempnext
     end do
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

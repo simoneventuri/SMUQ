@@ -63,18 +63,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(Root_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
@@ -82,24 +76,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(Root_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -117,34 +103,24 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(Root_Type), intent(inout)                                   ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     This%SectionChain = ''
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput( This, Input, SectionChain, Prefix, Debug )
+  subroutine ConstructInput( This, Input, SectionChain, Prefix )
 
     use StringRoutines_Module
 
@@ -152,9 +128,7 @@ contains
     class(InputSection_Type), intent(in)                              ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
@@ -168,10 +142,6 @@ contains
     integer                                                           ::    ii
     character(:), allocatable                                         ::    Label1
     character(:), allocatable                                         ::    Label2
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -225,13 +195,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -240,9 +208,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -251,10 +217,6 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -292,30 +254,20 @@ contains
     call GetInput%AddSection( Section=AnalysisMethod_Factory%GetObjectInput(Object=This%AnalysisMethod,                           &
                                                           MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run( This, Debug )
+  subroutine Run( This )
 
     class(Root_Type), intent(inout)                                   ::    This
 
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     call This%AnalysisMethod%Run( SampleSpace=This%ParameterSpace, Responses=This%Responses, Model=This%Model,                    &
                                                                                       OutputDirectory=ProgramDefs%GetOutputDir() )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
@@ -326,12 +278,8 @@ contains
     class(Root_Type), intent(out)                                     ::    LHS
     class(Root_Type), intent(in)                                      ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -355,8 +303,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -366,11 +312,7 @@ contains
     type(Root_Type), intent(inout)                                    ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%Model) ) deallocate(This%Model, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Model', ProcName=ProcName, stat=StatLoc )
@@ -380,8 +322,6 @@ contains
 
     deallocate(This%Responses, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Responses', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

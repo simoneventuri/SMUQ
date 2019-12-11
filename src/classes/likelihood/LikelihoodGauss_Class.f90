@@ -64,17 +64,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(LikelihoodGauss_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'LikelihoodGauss'
@@ -82,24 +76,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(LikelihoodGauss_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc = 0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -115,42 +101,30 @@ contains
 
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(LikelihoodGauss_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%MultiplicativeError = .false.
     This%Scalar = Zero
     This%Label = ''
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(LikelihoodGauss_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     logical                                                           ::    VarL0D
@@ -163,10 +137,6 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -193,13 +163,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -207,9 +175,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
@@ -219,10 +185,6 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -245,13 +207,11 @@ contains
     call GetInput%AddSection( Section=CovarianceConstructor_Factory%GetObjectInput( Object=This%CovarianceConstructor,            &
                               MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_1D( This, Responses, Input, Output, LogValue, Debug )
+  function Evaluate_1D( This, Responses, Input, Output, LogValue )
 
     real(rkp)                                                         ::    Evaluate_1D
 
@@ -260,9 +220,7 @@ contains
     type(InputDet_Type), intent(in)                                   ::    Input
     type(Output_Type), dimension(:), intent(in)                       ::    Output
     logical, optional, intent(in)                                     ::    LogValue
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Evaluate_1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    iOutput
@@ -270,10 +228,6 @@ contains
     integer                                                           ::    NbOutputs
     integer                                                           ::    NbResponses
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     iOutput = 0
     iResponse = 0
@@ -307,13 +261,11 @@ contains
       Evaluate_1D = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput) )
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_0D( This, Response, Input, Output, LogValue, Debug )
+  function Evaluate_0D( This, Response, Input, Output, LogValue )
 
     real(rkp)                                                         ::    Evaluate_0D
 
@@ -322,9 +274,7 @@ contains
     type(InputDet_Type), intent(in)                                   ::    Input
     type(Output_Type), intent(in)                                     ::    Output
     logical, optional, intent(in)                                     ::    LogValue
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Evaluate_0D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbDataSets
@@ -346,10 +296,6 @@ contains
     real(rkp)                                                         ::    ln2pi
     logical                                                           ::    LogValueLoc
     logical                                                           ::    ZeroExit
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( Response%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect response', ProcName=ProcName )
     if ( Output%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect output', ProcName=ProcName )
@@ -464,8 +410,6 @@ contains
       nullify(DataPtr)
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -475,13 +419,9 @@ contains
     class(LikelihoodGauss_Type), intent(out)                          ::    LHS
     class(LikelihoodFunction_Type), intent(in)                        ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -503,8 +443,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -514,11 +452,7 @@ contains
     type(LikelihoodGauss_Type), intent(inout)                         ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
   
     if ( allocated(This%CovarianceConstructor) ) deallocate(This%CovarianceConstructor, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CovarianceConstructor', ProcName=ProcName, stat=StatLoc )
@@ -528,8 +462,6 @@ contains
 
     if ( allocated(This%L) ) deallocate(This%L, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

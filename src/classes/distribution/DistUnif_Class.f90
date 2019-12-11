@@ -59,17 +59,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(DistUnif_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'uniform'
@@ -77,67 +71,47 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(DistUnif_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized = .false.
     This%Constructed = .false.
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(DistUnif_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%A = Zero
     This%B = One
     This%TruncatedLeft=.true.
     This%TruncatedRight=.true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(DistUnif_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    ParameterName
     logical                                                           ::    Found
@@ -145,10 +119,6 @@ contains
     character(:), allocatable                                         ::    VarC0D
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -171,25 +141,17 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, A, B, Debug )
+  subroutine ConstructCase1( This, A, B )
     
     class(DistUnif_Type), intent(inout)                               ::    This
     real(rkp), optional, intent(in)                                   ::    A
-    real(rkp), optional, intent(in)                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug 
+    real(rkp), optional, intent(in)                                   ::    B 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -205,13 +167,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -221,18 +181,12 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -249,38 +203,28 @@ contains
     call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
     call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X, Debug )
+  function PDF_R0D( This, X )
 
     real(rkp)                                                         ::    PDF_R0D
 
     class(DistUnif_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF_R0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     PDF_R0D = This%ComputeUnifPDF( X, This%A, This%B )
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
 !  !!------------------------------------------------------------------------------------------------------------------------------
-!  function PDF_R2D( This, NbNodes, Debug )
+!  function PDF_R2D( This, NbNodes )
 
 !    use ComputingRoutines_Module
 
@@ -288,17 +232,11 @@ contains
 
 !    class(DistUnif_Type), intent(in)                                  ::    This
 !    integer, intent(in)                                               ::    NbNodes
-!    logical, optional ,intent(in)                                     ::    Debug
 
-!    logical                                                           ::    DebugLoc
 !    character(*), parameter                                           ::    ProcName='PDF_R2D'
 !    real(rkp)                                                         ::    BinMass
 !    integer                                                           ::    StatLoc=0
 !    integer                                                           ::    i
-
-!    DebugLoc = DebugGlobal
-!    if ( present(Debug) ) DebugLoc = Debug
-!    if (DebugLoc) call Logger%Entering( ProcName )
 
 !    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -312,80 +250,56 @@ contains
 !    PDF_R2D(:,1) = LinSpace( InterMin=This%A, InterMax=This%B, NbNodes=NbNodes )
 !    PDF_R2D(:,2) = One / ( This%B - This%A )
 
-!    if (DebugLoc) call Logger%Exiting()
-
 !  end function
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeUnifPDF( X, A, B, Debug )
+  function ComputeUnifPDF( X, A, B )
 
     real(rkp)                                                         ::    ComputeUnifPDF
 
     real(rkp), intent(in)                                             ::    X
     real(rkp), intent(in)                                             ::    A
     real(rkp), intent(in)                                             ::    B
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeUnifPDF'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( X < A .or. X > B) then
       ComputeUnifPDF = Zero
     else
       ComputeUnifPDF = One/(B-A)
     end if
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X, Debug )
+  function CDF_R0D( This, X )
 
     real(rkp)                                                         ::    CDF_R0D
 
     class(DistUnif_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='CDF_R0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     CDF_R0D = ComputeUnifCDF( X, This%A, This%B )
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeUnifCDF( X, A, B, Debug )
+  function ComputeUnifCDF( X, A, B )
 
     real(rkp)                                                         ::    ComputeUnifCDF
 
     real(rkp), intent(in)                                             ::    X
     real(rkp), intent(in)                                             ::    A
     real(rkp), intent(in)                                             ::    B
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeUnifCDF'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( X < A ) then
       ComputeUnifCDF = Zero
@@ -395,82 +309,58 @@ contains
       ComputeUnifCDF = (X-A) / (B-A)
     end if      
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P, Debug )
+  function InvCDF_R0D( This, P )
 
     real(rkp)                                                         ::    InvCDF_R0D
 
     class(DistUnif_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    P
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     InvCDF_R0D = ComputeUnifInvCDF( P, This%A, This%B )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeUnifInvCDF( P, A, B, Debug )
+  function ComputeUnifInvCDF( P, A, B )
 
     real(rkp)                                                         ::    ComputeUnifInvCDF
 
     real(rkp), intent(in)                                             ::    P
     real(rkp), intent(in), optional                                   ::    A
     real(rkp), intent(in), optional                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeUnifInvCDF'
     real(rkp)                                                         ::    CDFLeft
     real(rkp)                                                         ::    CDFRight
     real(rkp)                                                         ::    VarR0D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
     if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
 
     ComputeUnifInvCDF = A + P*(B-A)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment( This, Moment, Debug )
+  function GetMoment( This, Moment )
 
     real(rkp)                                                         ::    GetMoment
 
     class(DistUnif_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Moment
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMoment'
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -487,8 +377,6 @@ contains
       GetMoment = One
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -498,12 +386,8 @@ contains
     class(DistUnif_Type), intent(out)                                 ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -524,8 +408,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -535,13 +417,7 @@ contains
     type(DistUnif_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

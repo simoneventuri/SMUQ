@@ -84,16 +84,14 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_R1D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_R1D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     real(rkp), allocatable, dimension(:), intent(out)                 ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_R1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -108,10 +106,6 @@ contains
     integer                                                           ::    VarI0D
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -150,22 +144,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_I1D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_I1D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     integer, allocatable, dimension(:), intent(out)                   ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_I1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -180,10 +170,6 @@ contains
     integer                                                           ::    VarI0D
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -222,22 +208,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_I81D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_I81D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     integer(8), allocatable, dimension(:), intent(out)                ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_I81D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -252,10 +234,6 @@ contains
     integer                                                           ::    VarI0D
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -294,22 +272,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_C1D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_C1D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     character(:), allocatable, dimension(:), intent(out)              ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_C1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -324,10 +298,6 @@ contains
     integer                                                           ::    VarI0D
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -365,22 +335,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_L1D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_L1D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     logical, allocatable, dimension(:), intent(out)                   ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_L1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -395,10 +361,6 @@ contains
     integer                                                           ::    VarI0D
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -437,22 +399,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_CX1D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_CX1D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     complex, allocatable, dimension(:), intent(out)                   ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_CX1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -467,10 +425,6 @@ contains
     integer                                                           ::    VarI0D
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -509,22 +463,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_String1D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_String1D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     type(String_Type), allocatable, dimension(:), intent(out)         ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_String1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -541,10 +491,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -590,22 +536,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_R2D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_R2D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     real(rkp), allocatable, dimension(:,:), intent(out)               ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_R2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -625,10 +567,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -701,22 +639,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_I2D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_I2D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     integer, allocatable, dimension(:,:), intent(out)                 ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_I2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -736,10 +670,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -810,22 +740,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_I82D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_I82D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     integer(8), allocatable, dimension(:,:), intent(out)              ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_I82D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -845,10 +771,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -919,22 +841,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_C2D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_C2D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     character(:), allocatable, dimension(:,:), intent(out)            ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_C2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -954,10 +872,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -1028,22 +942,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_L2D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_L2D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     logical, allocatable, dimension(:,:), intent(out)                 ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_L2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -1063,10 +973,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -1137,22 +1043,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_CX2D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_CX2D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     complex, allocatable, dimension(:,:), intent(out)                 ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_CX2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -1172,10 +1074,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -1245,22 +1143,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_String2D( Input, Array, Prefix, RowMajor, Debug )
+  subroutine ImportArrayInput_String2D( Input, Array, Prefix, RowMajor )
 
     class(InputSection_Type), intent(in)                              ::    Input
     type(String_Type), allocatable, dimension(:,:), intent(out)       ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportArrayInput_String2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -1280,10 +1174,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -1361,13 +1251,11 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_R1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_R1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     real(rkp), dimension(:), allocatable, intent(out)                 ::    Array
@@ -1375,9 +1263,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_R1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -1392,10 +1278,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable, dimension(:)                           ::    VarC1D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -1449,13 +1331,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_I1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_I1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     integer, dimension(:), allocatable, intent(out)                   ::    Array
@@ -1463,9 +1343,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_I1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -1480,10 +1358,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable, dimension(:)                           ::    VarC1D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -1537,13 +1411,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_I81D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_I81D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     integer(8), dimension(:), allocatable, intent(out)                ::    Array
@@ -1551,9 +1423,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_I81D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -1568,10 +1438,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable, dimension(:)                           ::    VarC1D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -1625,13 +1491,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_C1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_C1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     character(:), dimension(:), allocatable, intent(out)              ::    Array
@@ -1639,9 +1503,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_C1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -1656,10 +1518,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable, dimension(:)                           ::    VarC1D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -1713,13 +1571,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_L1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_L1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     logical, dimension(:), allocatable, intent(out)                   ::    Array
@@ -1727,9 +1583,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_L1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -1744,10 +1598,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable, dimension(:)                           ::    VarC1D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -1801,13 +1651,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_CX1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_CX1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     complex, dimension(:), allocatable, intent(out)                   ::    Array
@@ -1815,9 +1663,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_CX1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -1832,10 +1678,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable, dimension(:)                           ::    VarC1D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -1889,13 +1731,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_String1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_String1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     type(String_Type), dimension(:), allocatable, intent(out)         ::    Array
@@ -1903,9 +1743,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_String1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -1920,10 +1758,6 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable, dimension(:)                           ::    VarC1D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -1977,13 +1811,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_R2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_R2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     real(rkp), dimension(:,:), allocatable, intent(out)               ::    Array
@@ -1991,9 +1823,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_R2D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -2011,10 +1841,6 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2076,13 +1902,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_I2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_I2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     integer, dimension(:,:), allocatable, intent(out)                 ::    Array
@@ -2090,9 +1914,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_I2D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -2110,10 +1932,6 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2175,13 +1993,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_I82D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_I82D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     integer(8), dimension(:,:), allocatable, intent(out)              ::    Array
@@ -2189,9 +2005,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_I82D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -2209,10 +2023,6 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2274,13 +2084,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_C2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_C2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     character(:), dimension(:,:), allocatable, intent(out)            ::    Array
@@ -2288,9 +2096,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_C2D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -2308,10 +2114,6 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2372,13 +2174,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_L2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_L2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     logical, dimension(:,:), allocatable, intent(out)                 ::    Array
@@ -2386,9 +2186,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_L2D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -2406,10 +2204,6 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2471,13 +2265,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_CX2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_CX2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     complex, dimension(:,:), allocatable, intent(out)                 ::    Array
@@ -2485,9 +2277,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_CX2D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -2505,10 +2295,6 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2570,13 +2356,11 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_String2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor, Debug )
+  subroutine ImportArray_String2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     type(String_Type), dimension(:,:), allocatable, intent(out)       ::    Array
@@ -2584,9 +2368,7 @@ contains
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportArray_String2D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
@@ -2604,10 +2386,6 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2675,23 +2453,19 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_R1D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_R1D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_R1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -2699,10 +2473,6 @@ contains
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    FormatLoc
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2729,23 +2499,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_I1D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_I1D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     integer, dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_I1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -2753,10 +2519,6 @@ contains
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    FormatLoc
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2783,23 +2545,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_I81D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_I81D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     integer(8), dimension(:), intent(in)                              ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_I81D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -2807,10 +2565,6 @@ contains
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    FormatLoc
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2837,23 +2591,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_C1D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_C1D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     character(*), dimension(:), intent(in)                            ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_C1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -2861,10 +2611,6 @@ contains
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    FormatLoc
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2891,23 +2637,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_L1D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_L1D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     logical, dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_L1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -2915,10 +2657,6 @@ contains
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    FormatLoc
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2945,23 +2683,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_CX1D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_CX1D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     complex, dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_CX1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -2969,10 +2703,6 @@ contains
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    FormatLoc
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -2999,23 +2729,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_String1D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_String1D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     type(String_Type), dimension(:), intent(in)                       ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_String1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -3023,10 +2749,6 @@ contains
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    FormatLoc
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -3053,23 +2775,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_R2D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_R2D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     real(rkp), dimension(:,:), intent(in)                             ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_R2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -3080,10 +2798,6 @@ contains
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -3126,23 +2840,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_I2D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_I2D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     integer, dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_I2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -3153,10 +2863,6 @@ contains
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -3199,23 +2905,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_I82D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_I82D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     integer(8), dimension(:,:), intent(in)                            ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_I82D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -3226,10 +2928,6 @@ contains
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -3272,23 +2970,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_C2D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_C2D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     character(*), dimension(:,:), intent(in)                          ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_C2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -3299,10 +2993,6 @@ contains
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -3345,23 +3035,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_L2D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_L2D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     logical, dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_L2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -3372,10 +3058,6 @@ contains
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -3418,23 +3100,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_CX2D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_CX2D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     complex, dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_CX2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -3445,10 +3123,6 @@ contains
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -3491,23 +3165,19 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_String2D( Input, Array, File, Format, RowMajor, Debug )
+  subroutine ExportArrayInput_String2D( Input, Array, File, Format, RowMajor )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     type(String_Type), dimension(:,:), intent(in)                     ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArrayInput_String2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -3518,10 +3188,6 @@ contains
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     if ( present(RowMajor) ) RowMajorLoc = RowMajor
@@ -3563,13 +3229,11 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_R1D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_R1D( Array, File, Header, Format, RowMajor, Append )
 
     real(rkp), dimension(:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -3577,10 +3241,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_R1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    UnitLoc=0
@@ -3588,10 +3250,6 @@ contains
     character(:), allocatable                                         ::    SeparatorLoc
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     AppendLoc = .false.
@@ -3632,13 +3290,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_I1D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_I1D( Array, File, Header, Format, RowMajor, Append )
 
     integer, dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -3646,10 +3302,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_I1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    UnitLoc=0
@@ -3657,10 +3311,6 @@ contains
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
     character(:), allocatable                                         ::    SeparatorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     AppendLoc = .false.
@@ -3701,13 +3351,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_I81D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_I81D( Array, File, Header, Format, RowMajor, Append )
 
     integer(8), dimension(:), intent(in)                              ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -3715,10 +3363,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_I81D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    UnitLoc=0
@@ -3726,10 +3372,6 @@ contains
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
     character(:), allocatable                                         ::    SeparatorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     AppendLoc = .false.
@@ -3770,13 +3412,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_C1D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_C1D( Array, File, Header, Format, RowMajor, Append )
 
     character(*), dimension(:), intent(in)                            ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -3784,10 +3424,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_C1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    UnitLoc=0
@@ -3795,10 +3433,6 @@ contains
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
     character(:), allocatable                                         ::    SeparatorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     AppendLoc = .false.
@@ -3839,13 +3473,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_L1D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_L1D( Array, File, Header, Format, RowMajor, Append )
 
     logical, dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -3853,10 +3485,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_L1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    UnitLoc=0
@@ -3864,10 +3494,6 @@ contains
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
     character(:), allocatable                                         ::    SeparatorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     AppendLoc = .false.
@@ -3908,13 +3534,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_CX1D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_CX1D( Array, File, Header, Format, RowMajor, Append )
 
     complex, dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -3922,10 +3546,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_CX1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    UnitLoc=0
@@ -3933,10 +3555,6 @@ contains
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
     character(:), allocatable                                         ::    SeparatorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     AppendLoc = .false.
@@ -3977,13 +3595,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_String1D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_String1D( Array, File, Header, Format, RowMajor, Append )
 
     type(String_Type), dimension(:), intent(in)                       ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -3991,10 +3607,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_String1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    UnitLoc=0
@@ -4002,10 +3616,6 @@ contains
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
     character(:), allocatable                                         ::    SeparatorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .true.
     AppendLoc = .false.
@@ -4046,13 +3656,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_R2D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_R2D( Array, File, Header, Format, RowMajor, Append )
 
     real(rkp), dimension(:,:), intent(in)                             ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4060,10 +3668,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_R2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    SeparatorLoc
     character(:), allocatable                                         ::    FormatLoc
@@ -4071,10 +3677,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     AppendLoc = .false.
@@ -4120,13 +3722,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_I2D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_I2D( Array, File, Header, Format, RowMajor, Append )
 
     integer, dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4134,10 +3734,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_I2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    SeparatorLoc
     character(:), allocatable                                         ::    FormatLoc
@@ -4145,10 +3743,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     AppendLoc = .false.
@@ -4193,13 +3787,11 @@ contains
     end if
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_I82D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_I82D( Array, File, Header, Format, RowMajor, Append )
 
     integer(8), dimension(:,:), intent(in)                            ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4207,10 +3799,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_I82D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    SeparatorLoc
     character(:), allocatable                                         ::    FormatLoc
@@ -4218,10 +3808,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     AppendLoc = .false.
@@ -4267,13 +3853,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_C2D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_C2D( Array, File, Header, Format, RowMajor, Append )
 
     character(*), dimension(:,:), intent(in)                          ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4281,10 +3865,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_C2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    SeparatorLoc
     character(:), allocatable                                         ::    FormatLoc
@@ -4292,10 +3874,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     AppendLoc = .false.
@@ -4341,13 +3919,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_L2D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_L2D( Array, File, Header, Format, RowMajor, Append )
 
     logical, dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4355,10 +3931,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_L2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    SeparatorLoc
     character(:), allocatable                                         ::    FormatLoc
@@ -4366,10 +3940,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     AppendLoc = .false.
@@ -4415,13 +3985,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_CX2D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_CX2D( Array, File, Header, Format, RowMajor, Append )
 
     complex, dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4429,10 +3997,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_CX2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    SeparatorLoc
     character(:), allocatable                                         ::    FormatLoc
@@ -4440,10 +4006,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     AppendLoc = .false.
@@ -4489,13 +4051,11 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_String2D( Array, File, Header, Format, RowMajor, Append, Debug )
+  subroutine ExportArray_String2D( Array, File, Header, Format, RowMajor, Append )
 
     type(String_Type), dimension(:,:), intent(in)                     ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4503,10 +4063,8 @@ contains
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportArray_String2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    SeparatorLoc
     character(:), allocatable                                         ::    FormatLoc
@@ -4514,10 +4072,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    RowMajorLoc
     logical                                                           ::    AppendLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     RowMajorLoc = .false.
     AppendLoc = .false.
@@ -4563,23 +4117,19 @@ contains
 
     call File%Close()
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportFile( Input, Strings, Prefix, Comment, Separator, Debug )
+  subroutine ImportFile( Input, Strings, Prefix, Comment, Separator )
 
     class(InputSection_Type), intent(in)                              ::    Input
     type(String_Type), allocatable, dimension(:), intent(out)         ::    Strings
     character(*), optional, intent(out)                               ::    Comment
     character(*), optional, intent(out)                               ::    Separator
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ImportFile'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -4595,10 +4145,6 @@ contains
     integer                                                           ::    VarI0D
     type(String_Type), allocatable, dimension(:)                      ::    VarString1D
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -4661,22 +4207,18 @@ contains
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportFile( Input, Strings, File, Format, Debug )
+  subroutine ExportFile( Input, Strings, File, Format )
 
     class(InputSection_Type), intent(inout)                           ::    Input
     type(String_Type), dimension(:), intent(in)                       ::    Strings
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='ExportFile'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
@@ -4685,10 +4227,6 @@ contains
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     FormatLoc = 'G0'
     if ( present(Format) ) FormatLoc = Format
@@ -4716,8 +4254,6 @@ contains
       case default
         call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
     end select
-
-    if (DebugLoc) call Logger%Exiting
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

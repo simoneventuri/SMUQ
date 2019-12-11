@@ -41,47 +41,42 @@ logical, parameter                                                    ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_Input( This, Debug )
+  subroutine Initialize_Input( This )
     import                                                            ::    Input_Type
     class(Input_Type), intent(inout)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_Input( This, Debug )
+  subroutine Reset_Input( This )
     import                                                            ::    Input_Type
     class(Input_Type), intent(inout)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_Input( This, Debug )
+  subroutine SetDefaults_Input( This )
     import                                                            ::    Input_Type
     class(Input_Type), intent(inout)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform0D_Input( This, Transformation, Label, Debug )
+  subroutine Transform0D_Input( This, Transformation, Label )
     import                                                            ::    Input_Type
     class(Input_Type), intent(inout)                                  ::    This
     character(*), intent(in)                                          ::    Transformation
     character(*), intent(in)                                          ::    Label
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform1D_Input( This, Transformations, Label, Debug )
+  subroutine Transform1D_Input( This, Transformations, Label )
     import                                                            ::    Input_Type
     import                                                            ::    String_Type
     class(Input_Type), intent(inout)                                  ::    This
     character(*), dimension(:), intent(in)                            ::    Transformations
     character(*), intent(in)                                          ::    Label
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -98,18 +93,12 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructEmpty( This, Debug )
+  subroutine ConstructEmpty( This )
 
     class(Input_Type), intent(inout)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='ConstructEmpty'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -121,83 +110,57 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbInputs( This, Debug )
+  function GetNbInputs( This )
 
     integer                                                           ::    GetNbInputs
 
     class(Input_Type), intent(in)                                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='GetNbInputs'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
     GetNbInputs = This%NbInputs
 
-    if (DebugLoc) call Logger%Exiting
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel0D( This, Num, Debug )
+  function GetLabel0D( This, Num )
 
     character(:), allocatable                                         ::    GetLabel0D
 
     class(Input_Type), intent(in)                                     ::    This
     integer, intent(in)                                               ::    Num
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='GetLabel0D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    GetLabel0D = This%Label(Num)%GetValue()      
-
-    if (DebugLoc) call Logger%Exiting
+    GetLabel0D = This%Label(Num)%GetValue()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel1D( This, Debug )
+  function GetLabel1D( This )
 
     type(String_Type), allocatable, dimension(:)                      ::    GetLabel1D
     class(Input_Type), intent(in)                                     ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='GetLabel1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     allocate(GetLabel1D, source=This%Label, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetLabel1D', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

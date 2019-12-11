@@ -43,13 +43,12 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructProp_Case1_MHProposalMethod(This, X, Cov, Debug )
+  subroutine ConstructProp_Case1_MHProposalMethod(This, X, Cov )
     use                                                               ::    Parameters_Library
     import                                                            ::    MHProposalMethod_Type
     class(MHProposalMethod_Type), intent(inout)                       ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    X
     real(rkp), dimension(:,:), intent(in)                             ::    Cov
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

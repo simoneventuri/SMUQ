@@ -48,24 +48,22 @@ logical, parameter                                                    ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Transform1D_TransfSampleSpace( This, X, Debug )
+  function Transform1D_TransfSampleSpace( This, X )
     use Parameters_Library
     import                                                            ::    TransfSampleSpace_Type
     real(rkp), allocatable, dimension(:)                              ::    Transform1D_TransfSampleSpace   
     class(TransfSampleSpace_Type), intent(inout)                      ::    This
-    real(rkp), dimension(:), intent(in)                               ::    X
-    logical, optional ,intent(in)                                     ::    Debug                                             
+    real(rkp), dimension(:), intent(in)                               ::    X                                             
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvTransform1D_TransfSampleSpace( This, Z, Debug )
+  function InvTransform1D_TransfSampleSpace( This, Z )
     use Parameters_Library
     import                                                            ::    TransfSampleSpace_Type
     real(rkp), allocatable, dimension(:)                              ::    InvTransform1D_TransfSampleSpace   
     class(TransfSampleSpace_Type), intent(inout)                      ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Z
-    logical, optional ,intent(in)                                     ::    Debug                                             
+    real(rkp), dimension(:), intent(in)                               ::    Z                                             
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -74,23 +72,17 @@ end interface
 contains 
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Transform2D( This, X, Debug )
+  function Transform2D( This, X )
 
     real(rkp), allocatable, dimension(:,:)                            ::    Transform2D  
 
     class(TransfSampleSpace_Type), intent(inout)                      ::    This
-    real(rkp), dimension(:,:), intent(in)                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug   
+    real(rkp), dimension(:,:), intent(in)                             ::    X   
 
     character(*), parameter                                           ::    ProcName='Transform2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    NbDegen
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -105,30 +97,22 @@ contains
     do i = 1, NbDegen
       Transform2D(:,i) = This%Transform( X=X(:,i) )
     end do
-
-    if (DebugLoc) call Logger%Exiting
                                           
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvTransform2D( This, Z, Debug )
+  function InvTransform2D( This, Z )
 
     real(rkp), allocatable, dimension(:,:)                            ::    InvTransform2D 
  
     class(TransfSampleSpace_Type), intent(inout)                      ::    This
-    real(rkp), dimension(:,:), intent(in)                             ::    Z
-    logical, optional ,intent(in)                                     ::    Debug   
+    real(rkp), dimension(:,:), intent(in)                             ::    Z   
 
     character(*), parameter                                           ::    ProcName='InvTransform2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    NbDegen
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -143,8 +127,6 @@ contains
     do i = 1, NbDegen
       InvTransform2D(:,i) = This%InvTransform( Z=Z(:,i) )
     end do
-
-    if (DebugLoc) call Logger%Exiting
                                             
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

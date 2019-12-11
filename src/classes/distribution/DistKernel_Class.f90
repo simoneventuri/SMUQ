@@ -81,17 +81,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(DistKernel_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'kernel'
@@ -99,24 +93,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(DistKernel_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%TransformedSamples) ) deallocate(This%TransformedSamples, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TransformedSamples', ProcName=ProcName, stat=StatLoc )
@@ -135,23 +121,15 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(DistKernel_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%A = One
     This%B = One
@@ -160,20 +138,16 @@ contains
     This%Bandwidth = Zero
     This%NbCDFSamples = 101
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(DistKernel_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    ParameterName
@@ -190,10 +164,6 @@ contains
     real(rkp)                                                         ::    SampleMax
     real(rkp), allocatable, dimension(:)                              ::    Samples
     integer                                                           ::    NbSamples
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -275,13 +245,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Samples, Kernel, Bandwidth, A, B, Debug )
+  subroutine ConstructCase1( This, Samples, Kernel, Bandwidth, A, B )
 
     class(DistKernel_Type), intent(inout)                             ::    This
     real(rkp), dimension(:), intent(in)                               ::    Samples
@@ -289,9 +257,7 @@ contains
     real(rkp), optional, intent(in)                                   ::    Bandwidth
     real(rkp), optional, intent(in)                                   ::    A
     real(rkp), optional, intent(in)                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    ParameterName
@@ -305,10 +271,6 @@ contains
     real(rkp)                                                         ::    SampleMax
     real(rkp), allocatable, dimension(:)                              ::    SamplesLoc
     integer                                                           ::    NbSamples
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -378,13 +340,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -392,9 +352,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
@@ -406,10 +364,6 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     character(:), allocatable                                         ::    FileName
     type(SMUQFile_Type)                                               ::    File
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -454,27 +408,19 @@ contains
     deallocate(VarR1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X, Debug )
+  function PDF_R0D( This, X )
 
     real(rkp)                                                         ::    PDF_R0D
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF_R0D'
     real(rkp)                                                         ::    XLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -485,13 +431,11 @@ contains
 
     call This%fInvTransform( Value=PDF_R0D, X=X )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF( X, Samples, Bandwidth, Kernel, Debug )
+  function ComputePDF( X, Samples, Bandwidth, Kernel )
 
     real(rkp)                                                         ::    ComputePDF
 
@@ -499,17 +443,11 @@ contains
     real(rkp), dimension(:), intent(in)                               ::    Samples
     real(rkp), intent(in)                                             ::    Bandwidth
     class(DistProb_Type), intent(in)                                  ::    Kernel
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputePDF'
     integer                                                           ::    NbSamples
     integer                                                           ::    i
     real(rkp)                                                         ::    XLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( Bandwidth <= Zero ) call Error%Raise( "Specified bandwidth at or below zero", ProcName=ProcName )
 
@@ -524,27 +462,19 @@ contains
     end do
     ComputePDF = ComputePDF * One/(real(NbSamples,rkp)*Bandwidth)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X, Debug )
+  function CDF_R0D( This, X )
 
     real(rkp)                                                         ::    CDF_R0D
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='CDF_R0D'
     real(rkp)                                                         ::    XLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -552,14 +482,12 @@ contains
     call This%Transform( Value=XLoc )
 
     CDF_R0D = This%ComputeCDF( X=XLoc, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel )
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeCDF( X, Samples, Bandwidth, Kernel, Debug )
+  function ComputeCDF( X, Samples, Bandwidth, Kernel )
 
     real(rkp)                                                         ::    ComputeCDF
 
@@ -567,17 +495,11 @@ contains
     real(rkp), dimension(:), intent(in)                               ::    Samples
     real(rkp), intent(in)                                             ::    Bandwidth
     class(DistProb_Type), intent(in)                                  ::    Kernel
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeCDF'
     integer                                                           ::    NbSamples
     integer                                                           ::    i
     real(rkp)                                                         ::    XLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( Bandwidth <= Zero ) call Error%Raise( "Specified bandwidth at or below zero", ProcName=ProcName )
 
@@ -592,21 +514,17 @@ contains
     end do
     ComputeCDF = ComputeCDF * One/(real(NbSamples,rkp))
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P, Debug )
+  function InvCDF_R0D( This, P )
 
     real(rkp)                                                         ::    InvCDF_R0D
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(in)                                             ::    P
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
     real(rkp)                                                         ::    LeftBound
     real(rkp)                                                         ::    RightBound
@@ -618,10 +536,6 @@ contains
     real(rkp)                                                         ::    MachEp
     real(rkp)                                                         ::    Tol
     procedure(Fun), pointer                                           ::    PMinFun=>null()
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -705,8 +619,6 @@ contains
         call This%InvTransform( Value=InvCDF_R0D )
       end if
     end if
-      
-    if (DebugLoc) call Logger%Exiting()
 
     contains
 
@@ -726,23 +638,17 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeRoTBandwidth( Samples, Debug )
+  function ComputeRoTBandwidth( Samples )
 
     real(rkp)                                                         ::    ComputeRoTBandwidth
 
     real(rkp), dimension(:), intent(in)                               ::    Samples
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeRoTBandwidth'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbSamples
     real(rkp)                                                         ::    Median
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbSamples = size(Samples)
 
@@ -765,25 +671,17 @@ contains
 
     ComputeRoTBandwidth = (Four/(Three*NbSamples))**(One/Five)*(Median/0.6745_rkp)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_0D( This, Value, Debug )
+  subroutine Transform_0D( This, Value )
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(inout)                                          ::    Value
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Transform_0D'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
       Value = dlog((Value-This%A)/(This%B-Value))
@@ -793,25 +691,17 @@ contains
       Value = dlog(One/(This%B-Value))
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_1D( This, Values, Debug )
+  subroutine Transform_1D( This, Values )
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), dimension(:), intent(inout)                            ::    Values
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Transform_1D'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
       Values = dlog((Values-This%A)/(This%B-Values))
@@ -821,25 +711,17 @@ contains
       Values = dlog(One/(This%B-Values))
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine InvTransform_0D( This, Value, Debug )
+  subroutine InvTransform_0D( This, Value )
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(inout)                                          ::    Value
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='InvTransform_0D'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
       Value = (This%B*dexp(Value)+This%A) / ( One+dexp(Value) )
@@ -849,25 +731,17 @@ contains
       Value = This%B - One/dexp(Value)
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine InvTransform_1D( This, Values, Debug )
+  subroutine InvTransform_1D( This, Values )
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), dimension(:), intent(inout)                            ::    Values
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='InvTransform_1D'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
       Values = (This%B*dexp(Values)+This%A) / ( One+dexp(Values) )
@@ -877,26 +751,18 @@ contains
       Values = This%B - One/dexp(Values)
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine fInvTransform_0D( This, Value, X, Debug )
+  subroutine fInvTransform_0D( This, Value, X )
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(inout)                                          ::    Value
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='fInvTransform_0D'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
       Value = Value * dabs((This%B-This%A)/((X-This%A)*(This%B-X)))
@@ -905,8 +771,6 @@ contains
     elseif ( This%TruncatedRight ) then
       Value = Value * dabs(One / (This%B-X))
     end if
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -917,12 +781,8 @@ contains
     class(DistKernel_Type), intent(out)                               ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -953,8 +813,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -964,11 +822,7 @@ contains
     type(DistKernel_Type), intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%TransformedSamples) ) deallocate(This%TransformedSamples, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TransformedSamples', ProcName=ProcName, stat=StatLoc )
@@ -981,8 +835,6 @@ contains
 
     if ( allocated(This%Kernel) ) deallocate(This%Kernel, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Kernel', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -47,19 +47,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Set( This, Values, Debug )
+  subroutine Set( This, Values )
 
     class(List1DAllocChar_Type), intent(inout)                        ::    This
     character(*), dimension(:), intent(in)                            ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Purge()
 
@@ -68,56 +62,38 @@ contains
 
     This%Constructed=.true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetC1D( This, Values, Debug )
+  subroutine GetC1D( This, Values )
 
     class(List1DAllocChar_Type), intent(in)                           ::    This
     character(*), dimension(:), allocatable, intent(out)              ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetC1D'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
     allocate( Values, source=This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Values', stat=StatLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Purge( This, Debug )
+  subroutine Purge( This )
 
     class(List1DAllocChar_Type), intent(inout)                        ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Purge'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
     This%Constructed=.false.
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -128,12 +104,8 @@ contains
     class(List1DAllocChar_Type), intent(out)                          ::    LHS
     class(List1DAllocChar_Type), intent(in)                           ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call LHS%Purge()
 
@@ -141,8 +113,6 @@ contains
       allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Values', ProcName=ProcName, stat=StatLoc )
     end if
-
-    if (DebugLoc) call Logger%Exiting
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -153,16 +123,10 @@ contains
     type(List1DAllocChar_Type), intent(inout)                         ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

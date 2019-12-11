@@ -78,17 +78,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'BayesInvMCMC'
@@ -96,24 +90,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc = 0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -126,42 +112,30 @@ contains
 
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Hierarchical = .false.
     This%TransformBounded = .false.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, SectionChain, Prefix, Debug )
+  subroutine ConstructInput( This, Input, SectionChain, Prefix )
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
@@ -175,10 +149,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -216,13 +186,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -230,9 +198,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
@@ -244,10 +210,6 @@ contains
     integer                                                           ::    NbLikelihoods
     integer                                                           ::    i
     class(LikelihoodFunction_Type), pointer                           ::    LikelihoodPtr=>null()
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -283,13 +245,11 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Calibrate( This, Model, SampleSpace, Responses, LikelihoodFunction, OutputDirectory, Debug )
+  subroutine Calibrate( This, Model, SampleSpace, Responses, LikelihoodFunction, OutputDirectory )
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
@@ -297,9 +257,7 @@ contains
     class(Model_Type), intent(inout)                                  ::    Model
     class(LikelihoodFunction_Type), intent(inout)                     ::    LikelihoodFunction
     character(*), optional, intent(in)                                ::    OutputDirectory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Calibrate'
     integer                                                           ::    StatLoc=0
     type(ModelInterface_Type)                                         ::    ModelInterface
@@ -323,10 +281,6 @@ contains
     integer                                                           ::    NbDimOrig
     integer                                                           ::    NbDimHier
     type(MultiVarDist_Type)                                           ::    PriorDistribution
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     HVarR0D = dlog(huge(VarR0D))
     TVarR0D = dlog(tiny(VarR0D))
@@ -387,13 +341,14 @@ contains
 
     ParamChain = TargetSpace%InvTransform( Z=ParamChain )
 
-    deallocate(Output, stat=StatLoc)
+    if ( allocated(Output) ) deallocate(Output, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(HierSamples) ) then
-      deallocate(HierSamples, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierSamples', ProcName=ProcName, stat=StatLoc )
-    end if
+    if ( allocated(HierOutput) ) deallocate(HierOutput, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierOutput', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(HierSamples) ) deallocate(HierSamples, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierSamples', ProcName=ProcName, stat=StatLoc )
 
     if ( present(OutputDirectory) ) call This%WriteOutput( SampleSpace=SampleSpace, PosteriorChain=PosteriorChain,                &
                                                            ParamChain=ParamChain, MiscChain=MiscChain, Directory=OutputDirectory )
@@ -410,8 +365,6 @@ contains
     deallocate(OrigInputValues, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrigInputValues', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
     contains
 
       !!--------------------------------------------------------------------------------------------------------------------------
@@ -421,17 +374,11 @@ contains
         real(rkp), intent(out)                                            ::    Value
         real(rkp), allocatable, dimension(:), intent(inout)               ::    MiscValues
 
-        logical                                                           ::    DebugLoc
         character(*), parameter                                           ::    ProcName='MCMCPosterior'
         real(rkp)                                                         ::    Likelihood
         real(rkp)                                                         ::    Prior
         integer                                                           ::    RunStat
         type(InputDet_Type)                                               ::    InputLoc
-
-        
-        DebugLoc = DebugGlobal
-        if ( present(Debug) ) DebugLoc = Debug
-        if (DebugLoc) call Logger%Entering( ProcName )
 
         NbDimOrig = Input%GetNbInputs()
 
@@ -476,8 +423,6 @@ contains
           Value = Zero
         end if
 
-        if (DebugLoc) call Logger%Exiting()
-
       end subroutine
       !!--------------------------------------------------------------------------------------------------------------------------
 
@@ -488,7 +433,6 @@ contains
         real(rkp), intent(out)                                            ::    Value
         real(rkp), allocatable, dimension(:), intent(inout)               ::    MiscValues
 
-        logical                                                           ::    DebugLoc
         character(*), parameter                                           ::    ProcName='MCMCPosterior'
         real(rkp)                                                         ::    Prior
         type(InputDet_Type), allocatable, dimension(:)                    ::    HierInput
@@ -497,10 +441,6 @@ contains
         integer                                                           ::    iLoc
         integer                                                           ::    NbHierSamples
         type(InputDet_Type)                                               ::    InputLoc
-
-        DebugLoc = DebugGlobal
-        if ( present(Debug) ) DebugLoc = Debug
-        if (DebugLoc) call Logger%Entering( ProcName )
 
         Likelihood = Zero
         Prior = Zero
@@ -565,8 +505,6 @@ contains
           Value = Zero
         end if
 
-        if (DebugLoc) call Logger%Exiting()
-
       end subroutine
       !!--------------------------------------------------------------------------------------------------------------------------
 
@@ -574,7 +512,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, SampleSpace, PosteriorChain, ParamChain, MiscChain, Directory, Debug )
+  subroutine WriteOutput( This, SampleSpace, PosteriorChain, ParamChain, MiscChain, Directory )
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
@@ -582,9 +520,7 @@ contains
     real(rkp), dimension(:,:),  intent(in)                            ::    MiscChain
     real(rkp),dimension(:), optional, intent(in)                      ::    PosteriorChain
     character(*), intent(in)                                          ::    Directory
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='WriteOutput'
     type(InputSection_Type)                                           ::    Input
     character(:), allocatable                                         ::    FileName
@@ -592,10 +528,6 @@ contains
     character(:), allocatable                                         ::    DirectoryLoc
     logical                                                           ::    SilentLoc
     type(SMUQFile_Type)                                               ::    File
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( len_trim(Directory) /= 0 ) then
 
@@ -632,8 +564,6 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -643,13 +573,9 @@ contains
     class(BayesInvMCMC_Type), intent(out)                             ::    LHS
     class(BayesInvMethod_Type), intent(in)                            ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -673,8 +599,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -684,16 +608,10 @@ contains
     type(BayesInvMCMC_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%MCMC) ) deallocate(This%MCMC, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MCMC', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

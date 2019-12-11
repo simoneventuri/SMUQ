@@ -42,18 +42,12 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(InputDet_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
@@ -61,24 +55,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(InputDet_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -93,44 +79,27 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(InputDet_Type),intent(inout)                                ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
-    logical                                                           ::    DebugLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------ 
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Input, Labels, Debug )
+  subroutine ConstructCase1( This, Input, Labels )
 
     class(InputDet_Type), intent(inout)                               ::    This
     real(rkp), dimension(:), intent(in)                               ::    Input
     type(String_Type), dimension(:), intent(in)                       ::    Labels
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='ConstructCase1'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -148,29 +117,21 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AppendInput0D( This, Value, Label, Debug )
+  subroutine AppendInput0D( This, Value, Label )
 
     class(InputDet_Type), intent(inout)                               ::    This
     real(rkp), intent(in)                                             ::    Value
     character(*), intent(in)                                          ::    Label
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='AppendInput0D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     type(String_Type), allocatable, dimension(:)                      ::    LabelsLoc
     real(rkp), allocatable, dimension(:)                              ::    ValuesLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
@@ -197,22 +158,17 @@ contains
 
     deallocate(LabelsLoc, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='LabelsLoc', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AppendInput1D( This, Values, Labels, Debug )
+  subroutine AppendInput1D( This, Values, Labels )
 
     class(InputDet_Type), intent(inout)                               ::    This
     real(rkp), dimension(:), intent(in)                               ::    Values
     type(String_Type), dimension(:), intent(in)                       ::    Labels
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='AppendInput1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    ii
@@ -220,10 +176,6 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    ValuesLoc
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    NbAppendInputs
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
@@ -259,32 +211,23 @@ contains
 
     deallocate(LabelsLoc, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='LabelsLoc', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetValue0D_Label( This, Value, Label, Mandatory, Found, Debug )
+  subroutine GetValue0D_Label( This, Value, Label, Mandatory, Found )
 
     class(InputDet_Type), intent(in)                                  ::    This
     real(rkp), intent(out)                                            ::    Value
     character(*), intent(in)                                          ::    Label
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='GetValue0D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     logical                                                           ::    FoundLoc
     logical                                                           ::    MandatoryLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
@@ -309,24 +252,19 @@ contains
     if ( MandatoryLoc .and. .not. FoundLoc ) call Error%Raise( Line='Mandatory label not found : ' // Label, ProcName=ProcName )
 
     if ( present(Found) ) Found = FoundLoc
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetValue1D_Labels( This, Values, Labels, Mandatory, Found, Debug )
+  subroutine GetValue1D_Labels( This, Values, Labels, Mandatory, Found )
 
     class(InputDet_Type), intent(in)                                  ::    This
     real(rkp), allocatable, dimension(:), intent(out)                 ::    Values
     type(String_Type), dimension(:), intent(in)                       ::    Labels
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='GetValue1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbLabels
     integer                                                           ::    i
@@ -334,10 +272,6 @@ contains
     logical                                                           ::    FoundLoc
     logical                                                           ::    MandatoryLoc
     character(:), allocatable                                         ::    VarC0D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
@@ -371,78 +305,51 @@ contains
     end do
 
     if ( present(Found) ) Found = FoundLoc
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetValue1D( This, Values, Debug )
+  subroutine GetValue1D( This, Values )
 
     class(InputDet_Type), intent(in)                                  ::    This
     real(rkp), allocatable, dimension(:), intent(out)                 ::    Values
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='GetValue1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
     allocate(Values, source=This%Input, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetValue1D_NonAlloc( This, Values, Debug )
+  subroutine GetValue1D_NonAlloc( This, Values )
 
     class(InputDet_Type), intent(in)                                  ::    This
     real(rkp), allocatable, dimension(:), intent(out)                 ::    Values
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='GetValue1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
     allocate(Values, source=This%Input, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform0D( This, Transformation, Label, Debug )
+  subroutine Transform0D( This, Transformation, Label )
 
     class(InputDet_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    Transformation
     character(*), intent(in)                                          ::    Label
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='Transform0D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
@@ -457,28 +364,19 @@ contains
     else
       call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
     end if
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform1D( This, Transformations, Label, Debug )
+  subroutine Transform1D( This, Transformations, Label )
 
     class(InputDet_Type), intent(inout)                               ::    This
     character(*), dimension(:), intent(in)                            ::    Transformations
     character(*), intent(in)                                          ::    Label
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='Transform1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
@@ -493,9 +391,6 @@ contains
     else
       call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
     end if
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -505,12 +400,8 @@ contains
     class(InputDet_Type), intent(out)                                 ::    LHS
     class(Input_Type), intent(in)                                     ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -532,9 +423,6 @@ contains
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
 
     end select
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -544,20 +432,13 @@ contains
     type(InputDet_Type),intent(inout)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%Input) ) deallocate(This%Input, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Input', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

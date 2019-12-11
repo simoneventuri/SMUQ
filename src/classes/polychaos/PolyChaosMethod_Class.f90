@@ -63,43 +63,39 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize_PolyChaosMethod( This, Debug )
+  subroutine Initialize_PolyChaosMethod( This )
     import                                                            ::    PolyChaosMethod_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset_PolyChaosMethod( This, Debug )
+  subroutine Reset_PolyChaosMethod( This )
     import                                                            ::    PolyChaosMethod_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults_PolyChaosMethod( This, Debug )
+  subroutine SetDefaults_PolyChaosMethod( This )
     import                                                            ::    PolyChaosMethod_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput_PolyChaosMethod( This, Input, SectionChain, Prefix, Debug )
+  subroutine ConstructInput_PolyChaosMethod( This, Input, SectionChain, Prefix )
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    InputSection_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput_PolyChaosMethod( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_PolyChaosMethod( This, MainSectionName, Prefix, Directory )
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_PolyChaosMethod
@@ -107,13 +103,12 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
   subroutine BuildModel_PolyChaosMethod( This, Basis, SampleSpace, Responses, Model, IndexSetScheme, Coefficients, Indices,       &
-                                                                    CVErrors, OutputDirectory, InputSamples, OutputSamples, Debug)
+                                                                    CVErrors, OutputDirectory, InputSamples, OutputSamples)
     use Parameters_Library
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    OrthoMultivar_Type
@@ -138,7 +133,6 @@ abstract interface
     character(*), optional, intent(in)                                ::    OutputDirectory
     real(rkp), optional, dimension(:,:), intent(in)                   ::    InputSamples
     type(List2D_Type), dimension(:), optional, intent(in)             ::    OutputSamples
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -155,22 +149,14 @@ end interface
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!

@@ -60,42 +60,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_IndexSetScheme( This, Debug )
+  subroutine Initialize_IndexSetScheme( This )
     import                                                            ::    IndexSetScheme_Type
     class(IndexSetScheme_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_IndexSetScheme( This, Debug )
+  subroutine Reset_IndexSetScheme( This )
     import                                                            ::    IndexSetScheme_Type
     class(IndexSetScheme_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_IndexSetScheme( This, Input, Prefix, Debug )
+  subroutine ConstructInput_IndexSetScheme( This, Input, Prefix )
     import                                                            ::    IndexSetScheme_Type
     import                                                            ::    InputSection_Type
     class(IndexSetScheme_Type), intent(inout)                         ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_IndexSetScheme( This, Debug )
+  subroutine SetDefaults_IndexSetScheme( This )
     import                                                            ::    IndexSetScheme_Type
     class(IndexSetScheme_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_IndexSetScheme( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_IndexSetScheme( This, MainSectionName, Prefix, Directory )
     import                                                            ::    IndexSetScheme_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_IndexSetScheme
@@ -103,12 +99,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateIndices_IndexSetScheme( This, Order, TupleSize, Indices, OrderError, OrderExceeded, Debug )
+  subroutine GenerateIndices_IndexSetScheme( This, Order, TupleSize, Indices, OrderError, OrderExceeded )
     import                                                            ::    IndexSetScheme_Type
     class(IndexSetScheme_Type), intent(in)                            ::    This
     integer, intent(in)                                               ::    Order
@@ -116,7 +111,6 @@ abstract interface
     integer, dimension(:,:), allocatable, intent(out)                 ::    Indices
     logical, optional, intent(in)                                     ::    OrderError
     logical, optional, intent(out)                                    ::    OrderExceeded
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -133,70 +127,46 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOrder( This, Debug )
+  function GetOrder( This )
 
     integer                                                           ::    GetOrder
     class(IndexSetScheme_Type), intent(in)                            ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetOrder'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     GetOrder = This%Order
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMinOrder( This, Debug )
+  function GetMinOrder( This )
 
     integer                                                           ::    GetMinOrder
     class(IndexSetScheme_Type), intent(in)                            ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMinOrder'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     GetMinOrder = This%MinOrder
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMaxOrder( This, Debug )
+  function GetMaxOrder( This )
 
     integer                                                           ::    GetMaxOrder
     class(IndexSetScheme_Type), intent(in)                            ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMaxOrder'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     GetMaxOrder = This%MaxOrder
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine algorithmH( M, p, j, Indices, Debug )
+  subroutine algorithmH( M, p, j, Indices )
 
     use LinkedList1D_Class                                        ,only:    LinkedList1D_Type
 
@@ -204,10 +174,8 @@ contains
     integer, intent(in)                                               ::    M
     integer, intent(in)                                               ::    p
     integer, intent(in)                                               ::    j
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='algorithmH'
-    logical                                                           ::    DebugLoc
     type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
     integer                                                           ::    i
     integer                                                           ::    NbIndices
@@ -215,10 +183,6 @@ contains
     integer, dimension(:), allocatable                                ::    al, VarI1D
     integer                                                           ::    StatLoc=0
 
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(Indices) ) deallocate(Indices, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Indices', stat=StatLoc)
@@ -279,23 +243,19 @@ contains
 
     deallocate(IndicesRecord)
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine algorithmL( MTuple, M, Indices, Debug )
+  subroutine algorithmL( MTuple, M, Indices )
     
     use LinkedList1D_Class                                        ,only:    LinkedList1D_Type
 
     integer, dimension(:,:), allocatable, intent(inout)               ::    Indices
     integer, dimension(:), intent(in)                                 ::    MTuple
     integer, intent(in)                                               ::    M
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='algorithmL'
-    logical                                                           ::    DebugLoc
     type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
     integer, dimension(:), allocatable                                ::    al
     integer                                                           ::    NbIndices
@@ -304,10 +264,6 @@ contains
     integer                                                           ::    VarI0D
     integer, dimension(:), allocatable                                ::    VarI1D
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(Indices) ) deallocate(Indices, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Indices', stat=StatLoc)
@@ -374,8 +330,6 @@ contains
 
     deallocate(IndicesRecord, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
-
-    if (DebugLoc) call Logger%Exiting
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

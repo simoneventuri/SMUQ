@@ -65,17 +65,10 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(MFileMixed_Type), intent(inout)                             ::    This
-    logical, optional, intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'mfilemixed'
@@ -83,24 +76,15 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(MFileMixed_Type), intent(inout)                             ::    This
-    logical, optional, intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc = 0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%TemplateTranscript) ) deallocate(This%TemplateTranscript, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TemplateTranscript', ProcName=ProcName, stat=StatLoc )
@@ -120,40 +104,26 @@ contains
 
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(MFileMixed_Type), intent(inout)                             ::    This
-    logical, optional, intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Scalar = .false.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(MFileMixed_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
@@ -168,10 +138,6 @@ contains
     integer                                                           ::    i, ii, iii
     integer                                                           ::    NbLines
     type(SMUQFile_Type)                                               ::    MTemplateFile
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -240,21 +206,16 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput2( This, Template, Input, Prefix, Debug )
+  subroutine ConstructInput2( This, Template, Input, Prefix )
 
     class(MFileMixed_Type), intent(inout)                             ::    This
     type(String_Type), dimension(:), intent(in)                       ::    Template
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput2'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
@@ -268,10 +229,6 @@ contains
     logical                                                           ::    Found
     integer                                                           ::    i, ii, iii
     integer                                                           ::    NbLines
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -338,13 +295,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -352,9 +307,6 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Debug
-
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -365,10 +317,6 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    SubSubSectionName
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -413,20 +361,16 @@ contains
                                                                             Directory=DirectorySub), To_SubSection=SubSectionName)
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
- subroutine WriteInput( This, Input, Strings, Debug )
+ subroutine WriteInput( This, Input, Strings )
 
     class(MFileMixed_Type), intent(inout)                             ::    This
     type(InputDet_Type), intent(in)                                   ::    Input
     type(String_Type), allocatable, dimension(:), intent(out)         ::    Strings
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='WriteInput'
     integer                                                           ::    StatLoc=0
     type(String_Type), allocatable, dimension(:)                      ::    TemplateLoc
@@ -434,10 +378,6 @@ contains
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    i, ii, iii
     type(String_Type), allocatable, dimension(:)                      ::    VarString1D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -476,8 +416,6 @@ contains
       Strings(ii) = TemplateLoc(i)
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -487,13 +425,9 @@ contains
     class(MFileMixed_Type), intent(out)                               ::    LHS
     class(MFileInput_Type), intent(in)                                ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -521,8 +455,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -532,11 +464,7 @@ contains
     type(MFileMixed_Type),intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )   
 
     if ( allocated(This%TemplateTranscript) ) deallocate(This%TemplateTranscript, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TemplateTranscript', ProcName=ProcName, stat=StatLoc )
@@ -549,8 +477,6 @@ contains
 
     if ( allocated(This%TableEnd) ) deallocate(This%TableEnd, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TableEnd', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

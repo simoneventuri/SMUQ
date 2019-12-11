@@ -51,17 +51,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(CVErrorLOO_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
 
     if ( .not. This%Initialized ) then
       This%Name = 'cverrorloo'
@@ -69,74 +63,50 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(CVErrorLOO_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
 
     This%Initialized=.false.
     This%Constructed=.false.
 
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(CVErrorLOO_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
 
     This%Corrected=.true.
     This%Normalized=.true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(CVErrorLOO_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    PrefixLoc
     logical                                                           ::    Found
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -154,29 +124,21 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase1( This, Corrected, Normalized, Debug )
+  subroutine ConstructCase1( This, Corrected, Normalized )
 
     class(CVErrorLOO_Type), intent(inout)                             ::    This
     logical, optional, intent(in)                                     ::    Corrected
     logical, optional, intent(in)                                     ::    Normalized
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    ParameterName
     logical                                                           ::    Found
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -187,13 +149,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -203,18 +163,12 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -230,13 +184,11 @@ contains
     call GetInput%AddParameter( Name='corrected', Value=ConvertToString( Value=This%Corrected ) )
     call GetInput%AddParameter( Name='normalized', Value=ConvertToString( Value=This%Normalized ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function ComputeError( This, Solver, System, Goal, Coefficients, Debug )
+  function ComputeError( This, Solver, System, Goal, Coefficients )
 
     use ieee_arithmetic
 
@@ -247,9 +199,7 @@ contains
     real(rkp), dimension(:,:), intent(in)                             ::    System
     real(rkp), dimension(:), intent(in)                               ::    Goal
     real(rkp), dimension(:), intent(in)                               ::    Coefficients
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeErrorDefaultQ'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    M
@@ -260,10 +210,6 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -312,8 +258,6 @@ contains
       end if
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -323,12 +267,8 @@ contains
     class(CVErrorLOO_Type), intent(out)                               ::    LHS
     class(CVErrorMethod_Type), intent(in)                             ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
       type is (CVErrorLOO_Type)
@@ -342,8 +282,6 @@ contains
       class default
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
     end select
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

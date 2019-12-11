@@ -45,17 +45,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(HierDistLogNorm_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'hiererchical lognormal'
@@ -63,23 +57,15 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(HierDistLogNorm_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%A = - huge(One)
     This%B = huge(One)
@@ -92,13 +78,11 @@ contains
     This%ADependency=''
     This%BDependency=''
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateDistribution( This, Mu, Sigma, A, B, Distribution, Debug )
+  subroutine GenerateDistribution( This, Mu, Sigma, A, B, Distribution )
 
     class(HierDistLogNorm_Type), intent(in)                           ::    This
     real(rkp), intent(in)                                             ::    Mu
@@ -106,15 +90,9 @@ contains
     real(rkp), intent(in)                                             ::    A
     real(rkp), intent(in)                                             ::    B
     class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GenerateDistribution'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -130,8 +108,6 @@ contains
       class default
         call Error%Raise( "Something went wrong", ProcName=ProcName )
     end select
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

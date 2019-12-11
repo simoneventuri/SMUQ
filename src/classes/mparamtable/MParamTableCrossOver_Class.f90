@@ -61,43 +61,27 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(MParamTableCrossOver_Type), intent(inout)                   ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Initialized ) then
       This%Name = 'mparamtablecrossover'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(MParamTableCrossOver_Type), intent(inout)                   ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( allocated(This%OriginalTable) ) deallocate(This%OriginalTable, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc )
 
@@ -106,38 +90,26 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(MParamTableCrossOver_Type), intent(inout)                   ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(MParamTableCrossOver_Type), intent(inout)                   ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
@@ -153,11 +125,6 @@ contains
     integer                                                           ::    AbscissaColumn
     type(String_Type), allocatable, dimension(:,:)                    ::    VarR2D
     
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -209,13 +176,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -223,9 +188,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -236,11 +199,6 @@ contains
     character(:), allocatable                                         ::    FileName
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     type(SMUQFile_Type)                                               ::    File
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     DirectoryLoc = ''
@@ -277,33 +235,24 @@ contains
     call GetInput%AddSection( Section=This%PolyParam%GetInput(MainSectionName=SectionName, Prefix=PrefixLoc,                      &
                                                                                                          Directory=DirectorySub) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue( This, Input, Abscissa, Debug )
+  function GetValue( This, Input, Abscissa )
 
     real(rkp), allocatable, dimension(:)                              ::    GetValue
 
     class(MParamTableCrossOver_Type), intent(in)                      ::    This
     type(InputDet_Type), intent(in)                                   ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetValue'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     real(rkp), allocatable, dimension(:)                              ::    PolyVal
     real(rkp), allocatable, dimension(:)                              ::    TableVal
     logical                                                           ::    TripFlag=.false.
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     allocate(GetValue(size(Abscissa,1)), stat=StatLoc)
@@ -341,13 +290,11 @@ contains
     deallocate(PolyVal, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='PolyVal', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue( This, Input, Abscissa, Format, Debug )
+  function GetCharValue( This, Input, Abscissa, Format )
 
     use String_Library
     use StringRoutines_Module
@@ -360,9 +307,7 @@ contains
     type(InputDet_Type), intent(in)                                   ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
     character(*), optional, intent(in)                                ::    Format
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetValue'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
@@ -370,11 +315,6 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    TableVal
     logical                                                           ::    TripFlag=.false.
     character(:), allocatable                                         ::    FormatLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     FormatLoc = 'G0'
@@ -412,8 +352,6 @@ contains
     deallocate(PolyVal, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='PolyVal', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -423,12 +361,8 @@ contains
     class(MParamTableCrossOver_Type), intent(out)                     ::    LHS
     class(MParamTable_Type), intent(in)                               ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -446,8 +380,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -457,16 +389,10 @@ contains
     type(MParamTableCrossOver_Type), intent(inout)                    ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%OriginalTable) ) deallocate(This%OriginalTable, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -67,17 +67,11 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(SpaceSampler_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'spacesampler'
@@ -86,24 +80,16 @@ contains
 
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(SpaceSampler_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -115,38 +101,26 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(SpaceSampler_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(SpaceSampler_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
@@ -156,17 +130,11 @@ contains
     character(:), allocatable                                         ::    VarC0D
     character(:), allocatable                                         ::    PrefixLoc
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
-
-    if (DebugLoc) call Logger%Write( "Processing passed down settings")
 
     SectionName = 'scheme'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
@@ -184,26 +152,18 @@ contains
 
     This%Constructed=.true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine 
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Sampler, RNG, Debug )
+  subroutine ConstructCase1( This, Sampler, RNG )
 
     class(SpaceSampler_Type), intent(inout)                           ::    This
     class(SampleScheme_Type), intent(in)                              ::    Sampler
     type(RandPseudo_Type), optional, intent(in)                       ::    RNG
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -219,13 +179,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use String_Library
 
@@ -235,9 +193,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -246,10 +202,6 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -272,13 +224,11 @@ contains
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/rng'
     call GetInput%AddSection( Section=This%RNG%GetInput( MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function DrawSpace( This, SampleSpace, Debug)
+  function DrawSpace( This, SampleSpace)
 
     use DistNorm_Class                                            ,only:    DistNorm_Type
 
@@ -286,9 +236,7 @@ contains
 
     class(SpaceSampler_Type), intent(inout)                           ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='DrawSpace'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbDim
@@ -296,10 +244,6 @@ contains
     class(DistProb_Type), pointer                                     ::    DistProb=>null()
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     integer                                                           ::    NbSamples
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -345,13 +289,11 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine EnrichSpace( This, SampleSpace, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, Debug)
+  subroutine EnrichSpace( This, SampleSpace, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded)
 
     use DistNorm_Class                                            ,only:    DistNorm_Type
 
@@ -361,9 +303,7 @@ contains
     real(rkp), allocatable, dimension(:,:), intent(out)               ::    EnrichmentSamples
     integer, optional, intent(in)                                     ::    NbEnrichmentSamples
     logical, intent(out)                                              ::    Exceeded
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='EnrichSpace'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbDim
@@ -375,10 +315,6 @@ contains
     logical                                                           ::    ReqNormalized
     real(rkp), target, allocatable, dimension(:,:)                    ::    NormalizedSamples
     real(rkp), pointer, dimension(:,:)                                ::    SamplesPointer=>null()
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -464,97 +400,13 @@ contains
     if ( allocated(NormalizedSamples) ) deallocate(NormalizedSamples, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='NormalizedSamples', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
-
-!  !!------------------------------------------------------------------------------------------------------------------------------
-!  subroutine DrawDistVecSamples( This, Distributions, CorrMat, NbSamples, Debug)
-
-!    use DistNorm_Class                                            ,only:    DistNorm_Type
-!    use ArrayRoutines_Module
-
-!    real(rkp), allocatable, dimension(:,:)                            ::    DrawDistVecSamples
-
-!    class(SpaceSampler_Type), intent(inout)                           ::    This
-!    type(DistProb_Vec_Type), dimension(:), intent(in)                 ::    Distributions
-!    real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
-!    integer, intent(in)                                               ::    NbSamples
-!    logical, optional ,intent(in)                                     ::    Debug
-
-!    logical                                                           ::    DebugLoc
-!    character(*), parameter                                           ::    ProcName='DrawDistVecSamples'
-!    integer                                                           ::    StatLoc=0
-!    integer                                                           ::    NbDim
-!    integer                                                           ::    i, ii
-!    class(DistProb_Type), pointer                                     ::    DistProb=>null()
-!    real(rkp), allocatable, dimension(:)                              ::    VarR1D
-
-!    DebugLoc = DebugGlobal
-!    if ( present(Debug) ) DebugLoc = Debug
-!    if (DebugLoc) call Logger%Entering( ProcName )
-
-!    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-!    if ( NbSamples <= 0 ) call Error%Raise( Line='Number of requested samples at or below 0', ProcName=ProcName )
-
-!    if ( present(CorrMat) ) then
-!      if ( size(Distributions,1) /= size(CorrMat,1) ) call Error%Raise( Line='Invalid CorrMat', ProcName=ProcName )
-!      if ( size(CorrMat,1) /= size(CorrMat,2) ) call Error%Raise( Line='CorrMat has an invalid shape', ProcName=ProcName)
-!    end if
-
-!    NbDim = size(Distributions,1)
-
-!    allocate( DrawDistVecSamples(NbDim, NbSamples), stat=StatLoc )
-!    if ( StatLoc /= 0 ) call Error%Allocate( Name='DrawDistVecSamples', ProcName=ProcName, stat=StatLoc )
-
-!    DrawDistVecSamples = This%RNG%Draw(NbDim=NbDim, NbSamples=NbSamples)
-
-!    if ( .not. IsDiagonal(CorrMat) ) then
-!      ii = 1
-!      do ii = 1, NbSamples
-!        i = 1
-!        do i = 1, NbDim
-!          DistProb => Distributions(i)%GetPointer()
-!          DrawDistVecSamples(i,ii) = DistProb%InvCDF(P=DrawDistVecSamples(i,ii))
-!        end do
-!      end do
-!    else
-!      allocate(VarR1D(NbDim), stat=StatLoc)
-!      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-
-!      i = 1
-!      ii = 0
-!      do i = 1, NbDim
-!        DistProb => Distributions(i)%GetPointer()
-!        select type ( DistProb )
-!          type is (DistNorm_Type)
-!            VarR1D(i) = DistProb%GetMu()
-!            ii = ii + 1
-!          class default
-!            exit
-!        end select
-!      end do
-!  
-!      if ( ii < NbDim ) call Error%Raise( Line='Sampling of correlated non-multivariate normal spaces is not yet supported',      &
-!                                                                                                               ProcName=ProcName )
-
-!      i = 1
-!      do i = 1, NbSamples
-!        DrawDistVecSamples(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=CorrMat, PVec=DrawDistVecSamples(:,i) )
-!      end do
-!    end if
-
-!    if (DebugLoc) call Logger%Exiting()
-
-!  end subroutine
-!  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Draw a vector of real(rkp) random numbers from a Multivariate Normal distribution N~[Mu,Cov] where Mu is a vector of means and 
   ! Cov is the covariance matrix
-  function DrawMVarNormal( This, Mu, Cov, PVec, Debug )
+  function DrawMVarNormal( This, Mu, Cov, PVec )
 
     use DistNorm_Class                                            ,only:    DistNorm_Type
 
@@ -564,9 +416,7 @@ contains
     real(rkp), dimension(:), intent(in)                               ::    Mu
     real(rkp), dimension(:,:), intent(in)                             ::    Cov
     real(rkp), dimension(:), intent(in)                               ::    PVec
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='DrawMVarNormal'
     integer                                                           ::    StatLoc=0
     real(rkp), dimension(:,:), allocatable                            ::    CovLoc
@@ -575,10 +425,6 @@ contains
     integer                                                           ::    NbDim
     integer                                                           ::    i, ii, imax
     type(DistNorm_Type)                                               ::    DistNormal
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( size(Cov,1) /= size(Cov,2) ) call Error%Raise( Line='Covariance matrix is not a square matrix', ProcName=ProcName )
 
@@ -634,80 +480,20 @@ contains
     deallocate( CovLoc, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='CovLoc', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-!  !!------------------------------------------------------------------------------------------------------------------------------
-!  ! Draw a vector of real(rkp) random numbers from a Multivariate Normal distribution N~[Mu,Cov] where Mu is a vector of means and 
-!  ! Cov is the covariance matrix
-
-!  function DrawMVarNormal( This, Mu, Cov, Debug )
-
-!    real(rkp), dimension(:), allocatable                              ::    DrawMVarNormal
-
-!    class(SpaceSampler_Type), intent(inout)                               ::    This
-!    real(rkp), dimension(:), intent(in)                               ::    Mu
-!    real(rkp), dimension(:,:), intent(in)                             ::    Cov
-!    logical, optional ,intent(in)                                     ::    Debug
-
-!    logical                                                           ::    DebugLoc
-!    character(*), parameter                                           ::    ProcName='DrawMVarNormal'
-!    integer(8)                                                        ::    NbDim
-!    real(rkp), allocatable, dimension(:)                              ::    PARM
-!    real(rkp), allocatable, dimension(:)                              ::    WORK
-!    integer                                                           ::    StatLoc=0
-
-!    DebugLoc = DebugGlobal
-!    if ( present(Debug) ) DebugLoc = Debug
-!    if (DebugLoc) call Logger%Entering( ProcName )
-
-!    NbDim=size(Mu,1)
-
-!    allocate(PARM(NbDim*(NbDim+3)/2+1), stat=StatLoc)
-!    if ( StatLoc /= 0 ) call Error%Allocate( Name='PARM', ProcName=ProcName, stat=StatLoc )
-!    PARM = Zero
-
-!    allocate(WORK(NbDim), stat=StatLoc)
-!    if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
-!    WORK = Zero
-
-!    allocate(DrawMVarNormal, source=Mu, stat=StatLoc)
-!    if ( StatLoc /= 0 ) call Error%Allocate( Name='DrawMVarNormal', ProcName=ProcName, stat=StatLoc )
-
-!    call SETGMN(DrawMVarNormal, real(cov,4), NbDim, PARM)
-!    call GENMN(PARM, DrawMVarNormal, WORK)
-
-!    deallocate(PARM, stat=StatLoc)
-!    if ( StatLoc /= 0 ) call Error%Deallocate( Name='PARM', ProcName=ProcName, stat=StatLoc )
-!    deallocate(WORK, stat=StatLoc)
-!    if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
-
-!    if (DebugLoc) call Logger%Exiting()
-
-!  end function
-!  !!------------------------------------------------------------------------------------------------------------------------------
-
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This, Debug )
+  function IsConstructed( This )
 
     logical                                                           ::    IsConstructed
 
     class(SpaceSampler_Type), intent(in)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='DrawMVarNormal'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     IsConstructed = This%Constructed
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -718,13 +504,9 @@ contains
     class(SpaceSampler_Type), intent(out)                             ::    LHS
     class(SpaceSampler_Type), intent(in)                              ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call LHS%Reset()
 
@@ -737,8 +519,6 @@ contains
       LHS%RNG = RHS%RNG
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -747,17 +527,11 @@ contains
   
     type(SpaceSampler_Type)                                           ::    This
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if( associated(This%Sampler) ) deallocate( This%Sampler, stat=StatLoc )
     if( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

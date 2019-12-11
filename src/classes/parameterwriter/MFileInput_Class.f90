@@ -53,42 +53,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_MFileInput( This, Debug )
+  subroutine Initialize_MFileInput( This )
     import                                                            ::    MFileInput_Type
     class(MFileInput_Type), intent(inout)                             ::    This
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_MFileInput( This, Debug )
+  subroutine Reset_MFileInput( This )
     import                                                            ::    MFileInput_Type
     class(MFileInput_Type), intent(inout)                             ::    This
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_MFileInput( This, Debug )
+  subroutine SetDefaults_MFileInput( This )
     import                                                            ::    MFileInput_Type
     class(MFileInput_Type), intent(inout)                             ::    This
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_MFileInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput_MFileInput( This, Input, Prefix )
     import                                                            ::    MFileInput_Type
     import                                                            ::    InputSection_Type
     class(MFileInput_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_MFileInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_MFileInput( This, MainSectionName, Prefix, Directory )
     import                                                            ::    InputSection_Type
     import                                                            ::    MFileInput_Type
     type(InputSection_Type)                                           ::    GetInput_MFileInput
@@ -96,12 +92,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInput_MFileInput( This, Input, Strings, Debug )
+  subroutine WriteInput_MFileInput( This, Input, Strings )
     use Parameters_Library
     use String_Library
     import                                                            ::    InputDet_Type
@@ -109,7 +104,6 @@ abstract interface
     class(MFileInput_Type), intent(inout)                             ::    This
     type(String_Type), allocatable, dimension(:), intent(out)         ::    Strings
     type(InputDet_Type), intent(in)                                   ::    Input
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -126,22 +120,14 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(MFileInput_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

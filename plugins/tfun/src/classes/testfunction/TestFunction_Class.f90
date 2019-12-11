@@ -55,42 +55,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize_TestFunction( This, Debug )
+  subroutine Initialize_TestFunction( This )
     import                                                            ::    TestFunction_Type
     class(TestFunction_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset_TestFunction( This, Debug )
+  subroutine Reset_TestFunction( This )
     import                                                            ::    TestFunction_Type
     class(TestFunction_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults_TestFunction( This, Debug )
+  subroutine SetDefaults_TestFunction( This )
     import                                                            ::    TestFunction_Type
     class(TestFunction_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput_TestFunction( This, Input, Prefix, Debug )
+  subroutine ConstructInput_TestFunction( This, Input, Prefix )
     import                                                            ::    TestFunction_Type
     import                                                            ::    InputSection_Type
     class(TestFunction_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput_TestFunction( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_TestFunction( This, MainSectionName, Prefix, Directory )
     import                                                            ::    TestFunction_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_TestFunction
@@ -98,12 +94,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run_TestFunction( This, Input, Output, Debug )
+  subroutine Run_TestFunction( This, Input, Output )
     use Parameters_Library
     import                                                            ::    TestFunction_Type
     import                                                            ::    Input_Type
@@ -111,7 +106,6 @@ abstract interface
     class(TestFunction_Type), intent(inout)                           ::    This
     class(Input_Type), intent(in)                                     ::    Input
     type(Output_Type), intent(inout)                                  ::    Output
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -128,49 +122,33 @@ end interface
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
 
     class(TestFunction_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( 'Object not yet constructed', ProcName=ProcName )
 
     GetName = This%Name
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetLabel( This, Debug )
+  function GetLabel( This )
 
     character(:), allocatable                                         ::    GetLabel
 
     class(TestFunction_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetLabel'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( 'Object not yet constructed', ProcName=ProcName )
 
     GetLabel = This%Label
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!

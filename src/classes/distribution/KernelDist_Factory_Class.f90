@@ -49,18 +49,12 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_C0D( Object, DesiredType, Debug )
+  subroutine Construct_C0D( Object, DesiredType )
 
     class(DistProb_Type), allocatable, intent(inout)                  ::    Object                                             
-    character(*), intent(in)                                          ::    DesiredType
-    logical, optional, intent(in)                                     ::    Debug                                               
+    character(*), intent(in)                                          ::    DesiredType                                               
 
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='Construct_C0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
+    character(*), parameter                                           ::    ProcName='Construct_C0D' 
 
     if ( allocated( Object ) ) call Error%Raise( Line="Object already allocated", ProcName=ProcName )
 
@@ -90,24 +84,16 @@ contains
 
     call Object%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructPointer_C0D( Object, DesiredType, Debug )
+  subroutine ConstructPointer_C0D( Object, DesiredType )
 
     class(DistProb_Type), pointer, intent(inout)                      ::    Object                                             
-    character(*), intent(in)                                          ::    DesiredType
-    logical, optional, intent(in)                                     ::    Debug                                               
+    character(*), intent(in)                                          ::    DesiredType                                               
 
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ConstructPointer_C0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
+    character(*), parameter                                           ::    ProcName='ConstructPointer_C0D' 
 
     if ( associated( Object ) ) call Error%Raise( Line="Object already associated", ProcName=ProcName )
 
@@ -137,25 +123,17 @@ contains
 
     call Object%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOption( Object, Debug )
+  function GetOption( Object )
 
     character(:), allocatable                                         ::    GetOption
 
-    class(DistProb_Type), intent(in)                                  ::    Object                                             
-    logical, optional, intent(in)                                     ::    Debug                                               
+    class(DistProb_Type), intent(in)                                  ::    Object                                                                                            
 
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetOption'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
+    character(*), parameter                                           ::    ProcName='GetOption' 
 
     select type (Object)
 
@@ -169,8 +147,6 @@ contains
         call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )
 
     end select
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -73,17 +73,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'multivariate'
@@ -91,24 +85,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized = .false.
     This%Constructed = .false.
@@ -123,38 +109,26 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    ParameterName
@@ -165,10 +139,6 @@ contains
     integer                                                           ::    i
     character(:), allocatable                                         ::    PrefixLoc
     class(DistProb_Type), allocatable                                 ::    DistProb
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -210,26 +180,18 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructCase1( This, Distributions, CorrMat, Debug )
+  subroutine ConstructCase1( This, Distributions, CorrMat )
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
     type(DistProb_Vec_Type), dimension(:), intent(in)                 ::    Distributions
     real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='ConstructCase1'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset
     if ( .not. This%Initialized ) call This%Initialize  
@@ -254,27 +216,19 @@ contains
 
     This%Constructed=.true.
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructCase2( This, Distributions, CorrMat, Debug )
+  subroutine ConstructCase2( This, Distributions, CorrMat )
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
     class(DistProb_Type), dimension(:), intent(in)                    ::    Distributions
     real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='ConstructCase2'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset
     if ( .not. This%Initialized ) call This%Initialize  
@@ -304,25 +258,17 @@ contains
 
     This%Constructed=.true.
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructCase3( This, SampleSpace, Debug )
+  subroutine ConstructCase3( This, SampleSpace )
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='ConstructCase3'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset
     if ( .not. This%Initialized ) call This%Initialize  
@@ -341,13 +287,11 @@ contains
 
     This%Constructed=.true.
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -357,9 +301,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
@@ -373,10 +315,6 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     class(DistProb_Type), pointer                                     ::    DistProb=>null()
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -415,29 +353,21 @@ contains
     end if
     nullify(InputSection)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF( This, X, Debug )
+  function PDF( This, X )
 
     real(rkp)                                                         ::    PDF
 
     class(MultiVarDist_Type), intent(in)                              ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     class(DistProb_Type), pointer                                     ::    DistProb=>null()
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Correlated ) call Error%Raise( 'Correlated multivariate non-normal distribution pdf is not yet supported',          &
                                                                                                                ProcName=ProcName )
@@ -449,56 +379,38 @@ contains
       DistProb => This%Distributions(i)%GetPointer()
       PDF = PDF * DistProb%PDF(X=X(i))
     end do
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDim( This, Debug )
+  function GetNbDim( This )
 
     real(rkp)                                                         ::    GetNbDim
 
     class(MultiVarDist_Type), intent(in)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbDim'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetNbDim = This%NbDim
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This, Debug )
+  function IsConstructed( This )
 
     logical                                                           ::    IsConstructed
 
     class(MultiVarDist_Type), intent(in)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IsConstructed'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     IsConstructed = This%Constructed
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -509,12 +421,8 @@ contains
     class(MultiVarDist_Type), intent(out)                         ::    LHS
     class(MultiVarDist_Type), intent(in)                          ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -538,8 +446,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -549,19 +455,13 @@ contains
     type(MultiVarDist_Type), intent(inout)                        ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%Distributions) ) deallocate(This%Distributions, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Distributions', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%CorrMat) ) deallocate(This%CorrMat, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

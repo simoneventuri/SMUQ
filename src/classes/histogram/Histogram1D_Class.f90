@@ -76,18 +76,12 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(Histogram1D_Type), intent(inout)                            ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
@@ -95,24 +89,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(Histogram1D_Type), intent(inout)                            ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -127,39 +113,27 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(Histogram1D_Type), intent(inout)                            ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(Histogram1D_Type), intent(inout)                            ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
@@ -171,10 +145,6 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     integer, allocatable, dimension(:)                                ::    VarI1D
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -225,13 +195,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -239,9 +207,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -253,10 +219,6 @@ contains
     type(SMUQFile_Type)                                               ::    File
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -302,20 +264,16 @@ contains
     end if
     nullify(InputSection)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Bin_R0D( This, Value, Debug )
+  subroutine Bin_R0D( This, Value )
 
     class(Histogram1D_Type), intent(inout)                            ::    This
     real(rkp), intent(in)                                             ::    Value
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='BinR0D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
@@ -324,20 +282,16 @@ contains
 
     call BinValues( Value=Value, BinEdges=This%BinEdges, BinCounts=This%BinCounts )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Bin_R1D( This, Values, Debug )
+  subroutine Bin_R1D( This, Values )
 
     class(Histogram1D_Type), intent(inout)                            ::    This
     real(rkp), dimension(:), intent(in)                               ::    Values
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='BinR1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
@@ -346,28 +300,20 @@ contains
 
     call BinValues( Values=Values, BinEdges=This%BinEdges, BinCounts=This%BinCounts )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine BinValues_R0D( Value, BinEdges, BinCounts, Debug )
+  subroutine BinValues_R0D( Value, BinEdges, BinCounts )
 
     real(rkp), intent(in)                                             ::    Value
     real(rkp), dimension(:), intent(in)                               ::    BinEdges
     integer, dimension(:), intent(inout)                              ::    BinCounts
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='BinValue'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     integer                                                           ::    NbBins
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( size(BinCounts) /= size(BinEdges)-1 ) call Error%Raise( 'Mismatch between bin counts and number of bins',                &
                                                                                                                ProcName=ProcName )
@@ -388,30 +334,22 @@ contains
       end do
     end if
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine BinValues_R1D( Values, BinEdges, BinCounts, Debug )
+  subroutine BinValues_R1D( Values, BinEdges, BinCounts )
 
     real(rkp), dimension(:), intent(in)                               ::    Values
     real(rkp), dimension(:), intent(in)                               ::    BinEdges
     integer, dimension(:), intent(inout)                              ::    BinCounts
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='BinValues'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbBins
     integer                                                           ::    NbValues
     integer                                                           ::    i
     integer                                                           ::    ii
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( size(BinCounts) /= size(BinEdges)-1 ) call Error%Raise( 'Mismatch between bin counts and number of bins',                &
                                                                                                                ProcName=ProcName )
@@ -436,159 +374,109 @@ contains
       end if
     end do
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetBinEdges( This, Debug )
+  function GetBinEdges( This )
 
     real(rkp), allocatable, dimension(:)                              ::    GetBinEdges
 
     class(Histogram1D_Type), intent(in)                               ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetBinEdges'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     allocate(GetBinEdges, source=This%BinEdges, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetBinEdges', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetBinEdgesPointer( This, Debug )
+  function GetBinEdgesPointer( This )
 
     real(rkp), pointer, dimension(:)                                  ::    GetBinEdgesPointer
 
     class(Histogram1D_Type), intent(in)                               ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetBinEdgesPointer'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     GetBinEdgesPointer => This%BinEdges
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetBinCounts( This, Debug )
+  function GetBinCounts( This )
 
     integer, allocatable, dimension(:)                                ::    GetBinCounts
 
     class(Histogram1D_Type), intent(in)                               ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetBinCounts'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     allocate(GetBinCounts, source=This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetBinCounts', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetBinCountsPointer( This, Debug )
+  function GetBinCountsPointer( This )
 
     integer, pointer, dimension(:)                                    ::    GetBinCountsPointer
 
     class(Histogram1D_Type), intent(in)                               ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetBinCountsPointer'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     GetBinCountsPointer => This%BinCounts
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
 
     class(Histogram1D_Type), intent(in)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     GetName = This%Name
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbBins( This, Debug )
+  function GetNbBins( This )
 
     integer                                                           ::    GetNbBins
 
     class(Histogram1D_Type), intent(in)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbBins'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     GetNbBins = This%NbBins
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -599,12 +487,8 @@ contains
     class(Histogram1D_Type), intent(out)                              ::    LHS
     class(Histogram1D_Type), intent(in)                               ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -627,8 +511,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -638,19 +520,13 @@ contains
     type(Histogram1D_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( associated(This%BinEdges) ) deallocate(This%BinEdges, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinEdges', ProcName=ProcName, stat=StatLoc )
 
     if ( associated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

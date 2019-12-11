@@ -36,42 +36,28 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMean( Values, Debug )
+  function ComputeMean( Values )
 
     real(rkp)                                                         ::    ComputeMean
-    real(rkp), dimension(:), intent(in)                               ::    Values
-    logical, optional ,intent(in)                                     ::    Debug 
+    real(rkp), dimension(:), intent(in)                               ::    Values 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeMean'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     ComputeMean = sum(Values/real(size(Values,1),rkp))
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeSampleVar( Values, Mean, Debug )
+  function ComputeSampleVar( Values, Mean )
 
     real(rkp)                                                         ::    ComputeSampleVar
     real(rkp), dimension(:), intent(in)                               ::    Values
-    real(rkp), optional, intent(in)                                   ::    Mean
-    logical, optional ,intent(in)                                     ::    Debug 
+    real(rkp), optional, intent(in)                                   ::    Mean 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeSampleVar'
     real(rkp)                                                         ::    Mean_Loc
     integer(ikp)                                                      ::    i, iMax
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if (size(Values,1)>1) then
       if ( present(Mean) ) then
@@ -84,27 +70,19 @@ contains
       ComputeSampleVar = Zero
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePopulationVar( Values, Mean, Debug )
+  function ComputePopulationVar( Values, Mean )
 
     real(rkp)                                                         ::    ComputePopulationVar
     real(rkp), dimension(:), intent(in)                               ::    Values
-    real(rkp), optional, intent(in)                                   ::    Mean
-    logical, optional ,intent(in)                                     ::    Debug 
+    real(rkp), optional, intent(in)                                   ::    Mean 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputePopulationVar'
     real(rkp)                                                         ::    Mean_Loc
     integer(ikp)                                                      ::    i, iMax
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if (size(Values,1)>1) then
       if ( present(Mean) ) then
@@ -116,8 +94,6 @@ contains
     else
       ComputePopulationVar = Zero
     end if
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

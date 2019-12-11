@@ -79,42 +79,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_DistProb( This, Debug )
+  subroutine Initialize_DistProb( This )
     import                                                            ::    DistProb_Type
     class(DistProb_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_DistProb( This, Debug )
+  subroutine Reset_DistProb( This )
     import                                                            ::    DistProb_Type
     class(DistProb_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_DistProb( This, Debug )
+  subroutine SetDefaults_DistProb( This )
     import                                                            ::    DistProb_Type
     class(DistProb_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_DistProb( This, Input, Prefix, Debug )
+  subroutine ConstructInput_DistProb( This, Input, Prefix )
     import                                                            ::    DistProb_Type
     import                                                            ::    InputSection_Type
     class(DistProb_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_DistProb( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_DistProb( This, MainSectionName, Prefix, Directory )
     import                                                            ::    DistProb_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_DistProb
@@ -122,40 +118,36 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Directory
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D_DistProb(This, X, Debug )
+  function CDF_R0D_DistProb(This, X )
     use                                                               ::    Parameters_Library
     import                                                            ::    DistProb_Type
     real(rkp)                                                         ::    CDF_R0D_DistProb
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D_DistProb(This, P, Debug )
+  function InvCDF_R0D_DistProb(This, P )
     use                                                               ::    Parameters_Library
     import                                                            ::    DistProb_Type
     real(rkp)                                                         ::    InvCDF_R0D_DistProb
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    P
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D_DistProb(This, X, Debug )
+  function PDF_R0D_DistProb(This, X )
     use                                                               ::    Parameters_Library
     import                                                            ::    DistProb_Type
     real(rkp)                                                         ::    PDF_R0D_DistProb
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -179,23 +171,17 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R1D(This, X, Debug )
+  function PDF_R1D(This, X )
 
     real(rkp), allocatable, dimension(:)                              ::    PDF_R1D
 
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF_R1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    NbX
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbX = size(X,1)
     
@@ -207,29 +193,21 @@ contains
       PDF_R1D(i) = This%PDF(X=X(i))
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R1D(This, X, Debug )
+  function CDF_R1D(This, X )
 
     real(rkp), allocatable, dimension(:)                              ::    CDF_R1D
 
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='CDF_R1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    NbX
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbX = size(X,1)
     
@@ -241,29 +219,21 @@ contains
       CDF_R1D(i) = This%CDF(X=X(i))
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R1D(This, P, Debug )
+  function InvCDF_R1D(This, P )
 
     real(rkp), allocatable, dimension(:)                              ::    InvCDF_R1D
 
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), dimension(:), intent(in)                               ::    P
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='InvCDF_R1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    NbP
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbP = size(P,1)
     
@@ -275,46 +245,30 @@ contains
       InvCDF_R1D(i) = This%InvCDF(P=P(i))
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(DistProb_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetA( This, Debug )
+  function GetA( This )
 
     real(rkp)                                                         ::    GetA
 
     class(DistProb_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetA'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -322,25 +276,17 @@ contains
 
     GetA = This%A
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetB( This, Debug )
+  function GetB( This )
 
     real(rkp)                                                         ::    GetB
 
     class(DistProb_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetB'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -348,124 +294,84 @@ contains
 
     GetB = This%B
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsTruncatedLeft( This, Debug )
+  function IsTruncatedLeft( This )
 
     logical                                                           ::    IsTruncatedLeft
 
     class(DistProb_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IsTruncatedLeft'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     IsTruncatedLeft = This%TruncatedLeft
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsTruncatedRight( This, Debug )
+  function IsTruncatedRight( This )
 
     logical                                                           ::    IsTruncatedRight
 
     class(DistProb_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IsTruncatedRight'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     IsTruncatedRight = This%TruncatedRight
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMean( This, Debug )
+  function GetMean( This )
 
     real(rkp)                                                         ::    GetMean
 
     class(DistProb_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMean'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetMean = This%GetMoment( Moment=1 )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVariance( This, Debug )
+  function GetVariance( This )
 
     real(rkp)                                                         ::    GetVariance
 
     class(DistProb_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetVariance'
     real(rkp)                                                         ::    Ex
     real(rkp)                                                         ::    Ex2
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetVariance = This%GetMoment( Moment=2 ) - ( This%GetMoment( Moment=1 ) )**2
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment( This, Moment, Debug )
+  function GetMoment( This, Moment )
 
     real(rkp)                                                         ::    GetMoment
 
     class(DistProb_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Moment
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMoment'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -477,21 +383,17 @@ contains
       GetMoment = One
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMomentNumerical( This, Moment, Debug )
+  function ComputeMomentNumerical( This, Moment )
 
     real(rkp)                                                         ::    ComputeMomentNumerical
 
     class(DistProb_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Moment
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeMomentNumerical'
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    NumericalMoment
@@ -509,10 +411,6 @@ contains
     integer                                                           ::    Last
     real(8)                                                           ::    A
     real(8)                                                           ::    B
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -563,8 +461,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Work', ProcName=ProcName, stat=StatLoc )
 
     ComputeMomentNumerical = NumericalMoment
-
-    if (DebugLoc) call Logger%Exiting()
 
     contains
 

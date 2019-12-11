@@ -53,42 +53,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_MParamTable( This, Debug )
+  subroutine Initialize_MParamTable( This )
     import                                                            ::    MParamTable_Type
     class(MParamTable_Type), intent(inout)                            ::    This
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_MParamTable( This, Debug )
+  subroutine Reset_MParamTable( This )
     import                                                            ::    MParamTable_Type
     class(MParamTable_Type), intent(inout)                            ::    This
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_MParamTable( This, Debug )
+  subroutine SetDefaults_MParamTable( This )
     import                                                            ::    MParamTable_Type
     class(MParamTable_Type), intent(inout)                            ::    This
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_MParamTable( This, Input, Prefix, Debug )
+  subroutine ConstructInput_MParamTable( This, Input, Prefix )
     import                                                            ::    MParamTable_Type
     import                                                            ::    InputSection_Type
     class(MParamTable_Type), intent(inout)                            ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_MParamTable( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_MParamTable( This, MainSectionName, Prefix, Directory )
     import                                                            ::    MParamTable_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_MParamTable
@@ -96,12 +92,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue_MParamTable( This, Input, Abscissa, Debug )
+  function GetValue_MParamTable( This, Input, Abscissa )
     use Parameters_Library
     import                                                            ::    InputDet_Type
     import                                                            ::    MParamTable_Type  
@@ -109,12 +104,11 @@ abstract interface
     class(MParamTable_Type), intent(in)                               ::    This
     type(InputDet_Type, intent(in)                                    ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue_MParamTable( This, Input, Abscissa, Format, Debug )
+  function GetCharValue_MParamTable( This, Input, Abscissa, Format )
     use Parameters_Library
     use String_Library
     import                                                            ::    InputDet_Type
@@ -124,7 +118,6 @@ abstract interface
     type(InputDet_Type, intent(in)                                    ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
     character(*), optional, intent(in)                                ::    Format
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -141,22 +134,14 @@ end interface
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(MParamTable_Type), intent(inout)                            ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!

@@ -37,20 +37,14 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EyeI( N, Debug )
+  function EyeI( N )
 
     integer, dimension(:,:), allocatable                              ::    EyeI
     integer, intent(in)                                               ::    N
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='EyeI'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    i
     integer                                                           ::    IOLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     allocate( EyeI(N,N), stat=IOLoc )
     if ( IOLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='EyeI', stat=IOLoc)
@@ -60,26 +54,18 @@ contains
       EyeI(i,i) = 1
     end do
 
-    if (DebugLoc) call Logger%Exiting
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EyeR( N, Debug )
+  function EyeR( N )
 
     real(rkp), dimension(:,:), allocatable                            ::    EyeR
     integer, intent(in)                                               ::    N
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='EyeR'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    i
     integer                                                           ::    IOLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     allocate( EyeR(N,N), stat=IOLoc )
     if ( IOLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='EyeR', stat=IOLoc)
@@ -89,26 +75,18 @@ contains
       EyeR(i,i) = One
     end do
 
-    if (DebugLoc) call Logger%Exiting
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Eye_R2D( Array, Debug )
+  subroutine Eye_R2D( Array )
 
     real(rkp), dimension(:,:)                                         ::    Array
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='Eye_R2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     integer                                                           ::    i
     integer                                                           ::    N
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     N = size(Array,1)
 
@@ -119,26 +97,18 @@ contains
       Array(i,i) = One
     end do
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Eye_I2D( Array, Debug )
+  subroutine Eye_I2D( Array )
 
     integer, dimension(:,:)                                           ::    Array
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='Eye_I2D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc
     integer                                                           ::    i
     integer                                                           ::    N
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     N = size(Array,1)
 
@@ -149,28 +119,20 @@ contains
       Array(i,i) = 1
     end do
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsDiagonal_Real8( Array, Debug )
+  function IsDiagonal_Real8( Array )
 
     logical                                                           ::    IsDiagonal_Real8
 
     real(rkp), dimension(:,:), intent(in)                             ::    Array
-    logical, optional ,intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='IsDiagonal_Real8'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    M
     integer                                                           ::    N
     integer                                                           ::    i, ii
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     M = size(Array,1)
     N = size(Array,2)
@@ -192,22 +154,18 @@ contains
        if ( .not. IsDiagonal_Real8 ) exit
       end do     
     end if
-      
-    if (DebugLoc) call Logger%Exiting
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function LinSpaceVecInput_R1D( Input, Debug )
+  function LinSpaceVecInput_R1D( Input )
 
     real(rkp), allocatable, dimension(:)                              ::    LinSpaceVecInput_R1D
 
     class(InputSection_Type), intent(inout)                           ::    Input
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='LinSpaceVecInput_R1D'
-    logical                                                           ::    DebugLoc
     real(rkp), dimension(:,:), allocatable                            ::    InterExtremes
     integer, dimension(:), allocatable                                ::    InterNbNodes
     character(20), dimension(:), allocatable                          ::    InterGenFun
@@ -220,10 +178,6 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    ParameterName
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbInter = Input%GetNumberOfSubSections()
 
@@ -265,13 +219,11 @@ contains
     deallocate( InterGenFun, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='InterGenFun', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function LinSpaceVec_R1D( NbInter, InterExtremes, InterNbNodes, InterGenFun, Debug )
+  function LinSpaceVec_R1D( NbInter, InterExtremes, InterNbNodes, InterGenFun )
 
     use ComputingRoutines_Module
 
@@ -281,11 +233,9 @@ contains
     real(rkp), dimension(:,:), intent(in)                             ::    InterExtremes
     integer, dimension(:), intent(in)                                 ::    InterNbNodes
     character(*), dimension(:), optional, intent(in)                  ::    InterGenFun
-    logical, optional ,intent(in)                                     ::    Debug
 
 
     character(*), parameter                                           ::    ProcName='LinSpaceVec_R1D'
-    logical                                                           ::    DebugLoc
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    NbNodes
     integer                                                           ::    i
@@ -294,10 +244,6 @@ contains
     integer                                                           ::    ii
     integer                                                           ::    iim1
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( NbInter <= 0 ) call Error%Raise( 'Specified number of intervals is invalid ( 0 or lower)' )
     if ( NbInter /= size(InterExtremes,1) ) call Error%Raise( 'Number of intervals does not match size of InterExtremes' )
@@ -343,8 +289,6 @@ contains
       end select
 
     end do
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

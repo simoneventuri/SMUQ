@@ -66,44 +66,28 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(ModelInterface_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
       This%Name = 'ModelInterface'
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(ModelInterface_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     This%Initialized=.false.
     This%Constructed=.false.
 
@@ -120,47 +104,30 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(ModelInterface_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Model, Responses, Debug )
+  subroutine ConstructCase1( This, Model, Responses )
 
     class(ModelInterface_Type), intent(inout)                         ::    This
     class(Model_Type), intent(in)                                     ::    Model
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -183,32 +150,23 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run0D( This, Input, Output, Stat, Debug )
+  subroutine Run0D( This, Input, Output, Stat )
 
     class(ModelInterface_Type), intent(inout)                         ::    This
     class(Input_Type), intent(in)                                     ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run0D'
     integer                                                           ::    StatLoc=0
     type(Output_Type), dimension(:), allocatable                      ::    OutputLoc
     character(:), allocatable                                         ::    LabelLoc
     integer                                                           ::    NbOutputs
     integer                                                           ::    i, ii, iii
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( allocated(Output) ) then
       if ( size(Output,1) /= This%NbResponses ) then
         deallocate(Output, stat=StatLoc)
@@ -258,32 +216,23 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run1D( This, Input, Output, Stat, Debug )
+  subroutine Run1D( This, Input, Output, Stat )
 
     class(ModelInterface_Type), intent(inout)                         ::    This
     class(Input_Type), dimension(:), intent(in)                       ::    Input
     type(Output_Type), dimension(:,:), allocatable, intent(inout)     ::    Output
     integer, optional, intent(out)                                    ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run0D'
     integer                                                           ::    StatLoc=0
     type(Output_Type), dimension(:), allocatable                      ::    OutputLoc
     character(:), allocatable                                         ::    LabelLoc
     integer                                                           ::    NbInputs
-    integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
+    integer                                                           ::    i, ii
     NbInputs = size(Input,1)
 
     if ( allocated(Output) ) then
@@ -311,59 +260,42 @@ contains
         end if
         exit
       else
-        Output(:,i) = OutputLoc
+        Output(:,i) = OutputLoc(:)
       end if
     end do
 
     if ( allocated(OutputLoc) ) deallocate(OutputLoc, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbResponses( This, Debug )
+  function GetNbResponses( This )
 
     integer                                                           ::    GetNbResponses
 
     class(ModelInterface_Type), intent(in)                            ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbResponses'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetNbResponses = This%NbResponses
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetResponseNbNodes( This, Label, Debug )
+  function GetResponseNbNodes( This, Label )
 
     integer                                                           ::    GetResponseNbNodes
 
     class(ModelInterface_Type), intent(in)                            ::    This
     character(*), intent(in)                                          ::    Label
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetResponseNbNodes'
     integer                                                           ::    i
     integer                                                           ::    ii
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -379,8 +311,6 @@ contains
 
     GetResponseNbNodes = This%ResponseNbNodes(ii)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -390,12 +320,8 @@ contains
     class(ModelInterface_Type), intent(out)                           ::    LHS
     class(ModelInterface_Type), intent(in)                            ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -419,8 +345,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -430,11 +354,7 @@ contains
     type(ModelInterface_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%Model) ) deallocate(This%Model, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Model', ProcName=ProcName, stat=StatLoc )
@@ -444,8 +364,6 @@ contains
 
     if ( allocated(This%ResponseNbNodes) ) deallocate(This%ResponseNbNodes, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseNbNodes', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

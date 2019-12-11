@@ -75,17 +75,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(MultiVarDistNorm_Type), intent(inout)                       ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'multivariate_normal'
@@ -93,24 +87,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(MultiVarDistNorm_Type), intent(inout)                       ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized = .false.
     This%Constructed = .false.
@@ -123,41 +109,29 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(MultiVarDistNorm_Type), intent(inout)                       ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Truncated = .false.
     This%NbDim = 0
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(MultiVarDistNorm_Type), intent(inout)                       ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    ParameterName
@@ -173,10 +147,6 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     integer                                                           ::    i
     character(:), allocatable                                         ::    PrefixLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -226,26 +196,18 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Mu, Cov, Debug )
+  subroutine ConstructCase1( This, Mu, Cov )
     
     class(MultiVarDistNorm_Type), intent(inout)                       ::    This
     real(rkp), dimension(:), intent(in)                               ::    Mu
-    real(rkp), dimension(:,:), intent(in)                             ::    Cov
-    logical, optional ,intent(in)                                     ::    Debug 
+    real(rkp), dimension(:,:), intent(in)                             ::    Cov 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%NbDim == size(Mu,1) .and. This%NbDim == size(Cov,1) .and. This%NbDim == size(Cov,2) ) then
       This%Mu = Mu
@@ -268,13 +230,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -284,9 +244,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
@@ -298,10 +256,6 @@ contains
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -332,81 +286,57 @@ contains
     end if
     nullify(InputSection)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_Full( This, X, Debug )
+  function PDF_Full( This, X )
 
     real(rkp)                                                         ::    PDF_Full
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF_Full'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     PDF_Full = This%ComputePDF( X=X, Mu=This%Mu, Cov=This%Cov )
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_Cholesky( This, X, L, Debug )
+  function PDF_Cholesky( This, X, L )
 
     real(rkp)                                                         ::    PDF_Cholesky
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
     real(rkp), dimension(:,:), intent(in)                             ::    L
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF_Cholesky'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     PDF_Cholesky = This%ComputePDF_Cholesky( X=X, Mu=This%Mu, Cov=This%Cov, L=L )
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF( X, Mu, Cov, Debug )
+  function ComputePDF( X, Mu, Cov )
 
     real(rkp)                                                         ::    ComputePDF
 
     real(rkp), dimension(:), intent(in)                               ::    X
     real(rkp), dimension(:), intent(in)                               ::    Mu
     real(rkp), dimension(:,:), intent(in)                             ::    Cov
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputePDF'
     integer                                                           ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                            ::    L
     integer                                                           ::    NbDim
     integer                                                           ::    i
     real(rkp), allocatable, dimension(:,:)                            ::    XmMean
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
       
     NbDim = size(Mu,1)
 
@@ -439,13 +369,11 @@ contains
     deallocate(XmMean, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='XmMean(NbDim)', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF_Cholesky( X, Mu, Cov, L, Debug )
+  function ComputePDF_Cholesky( X, Mu, Cov, L )
 
     real(rkp)                                                         ::    ComputePDF_Cholesky
 
@@ -453,18 +381,12 @@ contains
     real(rkp), dimension(:), intent(in)                               ::    Mu
     real(rkp), dimension(:,:), intent(in)                             ::    Cov
     real(rkp), dimension(:,:), intent(in)                             ::    L
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputePDF_Cholesky'
     integer                                                           ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                            ::    XmMean
     integer                                                           ::    NbDim
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
       
     NbDim = size(Mu,1)
 
@@ -491,38 +413,28 @@ contains
     deallocate(XmMean, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='XmMean(NbDim)', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function LogPDF_Cholesky( This, X, L, Debug )
+  function LogPDF_Cholesky( This, X, L )
 
     real(rkp)                                                         ::    LogPDF_Cholesky
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
     real(rkp), dimension(:,:), intent(in)                             ::    L
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='LogPDF_Cholesky'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     LogPDF_Cholesky = This%LogComputePDF_Cholesky( X=X, Mu=This%Mu, Cov=This%Cov, L=L )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function LogComputePDF_Cholesky( X, Mu, Cov, L, Debug )
+  function LogComputePDF_Cholesky( X, Mu, Cov, L )
 
     real(rkp)                                                         ::    LogComputePDF_Cholesky
 
@@ -530,18 +442,12 @@ contains
     real(rkp), dimension(:), intent(in)                               ::    Mu
     real(rkp), dimension(:,:), intent(in)                             ::    Cov
     real(rkp), dimension(:,:), intent(in)                             ::    L
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='LogComputePDF_Cholesky'
     integer                                                           ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                            ::    XmMean
     integer                                                           ::    NbDim
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
       
     NbDim = size(Mu,1)
 
@@ -564,25 +470,17 @@ contains
     LogComputePDF_Cholesky = - real(NbDim,rkp)/Two * dlog(Two*Pi) - LogComputePDF_Cholesky - 0.5 *                                &
                                                                                              dot_product(XmMean(:,1), XmMean(:,1))
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetMu( This, Mu, Debug )
+  subroutine GetMu( This, Mu )
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
     real(rkp), allocatable, dimension(:), intent(inout)               ::    Mu
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMu'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -600,26 +498,18 @@ contains
 
     Mu = This%Mu
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetCov( This, Cov, Debug )
+  subroutine GetCov( This, Cov )
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCov'
     integer                                                           ::    StatLoc=0
 
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -637,80 +527,54 @@ contains
 
     Cov = This%Cov
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsTruncated( This, Debug )
+  function IsTruncated( This )
 
     logical                                                           ::    IsTruncated
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IsTruncated'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     IsTruncated = This%Truncated
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDim( This, Debug )
+  function GetNbDim( This )
 
     real(rkp)                                                         ::    GetNbDim
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbDim'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetNbDim = This%NbDim
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This, Debug )
+  function IsConstructed( This )
 
     logical                                                           ::    IsConstructed
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IsConstructed'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     IsConstructed = This%Constructed
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -721,12 +585,8 @@ contains
     class(MultiVarDistNorm_Type), intent(out)                         ::    LHS
     class(MultiVarDistNorm_Type), intent(in)                          ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -749,8 +609,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -760,19 +618,13 @@ contains
     type(MultiVarDistNorm_Type), intent(inout)                        ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%Mu) ) deallocate(This%Mu, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Mu', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%Cov) ) deallocate(This%Cov, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cov', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

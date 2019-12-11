@@ -55,43 +55,39 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_SurrogateMethod( This, Debug )
+  subroutine Initialize_SurrogateMethod( This )
     import                                                            ::    SurrogateMethod_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_SurrogateMethod( This, Debug )
+  subroutine Reset_SurrogateMethod( This )
     import                                                            ::    SurrogateMethod_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_SurrogateMethod( This, Debug )
+  subroutine SetDefaults_SurrogateMethod( This )
     import                                                            ::    SurrogateMethod_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_SurrogateMethod( This, Input, SectionChain, Prefix, Debug )
+  subroutine ConstructInput_SurrogateMethod( This, Input, SectionChain, Prefix )
     import                                                            ::    SurrogateMethod_Type
     import                                                            ::    InputSection_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_SurrogateMethod( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_SurrogateMethod( This, MainSectionName, Prefix, Directory )
     import                                                            ::    SurrogateMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_SurrogateMethod
@@ -99,12 +95,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_SurrogateMethod( This, SampleSpace, Responses, Model, SurrogateModel, OutputDirectory, Debug )
+  subroutine Run_SurrogateMethod( This, SampleSpace, Responses, Model, SurrogateModel, OutputDirectory )
     import                                                            ::    Response_Type
     import                                                            ::    Model_Type
     import                                                            ::    SurrogateMethod_Type
@@ -115,7 +110,6 @@ abstract interface
     class(Model_Type), intent(inout)                                  ::    Model
     class(Model_Type), allocatable, dimension(:),optional,intent(out) ::    SurrogateModel
     character(*), optional, intent(in)                                ::    OutputDirectory
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -132,22 +126,14 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(SurrogateMethod_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

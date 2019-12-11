@@ -56,42 +56,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize_CVErrorMethod( This, Debug )
+  subroutine Initialize_CVErrorMethod( This )
     import                                                            ::    CVErrorMethod_Type
     class(CVErrorMethod_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset_CVErrorMethod( This, Debug )
+  subroutine Reset_CVErrorMethod( This )
     import                                                            ::    CVErrorMethod_Type
     class(CVErrorMethod_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults_CVErrorMethod( This, Debug )
+  subroutine SetDefaults_CVErrorMethod( This )
     import                                                            ::    CVErrorMethod_Type
     class(CVErrorMethod_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput_CVErrorMethod( This, Input, Prefix, Debug )
+  subroutine ConstructInput_CVErrorMethod( This, Input, Prefix )
     import                                                            ::    CVErrorMethod_Type
     import                                                            ::    InputSection_Type
     class(CVErrorMethod_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput_CVErrorMethod( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_CVErrorMethod( This, MainSectionName, Prefix, Directory )
     import                                                            ::    CVErrorMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_CVErrorMethod
@@ -99,12 +95,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function ComputeError_CVErrorMethod( This, Solver, System, Goal, Coefficients, Debug )
+  function ComputeError_CVErrorMethod( This, Solver, System, Goal, Coefficients )
     use Parameters_Library
     import                                                            ::    LinSolverMethod_Type
     import                                                            ::    CVErrorMethod_Type
@@ -114,7 +109,6 @@ abstract interface
     real(rkp), dimension(:,:), intent(in)                             ::    System
     real(rkp), dimension(:), intent(in)                               ::    Goal
     real(rkp), dimension(:), intent(in)                               ::    Coefficients
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -131,67 +125,43 @@ end interface
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
 
     class(CVErrorMethod_Type), intent(in)                             ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'    
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function IsCorrected( This, Debug )
+  function IsCorrected( This )
 
     logical                                                           ::    IsCorrected
 
     class(CVErrorMethod_Type), intent(in)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IsCorrected'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     IsCorrected = This%Corrected
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function IsNormalized( This, Debug )
+  function IsNormalized( This )
 
     logical                                                           ::    IsNormalized
 
     class(CVErrorMethod_Type), intent(in)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IsNormalized'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     IsNormalized = This%Normalized
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!

@@ -79,18 +79,12 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(HierParamSpace_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
@@ -98,24 +92,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(HierParamSpace_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%HierDistProb) ) deallocate(This%HierDistProb, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc )
@@ -136,39 +122,27 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(HierParamSpace_Type),intent(inout)                          ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
-    logical                                                           ::    DebugLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------     
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(HierParamSpace_Type), intent(inout)                         ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
     
     character(*), parameter                                           ::    ProcName='ConstructInput'
-    logical                                                           ::    DebugLoc
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
@@ -186,10 +160,6 @@ contains
     integer                                                           ::    i, ii
     logical                                                           ::    Found
     character(:), allocatable                                         ::    SpaceType
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset
     if ( .not. This%Initialized ) call This%Initialize  
@@ -257,13 +227,11 @@ contains
 
     This%Constructed=.true.
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -271,9 +239,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -286,10 +252,6 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     type(SMUQFile_Type)                                               ::    File
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -335,30 +297,22 @@ contains
     end if
     nullify(InputSection)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate( This, Input, ParamSpace, Debug )
+  subroutine Generate( This, Input, ParamSpace )
   
     class(HierParamSpace_Type), intent(in)                            ::    This
     type(ParamSpace_Type), intent(out)                                ::    ParamSpace
     type(InputDet_Type), intent(in)                                   ::    Input
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Generate'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     class(DistProb_Type), allocatable                                 ::    DistProb
     class(HierDistProb_Type), pointer                                 ::    HierDistProbPtr=>null()
     type(DistProb_Vec_Type), allocatable, dimension(:)                ::    DistProbVec
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     allocate(DistProbVec(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='DistProbVec', ProcName=ProcName, stat=StatLoc )
@@ -375,152 +329,102 @@ contains
 
     call ParamSpace%Construct( Distributions=DistProbVec, CorrMat=This%CorrMat, Labels=This%Label, Names=This%ParamName )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName0D( This, Num, Debug )
+  function GetName0D( This, Num )
 
     character(:), allocatable                                         ::    GetName0D
     class(HierParamSpace_Type), intent(in)                            ::    This
     integer, intent(in)                                               ::    Num
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='GetName0D'
-    logical                                                           ::    DebugLoc
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetName0D = This%ParamName(Num)%GetValue()      
 
-    if (DebugLoc) call Logger%Exiting
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName1D( This, Debug )
+  function GetName1D( This )
 
     type(String_Type), allocatable, dimension(:)                      ::    GetName1D
     class(HierParamSpace_Type), intent(in)                            ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='GetName1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     allocate(GetName1D, source=This%ParamName, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetName1D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel0D( This, Num, Debug )
+  function GetLabel0D( This, Num )
 
     character(:), allocatable                                         ::    GetLabel0D
     class(HierParamSpace_Type), intent(in)                            ::    This
     integer, intent(in)                                               ::    Num
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='GetLabel0D'
-    logical                                                           ::    DebugLoc
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetLabel0D = This%Label(Num)%GetValue()      
 
-    if (DebugLoc) call Logger%Exiting
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel1D( This, Debug )
+  function GetLabel1D( This )
 
     type(String_Type), allocatable, dimension(:)                      ::    GetLabel1D
     class(HierParamSpace_Type), intent(in)                            ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='GetLabel1D'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     allocate(GetLabel1D, source=This%Label, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetLabel1D', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDim( This, Debug )
+  function GetNbDim( This )
 
     integer                                                           ::    GetNbDim
     class(HierParamSpace_Type), intent(in)                            ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
     character(*), parameter                                           ::    ProcName='GetNbDim'
-    logical                                                           ::    DebugLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetNbDim = This%NbDim
 
-    if (DebugLoc) call Logger%Exiting
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsCorrelated( This, Debug )
+  function IsCorrelated( This )
 
     logical                                                           ::    IsCorrelated
     class(HierParamSpace_Type), intent(in)                            ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IsCorrelated'
     integer                                                           ::    StatLoc=0
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     IsCorrelated = This%Correlated
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -531,13 +435,9 @@ contains
     class(HierParamSpace_Type), intent(out)                           ::    LHS
     class(HierParamSpace_Type), intent(in)                            ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type ( RHS )
 
@@ -566,8 +466,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -577,11 +475,7 @@ contains
     type(HierParamSpace_Type),intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%CorrMat) ) deallocate(This%CorrMat, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
@@ -594,8 +488,6 @@ contains
 
     if ( allocated(This%HierDistProb) ) deallocate(This%HierDistProb, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

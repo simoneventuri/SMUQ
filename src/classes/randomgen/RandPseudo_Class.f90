@@ -64,18 +64,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(RandPseudo_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer(8)                                                        ::    SysTimeCount
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
@@ -87,66 +81,46 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(RandPseudo_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults(This, Debug)
+  subroutine SetDefaults(This)
 
     class(RandPseudo_Type), intent(inout)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Seed = This%SeedDefault
     call This%PRNG%init_genrand64(This%Seed)
     This%DrawType=2
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput ( This, Input, Prefix, Debug )
+  subroutine ConstructInput ( This, Input, Prefix )
 
     class(RandPseudo_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
@@ -160,14 +134,8 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
-
-    if (DebugLoc) call Logger%Write( "Processing passed down settings")
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -196,25 +164,17 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine 
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase1 ( This, Seed, Debug )
+  subroutine ConstructCase1 ( This, Seed )
 
     class(RandPseudo_Type), intent(inout)                             ::    This
     integer(8), optional, intent(in)                                  ::    Seed
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -226,22 +186,18 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine 
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
     class(RandPseudo_Type), intent(in)                                ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -253,10 +209,6 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     type(SMUQFile_Type)                                               ::    File
     character(:), allocatable                                         ::    VarC0D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -292,27 +244,19 @@ contains
     end if
     nullify(InputSection)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Draw( This, DrawType, Debug )
+  function Draw( This, DrawType )
 
     real(rkp)                                                         ::    Draw
 
     class(RandPseudo_Type), intent(inout)                             ::    This
     integer, optional, intent(in)                                     ::    DrawType
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Draw'
     integer                                                           ::    DrawTypeLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -333,30 +277,22 @@ contains
         call Error%Raise( Line='Something went wrong when selecting draw type', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function DrawVec( This, Size1, DrawType, Debug )
+  function DrawVec( This, Size1, DrawType )
 
     real(rkp), allocatable, dimension(:)                              ::    DrawVec
 
     class(RandPseudo_Type), intent(inout)                             ::    This
     integer, intent(in)                                               ::    Size1
     integer, optional, intent(in)                                     ::    DrawType
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='DrawVec'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    DrawTypeLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( Size1 <= 0 ) call Error%Raise( Line='Size 1 of requested sample at or below 0', ProcName=ProcName )
 
@@ -374,13 +310,11 @@ contains
       DrawVec(i) = This%Draw( DrawType=DrawTypeLoc )
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function DrawMat( This, Size1, Size2, DrawType, Debug )
+  function DrawMat( This, Size1, Size2, DrawType )
 
     real(rkp), allocatable, dimension(:,:)                            ::    DrawMat
 
@@ -388,17 +322,11 @@ contains
     integer, intent(in)                                               ::    Size1
     integer, intent(in)                                               ::    Size2
     integer, optional, intent(in)                                     ::    DrawType
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='DrawMat'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    DrawTypeLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( Size1 <= 0 ) call Error%Raise( Line='Size 1 of requested sample at or below 0', ProcName=ProcName )
 
@@ -418,8 +346,6 @@ contains
       DrawMat(:,i) = This%DrawVec( Size1=Size1, DrawType=DrawTypeLoc )
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -429,12 +355,8 @@ contains
     class(RandPseudo_Type), intent(out)                               ::    LHS
     class(Randpseudo_Type), intent(in)                                ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call LHS%Reset()
     LHS%Initialized = RHS%Initialized
@@ -447,8 +369,6 @@ contains
       LHS%DrawType = RHS%DrawType
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -458,13 +378,7 @@ contains
     type(RandPseudo_Type), intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

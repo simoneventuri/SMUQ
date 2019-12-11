@@ -63,17 +63,11 @@ real(rkp), parameter                                                  ::    dlog
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(DistNorm_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'normal'
@@ -81,47 +75,31 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(DistNorm_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized = .false.
     This%Constructed = .false.
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(DistNorm_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%A = One
     This%B = One
@@ -130,20 +108,16 @@ contains
     This%TruncatedRight = .false.
     This%TruncatedLeft = .false.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(DistNorm_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    ParameterName
@@ -152,10 +126,6 @@ contains
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    VarC0D
     character(:), allocatable                                         ::    PrefixLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -195,27 +165,19 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Mu, Sigma, A, B, Debug )
+  subroutine ConstructCase1( This, Mu, Sigma, A, B )
     
     class(DistNorm_Type), intent(inout)                               ::    This
     real(rkp), intent(in)                                             ::    Mu
     real(rkp), intent(in)                                             ::    Sigma
     real(rkp), optional, intent(in)                                   ::    A
-    real(rkp), optional, intent(in)                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug 
+    real(rkp), optional, intent(in)                                   ::    B 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -244,13 +206,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -260,18 +220,12 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -289,44 +243,28 @@ contains
     if ( This%TruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
     if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AdditionalConstruction( This, Debug )
+  subroutine AdditionalConstruction( This )
     
-    class(DistNorm_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug 
+    class(DistNorm_Type), intent(inout)                               ::    This 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X, Debug )
+  function PDF_R0D( This, X )
 
     real(rkp)                                                         ::    PDF_R0D
 
     class(DistNorm_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF_R0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -340,21 +278,17 @@ contains
       PDF_R0D = This%ComputeNormalPDF( X=X, Mu=This%Mu, Sigma=This%Sigma )
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
 !  !!------------------------------------------------------------------------------------------------------------------------------
-!  function PDF_R2D( This, NbNodes, Debug )
+!  function PDF_R2D( This, NbNodes )
 
 !    real(rkp), allocatable, dimension(:,:)                            ::    PDF_R2D
 
 !    class(DistNorm_Type), intent(in)                                  ::    This
 !    integer, intent(in)                                               ::    NbNodes
-!    logical, optional ,intent(in)                                     ::    Debug
 
-!    logical                                                           ::    DebugLoc
 !    character(*), parameter                                           ::    ProcName='PDF_R2D'
 !    real(rkp)                                                         ::    BinMass
 !    real(8)                                                           ::    CDFLeft
@@ -366,10 +300,6 @@ contains
 !    real(8)                                                           ::    VarR0D
 !    integer                                                           ::    i
 !    integer                                                           ::    StatLoc=0
-
-!    DebugLoc = DebugGlobal
-!    if ( present(Debug) ) DebugLoc = Debug
-!    if (DebugLoc) call Logger%Entering( ProcName )
 
 !    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -413,13 +343,11 @@ contains
 !    call normal_pdf ( B_8, Mu_8, Sigma_8, VarR0D )
 !    PDF_R2D(NbNodes,2) = VarR0D / ( CDFRight - CDFLeft )
 
-!    if (DebugLoc) call Logger%Exiting()
-
 !  end function
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeNormalPDF( X, Mu, Sigma, A, B, Debug )
+  function ComputeNormalPDF( X, Mu, Sigma, A, B )
 
     real(rkp)                                                         ::    ComputeNormalPDF
 
@@ -428,18 +356,12 @@ contains
     real(rkp), intent(in)                                             ::    Sigma
     real(rkp), intent(in), optional                                   ::    A
     real(rkp), intent(in), optional                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeNormalPDF'
     real(rkp)                                                         ::    CDFLeft
     real(rkp)                                                         ::    CDFRight
     real(rkp)                                                         ::    VarR0D
     logical                                                           ::    TripFlag
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     TripFlag = .false.
 
@@ -466,26 +388,18 @@ contains
       ComputeNormalPDF = VarR0D / ( CDFRight - CDFLeft )
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X, Debug )
+  function CDF_R0D( This, X )
 
     real(rkp)                                                         ::    CDF_R0D
 
     class(DistNorm_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='CDF_R0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -498,14 +412,12 @@ contains
     else
       CDF_R0D = This%ComputeNormalCDF( X=X, Mu=This%Mu, Sigma=This%Sigma )
     end if
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeNormalCDF( X, Mu, Sigma, A, B, Debug )
+  function ComputeNormalCDF( X, Mu, Sigma, A, B )
 
     real(rkp)                                                         ::    ComputeNormalCDF
 
@@ -514,18 +426,12 @@ contains
     real(rkp), intent(in)                                             ::    Sigma
     real(rkp), intent(in), optional                                   ::    A
     real(rkp), intent(in), optional                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeNormalCDF'
     real(rkp)                                                         ::    CDFLeft
     real(rkp)                                                         ::    CDFRight
     real(rkp)                                                         ::    VarR0D
     logical                                                           ::    TripFlag
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     TripFlag = .false.
 
@@ -552,26 +458,18 @@ contains
       ComputeNormalCDF = ( VarR0D - CDFLeft ) / ( CDFRight - CDFLeft )
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P, Debug )
+  function InvCDF_R0D( This, P )
 
     real(rkp)                                                         ::    InvCDF_R0D
 
     class(DistNorm_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    P
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -584,14 +482,12 @@ contains
     else
       InvCDF_R0D = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma )
     end if
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeNormalInvCDF( P, Mu, Sigma, A, B, Debug )
+  function ComputeNormalInvCDF( P, Mu, Sigma, A, B )
 
     real(rkp)                                                         ::    ComputeNormalInvCDF
 
@@ -600,9 +496,7 @@ contains
     real(rkp), intent(in)                                             ::    Sigma
     real(rkp), intent(in), optional                                   ::    A
     real(rkp), intent(in), optional                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeNormalInvCDF'
     real(rkp)                                                         ::    CDFLeft
     real(rkp)                                                         ::    CDFRight
@@ -611,10 +505,6 @@ contains
     real(8)                                                           ::    Mu_8
     real(8)                                                           ::    Sigma_8
     logical                                                           ::    TripFlag
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
     if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
@@ -651,55 +541,37 @@ contains
       ComputeNormalInvCDF = VarR0D
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMu( This, Debug )
+  function GetMu( This )
 
     real(rkp)                                                         ::    GetMu
 
     class(DistNorm_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMu'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetMu = This%Mu
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSigma( This, Debug )
+  function GetSigma( This )
 
     real(rkp)                                                         ::    GetSigma
 
     class(DistNorm_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetSigma'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetSigma = This%Sigma
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -707,15 +579,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Based on formulas given in :
   ! https://people.sc.fsu.edu/~%20jburkardt/presentations/truncated_normal.pdf
-  function GetMoment( This, Moment, Debug )
+  function GetMoment( This, Moment )
 
     real(rkp)                                                         ::    GetMoment
 
     class(DistNorm_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Moment
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMoment'
     integer                                                           ::    i
     integer                                                           ::    imax
@@ -728,10 +598,6 @@ contains
     real(rkp)                                                         ::    CDF_B
     real(rkp)                                                         ::    Alpha
     real(rkp)                                                         ::    Beta
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -784,8 +650,6 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -795,12 +659,8 @@ contains
     class(DistNorm_Type), intent(out)                                 ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -823,8 +683,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -834,13 +692,7 @@ contains
     type(DistNorm_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

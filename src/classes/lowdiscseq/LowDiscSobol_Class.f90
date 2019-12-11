@@ -57,17 +57,11 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(LowDiscSobol_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) then
       This%Name = 'lowdiscsobol'
@@ -76,67 +70,47 @@ contains
 
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(LowDiscSobol_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(LowDiscSobol_Type), intent(inout)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Skip = 0
     This%Leap = 0
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     use StringRoutines_Module
 
     class(LowDiscSobol_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ProcessInput'
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    ParameterName
@@ -147,17 +121,11 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
-
-    if (DebugLoc) call Logger%Write( "Processing passed down settings")
 
     ParameterName = 'skip'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -175,30 +143,20 @@ contains
                                                                                                                ProcName=ProcName )
     end if
 
-    if (DebugLoc) call Logger%Write( "Done processing passed down settings")
-
     This%Constructed=.true.
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine 
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase1 ( This, Skip, Leap, Debug )
+  subroutine ConstructCase1 ( This, Skip, Leap )
 
     class(LowDiscSobol_Type), intent(inout)                           ::    This
     integer, optional, intent(in)                                     ::    Skip
     integer, optional, intent(in)                                     ::    Leap
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -217,13 +175,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine 
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -232,9 +188,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -243,10 +197,6 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     character(100)                                                    ::    VarC0D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -263,21 +213,17 @@ contains
     call GetInput%AddParameter( Name='skip', Value=ConvertToString( Value=This%Skip ) )
     call GetInput%AddParameter( Name='leap', Value=ConvertToString( Value=This%Leap ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Get_0D( This, NbPoints, Debug )
+  function Get_0D( This, NbPoints )
 
     real(rkp), allocatable, dimension(:)                              ::    Get_0D
 
     class(LowDiscSobol_Type), intent(in)                              ::    This
-    integer, intent(in)                                               ::    NbPoints 
-    logical, optional ,intent(in)                                     ::    Debug 
+    integer, intent(in)                                               ::    NbPoints  
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Get_0D'
     integer                                                           ::    StatLoc=0
     real(rkp), dimension(:), allocatable                              ::    SeqVal
@@ -285,10 +231,6 @@ contains
     integer(8)                                                        ::    SkipLoc
     integer(8)                                                        ::    LeapLoc
     integer(8)                                                        ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -313,22 +255,18 @@ contains
     deallocate(SeqVal, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SeqVal', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Get_1D( This, NbPoints, NbDim, Debug )
+  function Get_1D( This, NbPoints, NbDim )
 
     real(rkp), allocatable, dimension(:,:)                            ::    Get_1D
 
     class(LowDiscSobol_Type), intent(in)                              ::    This
     integer, intent(in)                                               ::    NbPoints
-    integer, intent(in)                                               ::    NbDim
-    logical, optional ,intent(in)                                     ::    Debug 
+    integer, intent(in)                                               ::    NbDim 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Get_1D'
     integer                                                           ::    StatLoc=0
     real(rkp), dimension(:), allocatable                              ::    SeqVal
@@ -336,10 +274,6 @@ contains
     integer(8)                                                        ::    SkipLoc
     integer(8)                                                        ::    LeapLoc
     integer(8)                                                        ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -366,31 +300,23 @@ contains
     deallocate(SeqVal, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SeqVal', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetPoint_0D( This, Point, Debug )
+  function GetPoint_0D( This, Point )
 
     real(rkp)                                                         ::    GetPoint_0D
 
     class(LowDiscSobol_Type), intent(in)                              ::    This
-    integer, intent(in)                                               ::    Point 
-    logical, optional ,intent(in)                                     ::    Debug 
+    integer, intent(in)                                               ::    Point  
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetPoint_0D'
     integer                                                           ::    StatLoc=0
     real(rkp), dimension(:), allocatable                              ::    SeqVal
     integer(8)                                                        ::    Step
     integer(8)                                                        ::    SkipLoc
     integer(8)                                                        ::    LeapLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -410,22 +336,18 @@ contains
     deallocate(SeqVal, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SeqVal', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetPoint_1D( This, Point, NbDim, Debug )
+  function GetPoint_1D( This, Point, NbDim )
 
     real(rkp), allocatable, dimension(:)                              ::    GetPoint_1D
 
     class(LowDiscSobol_Type), intent(in)                              ::    This
     integer, intent(in)                                               ::    Point
-    integer, intent(in)                                               ::    NbDim
-    logical, optional ,intent(in)                                     ::    Debug 
+    integer, intent(in)                                               ::    NbDim 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetPoint_1D'
     integer                                                           ::    StatLoc=0
     real(rkp), dimension(:), allocatable                              ::    SeqVal
@@ -433,10 +355,6 @@ contains
     integer(8)                                                        ::    SkipLoc
     integer(8)                                                        ::    LeapLoc
     integer(8)                                                        ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -461,22 +379,18 @@ contains
     deallocate(SeqVal, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SeqVal', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetPoints_0D( This, SeqStart, SeqEnd, Debug )
+  function GetPoints_0D( This, SeqStart, SeqEnd )
 
     real(rkp), allocatable, dimension(:)                              ::    GetPoints_0D
 
     class(LowDiscSobol_Type), intent(in)                              ::    This
     integer, intent(in)                                               ::    SeqStart
-    integer, intent(in)                                               ::    SeqEnd
-    logical, optional ,intent(in)                                     ::    Debug 
+    integer, intent(in)                                               ::    SeqEnd 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetPoints_0D'
     integer                                                           ::    StatLoc=0
     real(rkp), dimension(:), allocatable                              ::    SeqVal
@@ -487,10 +401,6 @@ contains
     integer(8)                                                        ::    SeqEndLoc
     integer(8)                                                        ::    i
     integer                                                           ::    NbPoints
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -519,23 +429,19 @@ contains
     deallocate(SeqVal, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SeqVal', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetPoints_1D( This, SeqStart, SeqEnd, NbDim, Debug )
+  function GetPoints_1D( This, SeqStart, SeqEnd, NbDim )
 
     real(rkp), allocatable, dimension(:,:)                            ::    GetPoints_1D
 
     class(LowDiscSobol_Type), intent(in)                              ::    This
     integer, intent(in)                                               ::    SeqStart
     integer, intent(in)                                               ::    SeqEnd
-    integer, intent(in)                                               ::    NbDim
-    logical, optional ,intent(in)                                     ::    Debug 
+    integer, intent(in)                                               ::    NbDim 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetPoints_1D'
     integer                                                           ::    StatLoc=0
     real(rkp), dimension(:), allocatable                              ::    SeqVal
@@ -546,10 +452,6 @@ contains
     integer(8)                                                        ::    SeqEndLoc
     integer(8)                                                        ::    i
     integer                                                           ::    NbPoints
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -580,8 +482,6 @@ contains
     deallocate(SeqVal, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SeqVal', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -591,12 +491,8 @@ contains
     class(LowDiscSobol_Type), intent(out)                             ::    LHS
     class(LowDiscSequence_Type), intent(in)                           ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -615,8 +511,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -626,13 +520,7 @@ contains
     type(LowDiscSobol_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

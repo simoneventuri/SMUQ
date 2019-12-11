@@ -53,42 +53,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_OFileFormated( This, Debug )
+  subroutine Initialize_OFileFormated( This )
     import                                                            ::    OFileFormated_Type  
     class(OFileFormated_Type), intent(inout)                          ::    This
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_OFileFormated( This, Debug )
+  subroutine Reset_OFileFormated( This )
     import                                                            ::    OFileFormated_Type  
     class(OFileFormated_Type), intent(inout)                          ::    This
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_OFileFormated( This, Debug )
+  subroutine SetDefaults_OFileFormated( This )
     import                                                            ::    OFileFormated_Type  
     class(OFileFormated_Type), intent(inout)                          ::    This
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_OFileFormated( This, Input, Prefix, Debug )
+  subroutine ConstructInput_OFileFormated( This, Input, Prefix )
     import                                                            ::    OFileFormated_Type
     import                                                            ::    InputSection_Type
     class(OFileFormated_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_OFileFormated( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_OFileFormated( This, MainSectionName, Prefix, Directory )
     import                                                            ::    OFileFormated_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_OFileFormated
@@ -96,18 +92,16 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReadOutput_OFileFormated( This, Values, Debug )
+  subroutine ReadOutput_OFileFormated( This, Values )
     use Output_Class                                              ,only:    Output_Type
     use Parameters_Library
     import                                                            ::    OFileFormated_Type
     class(OFileFormated_Type), intent(in)                             ::    This
     real(rkp), allocatable, dimension(:,:), intent(out)               ::    Values
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -124,22 +118,14 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(OFileFormated_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

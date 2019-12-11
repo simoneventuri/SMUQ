@@ -60,18 +60,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer(8)                                                        ::    SysTimeCount
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
@@ -79,24 +73,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -108,41 +94,29 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults(This, Debug)
+  subroutine SetDefaults(This)
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Silent = .false.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput ( This, Input, SectionChain, Prefix, Debug )
+  subroutine ConstructInput ( This, Input, SectionChain, Prefix )
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
@@ -155,10 +129,6 @@ contains
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -185,13 +155,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine 
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
     
     type(InputSection_Type)                                           ::    GetInput
 
@@ -199,9 +167,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -210,10 +176,6 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -239,28 +201,20 @@ contains
     call GetInput%AddSection( Section=BayesInvMethod_Factory%GetObjectInput( Object=This%BayesInvMethod,                          &
                                                          MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory, Debug )
+  subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory )
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( present(OutputDirectory) ) then
       call This%BayesInvMethod%Calibrate( Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
@@ -269,20 +223,17 @@ contains
       call This%BayesInvMethod%Calibrate( Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
                                                                                               LikelihoodFunction=This%Likelihood )
     end if
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, Posterior, Directory, Debug )
+  subroutine WriteOutput( This, Posterior, Directory )
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Posterior
     character(*), intent(in)                                          ::    Directory
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='WriteOutput'
     type(InputSection_Type)                                           ::    Input
     character(:), allocatable                                         ::    FileName
@@ -295,17 +246,11 @@ contains
     type(SMUQFile_Type)                                               ::    File
     integer                                                           ::    i, ii
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( len_trim(Directory) /= 0 ) then
 
       call MakeDirectory( Path=Directory, Options='-p' )
 
     end if
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -316,12 +261,8 @@ contains
     class(CalibrationBayesian_Type), intent(out)                      ::    LHS
     class(CalibrationMethod_Type), intent(in)                         ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
 
@@ -342,8 +283,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -353,16 +292,10 @@ contains
     type(CalibrationBayesian_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%BayesInvMethod) ) deallocate(This%BayesInvMethod, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

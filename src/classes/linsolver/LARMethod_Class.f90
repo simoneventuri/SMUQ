@@ -48,7 +48,7 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Assumes that the first column is the mean
-  subroutine BuildMetaModels( This, System, Goal, ModelSet, CoefficientsSet, AddDrop, Tolerance, ConstantModel, Debug )
+  subroutine BuildMetaModels( This, System, Goal, ModelSet, CoefficientsSet, AddDrop, Tolerance, ConstantModel )
 
     class(LARMethod_Type), intent(in)                                 ::    This
     real(rkp), dimension(:,:), target, intent(inout)                  ::    System
@@ -58,9 +58,7 @@ contains
     real(rkp), allocatable, dimension(:), optional, intent(out)       ::    CoefficientsSet
     real(rkp), optional, intent(in)                                   ::    Tolerance
     logical, optional, intent(out)                                    ::    ConstantModel
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='BuildMetaModels'
     integer                                                           ::    StatLoc=0
     real(rkp), allocatable, dimension(:)                              ::    Residual
@@ -110,10 +108,6 @@ contains
     real(rkp)                                                         ::    WNorm
     real(rkp)                                                         ::    ToleranceLoc
     integer                                                           ::    ConstantIndex
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     ToleranceLoc = Zero
     if ( present(Tolerance) ) ToleranceLoc = Tolerance
@@ -495,8 +489,6 @@ contains
 
     deallocate(Correlations, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Correlations', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

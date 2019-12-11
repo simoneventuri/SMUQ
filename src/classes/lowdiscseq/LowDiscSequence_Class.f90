@@ -61,42 +61,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_LowDiscSequence( This, Debug )
+  subroutine Initialize_LowDiscSequence( This )
     import                                                            ::    LowDiscSequence_Type
     class(LowDiscSequence_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_LowDiscSequence( This, Debug )
+  subroutine Reset_LowDiscSequence( This )
     import                                                            ::    LowDiscSequence_Type
     class(LowDiscSequence_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_LowDiscSequence( This, Debug )
+  subroutine SetDefaults_LowDiscSequence( This )
     import                                                            ::    LowDiscSequence_Type
     class(LowDiscSequence_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_LowDiscSequence ( This, Input, Prefix, Debug )
+  subroutine ConstructInput_LowDiscSequence ( This, Input, Prefix )
     import                                                            ::    LowDiscSequence_Type
     import                                                            ::    InputSection_Type
     class(LowDiscSequence_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_LowDiscSequence( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_LowDiscSequence( This, MainSectionName, Prefix, Directory )
     import                                                            ::    LowDiscSequence_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_LowDiscSequence
@@ -104,78 +100,71 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Get_0D_LowDiscSequence( This, NbPoints, Debug )
+  function Get_0D_LowDiscSequence( This, NbPoints )
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp), allocatable, dimension(:)                              ::    Get_0D_LowDiscSequence
     integer, intent(in)                                               ::    NbPoints 
-    class(LowDiscSequence_Type), intent(in)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug                                             
+    class(LowDiscSequence_Type), intent(in)                           ::    This                                             
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Get_1D_LowDiscSequence( This, NbPoints, NbDim, Debug )
+  function Get_1D_LowDiscSequence( This, NbPoints, NbDim )
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp), allocatable, dimension(:,:)                            ::    Get_1D_LowDiscSequence  
     class(LowDiscSequence_Type), intent(in)                           ::    This
     integer, intent(in)                                               ::    NbPoints
-    integer, intent(in)                                               ::    NbDim
-    logical, optional ,intent(in)                                     ::    Debug                                             
+    integer, intent(in)                                               ::    NbDim                                             
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoint_0D_LowDiscSequence( This, Point, Debug )
+  function GetPoint_0D_LowDiscSequence( This, Point )
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp)                                                         ::    GetPoint_0D_LowDiscSequence
     integer, intent(in)                                               ::    Point
-    class(LowDiscSequence_Type), intent(in)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug                                             
+    class(LowDiscSequence_Type), intent(in)                           ::    This                                             
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoint_1D_LowDiscSequence( This, Point, NbDim, Debug )
+  function GetPoint_1D_LowDiscSequence( This, Point, NbDim )
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp), allocatable, dimension(:)                              ::    GetPoint_1D_LowDiscSequence  
     class(LowDiscSequence_Type), intent(in)                           ::    This
     integer, intent(in)                                               ::    Point
-    integer, intent(in)                                               ::    NbDim
-    logical, optional ,intent(in)                                     ::    Debug                                             
+    integer, intent(in)                                               ::    NbDim                                             
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoints_0D_LowDiscSequence( This, SeqStart, SeqEnd, Debug )
+  function GetPoints_0D_LowDiscSequence( This, SeqStart, SeqEnd )
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp), allocatable, dimension(:)                              ::    GetPoints_0D_LowDiscSequence
     integer, intent(in)                                               ::    SeqStart
     integer, intent(in)                                               ::    SeqEnd
-    class(LowDiscSequence_Type), intent(in)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug                                             
+    class(LowDiscSequence_Type), intent(in)                           ::    This                                             
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoints_1D_LowDiscSequence( This, SeqStart, SeqEnd, NbDim, Debug )
+  function GetPoints_1D_LowDiscSequence( This, SeqStart, SeqEnd, NbDim )
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp), allocatable, dimension(:,:)                            ::    GetPoints_1D_LowDiscSequence  
     class(LowDiscSequence_Type), intent(in)                           ::    This
     integer, intent(in)                                               ::    SeqStart
     integer, intent(in)                                               ::    SeqEnd
-    integer, intent(in)                                               ::    NbDim
-    logical, optional ,intent(in)                                     ::    Debug                                             
+    integer, intent(in)                                               ::    NbDim                                             
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -192,23 +181,15 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
 
     class(LowDiscSequence_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

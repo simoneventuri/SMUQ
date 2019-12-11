@@ -62,43 +62,27 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(MParamTablePoly_Type), intent(inout)                        ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Initialized ) then
       This%Name = 'mparamtablepoly'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(MParamTablePoly_Type), intent(inout)                        ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( allocated(This%PolyCoeff) ) deallocate(This%PolyCoeff, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc )
 
@@ -107,38 +91,26 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(MParamTablePoly_Type), intent(inout)                        ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(MParamTablePoly_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
@@ -152,11 +124,6 @@ contains
     class(PolyCoeff_Type), allocatable                                ::    PolyCoeff
     type(PolyCoeffScalar_Type)                                        ::    PolyCoeffScalar
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -196,26 +163,17 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, PolyCoeff, Debug )
+  subroutine ConstructCase1( This, PolyCoeff )
 
     class(MParamTablePoly_Type), intent(inout)                        ::    This
     class(PolyCoeff_Vec_Type), dimension(:), intent(in)               ::    PolyCoeff
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -224,13 +182,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -238,9 +194,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -251,11 +205,6 @@ contains
     integer                                                           ::    i
     integer                                                           ::    NbCoeffs
     class(PolyCoeff_Type), pointer                                    ::    PolyCoeffPointer=>null()
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     DirectoryLoc = ''
@@ -280,31 +229,22 @@ contains
       nullify(PolyCoeffPointer)
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue( This, Input, Abscissa, Debug )
+  function GetValue( This, Input, Abscissa )
 
     real(rkp), allocatable, dimension(:)                              ::    GetValue
 
     class(MParamTablePoly_Type), intent(in)                           ::    This
     type(InputDet_Type), intent(in)                                   ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetValue'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i, ii
     class(PolyCoeff_Type), pointer                                    ::    PolyCoeffPointer=>null()
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     allocate(GetValue(size(Abscissa,1)), stat=StatLoc)
@@ -322,13 +262,11 @@ contains
       end do
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue( This, Input, Abscissa, Format, Debug )
+  function GetCharValue( This, Input, Abscissa, Format )
 
     type(String_Type), allocatable, dimension(:)                      ::    GetCharValue
 
@@ -336,20 +274,13 @@ contains
     type(InputDet_Type), intent(in)                                   ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
     character(*), optional, intent(in)                                ::    Format
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCharValue'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i, ii
     class(PolyCoeff_Type), pointer                                    ::    PolyCoeffPointer=>null()
     real(rkp)                                                         ::    VarR0D
     character(:), allocatable                                         ::    FormatLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     FormatLoc = 'G0'
@@ -370,8 +301,6 @@ contains
       call GetCharValue(ii)%Set_Value( Value=ConvertToString(Value=VarR0D, Format=FormatLoc) )
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -381,12 +310,8 @@ contains
     class(MParamTablePoly_Type), intent(out)                          ::    LHS
     class(MParamTable_Type), intent(in)                               ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -405,8 +330,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -416,16 +339,10 @@ contains
     type(MParamTablePoly_Type), intent(inout)                         ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%PolyCoeff) ) deallocate(This%PolyCoeff, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

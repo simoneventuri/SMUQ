@@ -47,7 +47,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSparse_LinSolverSparse( This, System, Goal, ModelSet, CoefficientsSet, CVError, Debug )
+  subroutine SolveSparse_LinSolverSparse( This, System, Goal, ModelSet, CoefficientsSet, CVError )
     use Parameters_Library
     import                                                            ::    LinSolverSparse_Type
     class(LinSolverSparse_Type), intent(in)                           ::    This
@@ -56,12 +56,11 @@ abstract interface
     integer, allocatable, dimension(:), intent(out)                   ::    ModelSet
     real(rkp), allocatable, dimension(:), intent(out)                 ::    CoefficientsSet
     real(rkp), optional, intent(out)                                  ::    CVError
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveFull_LinSolverSparse( This, System, Goal, Coefficients, CVError, Debug )
+  subroutine SolveFull_LinSolverSparse( This, System, Goal, Coefficients, CVError )
     use Parameters_Library
     import                                                            ::    LinSolverSparse_Type
     class(LinSolverSparse_Type), intent(in)                           ::    This
@@ -69,7 +68,6 @@ abstract interface
     real(rkp), dimension(:), intent(inout)                            ::    Goal
     real(rkp), allocatable, dimension(:), intent(out)                 ::    Coefficients
     real(rkp), optional, intent(out)                                  ::    CVError
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -78,53 +76,35 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
 
     class(LinSolverSparse_Type), intent(inout)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-    
-    if ( present(Debug) ) call Logger%Entering( ProcName )
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSystem( This, System, Goal, Coefficients, CVError, Debug )
+  subroutine SolveSystem( This, System, Goal, Coefficients, CVError )
 
     class(LinSolverSparse_Type), intent(in)                           ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
     real(rkp), dimension(:), intent(inout)                            ::    Goal
     real(rkp), allocatable, dimension(:), intent(out)                 ::    Coefficients
     real(rkp), optional, intent(out)                                  ::    CVError
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SolveSystem'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
   
     if ( present(CVError) ) then
       call This%SolveFull( System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError )
     else
       call This%SolveFull( System=System, Goal=Goal, Coefficients=Coefficients )
     end if
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

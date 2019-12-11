@@ -53,18 +53,10 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
     class(OrthoLegendre_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Write( "Initializing Legendre orthogonal polynomial object" )
 
     if ( .not. This%Initialized ) then
       This%Name = 'legendre'
@@ -72,78 +64,52 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Write( "Initialization Successful" )
-
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(OrthoLegendre_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized = .false.
     This%Constructed = .false.
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This, Debug)
+  subroutine SetDefaults(This)
 
     class(OrthoLegendre_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Normalized = .false.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     use String_Library
 
     class(OrthoLegendre_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     logical                                                           ::    Found
     character(:), allocatable                                         ::    ParameterName
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -157,24 +123,16 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Normalized, Debug )
+  subroutine ConstructCase1( This, Normalized )
     
     class(OrthoLegendre_Type), intent(inout)                          ::    This
-    logical, optional, intent(in)                                     ::    Normalized
-    logical, optional ,intent(in)                                     ::    Debug 
+    logical, optional, intent(in)                                     ::    Normalized 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -183,13 +141,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use String_Library
 
@@ -198,19 +154,13 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
     character(:), allocatable                                         ::    SectionName
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -226,14 +176,12 @@ contains
 
     call GetInput%AddParameter( Name='normalized', Value=ConvertToString(Value=This%Normalized) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Returns the value of a polynomial of order 'n' for value of 'x'
-  function Eval_N( This, Order, X, Normalized, Debug )
+  function Eval_N( This, Order, X, Normalized )
 
     real(rkp)                                                         ::    Eval_N
 
@@ -241,9 +189,7 @@ contains
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    Order
     logical, optional, intent(in)                                     ::    Normalized
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Eval_N'
     real(rkp)                                                         ::    valnm1
     real(rkp)                                                         ::    valnp0
@@ -251,10 +197,6 @@ contains
     real(rkp)                                                         ::    nt
     integer                                                           ::    i
     logical                                                           ::    NormalizedLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -285,14 +227,12 @@ contains
 
     if ( NormalizedLoc ) Eval_N = Eval_N / This%NFactor( Order=Order )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Returns the values of a polynomials of order 'm' to 'n' for value of 'x'
-  function Eval_MN( This, MinOrder, MaxOrder, X, Normalized, Debug)
+  function Eval_MN( This, MinOrder, MaxOrder, X, Normalized)
 
     real(rkp), dimension(:), allocatable                              ::    Eval_MN
 
@@ -301,9 +241,7 @@ contains
     integer, intent(in)                                               ::    MinOrder
     integer, intent(in)                                               ::    MaxOrder
     logical, optional, intent(in)                                     ::    Normalized
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Eval_MN'
     real(rkp)                                                         ::    valnm1
     real(rkp)                                                         ::    valnp0
@@ -312,10 +250,6 @@ contains
     integer                                                           ::    i, i_offset, ii
     integer                                                           ::    StatLoc=0
     logical                                                           ::    NormalizedLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -363,33 +297,23 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function NFactor( Order, Debug )
+  function NFactor( Order )
 
     real(rkp)                                                         ::    NFactor
 
     integer, intent(in)                                               ::    Order
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='NFactor'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( Order > 0 ) then
       NFactor = One / dsqrt( Two*real(Order,rkp)+One )
     else
       NFactor = One
     end if
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -400,12 +324,8 @@ contains
     class(OrthoLegendre_Type), intent(out)                            ::    LHS
     class(OrthoPoly_Type), intent(in)                                 ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -422,8 +342,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -433,13 +351,7 @@ contains
     type(OrthoLegendre_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -52,18 +52,12 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_C0D( Object, DesiredType, Debug )
+  subroutine Construct_C0D( Object, DesiredType )
 
     class(OMPMethod_Type), allocatable, intent(inout)                 ::    Object
     character(*), intent(in)                                          ::    DesiredType
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='Construct_C0D'                                   
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
+    character(*), parameter                                           ::    ProcName='Construct_C0D'                                    
 
     if ( allocated(Object) ) call Error%Raise( Line='Object already allocated', ProcName=ProcName )
 
@@ -82,13 +76,11 @@ contains
 
     call Object%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_Input( This, Object, Input, Prefix, Debug )
+  subroutine Construct_Input( This, Object, Input, Prefix )
     
     use Input_Library
 
@@ -96,20 +88,14 @@ contains
     class(OMPMethod_Type), allocatable, intent(inout)                 ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Construct_Input'                                   
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
+    integer                                                           ::    StatLoc=0 
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -123,24 +109,16 @@ contains
     call Object%Construct( Input=InputSection, Prefix=PrefixLoc )
     nullify( InputSection )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructPointer_C0D( Object, DesiredType, Debug )
+  subroutine ConstructPointer_C0D( Object, DesiredType )
 
     class(OMPMethod_Type), pointer, intent(inout)                     ::    Object
     character(*), intent(in)                                          ::    DesiredType
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='ConstructPointer_C0D'                                   
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
+    character(*), parameter                                           ::    ProcName='ConstructPointer_C0D'                                    
 
     if ( associated(Object) ) call Error%Raise( Line='Object already associated', ProcName=ProcName )
 
@@ -159,13 +137,11 @@ contains
 
     call Object%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructPointer_Input( This, Object, Input, Prefix, Debug )
+  subroutine ConstructPointer_Input( This, Object, Input, Prefix )
     
     use Input_Library
 
@@ -173,20 +149,14 @@ contains
     class(OMPMethod_Type), pointer, intent(inout)                     ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructPointer_Input'                                   
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
+    integer                                                           ::    StatLoc=0 
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -200,25 +170,17 @@ contains
     call Object%Construct( Input=InputSection, Prefix=PrefixLoc )
     nullify( InputSection )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOption( Object, Debug )
+  function GetOption( Object )
 
     character(:), allocatable                                         ::    GetOption
 
-    class(OMPMethod_Type), intent(in)                                 ::    Object                                             
-    logical, optional, intent(in)                                     ::    Debug                                               
+    class(OMPMethod_Type), intent(in)                                 ::    Object                                                                                            
 
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetOption'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName ) 
+    character(*), parameter                                           ::    ProcName='GetOption' 
 
     select type (Object)
 
@@ -233,13 +195,11 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetObjectInput( This, Object, MainSectionName, Prefix, Directory, Debug )
+  function GetObjectInput( This, Object, MainSectionName, Prefix, Directory )
 
     use Input_Library
 
@@ -250,19 +210,13 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetObjectInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     DirectoryLoc = '<undefined>'
     PrefixLoc = ''
@@ -279,8 +233,6 @@ contains
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/type'
 
     call GetObjectInput%AddSection( Section=Object%GetInput( MainSectionName='type', Prefix=PrefixLoc, Directory=DirectorySub ) )
-
-    if (DebugLoc) call Logger%Exiting
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

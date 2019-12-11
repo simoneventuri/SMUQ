@@ -56,43 +56,39 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize_BayesInvMethod( This, Debug )
+  subroutine Initialize_BayesInvMethod( This )
     import                                                            ::    BayesInvMethod_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset_BayesInvMethod( This, Debug )
+  subroutine Reset_BayesInvMethod( This )
     import                                                            ::    BayesInvMethod_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults_BayesInvMethod( This, Debug )
+  subroutine SetDefaults_BayesInvMethod( This )
     import                                                            ::    BayesInvMethod_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput_BayesInvMethod( This, Input, SectionChain, Prefix, Debug )
+  subroutine ConstructInput_BayesInvMethod( This, Input, SectionChain, Prefix )
     import                                                            ::    BayesInvMethod_Type
     import                                                            ::    InputSection_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput_BayesInvMethod( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_BayesInvMethod( This, MainSectionName, Prefix, Directory )
     import                                                            ::    BayesInvMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_BayesInvMethod
@@ -100,12 +96,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Calibrate_BayesInvMethod( This, Model, SampleSpace, Responses, LikelihoodFunction, OutputDirectory, Debug)
+  subroutine Calibrate_BayesInvMethod( This, Model, SampleSpace, Responses, LikelihoodFunction, OutputDirectory)
     import                                                            ::    BayesInvMethod_Type
     import                                                            ::    Response_Type
     import                                                            ::    SampleSpace_Type
@@ -117,7 +112,6 @@ abstract interface
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(LikelihoodFunction_Type), intent(inout)                     ::    LikelihoodFunction
     character(*), optional, intent(in)                                ::    OutputDirectory
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -134,22 +128,14 @@ end interface
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(BayesInvMethod_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!

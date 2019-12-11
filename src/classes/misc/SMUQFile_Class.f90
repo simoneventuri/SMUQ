@@ -83,17 +83,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'smuqfile'
@@ -101,24 +95,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%File = '<undefined>'
     This%FullFile = '<undefined>'
@@ -130,51 +116,35 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Comment = '#'
     This%Separator = ' '
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    VarC0D
     logical                                                           ::    Found
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -200,29 +170,21 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, File, Prefix, Comment, Separator, Debug )
+  subroutine ConstructCase1( This, File, Prefix, Comment, Separator )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    File
     character(*), optional, intent(in)                                ::    Comment
     character(*), optional, intent(in)                                ::    Separator
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -242,13 +204,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -256,9 +216,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -266,10 +224,6 @@ contains
     logical                                                           ::    ExternalFlag=.false.
     character(:), allocatable                                         ::    CommentLoc
     character(:), allocatable                                         ::    SeparatorLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -291,21 +245,17 @@ contains
     call GetInput%AddParameter( Name='comment', Value=CommentLoc  )
     call GetInput%AddParameter( Name='separator', Value=SeparatorLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportFile( This, Strings, Mandatory, Found, Debug )
+  subroutine ImportFile( This, Strings, Mandatory, Found )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(String_Type), allocatable, dimension(:), intent(out)         ::    Strings
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ImportFile'
     integer                                                           ::    StatLoc=0
     logical                                                           ::    MandatoryLoc=.true.
@@ -314,10 +264,6 @@ contains
     logical                                                           ::    FoundLoc
     character(:), allocatable                                         ::    Record
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -342,26 +288,18 @@ contains
 
     if ( present(Found) ) Found = FoundLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Export0D_CharString( This, String, Debug )
+  subroutine Export0D_CharString( This, String )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    String
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Export0D_CharStrings='
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc 
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -372,26 +310,18 @@ contains
 
     call This%Close()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Export0D_String( This, String, Debug )
+  subroutine Export0D_String( This, String )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(String_Type), intent(in)                                     ::    String
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Export0D_Strings'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc 
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -402,28 +332,20 @@ contains
 
     call This%Close()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Export1D_Strings( This, Strings, Debug )
+  subroutine Export1D_Strings( This, Strings )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(String_Type), dimension(:), intent(in)                       ::    Strings
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Export1D_Strings'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc=0
     integer                                                           ::    NbLines=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -438,27 +360,19 @@ contains
 
     call This%Close()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Append0D_CharString( This, String, Debug )
+  subroutine Append0D_CharString( This, String )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    String
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Append0D_CharString'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc=0 
     logical                                                           ::    Found 
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -471,27 +385,19 @@ contains
       call This%Export( String=String )
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Append0D_String( This, String, Debug )
+  subroutine Append0D_String( This, String )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(String_Type), intent(in)                                     ::    String
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Append0D_String'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc=0
     logical                                                           ::    Found 
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -504,29 +410,21 @@ contains
       call This%Export( String=String )
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Append1D_Strings( This, Strings, Debug )
+  subroutine Append1D_Strings( This, Strings )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(String_Type), dimension(:), intent(in)                       ::    Strings
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Append1D_Strings'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc=0
     integer                                                           ::    NbLines=0
     integer                                                           ::    i
     logical                                                           ::    Found
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -543,13 +441,11 @@ contains
       call This%Export( Strings=Strings )
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Open( This, Unit, Action, Status, Position, Stat, Mandatory, Found, Debug )
+  subroutine Open( This, Unit, Action, Status, Position, Stat, Mandatory, Found )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     integer, optional, intent(out)                                    ::    Unit
@@ -559,9 +455,7 @@ contains
     character(*), optional, intent(in)                                ::    Status
     character(*), optional, intent(in)                                ::    Position
     integer, optional, intent(out)                                    ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Open'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc=0
@@ -570,10 +464,6 @@ contains
     character(:), allocatable                                         ::    PositionLoc
     character(:), allocatable                                         ::    ActionLoc
     character(:), allocatable                                         ::    StatusLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     ActionLoc = 'readwrite'
     StatusLoc = 'old'
@@ -600,25 +490,17 @@ contains
     if ( present(Unit) ) Unit = UnitLoc
     if ( present(Stat) ) Stat=StatLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Close( This, Stat, Debug )
+  subroutine Close( This, Stat )
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     integer, optional, intent(out)                                    ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Close'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Opened() ) close(Unit=This%Unit, iostat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Close( ProcName=ProcName, Unit=This%Unit, File=This%FullFile, iostat=StatLoc )
@@ -627,51 +509,35 @@ contains
 
     if( present(Stat) ) Stat = StatLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Exists( This, Debug )
+  function Exists( This )
 
     logical                                                           ::    Exists
 
     class(SMUQFile_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Exists'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     inquire( file=This%FullFile, exist=Exists )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Opened( This, Debug )
+  function Opened( This )
 
     logical                                                           ::    Opened
 
     class(SMUQFile_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Opened'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -680,122 +546,82 @@ contains
 
     Opened = This%FileOpened
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetComment( This, Debug )
+  function GetComment( This )
 
     character(:), allocatable                                         ::    GetComment
 
     class(SMUQFile_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetComment'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetComment = This%Comment
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSeparator( This, Debug )
+  function GetSeparator( This )
 
     character(:), allocatable                                         ::    GetSeparator
 
     class(SMUQFile_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetSeparator'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetSeparator = This%Separator
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetFile( This, Debug )
+  function GetFile( This )
 
     character(:), allocatable                                         ::    GetFile
 
     class(SMUQFile_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetFile'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetFile = This%File
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetFullFile( This, Debug )
+  function GetFullFile( This )
 
     character(:), allocatable                                         ::    GetFullFile
 
     class(SMUQFile_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetFullFile'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetFullFile = This%FullFIle
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbLines( This, Debug )
+  function GetNbLines( This )
 
     integer                                                           ::    GetNbLines
 
     class(SMUQFile_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbLines'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -813,24 +639,16 @@ contains
 
     call This%Rewind()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Rewind( This, Debug )
+  subroutine Rewind( This )
 
     class(SMUQFile_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Rewind'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -839,24 +657,16 @@ contains
     Rewind(This%Unit, iostat=StatLoc)
     if (StatLoc /= 0) call Error%Rewind(ProcName=ProcName, Unit=This%Unit, File=This%FullFile, iostat=StatLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Backspace( This, Debug )
+  subroutine Backspace( This )
 
     class(SMUQFile_Type), intent(in)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Backspace'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -865,29 +675,21 @@ contains
     Backspace(This%Unit, iostat=StatLoc)
     if (StatLoc /= 0) call Error%Raise( Line='Something went wrong backspacing the file', ProcName=ProcName )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReadRecord( Unit, Record, Stat, Debug )
+  subroutine ReadRecord( Unit, Record, Stat )
 
     integer, intent(in)                                               ::    Unit
     character(:), allocatable, intent(out)                            ::    Record
     integer, optional, intent(out)                                    ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ReadRecord'
     integer                                                           ::    StatLoc=0
     character(10000)                                                  ::    Buffer
     logical                                                           ::    Trip
     integer                                                           ::    ReadSize
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
 !    Trip = .false.
 !    Record = ''
@@ -903,8 +705,6 @@ contains
     if ( StatLoc == 0 ) Record = trim(adjustl(Buffer))
     if ( present(Stat) ) Stat=StatLoc
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -914,12 +714,8 @@ contains
     class(SMUQFile_Type), intent(out)                                 ::    LHS
     class(SMUQFile_Type), intent(in)                                  ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call LHS%Reset()
     LHS%Initialized = RHS%Initialized
@@ -933,8 +729,6 @@ contains
       LHS%Unit = RHS%Unit
       LHS%FileOpened = RHS%FileOpened
     end if
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

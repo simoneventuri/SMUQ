@@ -57,43 +57,27 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Initialized ) then
       This%Name = 'modeltransform'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( allocated(This%SpaceTransform) ) deallocate(This%SpaceTransform, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%SpaceTransform', ProcName=ProcName, stat=StatLoc )
 
@@ -105,45 +89,28 @@ contains
 
     call This%SetDefaults()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase1( This, SpaceTransform, Model, Debug )
+  subroutine ConstructCase1( This, SpaceTransform, Model )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
     class(TransfSampleSpace_Type), intent(in)                         ::    SpaceTransform
     class(Model_Type), intent(in)                                     ::    Model
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -159,32 +126,23 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine RunCase1( This, Input, Output, Stat, Debug )
+  subroutine RunCase1( This, Input, Output, Stat )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
     class(Input_Type), intent(in)                                     ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='RunCase1'
     integer                                                           ::    StatLoc=0
     logical                                                           ::    ExternalFlag=.false.
     class(Input_Type), allocatable                                    ::    InputLoc
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     select type (Input)
@@ -219,8 +177,6 @@ contains
     deallocate(InputLoc, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputLoc', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -230,13 +186,9 @@ contains
     class(ModelTransform_Type), intent(out)                           ::    LHS
     class(Model_Type), intent(in)                            ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type ( RHS )
       type is (ModelTransform_Type)
@@ -252,7 +204,6 @@ contains
       class default
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
     end select
-    if (DebugLoc) call Logger%Exiting
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
@@ -263,11 +214,7 @@ contains
     type(ModelTransform_Type),intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%SpaceTransform) ) deallocate(This%SpaceTransform, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%SpaceTransform', ProcName=ProcName, stat=StatLoc )
@@ -277,8 +224,6 @@ contains
 
     if ( allocated(This%InputLabels) ) deallocate(This%InputLabels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InputLabels', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

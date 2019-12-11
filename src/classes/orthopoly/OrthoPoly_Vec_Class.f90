@@ -45,74 +45,50 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Set( This, Object, Debug )
+  subroutine Set( This, Object )
 
     class(OrthoPoly_Vec_Type), intent(inout)                          ::    This
     class(OrthoPoly_Type), intent(in)                                 ::    Object
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     allocate(This%OrthoPoly, source=Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Get( This, Debug )
+  function Get( This )
 
     class(OrthoPoly_Type), allocatable                                ::    Get
 
     class(OrthoPoly_Vec_Type), intent(in)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. associated(This%OrthoPoly) ) call Error%Raise( Line='Orthogonal polynomial never defined', ProcName=ProcName)
 
     allocate(Get, source=This%OrthoPoly, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetPointer( This, Debug )
+  function GetPointer( This )
 
     class(OrthoPoly_Type), pointer                                    ::    GetPointer
 
     class(OrthoPoly_Vec_Type), intent(in)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetPointer'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. associated(This%OrthoPoly) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
 
     GetPointer => This%OrthoPoly
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
@@ -123,12 +99,8 @@ contains
     class(OrthoPoly_Vec_Type), intent(inout)                          ::    LHS
     class(OrthoPoly_Vec_Type), intent(in)                             ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -145,8 +117,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -155,17 +125,11 @@ contains
 
     type(OrthoPoly_Vec_Type), intent(inout)                            ::    This
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( associated(This%OrthoPoly) ) deallocate(This%OrthoPoly, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

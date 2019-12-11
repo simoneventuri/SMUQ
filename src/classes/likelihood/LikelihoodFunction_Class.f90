@@ -60,42 +60,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_LikelihoodFunction( This, Debug )
+  subroutine Initialize_LikelihoodFunction( This )
     import                                                            ::    LikelihoodFunction_Type
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_LikelihoodFunction( This, Debug )
+  subroutine Reset_LikelihoodFunction( This )
     import                                                            ::    LikelihoodFunction_Type
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_LikelihoodFunction( This, Debug )
+  subroutine SetDefaults_LikelihoodFunction( This )
     import                                                            ::    LikelihoodFunction_Type
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_LikelihoodFunction( This, Input, Prefix, Debug )
+  subroutine ConstructInput_LikelihoodFunction( This, Input, Prefix )
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    InputSection_Type
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_LikelihoodFunction( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_LikelihoodFunction( This, MainSectionName, Prefix, Directory )
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_LikelihoodFunction
@@ -103,12 +99,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_1D_LikelihoodFunction( This, Responses, Input, Output, LogValue, Debug )
+  function Evaluate_1D_LikelihoodFunction( This, Responses, Input, Output, LogValue )
     use                                                               ::    Parameters_Library
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    Response_Type
@@ -120,12 +115,11 @@ abstract interface
     type(InputDet_Type), intent(in)                                   ::    Input
     type(Output_Type), dimension(:), intent(in)                       ::    Output
     logical, optional, intent(in)                                     ::    LogValue
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_0D_LikelihoodFunction( This, Response, Input, Output, LogValue, Debug )
+  function Evaluate_0D_LikelihoodFunction( This, Response, Input, Output, LogValue )
     use                                                               ::    Parameters_Library
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    Response_Type
@@ -137,7 +131,6 @@ abstract interface
     type(InputDet_Type), intent(in)                                   ::    Input
     type(Output_Type), intent(in)                                     ::    Output
     logical, optional, intent(in)                                     ::    LogValue
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -154,43 +147,28 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel( This, Debug )
+  function GetLabel( This )
 
     character(:), allocatable                                         ::    GetLabel
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
     logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetLabel'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetLabel = This%Label
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

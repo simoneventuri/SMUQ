@@ -66,17 +66,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(DistGamma_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'gamma'
@@ -84,47 +78,31 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(DistGamma_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized = .false.
     This%Constructed = .false.
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(DistGamma_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%A = Zero
     This%B = One
@@ -134,20 +112,16 @@ contains
     This%TruncatedLeft = .true.
     This%DoubleTruncatedLeft = .false.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(DistGamma_Type), intent(inout)                              ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ProcessInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    ParameterName
@@ -156,10 +130,6 @@ contains
     character(:), allocatable                                         ::    VarC0D
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    PrefixLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -196,27 +166,19 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Alpha, Beta, A, B, Debug )
+  subroutine ConstructCase1( This, Alpha, Beta, A, B )
     
     class(DistGamma_Type), intent(inout)                              ::    This
     real(rkp), intent(in)                                             ::    Alpha
     real(rkp), intent(in)                                             ::    Beta
     real(rkp), optional, intent(in)                                   ::    A
-    real(rkp), optional, intent(in)                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug 
+    real(rkp), optional, intent(in)                                   ::    B 
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -239,13 +201,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -255,18 +215,12 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -284,26 +238,18 @@ contains
     if ( This%DoubleTruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
     if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X, Debug )
+  function PDF_R0D( This, X )
 
     real(rkp)                                                         ::    PDF_R0D
 
     class(DistGamma_Type), intent(in)                                 ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF_R0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -316,88 +262,13 @@ contains
     else
       PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta )
     end if
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-!  !!------------------------------------------------------------------------------------------------------------------------------
-!  function PDF_R2D( This, NbNodes, Debug )
-
-!    real(rkp), allocatable, dimension(:,:)                            ::    PDF_R2D
-
-!    class(DistGamma_Type), intent(in)                                 ::    This
-!    integer, intent(in)                                               ::    NbNodes
-!    logical, optional ,intent(in)                                     ::    Debug
-
-!    logical                                                           ::    DebugLoc
-!    character(*), parameter                                           ::    ProcName='PDF_R2D'
-!    real(rkp)                                                         ::    BinMass
-!    real(8)                                                           ::    CDFLeft
-!    real(8)                                                           ::    CDFRight
-!    real(8)                                                           ::    k
-!    real(8)                                                           ::    theta
-!    real(8)                                                           ::    A_8
-!    real(8)                                                           ::    B_8
-!    real(8)                                                           ::    VarR0D
-!    integer                                                           ::    i
-!    integer                                                           ::    StatLoc=0
-
-!    DebugLoc = DebugGlobal
-!    if ( present(Debug) ) DebugLoc = Debug
-!    if (DebugLoc) call Logger%Entering( ProcName )
-
-!    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-!    if ( NbNodes < 3 ) call Error%Raise( Line='Specified number of points lower than minimum of 3', ProcName=ProcName )
-
-!    BinMass = One / real(NbNodes-1,rkp)
-
-!    allocate(PDF_R2D(NbNodes,2), stat=StatLoc )
-!    if ( StatLoc /= 0 ) call Error%Allocate( Name='PDF_R2D', ProcName=ProcName, stat=StatLoc )
-
-!    k = real(This%Alpha,8)
-!    theta = real(One/This%Beta,8)
-
-!    if ( This%TruncatedLeft ) then
-!      A_8 = This%A
-!      call gamma_cdf( A_8, real(0,8), theta, k, CDFLeft )
-!    else
-!      A_8 = 1.E-8
-!      CDFLeft = This%CDF( X=real(A_8,rkp) )
-!    end if
-
-!    if ( This%TruncatedRight ) then
-!      B_8 = This%B
-!      call gamma_cdf( B_8, real(0,8), theta, k, CDFRight )
-!    else
-!      CDFRight = One - real(1.E-6,8)
-!      B_8 = This%InvCDF( P=CDFRight )
-!    end if
-
-!    PDF_R2D(1,1) = A_8
-!    call gamma_pdf( A_8, real(0,8), theta, k, VarR0D )
-!    PDF_R2D(1,2) = VarR0D / ( CDFRight - CDFLeft )
-
-!    i = 2
-!    do i = 2, NbNodes-1
-!      PDF_R2D(i,1) = This%InvCDF( real((i-1),rkp)*BinMass )
-!      PDF_R2D(i,2) = This%PDF( PDF_R2D(i,1) )
-!    end do
-
-!    PDF_R2D(NbNodes,1) = B_8
-!    call gamma_pdf( B_8, real(0,8), theta, k, VarR0D )
-!    PDF_R2D(NbNodes,2) = VarR0D / ( CDFRight - CDFLeft )
-
-!    if (DebugLoc) call Logger%Exiting()
-
-!  end function
-!  !!------------------------------------------------------------------------------------------------------------------------------
-
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Assumes that A will not be passed unless it is above 0.0 and that all parameters are valid
-  function ComputePDF( X, Alpha, Beta, A, B, Debug )
+  function ComputePDF( X, Alpha, Beta, A, B )
 
     real(rkp)                                                         ::    ComputePDF
 
@@ -406,9 +277,7 @@ contains
     real(rkp), intent(in)                                             ::    Beta
     real(rkp), optional, intent(in)                                   ::    A
     real(rkp), optional, intent(in)                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputePDF'
     real(8)                                                           ::    CDFLeft
     real(8)                                                           ::    CDFRight
@@ -418,10 +287,6 @@ contains
     real(8)                                                           ::    ALoc
     real(8)                                                           ::    BLoc
     logical                                                           ::    TripFlag
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     TripFlag = .false.
 
@@ -454,27 +319,19 @@ contains
       call gamma_pdf( real(X,8), real(0,8), theta, k, VarR0D )
       ComputePDF = real(VarR0D / ( CDFRight - CDFLeft ),rkp) 
     end if
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X, Debug )
+  function CDF_R0D( This, X )
 
     real(rkp)                                                         ::    CDF_R0D
 
     class(DistGamma_Type), intent(in)                                 ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='CDF_R0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -487,15 +344,13 @@ contains
     else
       CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta )
     end if
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Assumes that A will not be passed unless it is above 0.0 and that all parameters are valid
-  function ComputeCDF( X, Alpha, Beta, A, B, Debug )
+  function ComputeCDF( X, Alpha, Beta, A, B )
 
     real(rkp)                                                         ::    ComputeCDF
 
@@ -504,9 +359,7 @@ contains
     real(rkp), intent(in)                                             ::    Beta
     real(rkp), intent(in), optional                                   ::    A
     real(rkp), intent(in), optional                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeCDF'
     real(8)                                                           ::    CDFLeft
     real(8)                                                           ::    CDFRight
@@ -514,10 +367,6 @@ contains
     real(8)                                                           ::    theta
     real(8)                                                           ::    VarR0D
     logical                                                           ::    TripFlag
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( X < Zero ) call Error%Raise( Line='Gamma distribution is defined on the positive part of the line', ProcName=ProcName)
 
@@ -552,27 +401,19 @@ contains
       call gamma_cdf( real(X,8), real(0,8), theta, k, VarR0D )
       ComputeCDF = real(( VarR0D - CDFLeft ) / ( CDFRight - CDFLeft ),rkp)
     end if 
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P, Debug )
+  function InvCDF_R0D( This, P )
 
     real(rkp)                                                         ::    InvCDF_R0D
 
     class(DistGamma_Type), intent(in)                                 ::    This
     real(rkp), intent(in)                                             ::    P
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -585,15 +426,13 @@ contains
     else
       InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta )
     end if
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Assumes that A will not be passed unless it is above 0.0 and that all parameters are valid
-  function ComputeInvCDF( P, Alpha, Beta, A, B, Debug )
+  function ComputeInvCDF( P, Alpha, Beta, A, B )
 
     use CDF_Library
     use StringRoutines_Module
@@ -605,9 +444,7 @@ contains
     real(rkp), intent(in)                                             ::    Beta
     real(rkp), intent(in), optional                                   ::    A
     real(rkp), intent(in), optional                                   ::    B
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeInvCDF'
     real(8)                                                           ::    CDFLeft
     real(8)                                                           ::    CDFRight
@@ -618,10 +455,6 @@ contains
     real(8)                                                           ::    QLoc
     integer                                                           ::    StatLoc=0
     logical                                                           ::    TripFlag
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
     if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
@@ -661,75 +494,51 @@ contains
       ComputeInvCDF = real(VarR0D,rkp) / Beta
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetAlpha( This, Debug )
+  function GetAlpha( This )
 
     real(rkp)                                                         ::    GetAlpha
 
     class(DistGamma_Type), intent(in)                                 ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetAlpha'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetAlpha = This%Alpha
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetBeta( This, Debug )
+  function GetBeta( This )
 
     real(rkp)                                                         ::    GetBeta
 
     class(DistGamma_Type), intent(in)                                 ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetBeta'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetBeta = This%Beta
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment( This, Moment, Debug )
+  function GetMoment( This, Moment )
 
     real(rkp)                                                         ::    GetMoment
 
     class(DistGamma_Type), intent(in)                                 ::    This
     integer, intent(in)                                               ::    Moment
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMoment'
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -749,8 +558,6 @@ contains
       GetMoment = One
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -760,12 +567,8 @@ contains
     class(DistGamma_Type), intent(out)                                ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -789,8 +592,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -800,13 +601,7 @@ contains
     type(DistGamma_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

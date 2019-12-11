@@ -55,43 +55,39 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize_AnalysisMethod( This, Debug )
+  subroutine Initialize_AnalysisMethod( This )
     import                                                            ::    AnalysisMethod_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset_AnalysisMethod( This, Debug )
+  subroutine Reset_AnalysisMethod( This )
     import                                                            ::    AnalysisMethod_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults_AnalysisMethod( This, Debug )
+  subroutine SetDefaults_AnalysisMethod( This )
     import                                                            ::    AnalysisMethod_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput_AnalysisMethod( This, Input, SectionChain, Prefix, Debug )
+  subroutine ConstructInput_AnalysisMethod( This, Input, SectionChain, Prefix )
     import                                                            ::    AnalysisMethod_Type
     import                                                            ::    InputSection_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput_AnalysisMethod( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_AnalysisMethod( This, MainSectionName, Prefix, Directory )
     import                                                            ::    AnalysisMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_AnalysisMethod
@@ -99,12 +95,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run_AnalysisMethod( This, SampleSpace, Responses, Model, OutputDirectory, Debug )
+  subroutine Run_AnalysisMethod( This, SampleSpace, Responses, Model, OutputDirectory )
     import                                                            ::    SampleSpace_Type
     import                                                            ::    Response_Type
     import                                                            ::    Model_Type
@@ -114,7 +109,6 @@ abstract interface
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
     character(*), optional, intent(in)                                ::    OutputDirectory
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -131,22 +125,14 @@ end interface
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(AnalysisMethod_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!

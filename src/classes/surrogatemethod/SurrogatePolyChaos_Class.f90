@@ -102,18 +102,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer(8)                                                        ::    SysTimeCount
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
@@ -122,24 +116,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -158,43 +144,31 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This, Debug)
+  subroutine SetDefaults(This)
 
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%BasisScheme = 'numerical'
     This%SectionChain = ''
     This%InputSamplesTransform = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput ( This, Input, SectionChain, Prefix, Debug )
+  subroutine ConstructInput ( This, Input, SectionChain, Prefix )
 
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
@@ -211,10 +185,6 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbSamples
     integer                                                           ::    NbOutputs
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -311,13 +281,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine 
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
     
     use StringRoutines_Module
 
@@ -327,9 +295,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -338,10 +304,6 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -369,13 +331,11 @@ contains
     call GetInput%AddSection( Section=PolyChaosMethod_Factory%GetObjectInput( Object=This%PolyChaosMethod,                        &
                                                          MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SampleSPace, Responses, Model, SurrogateModel, OutputDirectory, Debug )
+  subroutine Run( This, SampleSPace, Responses, Model, SurrogateModel, OutputDirectory )
 
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
@@ -383,9 +343,7 @@ contains
     class(Model_Type), intent(inout)                                  ::    Model
     class(Model_Type), allocatable, dimension(:),optional,intent(out) ::    SurrogateModel
     character(*), optional, intent(in)                                ::    OutputDirectory
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
     class(TransfSampleSpace_Type), allocatable                        ::    SpaceTransform
@@ -403,10 +361,6 @@ contains
     integer                                                           ::    iii
     real(rkp), allocatable, dimension(:)                              ::    X
     character(:), allocatable                                         ::    Line
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     OutputDirectoryLoc = ''
 
@@ -544,13 +498,11 @@ contains
     deallocate(SpaceTransform, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SpaceTransform', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, PolyChaosModel, Directory, Debug )
+  subroutine WriteOutput( This, PolyChaosModel, Directory )
 
     use CommandRoutines_Module
     use StringRoutines_Module
@@ -560,9 +512,7 @@ contains
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
     type(PolyChaosModel_Type), intent(inout)                          ::    PolyChaosModel
     character(*), intent(in)                                          ::    Directory
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='WriteOutput'
     type(InputSection_Type)                                           ::    Input
     character(:), allocatable                                         ::    FileName
@@ -576,10 +526,6 @@ contains
     integer                                                           ::    NbCells
     type(SMUQFile_Type)                                               ::    File
     integer                                                           ::    i, ii
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( len_trim(Directory) /= 0 ) then
 
@@ -600,20 +546,16 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructAskeyScheme( SampleSpace, Basis, SpaceTransform, Debug )
+  subroutine ConstructAskeyScheme( SampleSpace, Basis, SpaceTransform )
 
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
     class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructAskeyScheme'
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), allocatable                                 ::    DistProb
@@ -623,10 +565,6 @@ contains
     type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbDim = SampleSpace%GetNbDim()
 
@@ -733,20 +671,16 @@ contains
     deallocate(OrthoPolyVec, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructWeinerScheme( SampleSpace, Basis, SpaceTransform, Debug )
+  subroutine ConstructWeinerScheme( SampleSpace, Basis, SpaceTransform )
 
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
     class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructWeinerScheme'
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), allocatable                                 ::    DistProbPointer
@@ -755,10 +689,6 @@ contains
     type(DistNorm_Type), allocatable, dimension(:)                    ::    DistNormal
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbDim = SampleSpace%GetNbDim()
 
@@ -805,20 +735,16 @@ contains
     deallocate(DistNormal, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistNormal', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructAskeyNumericalScheme( SampleSpace, Basis, SpaceTransform, Debug )
+  subroutine ConstructAskeyNumericalScheme( SampleSpace, Basis, SpaceTransform )
 
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
     class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructAskeyNumericalScheme'
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), allocatable                                 ::    DistProb
@@ -828,10 +754,6 @@ contains
     type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbDim = SampleSpace%GetNbDim()
 
@@ -951,20 +873,16 @@ contains
     deallocate(OrthoPolyVec, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructAskeyNumericalExtendedScheme( SampleSpace, Basis, SpaceTransform, Debug )
+  subroutine ConstructAskeyNumericalExtendedScheme( SampleSpace, Basis, SpaceTransform )
 
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
     class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructAskeyNumericalExtendedScheme'
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), pointer                                     ::    DistProbPointer
@@ -972,10 +890,6 @@ contains
     type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbDim = SampleSpace%GetNbDim()
 
@@ -1091,20 +1005,16 @@ contains
     deallocate(OrthoPolyVec, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructNumericalScheme( SampleSpace, Basis, SpaceTransform, Debug )
+  subroutine ConstructNumericalScheme( SampleSpace, Basis, SpaceTransform )
 
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(OrthoMultiVar_Type), intent(out)                             ::    Basis
     class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructNumericalScheme'
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), allocatable                                 ::    DistProb
@@ -1113,10 +1023,6 @@ contains
     type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbDim = SampleSpace%GetNbDim()
     
@@ -1159,8 +1065,6 @@ contains
     deallocate(OrthoPolyVec, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -1170,12 +1074,8 @@ contains
     class(SurrogatePolyChaos_Type), intent(out)                       ::    LHS
     class(SurrogateMethod_Type), intent(in)                           ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
 
@@ -1198,8 +1098,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -1209,19 +1107,13 @@ contains
     type(SurrogatePolyChaos_Type), intent(inout)                      ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%PolyChaosMethod) ) deallocate(This%PolyChaosMethod, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PolyChaosMethod', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%IndexSetScheme) ) deallocate(This%IndexSetScheme, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%IndexSetScheme', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

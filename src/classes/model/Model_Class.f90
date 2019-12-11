@@ -50,31 +50,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize_Model( This, Debug )
+  subroutine Initialize_Model( This )
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset_Model( This, Debug )
+  subroutine Reset_Model( This )
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults_Model( This, Debug )
+  subroutine SetDefaults_Model( This )
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine RunCase1_Model( This, Input, Output, Stat, Debug )
+  subroutine RunCase1_Model( This, Input, Output, Stat )
     use Parameters_Library
     use Output_Class                                              ,only:    Output_Type
     use Input_Class                                               ,only:    Input_Type
@@ -83,7 +80,6 @@ abstract interface
     class(Input_Type), intent(in)                                     ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -100,22 +96,14 @@ end interface
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(Model_Type), intent(inout)                                  ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!

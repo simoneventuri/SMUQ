@@ -54,19 +54,11 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(IndexSetHyperbolic_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Write( "Initializing IndexSetHyperbolic object" )
 
     if ( .not. This%Initialized ) then
       This%Name         =   'hyperbolic'
@@ -74,73 +66,47 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Write( "Initialization Successful" )
-
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(IndexSetHyperbolic_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Write( "Reseting IndexSetHyperbolic object" )
 
     This%Initialized = .false.
     This%Constructed = .false.
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Write( "Reset Successful" )
-
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(IndexSetHyperbolic_Type), intent(inout)                     ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Order = 1
     This%MaxOrder = huge(1)
     This%MinOrder = 1
     This%NormQ = 0.4_rkp
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(IndexSetHyperbolic_Type), intent(inout)                     ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    ParameterName
     logical                                                           ::    Found
@@ -148,10 +114,6 @@ contains
     integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -183,28 +145,20 @@ contains
     if ( This%NormQ > One ) call Error%Raise( "NormQ specification above maximum of 1" )
 
     This%Constructed = .true.
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, NormQ, Order, MinOrder, MaxOrder, Debug )
+  subroutine ConstructCase1( This, NormQ, Order, MinOrder, MaxOrder )
 
     class(IndexSetHyperbolic_Type), intent(inout)                     ::    This
     real(rkp), optional, intent(in)                                   ::    NormQ
     integer, optional, intent(in)                                     ::    Order
     integer, optional, intent(in)                                     ::    MinOrder
     integer, optional, intent(in)                                     ::    MaxOrder    
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -226,13 +180,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -241,18 +193,12 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -270,13 +216,11 @@ contains
     call GetInput%AddParameter( Name='max_order', Value=ConvertToString(Value=This%MaxOrder) )
     call GetInput%AddParameter( Name='normq', Value=ConvertToString(Value=This%NormQ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateIndices( This, Order, TupleSize, Indices, OrderError, OrderExceeded, Debug )
+  subroutine GenerateIndices( This, Order, TupleSize, Indices, OrderError, OrderExceeded )
 
     class(IndexSetHyperbolic_Type), intent(in)                        ::    This
     integer, intent(in)                                               ::    Order
@@ -284,16 +228,10 @@ contains
     integer, dimension(:,:), allocatable, intent(out)                 ::    Indices
     logical, optional, intent(in)                                     ::    OrderError
     logical, optional, intent(out)                                    ::    OrderExceeded
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GenerateIndices'
     logical                                                           ::    OrderExceededLoc=.false.
     logical                                                           ::    OrderErrorLoc=.true.
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -310,13 +248,11 @@ contains
 
     if ( present(OrderExceeded) ) OrderExceeded = OrderExceededLoc
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeIndices( This, M, Order, NormQ, Indices, Debug  )
+  subroutine ComputeIndices( This, M, Order, NormQ, Indices  )
 
     use ArrayRoutines_Module
     use LinkedList1D_Class                                        ,only:  LinkedList1D_Type
@@ -326,9 +262,7 @@ contains
     integer, intent(in)                                               ::    M
     integer, intent(in)                                               ::    Order
     real(rkp), intent(in)                                             ::    NormQ
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeIndices'
     type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
     integer, dimension(:,:), allocatable                              ::    Indices_Loc
@@ -342,10 +276,6 @@ contains
     integer                                                           ::    NbPermutations, NbIndices
     logical, dimension(:), allocatable                                ::    LogicMask
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( M <= 0 ) call Error%Raise(Line="Specified tuple size at or below 0", ProcName=ProcName)
 
@@ -443,53 +373,35 @@ contains
     deallocate(IndicesRecord, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function  ComputeNormQ_I1D( Vector, NormQ, Debug )
+  function  ComputeNormQ_I1D( Vector, NormQ )
 
     real(rkp)                                                         ::    ComputeNormQ_I1D
     integer, dimension(:), intent(in)                                 ::    Vector
     real(rkp), intent(in)                                             ::    NormQ
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ComputeNormQ_I1D'
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     ComputeNormQ_I1D = sum( Vector**NormQ )
     ComputeNormQ_I1D = ComputeNormQ_I1D**(One/NormQ)
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNormQ( This, Debug )
+  function GetNormQ( This )
 
     real(rkp)                                                         ::    GetNormQ
     class(IndexSetHyperbolic_Type), intent(in)                        ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNormQ'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetNormQ = This%NormQ
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -500,12 +412,8 @@ contains
     class(IndexSetHyperbolic_Type), intent(out)                       ::    LHS
     class(IndexSetScheme_Type), intent(in)                            ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
 
@@ -526,8 +434,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -537,13 +443,7 @@ contains
     type(IndexSetHyperbolic_Type), intent(inout)                      ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

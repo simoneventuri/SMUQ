@@ -57,42 +57,38 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_OrthoPoly( This, Debug )
+  subroutine Initialize_OrthoPoly( This )
     import                                                            ::    OrthoPoly_Type
     class(OrthoPoly_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_OrthoPoly( This, Debug )
+  subroutine Reset_OrthoPoly( This )
     import                                                            ::    OrthoPoly_Type
     class(OrthoPoly_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_OrthoPoly( This, Debug )
+  subroutine SetDefaults_OrthoPoly( This )
     import                                                            ::    OrthoPoly_Type
     class(OrthoPoly_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_OrthoPoly( This, Input, Prefix, Debug )
+  subroutine ConstructInput_OrthoPoly( This, Input, Prefix )
     import                                                            ::    OrthoPoly_Type
     import                                                            ::    InputSection_Type
     class(OrthoPoly_Type), intent(inout)                              ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_OrthoPoly( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput_OrthoPoly( This, MainSectionName, Prefix, Directory )
     import                                                            ::    OrthoPoly_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_OrthoPoly
@@ -100,12 +96,11 @@ abstract interface
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Eval_N_OrthoPoly(This, Order, X, Normalized, Debug )
+  function Eval_N_OrthoPoly(This, Order, X, Normalized )
     use Parameters_Library
     import                                                            ::    OrthoPoly_Type
     real(rkp)                                                         ::    Eval_N_OrthoPoly
@@ -113,12 +108,11 @@ abstract interface
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    Order
     logical, optional, intent(in)                                     ::    Normalized
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Eval_MN_OrthoPoly(This, MinOrder, MaxOrder, X, Normalized, Debug )
+  function Eval_MN_OrthoPoly(This, MinOrder, MaxOrder, X, Normalized )
     use Parameters_Library
     import                                                            ::    OrthoPoly_Type
     real(rkp), dimension(:), allocatable                              ::    Eval_MN_OrthoPoly
@@ -127,7 +121,6 @@ abstract interface
     integer, intent(in)                                               ::    MinOrder
     integer, intent(in)                                               ::    MaxOrder
     logical, optional, intent(in)                                     ::    Normalized
-    logical, optional ,intent(in)                                     ::    Debug
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -144,22 +137,14 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This, Debug )
+  function GetName( This )
 
     character(:), allocatable                                         ::    GetName
     class(OrthoPoly_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetName'
 
-    call Logger%Entering( ProcName )
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-
     GetName = This%Name
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

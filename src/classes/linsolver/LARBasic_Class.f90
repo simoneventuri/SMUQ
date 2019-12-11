@@ -59,17 +59,11 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(LARBasic_Type), intent(inout)                               ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name = 'LARBasic'
@@ -77,24 +71,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(LARBasic_Type), intent(inout)                               ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc = 0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized = .false.
     This%Constructed = .false.
@@ -104,44 +90,32 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(LARBasic_Type), intent(inout)                               ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Hybrid = .true.
     This%LASSO = .false.
     This%Tolerance = Zero
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     use String_Library
 
     class(LARBasic_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
@@ -152,11 +126,6 @@ contains
     character(:), allocatable                                         ::    VarC0D
     real(rkp)                                                         ::    varR0D
     logical                                                           ::    Found
-    
-    
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -192,13 +161,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Hybrid, LASSO, Tolerance, CVErrorMethod, Debug )
+  subroutine ConstructCase1( This, Hybrid, LASSO, Tolerance, CVErrorMethod )
 
     use String_Library
 
@@ -207,15 +174,9 @@ contains
     logical, optional, intent(in)                                     ::    LASSO
     real(rkp), optional, intent(in)                                   ::    Tolerance
     class(CVErrorMethod_Type), optional, intent(in)                   ::    CVErrorMethod
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -241,13 +202,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -255,9 +214,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -265,10 +222,6 @@ contains
     logical                                                           ::    ExternalFlag=.false.
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -291,13 +244,11 @@ contains
     call GetInput%AddSection( Section=CVErrorMethod_Factory%GetObjectInput( Object=This%CVError, MainSectionName=SectionName,     &
                                                                                       Prefix=PrefixLoc, Directory=DirectoryLoc ) )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSparse( This, System, Goal, ModelSet, CoefficientsSet, CVError, Debug )
+  subroutine SolveSparse( This, System, Goal, ModelSet, CoefficientsSet, CVError )
 
     class(LARBasic_Type), intent(in)                                  ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -305,9 +256,7 @@ contains
     integer, allocatable, dimension(:), intent(out)                   ::    ModelSet
     real(rkp), allocatable, dimension(:), intent(out)                 ::    CoefficientsSet
     real(rkp), optional, intent(out)                                  ::    CVError
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SolveSparse'
     integer                                                           ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                            ::    SystemLoc
@@ -322,10 +271,6 @@ contains
     real(rkp)                                                         ::    VarianceLoc
     integer                                                           ::    M
     integer                                                           ::    N
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -350,7 +295,6 @@ contains
             if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc )
             CoefficientsSet = GoalMean / MeanLoc
             if ( present(CVError) ) CVError = Zero
-            if (DebugLoc) call Logger%Exiting()
             return
           end if
         end do
@@ -372,7 +316,6 @@ contains
 
       if ( ConstantModel ) then
           if ( present(CVError) ) CVError = Zero
-          if (DebugLoc) call Logger%Exiting()
           return
       end if
 
@@ -404,30 +347,22 @@ contains
       end if
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveFull( This, System, Goal, Coefficients, CVError, Debug )
+  subroutine SolveFull( This, System, Goal, Coefficients, CVError )
 
     class(LARBasic_Type), intent(in)                                  ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
     real(rkp), dimension(:), intent(inout)                            ::    Goal
     real(rkp), allocatable, dimension(:), intent(out)                 ::    Coefficients
     real(rkp), optional, intent(out)                                  ::    CVError
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SolveFull'
     integer                                                           ::    StatLoc=0
     integer, allocatable, dimension(:)                                ::    ModelSet
     real(rkp), allocatable, dimension(:)                              ::    CoefficientsSet
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -443,8 +378,6 @@ contains
 
     Coefficients(ModelSet) = CoefficientsSet
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -454,12 +387,8 @@ contains
     class(LARBasic_Type), intent(out)                                 ::    LHS
     class(LinSolverMethod_Type), intent(in)                           ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
       type is (LARBasic_Type)
@@ -477,8 +406,6 @@ contains
       class default
         call Error%Raise( Line='Mismatching object types', ProcName=ProcName )
     end select
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -43,75 +43,48 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Set( This, Object, Debug )
+  subroutine Set( This, Object )
 
     class(OFileFormated_Vec_Type), intent(inout)                      ::    This
     class(OFileFormated_Type), intent(in)                             ::    Object
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     allocate(This%OFileFormated, source=Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OFileFormated', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Get( This, Debug )
+  function Get( This )
 
     class(OFileFormated_Type), allocatable                            ::    Get
 
     class(OFileFormated_Vec_Type), intent(in)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. associated(This%OFileFormated) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
     allocate(Get, source=This%OFileFormated, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetPointer( This, Debug )
+  function GetPointer( This )
 
     class(OFileFormated_Type), pointer                                ::    GetPointer
 
     class(OFileFormated_Vec_Type), intent(in)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetPointer'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. associated(This%OFileFormated) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
     GetPointer => This%OFileFormated
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
@@ -121,17 +94,11 @@ contains
 
     type(OFileFormated_Vec_Type), intent(inout)                       ::    This
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( associated(This%OFileFormated) ) deallocate(This%OFileFormated, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( name='This%OFileFormated', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

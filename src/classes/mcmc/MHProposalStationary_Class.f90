@@ -42,24 +42,16 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructProp_Case1(This, X, Cov, Debug )
+  subroutine ConstructProp_Case1(This, X, Cov )
 
     class(MHProposalStationary_Type), intent(inout)                   ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    X
     real(rkp), dimension(:,:), intent(in)                             ::    Cov
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructProp_Case1'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     call This%Construct( Mu=X(:,1), Cov=Cov )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

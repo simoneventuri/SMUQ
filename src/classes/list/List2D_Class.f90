@@ -65,19 +65,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Set( This, Values, Debug )
+  subroutine Set( This, Values )
 
     class(List2D_Type), intent(inout)                                 ::    This
     class(*), dimension(:,:), intent(in)                              ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Purge()
 
@@ -86,26 +80,18 @@ contains
 
     This%Constructed=.true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetR2D( This, Values, Debug )
+  subroutine GetR2D( This, Values )
 
     class(List2D_Type), intent(in)                                    ::    This
     real(rkp), dimension(:,:), allocatable, intent(out)               ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetR2D'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
     select type (Value => This%Values)
@@ -116,25 +102,17 @@ contains
         call Error%Raise("Requested value does not match the requested type")
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetR2DPointer( This, Values, Debug )
+  subroutine GetR2DPointer( This, Values )
 
     class(List2D_Type), intent(in)                                    ::    This
     real(rkp), dimension(:,:), pointer, intent(inout)                 ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetR2DPointer'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
@@ -147,26 +125,18 @@ contains
         call Error%Raise("Requested value does not match the requested type")
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetI2D( This, Values, Debug )
+  subroutine GetI2D( This, Values )
 
     class(List2D_Type), intent(in)                                    ::    This
     integer, dimension(:,:), allocatable, intent(out)                 ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetI2D'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
     select type (Value => This%Values)
@@ -177,25 +147,17 @@ contains
         call Error%Raise("Requested value does not match the requested type")
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetI2DPointer( This, Values, Debug )
+  subroutine GetI2DPointer( This, Values )
 
     class(List2D_Type), intent(in)                                    ::    This
     integer, dimension(:,:), pointer, intent(inout)                   ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetI2DPointer'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
@@ -208,26 +170,18 @@ contains
         call Error%Raise("Requested value does not match the requested type")
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetC2D( This, Values, Debug )
+  subroutine GetC2D( This, Values )
 
     class(List2D_Type), intent(in)                                    ::    This
     character(:), dimension(:,:), allocatable, intent(out)            ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetC2D'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
     select type (Value => This%Values)
@@ -238,25 +192,17 @@ contains
         call Error%Raise("Requested value does not match the requested type")
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetC2DPointer( This, Values, Debug )
+  subroutine GetC2DPointer( This, Values )
 
     class(List2D_Type), intent(in)                                    ::    This
     character(:), dimension(:,:), pointer, intent(inout)              ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetC2DPointer'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
@@ -269,26 +215,18 @@ contains
         call Error%Raise("Requested value does not match the requested type")
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetL2D( This, Values, Debug )
+  subroutine GetL2D( This, Values )
 
     class(List2D_Type), intent(in)                                    ::    This
     logical, dimension(:,:), allocatable, intent(out)                 ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetL2D'
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
-
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
     select type (Value => This%Values)
@@ -299,25 +237,17 @@ contains
         call Error%Raise("Requested value does not match the requested type")
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetL2DPointer( This, Values, Debug )
+  subroutine GetL2DPointer( This, Values )
 
     class(List2D_Type), intent(in)                                    ::    This
     logical, dimension(:,:), pointer, intent(inout)                   ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetL2DPointer'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
@@ -330,25 +260,17 @@ contains
         call Error%Raise("Requested value does not match the requested type")
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetCX2D( This, Values, Debug )
+  subroutine GetCX2D( This, Values )
 
     class(List2D_Type), intent(in)                                    ::    This
     complex, dimension(:,:), allocatable, intent(out)                 ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCX2D'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
@@ -360,25 +282,17 @@ contains
         call Error%Raise("Requested value does not match the requested type")
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetCX2DPointer( This, Values, Debug )
+  subroutine GetCX2DPointer( This, Values )
 
     class(List2D_Type), intent(in)                                    ::    This
     complex, dimension(:,:), pointer, intent(inout)                   ::    Values
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetCX2DPointer'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
 
@@ -391,31 +305,21 @@ contains
         call Error%Raise("Requested value does not match the requested type")
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Purge( This, Debug )
+  subroutine Purge( This )
 
     class(List2D_Type), intent(inout)                                 ::    This
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Purge'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if ( DebugLoc ) call Logger%Entering( ProcName )
 
     if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
     This%Constructed=.false.
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -426,12 +330,8 @@ contains
     class(List2D_Type), intent(out)                                   ::    LHS
     class(List2D_Type), intent(in)                                    ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     call LHS%Purge()
 
@@ -442,8 +342,6 @@ contains
       if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Values', ProcName=ProcName, stat=StatLoc )
     end if
 
-    if (DebugLoc) call Logger%Exiting
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -453,16 +351,10 @@ contains
     type(List2D_Type), intent(inout)                                  ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -48,95 +48,63 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(DistLog10Unif_Type), intent(inout)                          ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
-    if (DebugLoc) call Logger%Write( "Initializing DistLog10Unif object" )
     if ( .not. This%Initialized ) then
       This%Name = 'log10uniform'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
-    if (DebugLoc) call Logger%Write( "Initialization Successful" )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetA( This, Debug )
+  function GetA( This )
 
     real(rkp)                                                         ::    GetA
 
     class(DistLog10Unif_Type), intent(in)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetA'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetA = Ten**(This%A)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetB( This, Debug )
+  function GetB( This )
 
     real(rkp)                                                         ::    GetB
 
     class(DistLog10Unif_Type), intent(in)                             ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetB'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetB = Ten**(This%B)
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X, Debug )
+  function PDF_R0D( This, X )
 
     real(rkp)                                                         ::    PDF_R0D
 
     class(DistLog10Unif_Type), intent(in)                             ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='PDF'
     logical                                                           ::    TripFlag
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -152,70 +120,19 @@ contains
       PDF_R0D = One/(X*dlogof10) * PDF_R0D
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-!  !!------------------------------------------------------------------------------------------------------------------------------
-!  function PDF_R2D( This, NbNodes, Debug )
-
-!    real(rkp), allocatable, dimension(:,:)                            ::    PDF_R2D
-
-!    class(DistLog10Unif_Type), intent(in)                             ::    This
-!    integer, intent(in)                                               ::    NbNodes
-!    logical, optional ,intent(in)                                     ::    Debug
-
-!    logical                                                           ::    DebugLoc
-!    character(*), parameter                                           ::    ProcName='PDF_R2D'
-!    real(rkp)                                                         ::    BinMass
-!    integer                                                           ::    StatLoc=0
-!    integer                                                           ::    i
-
-!    DebugLoc = DebugGlobal
-!    if ( present(Debug) ) DebugLoc = Debug
-!    if (DebugLoc) call Logger%Entering( ProcName )
-
-!    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-!    if ( NbNodes < 3 ) call Error%Raise( Line='Specified number of points lower than minimum of 3', ProcName=ProcName )
-
-!    BinMass = One / real(NbNodes-1,rkp)
-
-!    allocate(PDF_R2D(NbNodes,2), stat=StatLoc )
-!    if ( StatLoc /= 0 ) call Error%Allocate( Name='PDF_R2D', ProcName=ProcName, stat=StatLoc )
-
-!    PDF_R2D(1,1) = Ten**(This%A)
-!    PDF_R2D(1,2) = One / ( dlogof10 * PDF_R2D(1,1) * (This%B-This%A) )
-!    i = 2
-!    do i = 2, NbNodes-1
-!      PDF_R2D(i,1) = This%InvCDF( real((i-1),rkp)*BinMass )
-!      PDF_R2D(i,2) = This%PDF( PDF_R2D(i,1) )
-!    end do
-!    PDF_R2D(NbNodes,1) = Ten**(This%B)
-!    PDF_R2D(NbNodes,2) = One / ( dlogof10 * PDF_R2D(NbNodes,1) * (This%B-This%A) )
-
-!    if (DebugLoc) call Logger%Exiting()
-
-!  end function
-!  !!------------------------------------------------------------------------------------------------------------------------------
-
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X, Debug )
+  function CDF_R0D( This, X )
 
     real(rkp)                                                         ::    CDF_R0D
 
     class(DistLog10Unif_Type), intent(in)                             ::    This
     real(rkp), intent(in)                                             ::    X
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='CDF_R0D'
     logical                                                           ::    TripFlag
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -229,55 +146,39 @@ contains
     if ( .not. TripFlag ) then
       CDF_R0D = This%ComputeUnifCDF( dlog10(X), This%A, This%B )
     end if
-      
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P, Debug )
+  function InvCDF_R0D( This, P )
 
     real(rkp)                                                         ::    InvCDF_R0D
 
     class(DistLog10Unif_Type), intent(in)                             ::    This
     real(rkp), intent(in)                                             ::    P
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     InvCDF_R0D = This%ComputeUnifInvCDF( P, This%A, This%B )
     InvCDF_R0D = Ten**InvCDF_R0D
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment( This, Moment, Debug )
+  function GetMoment( This, Moment )
 
     real(rkp)                                                         ::    GetMoment
 
     class(DistLog10Unif_Type), intent(in)                             ::    This
     integer, intent(in)                                               ::    Moment
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetMoment'
     real(rkp)                                                         ::    eA
     real(rkp)                                                         ::    eB
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -290,8 +191,6 @@ contains
     else
       GetMoment = One
     end if
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

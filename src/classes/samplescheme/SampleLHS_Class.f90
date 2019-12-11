@@ -66,18 +66,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(SampleLHS_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer(8)                                                        ::    SysTimeCount
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
@@ -85,24 +79,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(SampleLHS_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -114,23 +100,15 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults(This, Debug)
+  subroutine SetDefaults(This)
 
     class(SampleLHS_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%MedianPoints = .false.
     This%NbSamples = 1
@@ -140,22 +118,18 @@ contains
     This%EnrichmentIncrement = 1
     This%EnrichmentStage = 1
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput ( This, Input, Prefix, Debug )
+  subroutine ConstructInput ( This, Input, Prefix )
 
     use StringRoutines_Module
 
     class(SampleLHS_Type), intent(inout)                              ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
@@ -168,14 +142,8 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
-
-    if (DebugLoc) call Logger%Write( "Processing passed down settings")
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
@@ -236,14 +204,12 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine 
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
   subroutine ConstructCase1 ( This, RNG, NbSamples, MedianPoints,MaxNbSamples, EnrichmentScheme, EnrichmentMultiplier,            & 
-                                                                                  EnrichmentIncrement, EnrichmentSequence, Debug )
+                                                                                  EnrichmentIncrement, EnrichmentSequence )
 
     class(SampleLHS_Type), intent(inout)                              ::    This
     type(RandPseudo_Type), optional, intent(in)                       ::    RNG
@@ -254,15 +220,9 @@ contains
     integer, optional, intent(in)                                     ::    EnrichmentMultiplier
     integer, optional, intent(in)                                     ::    EnrichmentIncrement
     integer, optional, dimension(:), intent(in)                       ::    EnrichmentSequence
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -299,13 +259,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine 
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use CommandRoutines_Module
     use StringRoutines_Module
@@ -315,9 +273,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -327,10 +283,6 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    VarC0D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -373,27 +325,19 @@ contains
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/rng'
     call GetInput%AddSection( Section=This%RNG%GetInput( MainSectionName='rng', Prefix=PrefixLoc, Directory=DirectorySub ))
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetNbEnrichSamples( This, NbSamples, Debug )
+  function GetNbEnrichSamples( This, NbSamples )
 
     integer                                                           ::    GetNbEnrichSamples
 
     class(SampleLHS_Type), intent(inout)                              ::    This
     integer, intent(in)                                               ::    NbSamples
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetNbEnrichSamples'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -412,28 +356,20 @@ contains
         call Error%Raise( Line='Something went wrong', ProcName=ProcName )
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Draw_0D( This, Debug )
+  function Draw_0D( This )
 
     real(rkp), allocatable, dimension(:)                              ::    Draw_0D
 
     class(SampleLHS_Type), intent(inout)                              ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Draw_1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     real(rkp)                                                         ::    dx
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -457,29 +393,21 @@ contains
 
     call This%Shuffle( Array=Draw_0D )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Draw_1D( This, NbDim, Debug )
+  function Draw_1D( This, NbDim )
 
     real(rkp), allocatable, dimension(:,:)                            ::    Draw_1D
 
     class(SampleLHS_Type), intent(inout)                              ::    This
     integer, intent(in)                                               ::    NbDim
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Draw_1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i, ii
     real(rkp)                                                         ::    dx
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( NbDim <= 0 ) call Error%Raise( Line='Dimensionality of requested sample at or below 0', ProcName=ProcName )
 
@@ -505,13 +433,11 @@ contains
       call This%Shuffle( Array=Draw_1D(ii,:) )
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Enrich_0D( This, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, ReqNormalized, Debug )
+  subroutine Enrich_0D( This, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, ReqNormalized )
 
     use LinkedList0D_Class                                        ,only:    LinkedList0D_Type
 
@@ -521,9 +447,7 @@ contains
     integer, optional, intent(in)                                     ::    NbEnrichmentSamples
     logical, intent(out)                                              ::    Exceeded
     logical, optional, intent(out)                                    ::    ReqNormalized
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Enrich_1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i, ii
@@ -531,10 +455,6 @@ contains
     integer                                                           ::    NbBins
     integer                                                           ::    NbEnrichmentSamplesLoc
     real(rkp)                                                         ::    dx
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -591,13 +511,11 @@ contains
       end if
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Enrich_1D( This, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, ReqNormalized, Debug )
+  subroutine Enrich_1D( This, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, ReqNormalized )
 
     use LinkedList0D_Class                                        ,only:    LinkedList0D_Type
 
@@ -607,9 +525,7 @@ contains
     integer, optional, intent(in)                                     ::    NbEnrichmentSamples
     logical, intent(out)                                              ::    Exceeded
     logical, optional, intent(out)                                    ::    ReqNormalized
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Enrich_1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i, ii, iii, iv
@@ -621,10 +537,6 @@ contains
     type(LinkedList0D_Type)                                           ::    RepRecord
     integer, allocatable, dimension(:)                                ::    PermutationArray
     real(rkp)                                                         ::    dx
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     NbDim = size(Samples,1)
     if ( NbDim <= 0 ) call Error%Raise( Line='Dimensionality of requested samples at or below 0', ProcName=ProcName )
@@ -714,29 +626,21 @@ contains
       end if
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Shuffle_R1D( This, Array, Debug )
+  subroutine Shuffle_R1D( This, Array )
 
     class(SampleLHS_Type), intent(inout)                              ::    This
     real(rkp), dimension(:), intent(inout)                            ::    Array
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Shuffle'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    Length
     integer                                                           ::    i, ii
     real(rkp)                                                         ::    Temp
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     Length = size(Array,1)
 
     do i = 1, Length-1
@@ -750,29 +654,21 @@ contains
       end if
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Shuffle_I1D( This, Array, Debug )
+  subroutine Shuffle_I1D( This, Array )
 
     class(SampleLHS_Type), intent(inout)                              ::    This
     integer, dimension(:), intent(inout)                              ::    Array
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Shuffle'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    Length
     integer                                                           ::    i, ii
     integer                                                           ::    Temp
 
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     Length = size(Array,1)
 
     do i = 1, Length-1
@@ -786,20 +682,16 @@ contains
       end if
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function CheckRepresentation( NbBins, Array, Debug )
+  function CheckRepresentation( NbBins, Array )
 
     logical, allocatable, dimension(:)                                ::    CheckRepresentation
     integer, intent(in)                                               ::    NbBins
     real(rkp), dimension(:), intent(in)                               ::    Array
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='CheckRepresentation'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    Length
@@ -807,10 +699,6 @@ contains
     real(rkp)                                                         ::    BinMin
     real(rkp)                                                         ::    BinMax
     real(rkp)                                                         ::    dx
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     Length = size(Array,1)
 
@@ -831,8 +719,6 @@ contains
       end if
     end do
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -842,12 +728,8 @@ contains
     class(SampleLHS_Type), intent(out)                                ::    LHS
     class(SampleScheme_Type), intent(in)                              ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -872,8 +754,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
@@ -883,16 +763,10 @@ contains
     type(SampleLHS_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%EnrichmentSequence) ) deallocate(This%EnrichmentSequence, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%EnrichmentSequence', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

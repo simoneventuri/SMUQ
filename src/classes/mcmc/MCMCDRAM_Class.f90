@@ -90,18 +90,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
 
     class(MCMCDRAM_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
@@ -109,24 +103,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(MCMCDRAM_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -172,24 +158,16 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This, Debug )
+  subroutine SetDefaults( This )
 
     class(MCMCDRAM_Type), intent(inout)                               ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%SectionChain = ''
 
@@ -208,13 +186,11 @@ contains
     This%AcceptedPostBurnIn = 0
     This%StartThreshold = 1.0D-200
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, SectionChain, Prefix, Debug )
+  subroutine ConstructInput( This, Input, SectionChain, Prefix )
 
     use StringRoutines_Module
 
@@ -222,9 +198,7 @@ contains
     class(InputSection_Type), intent(in)                              ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
@@ -241,10 +215,6 @@ contains
     logical                                                           ::    Found
     integer                                                           ::    NbResponses
     integer                                                           ::    i
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -321,7 +291,7 @@ contains
 
     SectionName = 'am'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      ParameterName = 'burn_in_length'
+      ParameterName = 'initial_adaptation_length'
       call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
       if ( Found ) This%BurnIn_AM = VarI0D
 
@@ -432,13 +402,11 @@ contains
 
     This%Constructed = .true.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
 
@@ -447,9 +415,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -463,10 +429,6 @@ contains
     character(:), allocatable                                         ::    FileName
     logical                                                           ::    Found
     character(:), allocatable                                         ::    VarC0D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -499,7 +461,8 @@ contains
     SectionName = 'am'
     call GetInput%AddSection( SectionName=SectionName )
     call GetInput%AddParameter( Name='update_frequency', Value=ConvertToString(Value=This%UpdateFreq_AM), SectionName=SectionName)
-    call GetInput%AddParameter( Name='burn_in_length', Value=ConvertToString(Value=This%BurnIn_AM ), SectionName=SectionName )
+    call GetInput%AddParameter( Name='initial_adaptation_length', Value=ConvertToString(Value=This%BurnIn_AM ),                  &
+                                                                                                         SectionName=SectionName )
 
     if ( allocated(This%IniMu) ) then
       call GetInput%AddParameter( Name='initial_start', Value=ConvertToString(Values=This%IniMu) )
@@ -627,14 +590,12 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Delayed Rejection schemes for efficient Markov chainMonte Carlo sampling of multimodal distributions
-  subroutine GenerateChain( This, SamplingTarget, SampleSpace, ParameterChain, TargetChain, MiscChain, OutputDirectory, Debug )
+  subroutine GenerateChain( This, SamplingTarget, SampleSpace, ParameterChain, TargetChain, MiscChain, OutputDirectory )
 
     class(MCMCDRAM_Type), intent(inout)                               ::    This
     procedure(MCMCSamplingTarget), pointer                            ::    SamplingTarget
@@ -643,9 +604,7 @@ contains
     real(rkp), allocatable, dimension(:,:), optional, intent(out)     ::    ParameterChain
     real(rkp), allocatable, dimension(:), optional, intent(out)       ::    TargetChain
     real(rkp), allocatable, dimension(:,:), optional, intent(out)     ::    MiscChain
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbDim
@@ -691,10 +650,6 @@ contains
     logical                                                           ::    MiscValuesFlag
     real(rkp)                                                         ::    HVarR0D
     real(rkp)                                                         ::    TVarR0D
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     HVarR0D = dlog(huge(VarR0D))
     TVarR0D = dlog(tiny(VarR0D))
@@ -832,6 +787,7 @@ contains
         This%ParameterChain = Zero
         if ( allocated(This%MiscChain) ) This%MiscChain = Zero
 
+        This%Cov = Zero
         if ( .not. allocated(This%IniCov) ) then
           do i = 1, NbDim
             DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
@@ -1291,19 +1247,15 @@ contains
     deallocate(This%StartMu, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StartMu', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, Directory, Debug )
+  subroutine WriteOutput( This, Directory )
 
     class(MCMCDRAM_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    Directory
-    logical, intent(in), optional                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='WriteOutput'
     integer                                                           ::    StatLoc
     type(InputSection_Type)                                           ::    Input
@@ -1312,10 +1264,6 @@ contains
     character(:), allocatable                                         ::    DirectoryLoc
     logical                                                           ::    SilentLoc
     type(SMUQFile_Type)                                               ::    File
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( len_trim(Directory) /= 0 ) then
 
@@ -1370,8 +1318,6 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -1381,12 +1327,8 @@ contains
     class(MCMCDRAM_Type), intent(out)                                 ::    LHS
     class(MCMCMethod_Type), intent(in)                                ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -1448,8 +1390,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -1459,11 +1399,7 @@ contains
     type(MCMCDRAM_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%IniMu) ) deallocate(This%IniMu, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%IniMu', ProcName=ProcName, stat=StatLoc )
@@ -1497,8 +1433,6 @@ contains
 
     if ( allocated(This%StartMu) ) deallocate(This%StartMu, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StartMu', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

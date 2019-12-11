@@ -76,16 +76,10 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This, Debug )
+  subroutine Initialize( This )
     class(OrthoNumerical_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Initialize'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Initialized ) then
       This%Name         =   'numerical'
@@ -93,24 +87,16 @@ contains
       call This%SetDefaults()
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This, Debug )
+  subroutine Reset( This )
 
     class(OrthoNumerical_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     This%Initialized = .false.
     This%Constructed = .false.
@@ -131,40 +117,28 @@ contains
 
     call This%Initialize()
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This, Debug)
+  subroutine SetDefaults(This)
 
     class(OrthoNumerical_Type), intent(inout)                         ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
    
     This%Normalized = .false.
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix, Debug )
+  subroutine ConstructInput( This, Input, Prefix )
 
     class(OrthoNumerical_Type), intent(inout)                         ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructInput'
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
@@ -178,10 +152,6 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     logical                                                           ::    Found
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -229,27 +199,19 @@ contains
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) call This%IncreaseOrder( Order=VarI0D )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Weights, Normalized, Order, Debug )
+  subroutine ConstructCase1( This, Weights, Normalized, Order )
 
     class(OrthoNumerical_Type), intent(inout)                         ::    This
     class(DistProb_Type), intent(in)                                  ::    Weights
     logical, optional ,intent(in)                                     ::    Normalized
     integer, optional, intent(in)                                     ::    Order
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -263,13 +225,11 @@ contains
 
     if ( present(Order) ) call This%IncreaseOrder( Order=Order )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory, Debug )
+  function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -277,9 +237,7 @@ contains
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetInput'
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
@@ -292,10 +250,6 @@ contains
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FileName
     type(SMUQFile_Type)                                               ::    File
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
     
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -377,14 +331,12 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Returns the value of a polynomial of order 'n' for value of 'x'
-  function Eval_N( This, Order, X, Normalized, Debug )
+  function Eval_N( This, Order, X, Normalized )
 
     real(rkp)                                                         ::    Eval_N
 
@@ -392,9 +344,7 @@ contains
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    Order
     logical, optional, intent(in)                                     ::    Normalized
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Eval_N'
     real(rkp)                                                         ::    valnm1
     real(rkp)                                                         ::    valnp0
@@ -402,10 +352,6 @@ contains
     integer                                                           ::    i
     logical                                                           ::    NormalizedLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -437,13 +383,11 @@ contains
       Eval_N = Eval_N / This%NFactor(Order+1)
     end if 
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Eval_MN( This, MinOrder, MaxOrder, X, Normalized, Debug)
+  function Eval_MN( This, MinOrder, MaxOrder, X, Normalized)
 
     real(rkp), allocatable, dimension(:)                              ::    Eval_MN
 
@@ -452,9 +396,7 @@ contains
     integer, intent(in)                                               ::    MinOrder
     integer, intent(in)                                               ::    MaxOrder
     logical, optional, intent(in)                                     ::    Normalized
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Eval_MN'
     real(rkp)                                                         ::    valnm1
     real(rkp)                                                         ::    valnp0
@@ -462,10 +404,6 @@ contains
     integer                                                           ::    i, i_offset, ii, iii
     integer                                                           ::    StatLoc=0
     logical                                                           ::    NormalizedLoc
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -514,19 +452,15 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine IncreaseOrder( This, Order, Debug )
+  subroutine IncreaseOrder( This, Order )
 
     class(OrthoNumerical_Type), intent(inout)                         ::    This
     integer, intent(in)                                               ::    Order
-    logical, optional, intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='IncreaseOrder'
     integer                                                           ::    StatLoc=0
     real(rkp), allocatable, dimension(:)                              ::    Alpha
@@ -551,10 +485,6 @@ contains
     real(8)                                                           ::    iNFactor
     real(8)                                                           ::    A
     real(8)                                                           ::    B
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     StatLoc = 0
 
@@ -694,8 +624,6 @@ contains
 
     end if
 
-    if (DebugLoc) call Logger%Exiting()
-
     contains
 
       !!--------------------------------------------------------------------------------------------------------------------------
@@ -731,12 +659,8 @@ contains
     class(OrthoNumerical_Type), intent(out)                           ::    LHS
     class(OrthoPoly_Type), intent(in)                                 ::    RHS
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     select type (RHS)
   
@@ -767,8 +691,6 @@ contains
 
     end select
 
-    if (DebugLoc) call Logger%Exiting()
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -778,11 +700,7 @@ contains
     type(OrthoNumerical_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    logical                                                           ::    DebugLoc
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
 
     if ( allocated(This%Alpha) ) deallocate(This%Alpha, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Alpha', ProcName=ProcName, stat=StatLoc )
@@ -795,8 +713,6 @@ contains
 
     if ( allocated(This%Weights) ) deallocate( This%Weights, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Weights', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

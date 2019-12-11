@@ -43,74 +43,47 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Set( This, Object, Debug )
+  subroutine Set( This, Object )
 
     class(MParamTable_Vec_Type), intent(inout)                        ::    This
     class(MParamTable_Type), intent(in)                               ::    Object
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     allocate(This%MParamTable, source=Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MParamTable', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Get( This, Debug )
+  function Get( This )
 
     class(MParamTable_Type), allocatable                              ::    Get
 
     class(MParamTable_Vec_Type), intent(in)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. associated(This%MParamTable) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
     allocate(Get, source=This%MParamTable, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
-    if (DebugLoc) call Logger%Exiting()
-
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetPointer( This, Debug )
+  function GetPointer( This )
 
     class(MParamTable_Type), pointer                                  ::    GetPointer
 
     class(MParamTable_Vec_Type), intent(in)                           ::    This
-    logical, optional ,intent(in)                                     ::    Debug
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='GetPointer'
-
-    DebugLoc = DebugGlobal
-    if ( present(Debug) ) DebugLoc = Debug
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( .not. associated(This%MParamTable) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
     GetPointer => This%MParamTable
-
-    if (DebugLoc) call Logger%Exiting()
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
@@ -120,17 +93,11 @@ contains
 
     type(MParamTable_Vec_Type), intent(inout)                         ::    This
 
-    logical                                                           ::    DebugLoc
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    DebugLoc = DebugGlobal
-    if (DebugLoc) call Logger%Entering( ProcName )
-
     if ( associated(This%MParamTable) ) deallocate(This%MParamTable, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( name='This%MParamTable', ProcName=ProcName, stat=StatLoc )
-
-    if (DebugLoc) call Logger%Exiting()
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
