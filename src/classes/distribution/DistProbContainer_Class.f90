@@ -16,25 +16,27 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module MFileInput_Vec_Class
+module DistProbContainer_Class
 
-use Logger_Class                                                  ,only:    Logger
-use Error_Class                                                   ,only:    Error
-use MFileInput_Class                                              ,only:    MFileInput_Type
-use MFileInput_Factory_Class                                      ,only:    MFileInput_Factory
+use Logger_Class                                                  ,only:  Logger
+use Error_Class                                                   ,only:  Error
+use DistProb_Class                                                ,only:  DistProb_Type
+use DistProb_Factory_Class                                        ,only:  DistProb_Factory
 
 implicit none
 
 private
 
-public                                                                ::    MFileInput_Vec_Type
+public                                                                ::    DistProbContainer_Type
 
-type                                                                  ::    MFileInput_Vec_Type
-  class(MFileInput_Type), pointer                                     ::    MFileInput=>null()
+type                                                                  ::    DistProbContainer_Type
+  class(DistProb_Type), pointer                                       ::    DistProb=>null()
 contains
+  generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
   procedure, public                                                   ::    Set
+  procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
 
@@ -45,14 +47,17 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
-    class(MFileInput_Vec_Type), intent(inout)                         ::    This
-    class(MFileInput_Type), intent(in)                                ::    Object
+    class(DistProbContainer_Type), intent(inout)                      ::    This
+    class(DistProb_Type), intent(in)                                  ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
 
-    allocate(This%MFileInput, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MFileInput', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%DistProb) ) deallocate(This%DistProb, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
+    
+    allocate(This%DistProb, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -60,16 +65,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
-    class(MFileInput_Type), allocatable                               ::    Get
+    class(DistProb_Type), allocatable                                 ::    Get
 
-    class(MFileInput_Vec_Type), intent(in)                            ::    This
+    class(DistProbContainer_Type), intent(in)                         ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. associated(This%MFileInput) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. associated(This%DistProb) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
 
-    allocate(Get, source=This%MFileInput, stat=StatLoc)
+    allocate(Get, source=This%DistProb, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -78,15 +83,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
-    class(MFileInput_Type), pointer                                   ::    GetPointer
+    class(DistProb_Type), pointer                                     ::    GetPointer
 
-    class(MFileInput_Vec_Type), intent(in)                            ::    This
+    class(DistProbContainer_Type), intent(in)                         ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
-    if ( .not. associated(This%MFileInput) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. associated(This%DistProb) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
 
-    GetPointer => This%MFileInput
+    GetPointer => This%DistProb
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -94,26 +99,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(MFileInput_Vec_Type), intent(inout)                         ::    LHS
-    class(MFileInput_Vec_Type), intent(in)                            ::    RHS
+    class(DistProbContainer_Type), intent(out)                        ::    LHS
+    type(DistProbContainer_Type), intent(in)                          ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
-    select type (RHS)
-  
-      type is (MFileInput_Vec_Type)
-        if ( associated(RHS%MFileInput) ) then
-          if ( associated(LHS%MFileInput) ) deallocate( LHS%MFileInput, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%MFileInput', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%MFileInput, source=RHS%MFileInput, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MFileInput', ProcName=ProcName, stat=StatLoc )
-        end if
-      
-      class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
-
-    end select
+    if ( associated(RHS%DistProb) ) then
+      if ( associated(LHS%DistProb) ) deallocate( LHS%DistProb, stat=StatLoc )
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%DistProb', Procname=ProcName, stat=StatLoc )
+      allocate(LHS%DistProb, source=RHS%DistProb, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%DistProb', ProcName=ProcName, stat=StatLoc )
+    end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -121,13 +118,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(MFileInput_Vec_Type), intent(inout)                          ::    This
+    type(DistProbContainer_Type), intent(inout)                       ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%MFileInput) ) deallocate(This%MFileInput, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%MFileInput', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%DistProb) ) deallocate(This%DistProb, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%DistProb', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

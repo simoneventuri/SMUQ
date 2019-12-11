@@ -5,5 +5,5 @@ add_target_sources ( smuqApp
   TestGFun_Class.f90
   TestBorehole_Class.f90
   TestSpill_Class.f90
-  TestFunction_Vec_Class.f90
+  TestFunctionContainer_Class.f90
  )

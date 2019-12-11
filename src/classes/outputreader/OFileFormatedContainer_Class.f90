@@ -16,21 +16,21 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module PolyCoeff_Vec_Class
+module OFileFormatedContainer_Class
 
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use PolyCoeff_Class                                               ,only:    PolyCoeff_Type
-use PolyCoeff_Factory_Class                                       ,only:    PolyCoeff_Factory
+use OFileFormated_Class                                           ,only:    OFileFormated_Type
+use OFileFormated_Factory_Class                                   ,only:    OFileFormated_Factory
 
 implicit none
 
 private
 
-public                                                                ::    PolyCoeff_Vec_Type
+public                                                                ::    OFileFormatedContainer_Type
 
-type                                                                  ::    PolyCoeff_Vec_Type
-  class(PolyCoeff_Type), pointer                                      ::    PolyCoeff=>null()
+type                                                                  ::    OFileFormatedContainer_Type
+  class(OFileFormated_Type), pointer                                  ::    OFileFormated=>null()
 contains
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
@@ -45,14 +45,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
-    class(PolyCoeff_Vec_Type), intent(inout)                          ::    This
-    class(PolyCoeff_Type), intent(in)                                 ::    Object
+    class(OFileFormatedContainer_Type), intent(inout)                 ::    This
+    class(OFileFormated_Type), intent(in)                             ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-
-    allocate(This%PolyCoeff, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc )
+    allocate(This%OFileFormated, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OFileFormated', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -60,16 +59,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
-    class(PolyCoeff_Type), allocatable                                ::    Get
+    class(OFileFormated_Type), allocatable                            ::    Get
 
-    class(PolyCoeff_Vec_Type), intent(in)                             ::    This
+    class(OFileFormatedContainer_Type), intent(in)                    ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
+    if ( .not. associated(This%OFileFormated) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    if ( .not. associated(This%PolyCoeff) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
-
-    allocate(Get, source=This%PolyCoeff, stat=StatLoc)
+    allocate(Get, source=This%OFileFormated, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -78,15 +76,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
-    class(PolyCoeff_Type), pointer                                    ::    GetPointer
+    class(OFileFormated_Type), pointer                                ::    GetPointer
 
-    class(PolyCoeff_Vec_Type), intent(in)                             ::    This
+    class(OFileFormatedContainer_Type), intent(in)                    ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
+    integer                                                           ::    StatLoc=0
+    if ( .not. associated(This%OFileFormated) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    if ( .not. associated(This%PolyCoeff) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
-
-    GetPointer => This%PolyCoeff
+    GetPointer => This%OFileFormated
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -94,20 +92,20 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(PolyCoeff_Vec_Type), intent(inout)                          ::    LHS
-    class(PolyCoeff_Vec_Type), intent(in)                             ::    RHS
+    class(OFileFormatedContainer_Type), intent(inout)                 ::    LHS
+    class(OFileFormatedContainer_Type), intent(in)                    ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (PolyCoeff_Vec_Type)
-        if ( associated(RHS%PolyCoeff) ) then
-          if ( associated(LHS%PolyCoeff) ) deallocate( LHS%PolyCoeff, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%PolyCoeff', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%PolyCoeff, source=RHS%PolyCoeff, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PolyCoeff', ProcName=ProcName, stat=StatLoc )
+      type is (OFileFormatedContainer_Type)
+        if ( associated(RHS%OFileFormated) ) then
+          if ( associated(LHS%OFileFormated) ) deallocate( LHS%OFileFormated, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%OFileFormated', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%OFileFormated, source=RHS%OFileFormated, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OFileFormated', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -121,13 +119,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(PolyCoeff_Vec_Type), intent(inout)                           ::    This
+    type(OFileFormatedContainer_Type), intent(inout)                  ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc
+    integer                                                           ::    StatLoc=0
 
-    if ( associated(This%PolyCoeff) ) deallocate(This%PolyCoeff, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%OFileFormated) ) deallocate(This%OFileFormated, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%OFileFormated', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

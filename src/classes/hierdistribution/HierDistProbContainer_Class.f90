@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module HierDistProb_Vec_Class
+module HierDistProbContainer_Class
 
 use Logger_Class                                                  ,only:  Logger
 use Error_Class                                                   ,only:  Error
@@ -27,9 +27,9 @@ implicit none
 
 private
 
-public                                                                ::    HierDistProb_Vec_Type
+public                                                                ::    HierDistProbContainer_Type
 
-type                                                                  ::    HierDistProb_Vec_Type
+type                                                                  ::    HierDistProbContainer_Type
   class(HierDistProb_Type), pointer                                   ::    HierDistProb=>null()
 contains
   generic, public                                                     ::    assignment(=)           =>    Copy
@@ -44,10 +44,10 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
-    class(HierDistProb_Vec_Type), intent(inout)                       ::    This
+    class(HierDistProbContainer_Type), intent(inout)                  ::    This
     class(HierDistProb_Type), intent(in)                              ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
@@ -60,14 +60,14 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
     class(HierDistProb_Type), allocatable                             ::    Get
 
-    class(HierDistProb_Vec_Type), intent(in)                          ::    This
+    class(HierDistProbContainer_Type), intent(in)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
@@ -78,14 +78,14 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
     class(HierDistProb_Type), pointer                                 ::    GetPointer
 
-    class(HierDistProb_Vec_Type), intent(in)                          ::    This
+    class(HierDistProbContainer_Type), intent(in)                     ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
@@ -94,20 +94,20 @@ contains
     GetPointer => This%HierDistProb
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(HierDistProb_Vec_Type), intent(inout)                       ::    LHS
-    class(HierDistProb_Vec_Type), intent(in)                          ::    RHS
+    class(HierDistProbContainer_Type), intent(inout)                  ::    LHS
+    class(HierDistProbContainer_Type), intent(in)                     ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (HierDistProb_Vec_Type)
+      type is (HierDistProbContainer_Type)
         if ( associated(RHS%HierDistProb) ) then
           if ( associated(LHS%HierDistProb) ) deallocate( LHS%HierDistProb, stat=StatLoc )
           if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%HierDistProb', Procname=ProcName, stat=StatLoc )
@@ -121,12 +121,12 @@ contains
     end select
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(HierDistProb_Vec_Type), intent(inout)                        ::    This
+    type(HierDistProbContainer_Type), intent(inout)                   ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
@@ -135,6 +135,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( name='This%HierDistProb', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

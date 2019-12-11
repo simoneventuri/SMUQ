@@ -16,25 +16,27 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module OFileFormated_Vec_Class
+module TestFunctionContainer_Class
 
-use Logger_Class                                                  ,only:    Logger
-use Error_Class                                                   ,only:    Error
-use OFileFormated_Class                                           ,only:    OFileFormated_Type
-use OFileFormated_Factory_Class                                   ,only:    OFileFormated_Factory
+use Logger_Class                                                  ,only:  Logger
+use Error_Class                                                   ,only:  Error
+use TestFunction_Class                                            ,only:  TestFunction_Type
+use TestFunction_Factory_Class                                    ,only:  TestFunction_Factory
 
 implicit none
 
 private
 
-public                                                                ::    OFileFormated_Vec_Type
+public                                                                ::    TestFunctionContainer_Type
 
-type                                                                  ::    OFileFormated_Vec_Type
-  class(OFileFormated_Type), pointer                                  ::    OFileFormated=>null()
+type                                                                  ::    TestFunctionContainer_Type
+  class(TestFunction_Type), pointer                                   ::    TestFunction=>null()
 contains
+  generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
   procedure, public                                                   ::    Set
+  procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
 
@@ -45,13 +47,17 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
-    class(OFileFormated_Vec_Type), intent(inout)                      ::    This
-    class(OFileFormated_Type), intent(in)                             ::    Object
+    class(TestFunctionContainer_Type), intent(inout)                  ::    This
+    class(TestFunction_Type), intent(in)                              ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-    allocate(This%OFileFormated, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OFileFormated', ProcName=ProcName, stat=StatLoc )
+
+    if ( associated(This%TestFunction) ) deallocate(This%TestFunction, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TestFunction', ProcName=ProcName, stat=StatLoc)
+    
+    allocate(This%TestFunction, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%TestFunction', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -59,15 +65,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
-    class(OFileFormated_Type), allocatable                            ::    Get
+    class(TestFunction_Type), allocatable                             ::    Get
 
-    class(OFileFormated_Vec_Type), intent(in)                         ::    This
+    class(TestFunctionContainer_Type), intent(in)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
-    if ( .not. associated(This%OFileFormated) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    allocate(Get, source=This%OFileFormated, stat=StatLoc)
+    if ( .not. associated(This%TestFunction) ) call Error%Raise( Line='Object never defined', ProcName=ProcName)
+
+    allocate(Get, source=This%TestFunction, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -76,15 +83,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
-    class(OFileFormated_Type), pointer                                ::    GetPointer
+    class(TestFunction_Type), pointer                                 ::    GetPointer
 
-    class(OFileFormated_Vec_Type), intent(in)                         ::    This
+    class(TestFunctionContainer_Type), intent(in)                     ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
-    integer                                                           ::    StatLoc=0
-    if ( .not. associated(This%OFileFormated) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    GetPointer => This%OFileFormated
+    if ( .not. associated(This%TestFunction) ) call Error%Raise( Line='Object never defined', ProcName=ProcName)
+
+    GetPointer => This%TestFunction
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -92,20 +99,20 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(OFileFormated_Vec_Type), intent(inout)                      ::    LHS
-    class(OFileFormated_Vec_Type), intent(in)                         ::    RHS
+    class(TestFunctionContainer_Type), intent(inout)                  ::    LHS
+    class(TestFunctionContainer_Type), intent(in)                     ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (OFileFormated_Vec_Type)
-        if ( associated(RHS%OFileFormated) ) then
-          if ( associated(LHS%OFileFormated) ) deallocate( LHS%OFileFormated, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%OFileFormated', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%OFileFormated, source=RHS%OFileFormated, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OFileFormated', ProcName=ProcName, stat=StatLoc )
+      type is (TestFunctionContainer_Type)
+        if ( associated(RHS%TestFunction) ) then
+          if ( associated(LHS%TestFunction) ) deallocate( LHS%TestFunction, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%TestFunction', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%TestFunction, source=RHS%TestFunction, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%TestFunction', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -119,13 +126,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(OFileFormated_Vec_Type), intent(inout)                       ::    This
+    type(TestFunctionContainer_Type), intent(inout)                   ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+    integer                                                           ::    StatLoc
 
-    if ( associated(This%OFileFormated) ) deallocate(This%OFileFormated, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%OFileFormated', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%TestFunction) ) deallocate(This%TestFunction, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%TestFunction', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

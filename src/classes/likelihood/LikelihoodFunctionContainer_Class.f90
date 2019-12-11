@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module LikelihoodFunction_Vec_Class
+module LikelihoodFunctionContainer_Class
 
 use Logger_Class                                                  ,only:  Logger
 use Error_Class                                                   ,only:  Error
@@ -27,9 +27,9 @@ implicit none
 
 private
 
-public                                                                ::    LikelihoodFunction_Vec_Type
+public                                                                ::    LikelihoodFunctionContainer_Type
 
-type                                                                  ::    LikelihoodFunction_Vec_Type
+type                                                                  ::    LikelihoodFunctionContainer_Type
   class(LikelihoodFunction_Type), pointer                             ::    LikelihoodFunction=>null()
 contains
   generic, public                                                     ::    assignment(=)           =>    Copy
@@ -47,7 +47,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
   subroutine Set( This, Object )
 
-    class(LikelihoodFunction_Vec_Type), intent(inout)                 ::    This
+    class(LikelihoodFunctionContainer_Type), intent(inout)            ::    This
     class(LikelihoodFunction_Type), intent(in)                        ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
@@ -67,7 +67,7 @@ contains
 
     class(LikelihoodFunction_Type), allocatable                       ::    Get
 
-    class(LikelihoodFunction_Vec_Type), intent(in)                    ::    This
+    class(LikelihoodFunctionContainer_Type), intent(in)               ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
@@ -85,7 +85,7 @@ contains
 
     class(LikelihoodFunction_Type), pointer                           ::    GetPointer
 
-    class(LikelihoodFunction_Vec_Type), intent(in)                    ::    This
+    class(LikelihoodFunctionContainer_Type), intent(in)               ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
@@ -99,15 +99,15 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(LikelihoodFunction_Vec_Type), intent(inout)                 ::    LHS
-    class(LikelihoodFunction_Vec_Type), intent(in)                    ::    RHS
+    class(LikelihoodFunctionContainer_Type), intent(inout)            ::    LHS
+    class(LikelihoodFunctionContainer_Type), intent(in)               ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (LikelihoodFunction_Vec_Type)
+      type is (LikelihoodFunctionContainer_Type)
         if ( associated(RHS%LikelihoodFunction) ) then
           if ( associated(LHS%LikelihoodFunction) ) deallocate( LHS%LikelihoodFunction, stat=StatLoc )
           if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%LikelihoodFunction', Procname=ProcName, stat=StatLoc )
@@ -126,7 +126,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
   impure elemental subroutine Finalizer( This )
 
-    type(LikelihoodFunction_Vec_Type), intent(inout)                  ::    This
+    type(LikelihoodFunctionContainer_Type), intent(inout)             ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc

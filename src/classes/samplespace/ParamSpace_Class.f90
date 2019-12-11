@@ -234,8 +234,9 @@ contains
     allocate(This%ParamName(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%DistProb, source=Distributions, stat=StatLoc)
+    allocate(This%DistProb(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    This%DistProb = Distributions
 
     allocate(This%Label, source=Labels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )

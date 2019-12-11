@@ -16,27 +16,25 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module DistProb_Vec_Class
+module MParamScalarContainer_Class
 
-use Logger_Class                                                  ,only:  Logger
-use Error_Class                                                   ,only:  Error
-use DistProb_Class                                                ,only:  DistProb_Type
-use DistProb_Factory_Class                                        ,only:  DistProb_Factory
+use Logger_Class                                                  ,only:    Logger
+use Error_Class                                                   ,only:    Error
+use MParamScalar_Class                                            ,only:    MParamScalar_Type
+use MParamScalar_Factory_Class                                    ,only:    MParamScalar_Factory
 
 implicit none
 
 private
 
-public                                                                ::    DistProb_Vec_Type
+public                                                                ::    MParamScalarContainer_Type
 
-type                                                                  ::    DistProb_Vec_Type
-  class(DistProb_Type), pointer                                       ::    DistProb=>null()
+type                                                                  ::    MParamScalarContainer_Type
+  class(MParamScalar_Type), pointer                                   ::    MParamScalar=>null()
 contains
-  generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
   procedure, public                                                   ::    Set
-  procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
 
@@ -47,17 +45,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
-    class(DistProb_Vec_Type), intent(inout)                           ::    This
-    class(DistProb_Type), intent(in)                                  ::    Object
+    class(MParamScalarContainer_Type), intent(inout)                  ::    This
+    class(MParamScalar_Type), intent(in)                              ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-
-    if ( associated(This%DistProb) ) deallocate(This%DistProb, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
-    
-    allocate(This%DistProb, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    allocate(This%MParamScalar, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MParamScalar', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -65,16 +59,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
-    class(DistProb_Type), allocatable                                 ::    Get
+    class(MParamScalar_Type), allocatable                             ::    Get
 
-    class(DistProb_Vec_Type), intent(in)                              ::    This
+    class(MParamScalarContainer_Type), intent(in)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
+    if ( .not. associated(This%MParamScalar) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    if ( .not. associated(This%DistProb) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
-
-    allocate(Get, source=This%DistProb, stat=StatLoc)
+    allocate(Get, source=This%MParamScalar, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -83,15 +76,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
-    class(DistProb_Type), pointer                                     ::    GetPointer
+    class(MParamScalar_Type), pointer                                 ::    GetPointer
 
-    class(DistProb_Vec_Type), intent(in)                              ::    This
+    class(MParamScalarContainer_Type), intent(in)                     ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
+    if ( .not. associated(This%MParamScalar) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    if ( .not. associated(This%DistProb) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
-
-    GetPointer => This%DistProb
+    GetPointer => This%MParamScalar
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -99,20 +91,20 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(DistProb_Vec_Type), intent(out)                             ::    LHS
-    class(DistProb_Vec_Type), intent(in)                              ::    RHS
+    class(MParamScalarContainer_Type), intent(inout)                  ::    LHS
+    class(MParamScalarContainer_Type), intent(in)                     ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (DistProb_Vec_Type)
-        if ( associated(RHS%DistProb) ) then
-          if ( associated(LHS%DistProb) ) deallocate( LHS%DistProb, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%DistProb', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%DistProb, source=RHS%DistProb, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%DistProb', ProcName=ProcName, stat=StatLoc )
+      type is (MParamScalarContainer_Type)
+        if ( associated(RHS%MParamScalar) ) then
+          if ( associated(LHS%MParamScalar) ) deallocate( LHS%MParamScalar, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%MParamScalar', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%MParamScalar, source=RHS%MParamScalar, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MParamScalar', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -126,13 +118,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(DistProb_Vec_Type), intent(inout)                            ::    This
+    type(MParamScalarContainer_Type), intent(inout)                   ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%DistProb) ) deallocate(This%DistProb, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%MParamScalar) ) deallocate(This%MParamScalar, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%MParamScalar', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

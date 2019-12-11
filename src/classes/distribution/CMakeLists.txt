@@ -3,7 +3,7 @@ add_target_sources ( smuqApp
   BaseDistProb_Factory_Class.f90
   DistProb_Factory_Class.f90
   DistProb_Class.f90
-  DistProb_Vec_Class.f90
+  DistProbContainer_Class.f90
   DistGamma_Class.f90
   DistNorm_Class.f90
   DistLogNorm_Class.f90

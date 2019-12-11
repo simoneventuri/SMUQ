@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module MParamTable_Vec_Class
+module MParamTableContainer_Class
 
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -27,9 +27,9 @@ implicit none
 
 private
 
-public                                                                ::    MParamTable_Vec_Type
+public                                                                ::    MParamTableContainer_Type
 
-type                                                                  ::    MParamTable_Vec_Type
+type                                                                  ::    MParamTableContainer_Type
   class(MParamTable_Type), pointer                                    ::    MParamTable=>null()
 contains
   procedure, public                                                   ::    Get
@@ -45,7 +45,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
   subroutine Set( This, Object )
 
-    class(MParamTable_Vec_Type), intent(inout)                        ::    This
+    class(MParamTableContainer_Type), intent(inout)                   ::    This
     class(MParamTable_Type), intent(in)                               ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
@@ -61,7 +61,7 @@ contains
 
     class(MParamTable_Type), allocatable                              ::    Get
 
-    class(MParamTable_Vec_Type), intent(in)                           ::    This
+    class(MParamTableContainer_Type), intent(in)                      ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
@@ -78,7 +78,7 @@ contains
 
     class(MParamTable_Type), pointer                                  ::    GetPointer
 
-    class(MParamTable_Vec_Type), intent(in)                           ::    This
+    class(MParamTableContainer_Type), intent(in)                      ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
     if ( .not. associated(This%MParamTable) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
@@ -91,15 +91,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(MParamTable_Vec_Type), intent(inout)                        ::    LHS
-    class(MParamTable_Vec_Type), intent(in)                           ::    RHS
+    class(MParamTableContainer_Type), intent(inout)                   ::    LHS
+    class(MParamTableContainer_Type), intent(in)                      ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (MParamTable_Vec_Type)
+      type is (MParamTableContainer_Type)
         if ( associated(RHS%MParamTable) ) then
           if ( associated(LHS%MParamTable) ) deallocate( LHS%MParamTable, stat=StatLoc )
           if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%MParamTable', Procname=ProcName, stat=StatLoc )
@@ -118,7 +118,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
   impure elemental subroutine Finalizer( This )
 
-    type(MParamTable_Vec_Type), intent(inout)                         ::    This
+    type(MParamTableContainer_Type), intent(inout)                    ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc

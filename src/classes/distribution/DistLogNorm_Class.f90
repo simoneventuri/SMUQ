@@ -45,6 +45,7 @@ contains
   procedure, public                                                   ::    InvCDF_R0D
   procedure, public                                                   ::    GetMoment
   procedure, public                                                   ::    Copy
+  final                                                               ::    Finalizer
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -396,6 +397,17 @@ contains
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
 
     end select
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Finalizer( This )
+  
+    type(DistLogNorm_Type), intent(inout)                             ::    This
+
+    character(*), parameter                                           ::    ProcName='Finalizer'
+    integer                                                           ::    StatLoc=0
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

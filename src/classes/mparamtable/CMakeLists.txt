@@ -3,5 +3,5 @@ add_target_sources ( smuqApp
   MParamTablePoly_Class.f90
   MParamTableCrossOver_Class.f90
   MParamTable_Factory_Class.f90
-  MParamTable_Vec_Class.f90
+  MParamTableContainer_Class.f90
 )

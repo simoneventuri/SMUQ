@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module OrthoPoly_Vec_Class
+module OrthoPolyContainer_Class
 
 use Logger_Class                                                  ,only:  Logger
 use Error_Class                                                   ,only:  Error
@@ -27,9 +27,9 @@ implicit none
 
 private
 
-public                                                                ::    OrthoPoly_Vec_Type
+public                                                                ::    OrthoPolyContainer_Type
 
-type                                                                  ::    OrthoPoly_Vec_Type
+type                                                                  ::    OrthoPolyContainer_Type
   class(OrthoPoly_Type), pointer                                      ::    OrthoPoly => null()
 contains
   generic, public                                                     ::    assignment(=)           =>    Copy
@@ -44,10 +44,10 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
-    class(OrthoPoly_Vec_Type), intent(inout)                          ::    This
+    class(OrthoPolyContainer_Type), intent(inout)                     ::    This
     class(OrthoPoly_Type), intent(in)                                 ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
@@ -57,14 +57,14 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
     class(OrthoPoly_Type), allocatable                                ::    Get
 
-    class(OrthoPoly_Vec_Type), intent(in)                             ::    This
+    class(OrthoPolyContainer_Type), intent(in)                        ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc
@@ -75,14 +75,14 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
     class(OrthoPoly_Type), pointer                                    ::    GetPointer
 
-    class(OrthoPoly_Vec_Type), intent(in)                             ::    This
+    class(OrthoPolyContainer_Type), intent(in)                        ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
@@ -91,20 +91,20 @@ contains
     GetPointer => This%OrthoPoly
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(OrthoPoly_Vec_Type), intent(inout)                          ::    LHS
-    class(OrthoPoly_Vec_Type), intent(in)                             ::    RHS
+    class(OrthoPolyContainer_Type), intent(inout)                     ::    LHS
+    class(OrthoPolyContainer_Type), intent(in)                        ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (OrthoPoly_Vec_Type)
+      type is (OrthoPolyContainer_Type)
         if ( associated(RHS%OrthoPoly) ) then
           if ( associated(LHS%OrthoPoly) ) deallocate( LHS%OrthoPoly, stat=StatLoc )
           if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%OrthoPoly', Procname=ProcName, stat=StatLoc )
@@ -118,12 +118,12 @@ contains
     end select
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(OrthoPoly_Vec_Type), intent(inout)                            ::    This
+    type(OrthoPolyContainer_Type), intent(inout)                      ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
@@ -132,6 +132,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

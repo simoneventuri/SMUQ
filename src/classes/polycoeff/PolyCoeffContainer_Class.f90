@@ -16,21 +16,21 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module MParamScalar_Vec_Class
+module PolyCoeffContainer_Class
 
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use MParamScalar_Class                                            ,only:    MParamScalar_Type
-use MParamScalar_Factory_Class                                    ,only:    MParamScalar_Factory
+use PolyCoeff_Class                                               ,only:    PolyCoeff_Type
+use PolyCoeff_Factory_Class                                       ,only:    PolyCoeff_Factory
 
 implicit none
 
 private
 
-public                                                                ::    MParamScalar_Vec_Type
+public                                                                ::    PolyCoeffContainer_Type
 
-type                                                                  ::    MParamScalar_Vec_Type
-  class(MParamScalar_Type), pointer                                   ::    MParamScalar=>null()
+type                                                                  ::    PolyCoeffContainer_Type
+  class(PolyCoeff_Type), pointer                                      ::    PolyCoeff=>null()
 contains
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
@@ -45,13 +45,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set( This, Object )
 
-    class(MParamScalar_Vec_Type), intent(inout)                       ::    This
-    class(MParamScalar_Type), intent(in)                              ::    Object
+    class(PolyCoeffContainer_Type), intent(inout)                     ::    This
+    class(PolyCoeff_Type), intent(in)                                 ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-    allocate(This%MParamScalar, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MParamScalar', ProcName=ProcName, stat=StatLoc )
+
+    allocate(This%PolyCoeff, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -59,15 +60,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function Get( This )
 
-    class(MParamScalar_Type), allocatable                             ::    Get
+    class(PolyCoeff_Type), allocatable                                ::    Get
 
-    class(MParamScalar_Vec_Type), intent(in)                          ::    This
+    class(PolyCoeffContainer_Type), intent(in)                        ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
-    if ( .not. associated(This%MParamScalar) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    allocate(Get, source=This%MParamScalar, stat=StatLoc)
+    if ( .not. associated(This%PolyCoeff) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+
+    allocate(Get, source=This%PolyCoeff, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -76,14 +78,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer( This )
 
-    class(MParamScalar_Type), pointer                                 ::    GetPointer
+    class(PolyCoeff_Type), pointer                                    ::    GetPointer
 
-    class(MParamScalar_Vec_Type), intent(in)                          ::    This
+    class(PolyCoeffContainer_Type), intent(in)                        ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
-    if ( .not. associated(This%MParamScalar) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    GetPointer => This%MParamScalar
+    if ( .not. associated(This%PolyCoeff) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+
+    GetPointer => This%PolyCoeff
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -91,20 +94,20 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(MParamScalar_Vec_Type), intent(inout)                       ::    LHS
-    class(MParamScalar_Vec_Type), intent(in)                          ::    RHS
+    class(PolyCoeffContainer_Type), intent(inout)                     ::    LHS
+    class(PolyCoeffContainer_Type), intent(in)                        ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (MParamScalar_Vec_Type)
-        if ( associated(RHS%MParamScalar) ) then
-          if ( associated(LHS%MParamScalar) ) deallocate( LHS%MParamScalar, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%MParamScalar', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%MParamScalar, source=RHS%MParamScalar, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MParamScalar', ProcName=ProcName, stat=StatLoc )
+      type is (PolyCoeffContainer_Type)
+        if ( associated(RHS%PolyCoeff) ) then
+          if ( associated(LHS%PolyCoeff) ) deallocate( LHS%PolyCoeff, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%PolyCoeff', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%PolyCoeff, source=RHS%PolyCoeff, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PolyCoeff', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -118,13 +121,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(MParamScalar_Vec_Type), intent(inout)                        ::    This
+    type(PolyCoeffContainer_Type), intent(inout)                      ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%MParamScalar) ) deallocate(This%MParamScalar, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%MParamScalar', ProcName=ProcName, stat=StatLoc )
+    if ( associated(This%PolyCoeff) ) deallocate(This%PolyCoeff, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
