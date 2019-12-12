@@ -44,7 +44,7 @@ private
 public                                                                ::    TransfSampleSpaceUnbound_Type
 
 type, extends(TransfSampleSpace_Type)                                 ::    TransfSampleSpaceUnbound_Type
-  type(ParamSpace_Type), allocatable                                  ::    OrigSampleSpace
+  type(ParamSpace_Type)                                               ::    OrigSampleSpace
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -101,9 +101,6 @@ contains
     if ( allocated(This%CorrMat) ) deallocate(This%CorrMat, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
     This%Correlated=.false.
-
-    if ( allocated(This%OrigSampleSpace) ) deallocate(This%OrigSampleSpace, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -223,10 +220,7 @@ contains
       call DistProbVec(i)%Set(Object=DistProbPtr)
     end do
 
-    call OrigSampleSpace%Construct( Distributions=DistProbVec, CorrMat=This%CorrMat, Labels=This%Label, Names=This%ParamName )
-
-    allocate(This%OrigSampleSpace, source=OrigSampleSpace, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
+    call This%OrigSampleSpace%Construct( Distributions=DistProbVec, CorrMat=This%CorrMat, Labels=This%Label, Names=This%ParamName)
 
     if ( This%Correlated .or. This%OrigSampleSpace%IsCorrelated() ) call Error%Raise( 'Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName )

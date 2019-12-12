@@ -513,6 +513,22 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  function GetValuesPointer( This )
+
+    real(rkp), pointer, dimension(:,:)                                ::    GetValuesPointer
+    class(InputStoch_Type), target, intent(in)                        ::    This
+
+    character(*), parameter                                           ::    ProcName='GetValuesPointer'
+    integer                                                           ::    StatLoc=0
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
+
+    GetValuesPointer => This%Input
+
+   end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetNbDegen( This )
 
     integer                                                           ::    GetNbDegen

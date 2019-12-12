@@ -714,7 +714,7 @@ contains
     i = 1
     do i = 1, NbDim
       call OrthoPolyVec(i)%Set( Object=OrthoPoly )
-      call DistNormal(i)%Construct( Mu=One, Sigma=Zero )
+      call DistNormal(i)%Construct( Mu=Zero, Sigma=One )
     end do
 
     call Basis%Construct( Polynomials=OrthoPolyVec  )

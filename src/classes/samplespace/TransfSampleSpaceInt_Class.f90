@@ -43,7 +43,7 @@ private
 public                                                                ::    TransfSampleSpaceInt_Type
 
 type, extends(TransfSampleSpace_Type)                                 ::    TransfSampleSpaceInt_Type
-  type(ParamSpace_Type), allocatable                                  ::    OrigSampleSpace
+  type(ParamSpace_Type)                                               ::    OrigSampleSpace
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -104,9 +104,6 @@ contains
     if ( allocated(This%CorrMat) ) deallocate(This%CorrMat, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
     This%Correlated=.false.
-
-    if ( allocated(This%OrigSampleSpace) ) deallocate(This%OrigSampleSpace, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OrigSampleSpace', ProcName=ProcName, stat=StatLoc )
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -284,7 +281,7 @@ contains
   subroutine ConstructCase2( This, Distributions, CorrMat, OriginalSampleSpace )
 
     class(TransfSampleSpaceInt_Type), intent(inout)                   ::    This
-    type(DistProbContainer_Type), dimension(:), intent(in)                 ::    Distributions
+    type(DistProbContainer_Type), dimension(:), intent(in)            ::    Distributions
     class(SampleSpace_Type), intent(in)                               ::    OriginalSampleSpace
     real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
     
@@ -475,11 +472,21 @@ contains
     character(*), parameter                                           ::    ProcName='Transform1D'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
+    class(DistProb_Type), pointer                                     ::    Distribution=>null()
+    class(DistProb_Type), pointer                                     ::    OrigDistribution=>null()
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    allocate( Transform1D, source=X, stat=StatLoc )
+    allocate( Transform1D, mold=X, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Transform1D', ProcName=ProcName, stat=StatLoc )
+
+    do i = 1, This%NbDim
+      Distribution => This%DistProb(i)%GetPointer()
+      OrigDistribution => This%OrigSampleSpace%GetDistributionPointer( Label=This%Label(i)%GetValue() )
+      Transform1D(i) = Distribution%InvCDF( OrigDistribution%CDF(X(i)) )
+      nullify(Distribution)
+      nullify(OrigDistribution)
+    end do 
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -495,11 +502,19 @@ contains
     character(*), parameter                                           ::    ProcName='InvTransform1D'
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
+    class(DistProb_Type), pointer                                     ::    Distribution=>null()
+    class(DistProb_Type), pointer                                     ::    OrigDistribution=>null()
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    allocate( InvTransform1D, source=Z, stat=StatLoc )
+    allocate( InvTransform1D, mold=Z, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='InvTransform1D', ProcName=ProcName, stat=StatLoc )
+
+    do i = 1, This%NbDim
+      Distribution => This%DistProb(i)%GetPointer()
+      OrigDistribution => This%OrigSampleSpace%GetDistributionPointer( Label=This%Label(i)%GetValue() )
+      InvTransform1D(i) = OrigDistribution%InvCDF( Distribution%CDF(Z(i)) )
+    end do 
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

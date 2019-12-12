@@ -196,7 +196,7 @@ contains
       This%TruncatedRight = .true.
     end if
 
-    if ( This%Sigma <= Zero ) call Error%Raise( Line='Standard deviation specified to be below minimum of 0', ProcName=ProcName )
+    if ( This%Sigma <= Zero ) call Error%Raise( Line='Standard deviation specified to be at or below zero', ProcName=ProcName )
 
     if ( This%TruncatedLeft .and. This%TruncatedRight ) then
       if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )

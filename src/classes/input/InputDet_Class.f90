@@ -27,6 +27,7 @@ contains
   procedure, public                                                   ::    GetValue0D_Label
   procedure, public                                                   ::    GetValue1D_Labels
   procedure, public                                                   ::    GetValue1D
+  procedure, public                                                   ::    GetValuesPointer
   generic, public                                                     ::    Append                  =>    AppendInput0D,          &
                                                                                                           AppendInput1D
   procedure, public                                                   ::    AppendInput0D
@@ -331,6 +332,22 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
 
    end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetValuesPointer( This )
+
+    real(rkp), pointer, dimension(:)                                  ::    GetValuesPointer
+    class(InputDet_Type), target, intent(in)                          ::    This
+
+    character(*), parameter                                           ::    ProcName='GetValuesPointer'
+    integer                                                           ::    StatLoc=0
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
+
+    GetValuesPointer => This%Input
+
+   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
