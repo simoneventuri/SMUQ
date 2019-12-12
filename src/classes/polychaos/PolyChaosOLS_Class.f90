@@ -26,7 +26,7 @@ use StringRoutines_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use PolyChaosMethod_Class                                         ,only:    PolyChaosMethod_Type
+use PolyChaosMethod_Class                                         ,only:    PolyChaosMethod_Type, ComputeSobolIndices
 use LinSolverOLS_Class                                            ,only:    LinSolverOLS_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use LinkedList1D_Class                                            ,only:    LinkedList1D_Type
@@ -58,7 +58,13 @@ type                                                                  ::    Cell
   type(LinkedList0D_Type)                                             ::    OutputRecord
   real(rkp), dimension(:), allocatable                                ::    Coefficients
   integer, dimension(:,:), allocatable                                ::    Indices
-  real(rkp)                                                           ::    CVError=huge(1.0)                    
+  real(rkp), dimension(:), allocatable                                ::    SobolIndices
+  real(rkp)                                                           ::    CVError=huge(1.0)
+  type(LinkedList0D_Type)                                             ::    NbRunsHistory
+  type(LinkedList0D_Type)                                             ::    OrderHistory
+  type(LinkedList0D_Type)                                             ::    CardinalityHistory
+  type(LinkedList0D_Type)                                             ::    CVErrorHistory
+  type(LinkedList1D_Type)                                             ::    SobolIndicesHistory
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize_Cell
   procedure, public                                                   ::    Reset                   =>    Reset_Cell
@@ -77,6 +83,12 @@ contains
   procedure, public                                                   ::    GetIndicesPointer       =>    GetIndicesPointer_Cell
   procedure, public                                                   ::    GetCoefficientsPointer  =>    GetCoeffsPointer_Cell
   procedure, public                                                   ::    GetCVError              =>    GetCVError_Cell
+  procedure, public                                                   ::    GetSobolIndices         =>    GetSobolIndices_Cell
+  procedure, public                                                   ::    GetCVErrorHistory       =>    GetCVErrorHistory_Cell
+  procedure, public                                                   ::    GetOrderHistory         =>    GetOrderHistory_Cell
+  procedure, public                                                   ::    GetNbRunsHistory        =>    GetNbRunsHistory_Cell
+  procedure, public                                                   ::    GetCardinalityHistory   =>  GetCardinalityHistory_Cell
+  procedure, public                                                   ::    GetSobolIndicesHistory  => GetSobolIndicesHistory_Cell
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy                    =>    Copy_Cell
   final                                                               ::    Finalizer_Cell  
@@ -936,7 +948,7 @@ contains
                                                                                                                  CVError=CVError )
 
           if ( This%Cells(ii)%GetCVError() > CVError ) call This%Cells(ii)%SetModel( Coefficients=CoefficientsLoc,                &
-                                                                                             Indices=IndicesLoc, CVError=CVError )
+                                                                 Indices=IndicesLoc, CVError=CVError, IndexOrder=This%IndexOrder )
 
           if ( .not. SilentLoc ) then
             Line = ' Node ' // ConvertToString(Value=ii) // ' -- Error = ' // ConvertToString(Value=CVError)
@@ -1128,6 +1140,30 @@ contains
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
           call ExportArray( Array=This%Cells(ii)%GetRecord(), File=File )
 
+          FileName = DirectoryLoc // '/cverror_history.dat'
+          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+          call ExportArray( Array=This%Cells(ii)%GetCVErrorHistory(), File=File )
+
+          FileName = DirectoryLoc // '/order_history.dat'
+          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+          call ExportArray( Array=This%Cells(ii)%GetOrderHistory(), File=File )
+
+          FileName = DirectoryLoc // '/nb_runs_history.dat'
+          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+          call ExportArray( Array=This%Cells(ii)%GetNbRunsHistory(), File=File )
+
+          FileName = DirectoryLoc // '/cardinality_history.dat'
+          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+          call ExportArray( Array=This%Cells(ii)%GetCardinalityHistory(), File=File )
+
+          FileName = DirectoryLoc // '/sobol_indices_history.dat'
+          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+          call ExportArray( Array=This%Cells(ii)%GetSobolIndicesHistory(), File=File )
+
+          FileName = DirectoryLoc // '/sobol_indices.dat'
+          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+          call ExportArray( Array=This%Cells(ii)%GetSobolIndices(), File=File )
+
         end do
 
         iStart = iEnd
@@ -1232,7 +1268,15 @@ contains
     if ( allocated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
+    if ( allocated(This%SobolIndices) ) deallocate(This%SobolIndices, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%SobolIndices', ProcName=ProcName, stat=StatLoc )
+
     call This%OutputRecord%Purge()
+    call This%NbRunsHistory%Purge()
+    call This%OrderHistory%Purge()
+    call This%CardinalityHistory%Purge()
+    call This%CVErrorHistory%Purge()
+    call This%SobolIndicesHistory%Purge()
 
     call This%SetDefaults()
 
@@ -1246,7 +1290,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='SetDefaults_Cell'
 
-    This%CVError = huge(1)
+    This%CVError = huge(One)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1260,10 +1304,12 @@ contains
 
     character(*), parameter                                           ::    ProcName='ConstructInput_Cell'
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    VarI0D
     real(rkp)                                                         ::    VarR0D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    integer                                                           ::    VarI0D
     integer, allocatable, dimension(:)                                ::    VarI1D
     integer, allocatable, dimension(:,:)                              ::    VarI2D
     character(:), allocatable                                         ::    ParameterName
@@ -1284,6 +1330,15 @@ contains
     ParameterName = 'cv_error'
     call input%GetValue( Value=VarR0D, ParameterName=Parametername, Mandatory=.true. )
     This%CVError = VarR0D
+
+    SectionName = 'sobol_indices'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    allocate(This%SobolIndices, source=VarR1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%', ProcName=ProcName, stat=StatLoc )
+    deallocate(VarR1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
 
     SectionName = 'output'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -1311,6 +1366,46 @@ contains
     deallocate(VarI2D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
 
+    SectionName = 'cverror_history'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call This%CVErrorHistory%Append( Values=VarR1D )
+    deallocate(VarR1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+    SectionName = 'order_history'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarI1D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call This%CVErrorHistory%Append( Values=VarI1D )
+    deallocate(VarI1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+
+    SectionName = 'nb_runs_history'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarI1D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call This%NbRunsHistory%Append( Values=VarI1D )
+    deallocate(VarI1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+
+    SectionName = 'cardinality_history'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarI1D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call This%CardinalityHistory%Append( Values=VarI1D )
+    deallocate(VarI1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+
+    SectionName = 'sobol_indices_history'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call This%SobolIndicesHistory%Append( Values=VarR2D )
+    deallocate(VarR2D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+
     This%Constructed = .true.
 
   end subroutine
@@ -1336,6 +1431,11 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
     This%Indices = 0
 
+    allocate(This%SobolIndices(1), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%SobolIndices', ProcName=ProcName, stat=StatLoc )
+
+    This%Indices = 0
+    This%SobolIndices = Zero
     This%Constructed = .true.
 
   end subroutine
@@ -1363,6 +1463,7 @@ contains
     logical                                                           ::    ExternalFlag=.false.
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     integer                                                           ::    i
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     integer, allocatable, dimension(:)                                ::    VarI1D
     character(:), allocatable                                         ::    ParameterName
@@ -1391,6 +1492,14 @@ contains
 
     if ( ExternalFlag ) then
 
+      SectionName = 'sobol_indices'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      FileName = DirectoryLoc // '/sobol_indices.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Input=InputSection, Array=This%SobolIndices, File=File )
+      nullify(InputSection)
+
       SectionName = 'output'
       call GetInput_Cell%AddSection( SectionName=SectionName )
       call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -1418,7 +1527,74 @@ contains
       call ExportArray( Input=InputSection, Array=This%Indices, File=File )
       nullify(InputSection)
 
+      if ( This%CVError < huge(One) ) then
+        SectionName = 'cverror_history'
+        call GetInput_Cell%AddSection( SectionName=SectionName )
+        call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        FileName = DirectoryLoc // '/cverror_history.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call This%CVErrorHistory%Get( Values=VarR1D )
+        call ExportArray( Input=InputSection, Array=VarR1D, File=File )
+        deallocate(VarR1D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+        nullify(InputSection)
+
+        SectionName = 'order_history'
+        call GetInput_Cell%AddSection( SectionName=SectionName )
+        call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        FileName = DirectoryLoc // '/order_history.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call This%OrderHistory%Get( Values=VarI1D )
+        call ExportArray( Input=InputSection, Array=VarI1D, File=File )
+        deallocate(VarI1D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+        nullify(InputSection)
+
+        SectionName = 'nb_runs_history'
+        call GetInput_Cell%AddSection( SectionName=SectionName )
+        call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        FileName = DirectoryLoc // '/nb_runs_history.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call This%NbRunsHistory%Get( Values=VarI1D )
+        call ExportArray( Input=InputSection, Array=VarI1D, File=File )
+        deallocate(VarI1D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+        nullify(InputSection)
+
+        SectionName = 'cardinality_history'
+        call GetInput_Cell%AddSection( SectionName=SectionName )
+        call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        FileName = DirectoryLoc // '/cardinality_history.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call This%CardinalityHistory%Get( Values=VarI1D )
+        call ExportArray( Input=InputSection, Array=VarI1D, File=File )
+        deallocate(VarI1D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+        nullify(InputSection)
+
+        SectionName = 'sobol_indices_history'
+        call GetInput_Cell%AddSection( SectionName=SectionName )
+        call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        FileName = DirectoryLoc // '/sobol_indices_history.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call This%SobolIndicesHistory%Get( Values=VarR2D )
+        call ExportArray( Input=InputSection, Array=VarR2D, File=File )
+        deallocate(VarR2D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+        nullify(InputSection)
+      end if
+
     else
+      SectionName = 'sobol_indices'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      allocate(VarR1D, source=This%SobolIndices, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      call ExportArray( Input=InputSection, Array=VarR1D )
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+
       SectionName = 'output'
       call GetInput_Cell%AddSection( SectionName=SectionName )
       call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -1439,6 +1615,54 @@ contains
       call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call ExportArray( Input=InputSection, Array=This%Indices )
       nullify(InputSection)
+
+      if ( This%CVError < huge(One) ) then
+        SectionName = 'cverror_history'
+        call GetInput_Cell%AddSection( SectionName=SectionName )
+        call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        call This%CVErrorHistory%Get( Values=VarR1D )
+        call ExportArray( Input=InputSection, Array=VarR1D )
+        deallocate(VarR1D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+        nullify(InputSection)
+
+        SectionName = 'order_history'
+        call GetInput_Cell%AddSection( SectionName=SectionName )
+        call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        call This%OrderHistory%Get( Values=VarI1D )
+        call ExportArray( Input=InputSection, Array=VarI1D )
+        deallocate(VarI1D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+        nullify(InputSection)
+
+        SectionName = 'nb_runs_history'
+        call GetInput_Cell%AddSection( SectionName=SectionName )
+        call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        call This%NbRunsHistory%Get( Values=VarI1D )
+        call ExportArray( Input=InputSection, Array=VarI1D )
+        deallocate(VarI1D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+        nullify(InputSection)
+
+        SectionName = 'cardinality_history'
+        call GetInput_Cell%AddSection( SectionName=SectionName )
+        call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        call This%CardinalityHistory%Get( Values=VarI1D )
+        call ExportArray( Input=InputSection, Array=VarI1D )
+        deallocate(VarI1D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+        nullify(InputSection)
+
+        SectionName = 'sobol_indices_history'
+        call GetInput_Cell%AddSection( SectionName=SectionName )
+        call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        call This%SobolIndicesHistory%Get( Values=VarR2D )
+        call ExportArray( Input=InputSection, Array=VarR2D )
+        deallocate(VarR2D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+        nullify(InputSection)
+      end if
+
     end if
 
   end function
@@ -1477,15 +1701,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetModel_Cell( This, Coefficients, Indices, CVError )
+  subroutine SetModel_Cell( This, Coefficients, Indices, CVError, IndexOrder )
 
     class(Cell_Type), intent(inout)                                   ::    This
     real(rkp), dimension(:), intent(in)                               ::    Coefficients
     integer, dimension(:,:), intent(in)                               ::    Indices
     real(rkp), intent(in)                                             ::    CVError
+    integer, intent(in)                                               ::    IndexOrder
 
     character(*), parameter                                           ::    ProcName='SetModel_Cell'
-    integer                                                           ::    StatLoc=0    
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    VarI0D  
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D  
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -1502,6 +1729,36 @@ contains
 
     allocate( This%Indices, source=Indices, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%SobolIndices) ) then
+      if ( size(This%SobolIndices,1) /= size(This%Indices,1) ) then
+        deallocate(This%SobolIndices, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%SobolIndices', ProcName=ProcName, stat=StatLoc )
+      end if
+    end if
+
+    if ( .not. allocated(This%SobolIndices) ) then
+      allocate(This%SobolIndices(size(This%Indices,1)), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%SobolIndices', ProcName=ProcName, stat=StatLoc )
+      This%SobolIndices = Zero
+    end if
+
+    VarI0D = This%OutputRecord%GetLength()
+    call This%NbRunsHistory%Append(Value=VarI0D)
+
+    call This%OrderHistory%Append(Value=IndexOrder)
+
+    VarI0D = size(This%Indices,2)
+    call This%CardinalityHistory%Append(Value=VarI0D)
+
+    call This%CVErrorHistory%Append(Value=CVError)
+
+    call This%OutputRecord%Get( Values=VarR1D )
+    deallocate(VarR1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    call ComputeSobolIndices( Coefficients=Coefficients, Indices=Indices, SobolIndices=This%SobolIndices )
+
+    call This%SobolIndicesHistory%Append(Values=This%SobolIndices)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1578,6 +1835,114 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  function GetSobolIndices_Cell( This )
+
+    real(rkp), allocatable, dimension(:)                              ::    GetSobolIndices_Cell
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='GetSobolIndices_Cell'
+    integer                                                           ::    StatLoc=0    
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    allocate(GetSobolIndices_Cell, source=This%SobolIndices, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetSobolIndices', ProcName=ProcName, stat=StatLoc )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetCVErrorHistory_Cell( This )
+
+    real(rkp), allocatable, dimension(:)                              ::    GetCVErrorHistory_Cell
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='GetCVErrorHistory_Cell'
+    integer                                                           ::    StatLoc=0    
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if ( This%CVErrorHistory%GetLength() < 1 ) call Error%Raise( Line='Outputs not yet supplied', ProcName=ProcName )
+
+    call This%CVErrorHistory%Get( Values=GetCVErrorHistory_Cell )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetNbRunsHistory_Cell( This )
+
+    integer, allocatable, dimension(:)                                ::    GetNbRunsHistory_Cell
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='GetNbRunsHistory_Cell'
+    integer                                                           ::    StatLoc=0    
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if ( This%NbRunsHistory%GetLength() < 1 ) call Error%Raise( Line='Outputs not yet supplied', ProcName=ProcName )
+
+    call This%NbRunsHistory%Get( Values=GetNbRunsHistory_Cell )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetOrderHistory_Cell( This )
+
+    integer, allocatable, dimension(:)                                ::    GetOrderHistory_Cell
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='GetOrderHistory_Cell'
+    integer                                                           ::    StatLoc=0    
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if ( This%OrderHistory%GetLength() < 1 ) call Error%Raise( Line='Outputs not yet supplied', ProcName=ProcName )
+
+    call This%OrderHistory%Get( Values=GetOrderHistory_Cell )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetCardinalityHistory_Cell( This )
+
+    integer, allocatable, dimension(:)                                ::    GetCardinalityHistory_Cell
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='GetCardinalityHistory_Cell'
+    integer                                                           ::    StatLoc=0    
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if ( This%CardinalityHistory%GetLength() < 1 ) call Error%Raise( Line='Outputs not yet supplied', ProcName=ProcName )
+
+    call This%CardinalityHistory%Get( Values=GetCardinalityHistory_Cell )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetSobolIndicesHistory_Cell( This )
+
+    real(rkp), allocatable, dimension(:,:)                            ::    GetSobolIndicesHistory_Cell
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='GetSobolIndicesHistory_Cell'
+    integer                                                           ::    StatLoc=0    
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if ( This%SobolIndicesHistory%GetLength() < 1 ) call Error%Raise( Line='Outputs not yet supplied', ProcName=ProcName )
+
+    call This%SobolIndicesHistory%Get( Values=GetSobolIndicesHistory_Cell )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy_Cell( LHS, RHS )
 
     class(Cell_Type), intent(out)                                     ::    LHS
@@ -1598,6 +1963,13 @@ contains
       if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Coefficients', ProcName=ProcName, stat=StatLoc )
       if ( allocated(RHS%Indices) ) allocate( LHS%Indices, source=RHS%Indices, stat=StatLoc )
       if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Indices', ProcName=ProcName, stat=StatLoc )
+      LHS%CVErrorHistory = RHS%CVErrorHistory
+      LHS%OrderHistory = RHS%OrderHistory
+      LHS%NbRunsHistory = RHS%NbRunsHistory
+      LHS%CardinalityHistory = RHS%CardinalityHistory
+      LHS%SobolIndicesHistory = RHS%SobolIndicesHistory
+      allocate(LHS%SobolIndices, source=RHS%SobolIndices, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%SobolIndices', ProcName=ProcName, stat=StatLoc )
     end if
 
   end subroutine
@@ -1617,7 +1989,15 @@ contains
     if ( allocated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
+    if ( allocated(This%SobolIndices) ) deallocate(This%SobolIndices, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%SobolIndices', ProcName=ProcName, stat=StatLoc )
+
     call This%OutputRecord%Purge()
+    call This%NbRunsHistory%Purge()
+    call This%OrderHistory%Purge()
+    call This%CardinalityHistory%Purge()
+    call This%CVErrorHistory%Purge()
+    call This%SobolIndicesHistory%Purge()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

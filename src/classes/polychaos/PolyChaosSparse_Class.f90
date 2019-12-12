@@ -1877,6 +1877,8 @@ contains
       LHS%NbRunsHistory = RHS%NbRunsHistory
       LHS%CardinalityHistory = RHS%CardinalityHistory
       LHS%SobolIndicesHistory = RHS%SobolIndicesHistory
+      allocate(LHS%SobolIndices, source=RHS%SobolIndices, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%SobolIndices', ProcName=ProcName, stat=StatLoc )
     end if
 
   end subroutine
@@ -1895,6 +1897,9 @@ contains
 
     if ( allocated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%SobolIndices) ) deallocate(This%SobolIndices, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%SobolIndices', ProcName=ProcName, stat=StatLoc )
 
     call This%OutputRecord%Purge()
     call This%NbRunsHistory%Purge()
