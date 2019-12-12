@@ -1602,7 +1602,6 @@ contains
     character(*), parameter                                           ::    ProcName='SetModel_Cell'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    VarI0D  
-    real(rkp)                                                         ::    VarR0D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
@@ -1646,10 +1645,9 @@ contains
     call This%CVErrorHistory%Append(Value=CVError)
 
     call This%OutputRecord%Get( Values=VarR1D )
-    VarR0D = ComputePopulationVar( Values=VarR1D)
     deallocate(VarR1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-    call ComputeSobolIndices( Coefficients=Coefficients, Indices=Indices, Variance=VarR0D, SobolIndices=This%SobolIndices )
+    call ComputeSobolIndices( Coefficients=Coefficients, Indices=Indices, SobolIndices=This%SobolIndices )
 
     call This%SobolIndicesHistory%Append(Values=This%SobolIndices)
 

@@ -163,15 +163,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeSobolIndices( Coefficients, Indices, Variance, SobolIndices )
+  subroutine ComputeSobolIndices( Coefficients, Indices, SobolIndices )
 
     real(rkp), dimension(:), intent(in)                               ::    Coefficients
     integer, dimension(:,:), intent(in)                               ::    Indices
-    real(rkp), intent(in)                                             ::    Variance
     real(rkp), dimension(:), intent(out)                              ::    SobolIndices
 
     character(*), parameter                                           ::    ProcName='GetName'
     integer                                                           ::    StatLoc=0
+    real(rkp)                                                         ::    Variance
     integer                                                           ::    NbDim
     integer                                                           ::    Cardinality
     real(rkp)                                                         ::    VarR0D
@@ -184,15 +184,20 @@ contains
     if ( size(Coefficients,1) /= Cardinality ) call Error%Raise( 'Incorrect size', ProcName=ProcName )
     if ( size(SobolIndices,1) /= NbDim ) call Error%Raise( 'Incorrect size', ProcName=ProcName )
 
-    i = 1
-    do i = 1, NbDim
-      VarR0D = Zero
-      ii = 1
-      do ii = 1, Cardinality
-        if ( Indices(i,ii) /= 0 ) VarR0D = VarR0D + Coefficients(ii)**2
+    SobolIndices = Zero
+
+    if ( Cardinality > 1 ) then
+      Variance = dot_product(Coefficients(2:),Coefficients(2:))
+      i = 1
+      do i = 1, NbDim
+        VarR0D = Zero
+        ii = 1
+        do ii = 1, Cardinality
+          if ( Indices(i,ii) /= 0 ) VarR0D = VarR0D + Coefficients(ii)**2
+        end do
+        SobolIndices(i) = VarR0D / Variance
       end do
-      SobolIndices(i) = VarR0D / Variance
-    end do
+    end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

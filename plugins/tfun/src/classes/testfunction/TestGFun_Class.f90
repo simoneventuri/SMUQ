@@ -278,15 +278,13 @@ contains
         if ( StatLoc /= 0 ) call Error%Allocate( Name='X', ProcName=ProcName, stat=StatLoc )
         ii = 1
         do ii = 1, This%NbParams
-          if ( len_trim(This%InputLabel(i)%GetValue()) /= 0 ) then
-            call Input%GetValue( Value=X(ii), Label=This%InputLabel(i)%GetValue() )
+          if ( len_trim(This%InputLabel(ii)%GetValue()) /= 0 ) then
+            call Input%GetValue( Value=X(ii), Label=This%InputLabel(ii)%GetValue() )
           else
             X(ii) = This%Parameters(ii)
           end if
         end do
         Ordinate(1,1) = This%ComputeGFun( X, This%c )
-        deallocate(X, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='X', ProcName=ProcName, stat=StatLoc )
 
       type is (InputStoch_Type)
         allocate(Ordinate(1,Input%GetNbDegen()), stat=StatLoc)
@@ -298,8 +296,8 @@ contains
           InputDetLoc = Input%GetDetInput(Num=i)
           ii = 1
           do ii = 1, This%NbParams
-            if ( len_trim(This%InputLabel(i)%GetValue()) /= 0 ) then
-              call InputDetLoc%GetValue( Value=X(ii), Label=This%InputLabel(i)%GetValue() )
+            if ( len_trim(This%InputLabel(ii)%GetValue()) /= 0 ) then
+              call InputDetLoc%GetValue( Value=X(ii), Label=This%InputLabel(ii)%GetValue() )
             else
               X(ii) = This%Parameters(ii)
             end if
