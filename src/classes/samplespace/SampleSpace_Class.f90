@@ -24,7 +24,7 @@ use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use DistProb_Class                                                ,only:    DistProb_Type
-use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
+use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 
 implicit none
 
@@ -38,7 +38,7 @@ type, abstract                                                        ::    Samp
   logical                                                             ::    Constructed=.false.
   integer                                                             ::    NbDim=0
   logical                                                             ::    Correlated=.false.
-  type(DistProb_Vec_Type), allocatable, dimension(:)                  ::    DistProb
+  type(DistProbContainer_Type), allocatable, dimension(:)             ::    DistProb
   type(String_Type), allocatable, dimension(:)                        ::    ParamName
   type(String_Type), allocatable, dimension(:)                        ::    Label
   real(rkp), dimension(:,:), allocatable                              ::    CorrMat
@@ -290,7 +290,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetDist1D( This )
 
-    type(DistProb_Vec_Type), allocatable, dimension(:)                ::    GetDist1D
+    type(DistProbContainer_Type), allocatable, dimension(:)                ::    GetDist1D
 
     class(SampleSpace_Type), intent(in)                               ::    This
 

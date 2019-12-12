@@ -29,7 +29,7 @@ use Error_Class                                                   ,only:    Erro
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use MFileInput_Class                                              ,only:    MFileInput_Type
 use MParamTable_Class                                             ,only:    MParamTable_Type
-use MParamTable_Vec_Class                                         ,only:    MParamTable_Vec_Type
+use MParamTableContainer_Class                                    ,only:    MParamTableContainer_Type
 use MParamTable_Factory_Class                                     ,only:    MParamTable_Factory
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use InputDet_Class                                                ,only:    InputDet_Type
@@ -43,7 +43,7 @@ public                                                                ::    MFil
 
 type, extends(MFileInput_Type)                                        ::    MFileTable_Type
   type(String_Type), allocatable, dimension(:)                        ::    TemplateTranscript
-  type(MParamTable_Vec_Type), allocatable, dimension(:)               ::    MParam
+  type(MParamTableContainer_Type), allocatable, dimension(:)          ::    MParam
   integer                                                             ::    NbMParams=0
   character(:), allocatable                                           ::    Separator
   character(:), allocatable                                           ::    Comment

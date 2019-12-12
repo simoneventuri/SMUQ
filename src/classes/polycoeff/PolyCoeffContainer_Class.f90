@@ -30,7 +30,7 @@ private
 public                                                                ::    PolyCoeffContainer_Type
 
 type                                                                  ::    PolyCoeffContainer_Type
-  class(PolyCoeff_Type), pointer                                      ::    PolyCoeff=>null()
+  class(PolyCoeff_Type), allocatable                                  ::    Object
 contains
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
@@ -51,8 +51,8 @@ contains
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
 
-    allocate(This%PolyCoeff, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Object, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -67,9 +67,9 @@ contains
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. associated(This%PolyCoeff) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    allocate(Get, source=This%PolyCoeff, stat=StatLoc)
+    allocate(Get, source=This%Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -80,13 +80,13 @@ contains
 
     class(PolyCoeff_Type), pointer                                    ::    GetPointer
 
-    class(PolyCoeffContainer_Type), intent(in)                        ::    This
+    class(PolyCoeffContainer_Type), target, intent(in)                ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
-    if ( .not. associated(This%PolyCoeff) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    GetPointer => This%PolyCoeff
+    GetPointer => This%Object
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -103,11 +103,11 @@ contains
     select type (RHS)
   
       type is (PolyCoeffContainer_Type)
-        if ( associated(RHS%PolyCoeff) ) then
-          if ( associated(LHS%PolyCoeff) ) deallocate( LHS%PolyCoeff, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%PolyCoeff', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%PolyCoeff, source=RHS%PolyCoeff, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PolyCoeff', ProcName=ProcName, stat=StatLoc )
+        if ( allocated(RHS%Object) ) then
+          if ( allocated(LHS%Object) ) deallocate( LHS%Object, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%Object', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Object', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -126,8 +126,8 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%PolyCoeff) ) deallocate(This%PolyCoeff, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

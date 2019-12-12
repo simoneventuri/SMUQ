@@ -29,7 +29,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistProb_Factory_Class                                        ,only:    DistProb_Factory
-use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
+use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
@@ -217,7 +217,7 @@ contains
   subroutine ConstructCase1( This, Distributions, CorrMat, Labels, Names )
 
     class(ParamSpace_Type), intent(inout)                             ::    This
-    type(DistProb_Vec_Type), dimension(:), intent(in)                 ::    Distributions
+    type(DistProbContainer_Type), dimension(:), intent(in)                 ::    Distributions
     real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
     type(String_Type), dimension(:), intent(in)                       ::    Labels
     type(String_Type), dimension(:), optional, intent(in)             ::    Names

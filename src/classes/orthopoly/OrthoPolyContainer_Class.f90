@@ -30,7 +30,7 @@ private
 public                                                                ::    OrthoPolyContainer_Type
 
 type                                                                  ::    OrthoPolyContainer_Type
-  class(OrthoPoly_Type), pointer                                      ::    OrthoPoly => null()
+  class(OrthoPoly_Type), allocatable                                  ::    Object
 contains
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Get
@@ -53,8 +53,8 @@ contains
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc
 
-    allocate(This%OrthoPoly, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Object, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -69,9 +69,9 @@ contains
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc
 
-    if ( .not. associated(This%OrthoPoly) ) call Error%Raise( Line='Orthogonal polynomial never defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Orthogonal polynomial never defined', ProcName=ProcName)
 
-    allocate(Get, source=This%OrthoPoly, stat=StatLoc)
+    allocate(Get, source=This%Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -82,13 +82,13 @@ contains
 
     class(OrthoPoly_Type), pointer                                    ::    GetPointer
 
-    class(OrthoPolyContainer_Type), intent(in)                        ::    This
+    class(OrthoPolyContainer_Type), target, intent(in)                ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
-    if ( .not. associated(This%OrthoPoly) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
 
-    GetPointer => This%OrthoPoly
+    GetPointer => This%Object
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -105,11 +105,11 @@ contains
     select type (RHS)
   
       type is (OrthoPolyContainer_Type)
-        if ( associated(RHS%OrthoPoly) ) then
-          if ( associated(LHS%OrthoPoly) ) deallocate( LHS%OrthoPoly, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%OrthoPoly', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%OrthoPoly, source=RHS%OrthoPoly, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OrthoPoly', ProcName=ProcName, stat=StatLoc )
+        if ( allocated(RHS%Object) ) then
+          if ( allocated(LHS%Object) ) deallocate( LHS%Object, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%Object', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Object', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -128,8 +128,8 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%OrthoPoly) ) deallocate(This%OrthoPoly, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

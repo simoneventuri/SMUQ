@@ -30,11 +30,11 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use HierDistProb_Class                                            ,only:    HierDistProb_Type
 use HierDistProb_Factory_Class                                    ,only:    HierDistProb_Factory
-use HierDistProb_Vec_Class                                        ,only:    HierDistProb_Vec_Type
+use HierDistProbContainer_Class                                   ,only:    HierDistProbContainer_Type
 use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use DistProb_Class                                                ,only:    DistProb_Type
-use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
+use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 
 implicit none
 
@@ -48,7 +48,7 @@ type                                                                  ::    Hier
   logical                                                             ::    Correlated=.false.
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  type(HierDistProb_Vec_Type), allocatable, dimension(:)              ::    HierDistProb
+  type(HierDistProbContainer_Type), allocatable, dimension(:)         ::    HierDistProb
   type(String_Type), allocatable, dimension(:)                        ::    ParamName
   type(String_Type), allocatable, dimension(:)                        ::    Label
   real(rkp), dimension(:,:), allocatable                              ::    CorrMat
@@ -312,7 +312,7 @@ contains
     integer                                                           ::    i
     class(DistProb_Type), allocatable                                 ::    DistProb
     class(HierDistProb_Type), pointer                                 ::    HierDistProbPtr=>null()
-    type(DistProb_Vec_Type), allocatable, dimension(:)                ::    DistProbVec
+    type(DistProbContainer_Type), allocatable, dimension(:)           ::    DistProbVec
 
     allocate(DistProbVec(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='DistProbVec', ProcName=ProcName, stat=StatLoc )

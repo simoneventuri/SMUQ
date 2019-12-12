@@ -31,7 +31,7 @@ use Error_Class                                                   ,only:    Erro
 use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistProb_Factory_Class                                        ,only:    DistProb_Factory
-use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
+use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
@@ -284,7 +284,7 @@ contains
   subroutine ConstructCase2( This, Distributions, CorrMat, OriginalSampleSpace )
 
     class(TransfSampleSpaceInt_Type), intent(inout)                   ::    This
-    type(DistProb_Vec_Type), dimension(:), intent(in)                 ::    Distributions
+    type(DistProbContainer_Type), dimension(:), intent(in)                 ::    Distributions
     class(SampleSpace_Type), intent(in)                               ::    OriginalSampleSpace
     real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
     

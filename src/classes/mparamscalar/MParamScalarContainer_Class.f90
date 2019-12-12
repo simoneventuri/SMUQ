@@ -30,7 +30,7 @@ private
 public                                                                ::    MParamScalarContainer_Type
 
 type                                                                  ::    MParamScalarContainer_Type
-  class(MParamScalar_Type), pointer                                   ::    MParamScalar=>null()
+  class(MParamScalar_Type), allocatable                               ::    Object
 contains
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
@@ -50,8 +50,8 @@ contains
 
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-    allocate(This%MParamScalar, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MParamScalar', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Object, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -65,9 +65,9 @@ contains
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
-    if ( .not. associated(This%MParamScalar) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    allocate(Get, source=This%MParamScalar, stat=StatLoc)
+    allocate(Get, source=This%Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -78,12 +78,12 @@ contains
 
     class(MParamScalar_Type), pointer                                 ::    GetPointer
 
-    class(MParamScalarContainer_Type), intent(in)                     ::    This
+    class(MParamScalarContainer_Type), target, intent(in)             ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
-    if ( .not. associated(This%MParamScalar) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    GetPointer => This%MParamScalar
+    GetPointer => This%Object
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -100,11 +100,11 @@ contains
     select type (RHS)
   
       type is (MParamScalarContainer_Type)
-        if ( associated(RHS%MParamScalar) ) then
-          if ( associated(LHS%MParamScalar) ) deallocate( LHS%MParamScalar, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%MParamScalar', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%MParamScalar, source=RHS%MParamScalar, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MParamScalar', ProcName=ProcName, stat=StatLoc )
+        if ( allocated(RHS%Object) ) then
+          if ( allocated(LHS%Object) ) deallocate( LHS%Object, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%Object', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Object', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -123,8 +123,8 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%MParamScalar) ) deallocate(This%MParamScalar, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%MParamScalar', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

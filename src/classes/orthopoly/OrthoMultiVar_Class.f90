@@ -23,7 +23,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use Parameters_Library
 use OrthoPoly_Class                                               ,only:    OrthoPoly_Type
-use OrthoPoly_Vec_Class                                           ,only:    OrthoPoly_Vec_Type
+use OrthoPolyContainer_Class                                      ,only:    OrthoPolyContainer_Type
 use OrthoPoly_Factory_Class                                       ,only:    OrthoPoly_Factory    
 
 implicit none
@@ -36,7 +36,7 @@ type                                                                  ::    Orth
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  type(OrthoPoly_Vec_Type), allocatable, dimension(:)                 ::    OrthoPoly
+  type(OrthoPolyContainer_Type), allocatable, dimension(:)            ::    OrthoPoly
   integer                                                             ::    NbDim=0
 contains
   procedure, public                                                   ::    Initialize
@@ -163,10 +163,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, OrthoPolyVec )
+  subroutine ConstructCase1( This, Polynomials )
     
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
-    type(OrthoPoly_Vec_Type), dimension(:), intent(in)                ::    OrthoPolyVec 
+    type(OrthoPolyContainer_Type), dimension(:), intent(in)           ::    Polynomials
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    i
@@ -175,9 +175,9 @@ contains
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
-    This%NbDim = size(OrthoPolyVec,1)
+    This%NbDim = size(Polynomials,1)
 
-    allocate(This%OrthoPoly, source=OrthoPolyVec, stat=StatLoc)
+    allocate(This%OrthoPoly, source=Polynomials, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
 
     This%Constructed = .true.
@@ -375,7 +375,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetOrthoPoly1D( This )
 
-    class(OrthoPoly_Vec_Type), allocatable, dimension(:)              ::    GetOrthoPoly1D
+    class(OrthoPolyContainer_Type), allocatable, dimension(:)         ::    GetOrthoPoly1D
 
     class(OrthoMultiVar_Type), intent(in)                             ::    This
 

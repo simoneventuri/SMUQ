@@ -46,11 +46,11 @@ type                                                                  ::    Resp
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Label
-  real(rkp), dimension(:,:), pointer                                  ::    Coordinates=>null()
+  real(rkp), dimension(:,:), allocatable                              ::    Coordinates
   type(String_Type), allocatable, dimension(:)                        ::    CoordinatesLabels
   integer                                                             ::    NbIndCoordinates=0
   integer                                                             ::    NbNodes=0
-  real(rkp), dimension(:,:), pointer                                  ::    ResponseData=>null()
+  real(rkp), dimension(:,:), allocatable                              ::    ResponseData
   integer                                                             ::    NbDataSets=0
   logical                                                             ::    DataDefined=.false.
 contains
@@ -116,14 +116,14 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%Coordinates) ) deallocate(This%Coordinates, stat=StatLoc)
+    if ( allocated(This%Coordinates) ) deallocate(This%Coordinates, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
     This%NbIndCoordinates = 0
 
     if ( allocated(This%CoordinatesLabels) ) deallocate(This%CoordinatesLabels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CoordinatesLabels', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%ResponseData) ) deallocate(This%ResponseData, stat=StatLoc)
+    if ( allocated(This%ResponseData) ) deallocate(This%ResponseData, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseData', ProcName=ProcName, stat=StatLoc )
     This%NbDataSets = 0
     This%DataDefined = .false.
@@ -422,7 +422,7 @@ contains
 
     real(rkp), pointer, dimension(:)                                  ::    GetCoordsLabelPtr_R1D
 
-    class(Response_Type), intent(in)                                  ::    This
+    class(Response_Type), target, intent(in)                          ::    This
     character(*), intent(in)                                          ::    Label
 
     character(*), parameter                                           ::    ProcName='GetCoordsLabel_R1D'
@@ -452,7 +452,7 @@ contains
 
     real(rkp), pointer, dimension(:,:)                                ::    GetCoordsPtr_R2D
 
-    class(Response_Type), intent(in)                                  ::    This
+    class(Response_Type), target, intent(in)                          ::    This
 
     character(*), parameter                                           ::    ProcName='GetCoordsPtr_R2D'
     integer                                                           ::    StatLoc=0
@@ -489,7 +489,7 @@ contains
 
     real(rkp), dimension(:,:), pointer                                ::    GetDataPointer
 
-    class(Response_Type), intent(in)                                  ::    This
+    class(Response_Type), target, intent(in)                          ::    This
 
     character(*), parameter                                           ::    ProcName='GetDataPointer'
     integer                                                           ::    StatLoc=0
@@ -671,13 +671,13 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%Coordinates) ) deallocate(This%Coordinates, stat=StatLoc)
+    if ( allocated(This%Coordinates) ) deallocate(This%Coordinates, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coordinates', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%CoordinatesLabels) ) deallocate(This%CoordinatesLabels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CoordinatesLabels', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%ResponseData) ) deallocate(This%ResponseData, stat=StatLoc)
+    if ( allocated(This%ResponseData) ) deallocate(This%ResponseData, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ResponseData', ProcName=ProcName, stat=StatLoc )
 
   end subroutine

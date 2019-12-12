@@ -30,7 +30,7 @@ private
 public                                                                ::    MFileInputContainer_Type
 
 type                                                                  ::    MFileInputContainer_Type
-  class(MFileInput_Type), pointer                                     ::    MFileInput=>null()
+  class(MFileInput_Type), allocatable                                 ::    Object
 contains
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
@@ -51,8 +51,8 @@ contains
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
 
-    allocate(This%MFileInput, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MFileInput', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Object, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -67,9 +67,9 @@ contains
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. associated(This%MFileInput) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    allocate(Get, source=This%MFileInput, stat=StatLoc)
+    allocate(Get, source=This%Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -80,13 +80,13 @@ contains
 
     class(MFileInput_Type), pointer                                   ::    GetPointer
 
-    class(MFileInputContainer_Type), intent(in)                       ::    This
+    class(MFileInputContainer_Type), target, intent(in)               ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
-    if ( .not. associated(This%MFileInput) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    GetPointer => This%MFileInput
+    GetPointer => This%Object
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -103,11 +103,11 @@ contains
     select type (RHS)
   
       type is (MFileInputContainer_Type)
-        if ( associated(RHS%MFileInput) ) then
-          if ( associated(LHS%MFileInput) ) deallocate( LHS%MFileInput, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%MFileInput', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%MFileInput, source=RHS%MFileInput, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MFileInput', ProcName=ProcName, stat=StatLoc )
+        if ( allocated(RHS%Object) ) then
+          if ( allocated(LHS%Object) ) deallocate( LHS%Object, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%Object', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Object', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -126,8 +126,8 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%MFileInput) ) deallocate(This%MFileInput, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%MFileInput', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

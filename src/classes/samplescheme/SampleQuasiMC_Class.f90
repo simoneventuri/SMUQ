@@ -33,7 +33,7 @@ private
 public                                                                ::    SampleQuasiMC_Type
 
 type, extends(SampleScheme_Type)                                      ::    SampleQuasiMC_Type
-  class(LowDiscSequence_Type), pointer                                ::    LowDiscSequence=>null()
+  class(LowDiscSequence_Type), allocatable                            ::    LowDiscSequence
   integer                                                             ::    EnrichmentScheme=0
   integer                                                             ::    EnrichmentMultiplier=1
   integer                                                             ::    EnrichmentIncrement=1
@@ -87,7 +87,7 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%LowDiscSequence) ) deallocate(This%LowDiscSequence, stat=StatLoc)
+    if ( allocated(This%LowDiscSequence) ) deallocate(This%LowDiscSequence, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LowDiscSequence', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%EnrichmentSequence) ) deallocate(This%EnrichmentSequence, stat=StatLoc)
@@ -184,7 +184,7 @@ contains
 
     SectionName = 'sequence'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call LowDiscSequence_Factory%ConstructPointer( Object=This%LowDiscSequence, Input=InputSection )
+    call LowDiscSequence_Factory%Construct( Object=This%LowDiscSequence, Input=InputSection )
     nullify(InputSection)
 
     This%Constructed=.true.
@@ -518,7 +518,7 @@ contains
     if ( allocated(This%EnrichmentSequence) ) deallocate(This%EnrichmentSequence, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%EnrichmentSequence', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%LowDiscSequence) ) deallocate(This%LowDiscSequence, stat=StatLoc)
+    if ( allocated(This%LowDiscSequence) ) deallocate(This%LowDiscSequence, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LowDiscSequence', ProcName=ProcName, stat=StatLoc )
 
   end subroutine

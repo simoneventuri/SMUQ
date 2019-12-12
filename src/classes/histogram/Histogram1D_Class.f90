@@ -42,8 +42,8 @@ type                                                                  ::    Hist
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   integer                                                             ::    NbBins
-  real(rkp), pointer, dimension(:)                                    ::    BinEdges=>null()
-  integer, pointer, dimension(:)                                      ::    BinCounts=>null()
+  real(rkp), allocatable, dimension(:)                                ::    BinEdges
+  integer, allocatable, dimension(:)                                  ::    BinCounts
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -103,10 +103,10 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%BinEdges) ) deallocate(This%BinEdges, stat=StatLoc)
+    if ( allocated(This%BinEdges) ) deallocate(This%BinEdges, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinEdges', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
+    if ( allocated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
 
     This%NbBins = 0
@@ -400,7 +400,7 @@ contains
 
     real(rkp), pointer, dimension(:)                                  ::    GetBinEdgesPointer
 
-    class(Histogram1D_Type), intent(in)                               ::    This
+    class(Histogram1D_Type), target, intent(in)                       ::    This
 
     character(*), parameter                                           ::    ProcName='GetBinEdgesPointer'
     integer                                                           ::    StatLoc=0
@@ -435,7 +435,7 @@ contains
 
     integer, pointer, dimension(:)                                    ::    GetBinCountsPointer
 
-    class(Histogram1D_Type), intent(in)                               ::    This
+    class(Histogram1D_Type), target, intent(in)                       ::    This
 
     character(*), parameter                                           ::    ProcName='GetBinCountsPointer'
     integer                                                           ::    StatLoc=0
@@ -522,10 +522,10 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%BinEdges) ) deallocate(This%BinEdges, stat=StatLoc)
+    if ( allocated(This%BinEdges) ) deallocate(This%BinEdges, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinEdges', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
+    if ( allocated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
 
   end subroutine

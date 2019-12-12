@@ -55,7 +55,8 @@ contains
       call This%SetDefaults()
     end if
 
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -79,7 +80,8 @@ contains
 
     call This%Initialize()
 
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -88,7 +90,8 @@ contains
     class(InputDet_Type),intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------ 
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -117,7 +120,8 @@ contains
 
     This%Constructed = .true.
 
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -158,7 +162,8 @@ contains
 
     deallocate(LabelsLoc, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='LabelsLoc', ProcName=ProcName, stat=StatLoc )
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -211,7 +216,8 @@ contains
 
     deallocate(LabelsLoc, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='LabelsLoc', ProcName=ProcName, stat=StatLoc )
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -252,7 +258,8 @@ contains
     if ( MandatoryLoc .and. .not. FoundLoc ) call Error%Raise( Line='Mandatory label not found : ' // Label, ProcName=ProcName )
 
     if ( present(Found) ) Found = FoundLoc
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -305,7 +312,8 @@ contains
     end do
 
     if ( present(Found) ) Found = FoundLoc
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -321,23 +329,8 @@ contains
 
     allocate(Values, source=This%Input, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetValue1D_NonAlloc( This, Values )
-
-    class(InputDet_Type), intent(in)                                  ::    This
-    real(rkp), allocatable, dimension(:), intent(out)                 ::    Values
-    
-    character(*), parameter                                           ::    ProcName='GetValue1D'
-    integer                                                           ::    StatLoc=0
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
-
-    allocate(Values, source=This%Input, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
-  end subroutine
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -364,7 +357,8 @@ contains
     else
       call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
     end if
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -391,7 +385,8 @@ contains
     else
       call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
     end if
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -423,7 +418,8 @@ contains
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
 
     end select
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -439,7 +435,8 @@ contains
 
     if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
-  end subroutine
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

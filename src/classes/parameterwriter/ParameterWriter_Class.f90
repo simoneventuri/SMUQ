@@ -23,7 +23,7 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use MFileInput_Class                                              ,only:    MFileInput_Type
-use MFileInput_Vec_Class                                          ,only:    MFileInput_Vec_Type
+use MFileInputContainer_Class                                     ,only:    MFileInputContainer_Type
 use MFileInput_Factory_Class                                      ,only:    MFileInput_Factory
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use InputDet_Class                                                ,only:    InputDet_Type
@@ -41,7 +41,7 @@ type                                                                  ::    Para
   logical                                                             ::    Constructed=.false.
   integer                                                             ::    NbFiles
   type(SMUQFile_Type), allocatable, dimension(:)                      ::    ModelFile
-  type(MFileInput_Vec_Type), allocatable, dimension(:)                ::    FileProcessor
+  type(MFileInputContainer_Type), allocatable, dimension(:)           ::    FileProcessor
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset

@@ -30,7 +30,7 @@ private
 public                                                                ::    HierDistProbContainer_Type
 
 type                                                                  ::    HierDistProbContainer_Type
-  class(HierDistProb_Type), pointer                                   ::    HierDistProb=>null()
+  class(HierDistProb_Type), allocatable                               ::    Object
 contains
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Get
@@ -53,11 +53,11 @@ contains
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%HierDistProb) ) deallocate(This%HierDistProb, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc)
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Object', ProcName=ProcName, stat=StatLoc)
     
-    allocate(This%HierDistProb, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Object, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -72,9 +72,9 @@ contains
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. associated(This%HierDistProb) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
 
-    allocate(Get, source=This%HierDistProb, stat=StatLoc)
+    allocate(Get, source=This%Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -85,13 +85,13 @@ contains
 
     class(HierDistProb_Type), pointer                                 ::    GetPointer
 
-    class(HierDistProbContainer_Type), intent(in)                     ::    This
+    class(HierDistProbContainer_Type), target, intent(in)             ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
-    if ( .not. associated(This%HierDistProb) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
 
-    GetPointer => This%HierDistProb
+    GetPointer => This%Object
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -108,11 +108,11 @@ contains
     select type (RHS)
   
       type is (HierDistProbContainer_Type)
-        if ( associated(RHS%HierDistProb) ) then
-          if ( associated(LHS%HierDistProb) ) deallocate( LHS%HierDistProb, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%HierDistProb', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%HierDistProb, source=RHS%HierDistProb, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%HierDistProb', ProcName=ProcName, stat=StatLoc )
+        if ( allocated(RHS%Object) ) then
+          if ( allocated(LHS%Object) ) deallocate( LHS%Object, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%Object', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Object', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -131,8 +131,8 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%HierDistProb) ) deallocate(This%HierDistProb, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%HierDistProb', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

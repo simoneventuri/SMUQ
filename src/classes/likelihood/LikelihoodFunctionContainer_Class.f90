@@ -30,7 +30,7 @@ private
 public                                                                ::    LikelihoodFunctionContainer_Type
 
 type                                                                  ::    LikelihoodFunctionContainer_Type
-  class(LikelihoodFunction_Type), pointer                             ::    LikelihoodFunction=>null()
+  class(LikelihoodFunction_Type), allocatable                         ::    Object
 contains
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Get
@@ -53,11 +53,11 @@ contains
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%LikelihoodFunction) ) deallocate(This%LikelihoodFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LikelihoodFunction', ProcName=ProcName, stat=StatLoc)
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Object', ProcName=ProcName, stat=StatLoc)
     
-    allocate(This%LikelihoodFunction, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%LikelihoodFunction', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Object, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
@@ -72,9 +72,9 @@ contains
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. associated(This%LikelihoodFunction) ) call Error%Raise( Line='Object never defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Object never defined', ProcName=ProcName)
 
-    allocate(Get, source=This%LikelihoodFunction, stat=StatLoc)
+    allocate(Get, source=This%Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -85,13 +85,13 @@ contains
 
     class(LikelihoodFunction_Type), pointer                           ::    GetPointer
 
-    class(LikelihoodFunctionContainer_Type), intent(in)               ::    This
+    class(LikelihoodFunctionContainer_Type), target, intent(in)       ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
-    if ( .not. associated(This%LikelihoodFunction) ) call Error%Raise( Line='Object never defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Object never defined', ProcName=ProcName)
 
-    GetPointer => This%LikelihoodFunction
+    GetPointer => This%Object
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
@@ -108,11 +108,11 @@ contains
     select type (RHS)
   
       type is (LikelihoodFunctionContainer_Type)
-        if ( associated(RHS%LikelihoodFunction) ) then
-          if ( associated(LHS%LikelihoodFunction) ) deallocate( LHS%LikelihoodFunction, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%LikelihoodFunction', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%LikelihoodFunction, source=RHS%LikelihoodFunction, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%LikelihoodFunction', ProcName=ProcName, stat=StatLoc )
+        if ( allocated(RHS%Object) ) then
+          if ( allocated(LHS%Object) ) deallocate( LHS%Object, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%Object', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Object', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -131,8 +131,8 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%LikelihoodFunction) ) deallocate(This%LikelihoodFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%LikelihoodFunction', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

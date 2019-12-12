@@ -31,7 +31,7 @@ use Error_Class                                                   ,only:    Erro
 use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistProb_Factory_Class                                        ,only:    DistProb_Factory
-use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
+use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 

@@ -15,7 +15,7 @@ type                                                                  ::    Outp
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Label
-  real(rkp), dimension(:,:), pointer                                  ::    Values=>null()
+  real(rkp), dimension(:,:), allocatable                              ::    Values
   integer                                                             ::    NbNodes
   integer                                                             ::    NbDegen
 contains
@@ -67,7 +67,7 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
+    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
     This%NbNodes = 0
@@ -182,7 +182,7 @@ contains
 
     real(rkp), dimension(:,:), pointer                                ::    GetValuesPointer
 
-    class(Output_Type), intent(in)                                    ::    This
+    class(Output_Type), target, intent(in)                            ::    This
     
     character(*), parameter                                           ::    ProcName='GetValuesPointer'
     integer                                                           ::    StatLoc=0
@@ -276,7 +276,7 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
+    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
   end subroutine

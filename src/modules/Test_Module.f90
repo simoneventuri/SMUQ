@@ -10,7 +10,7 @@ use ComputingRoutines_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
+use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use DistNorm_Class                                                ,only:    DistNorm_Type
 use DistLogNorm_Class                                             ,only:    DistLogNorm_Type
 use DistLog10Norm_Class                                           ,only:    DistLog10Norm_Type

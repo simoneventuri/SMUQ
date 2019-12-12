@@ -24,7 +24,7 @@ use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use TestFunction_Class                                            ,only:    TestFunction_Type
-use TestFunction_Vec_Class                                        ,only:    TestFunction_Vec_Type
+use TestFunctionContainer_Class                                   ,only:    TestFunctionContainer_Type
 use TestFunction_Factory_Class                                    ,only:    TestFunction_Factory
 use ModelExtTemplate_Class                                        ,only:    ModelExtTemplate_Type
 use Model_Class                                                   ,only:    Model_Type
@@ -38,7 +38,7 @@ private
 public                                                                ::    TFUN_Type
 
 type, extends(ModelExtTemplate_Type)                                  ::    TFUN_Type
-  class(TestFunction_Vec_Type), allocatable, dimension(:)             ::    TestFunctions
+  class(TestFunctionContainer_Type), allocatable, dimension(:)        ::    TestFunctions
   integer                                                             ::    NbFunctions
 contains
   procedure, public                                                   ::    Initialize

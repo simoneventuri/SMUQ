@@ -30,7 +30,7 @@ private
 public                                                                ::    MParamTableContainer_Type
 
 type                                                                  ::    MParamTableContainer_Type
-  class(MParamTable_Type), pointer                                    ::    MParamTable=>null()
+  class(MParamTable_Type), allocatable                                ::    Object
 contains
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
@@ -50,8 +50,8 @@ contains
 
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-    allocate(This%MParamTable, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MParamTable', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Object, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
@@ -65,9 +65,9 @@ contains
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
-    if ( .not. associated(This%MParamTable) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    allocate(Get, source=This%MParamTable, stat=StatLoc)
+    allocate(Get, source=This%Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -78,12 +78,13 @@ contains
 
     class(MParamTable_Type), pointer                                  ::    GetPointer
 
-    class(MParamTableContainer_Type), intent(in)                      ::    This
+    class(MParamTableContainer_Type), target, intent(in)              ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
-    if ( .not. associated(This%MParamTable) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    GetPointer => This%MParamTable
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+
+    GetPointer => This%Object
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
@@ -100,11 +101,11 @@ contains
     select type (RHS)
   
       type is (MParamTableContainer_Type)
-        if ( associated(RHS%MParamTable) ) then
-          if ( associated(LHS%MParamTable) ) deallocate( LHS%MParamTable, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%MParamTable', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%MParamTable, source=RHS%MParamTable, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MParamTable', ProcName=ProcName, stat=StatLoc )
+        if ( allocated(RHS%Object) ) then
+          if ( allocated(LHS%Object) ) deallocate( LHS%Object, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%Object', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Object', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -123,8 +124,8 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%MParamTable) ) deallocate(This%MParamTable, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%MParamTable', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

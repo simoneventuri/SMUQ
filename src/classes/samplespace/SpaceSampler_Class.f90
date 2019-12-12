@@ -24,7 +24,7 @@ use Input_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use DistProb_Class                                                ,only:    DistProb_Type
-use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
+use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use RandPseudo_Class                                              ,only:    RandPseudo_Type
 use SampleScheme_Factory_Class                                    ,only:    SampleScheme_Factory
 use SampleScheme_Class                                            ,only:    SampleScheme_Type
@@ -40,7 +40,7 @@ type                                                                  ::    Spac
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Name
-  class(SampleScheme_Type), pointer                                   ::    Sampler=>null()
+  class(SampleScheme_Type), allocatable                               ::    Sampler
   type(RandPseudo_Type)                                               ::    RNG
 contains
   procedure, public                                                   ::    Initialize
@@ -94,7 +94,7 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%Sampler) ) deallocate( This%Sampler, stat=StatLoc )
+    if ( allocated(This%Sampler) ) deallocate( This%Sampler, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
 
     call This%RNG%Reset()
@@ -138,7 +138,7 @@ contains
 
     SectionName = 'scheme'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call SampleScheme_Factory%ConstructPointer( Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc )
+    call SampleScheme_Factory%Construct( Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc )
     nullify( InputSection )
 
     SectionName = 'rng'
@@ -530,7 +530,7 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if( associated(This%Sampler) ) deallocate( This%Sampler, stat=StatLoc )
+    if( allocated(This%Sampler) ) deallocate( This%Sampler, stat=StatLoc )
     if( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
 
   end subroutine

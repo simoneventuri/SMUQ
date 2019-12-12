@@ -28,7 +28,7 @@ use InputDet_Class                                                ,only:    Inpu
 use Response_Class                                                ,only:    Response_Type
 use Output_Class                                                  ,only:    Output_Type
 use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
-use LikelihoodFunction_Vec_Class                                  ,only:    LikelihoodFunction_Vec_Type
+use LikelihoodFunctionContainer_Class                             ,only:    LikelihoodFunctionContainer_Type
 use LikelihoodFunction_Factory_Class                              ,only:    LikelihoodFunction_Factory
 
 implicit none
@@ -38,7 +38,7 @@ private
 public                                                                ::    LikelihoodProduct_Type
 
 type, extends(LikelihoodFunction_Type)                                ::    LikelihoodProduct_Type
-  type(LikelihoodFunction_Vec_Type), allocatable, dimension(:)        ::    Likelihoods
+  type(LikelihoodFunctionContainer_Type), allocatable, dimension(:)   ::    Likelihoods
   integer                                                             ::    NbLikelihoods
 contains
   procedure, public                                                   ::    Initialize

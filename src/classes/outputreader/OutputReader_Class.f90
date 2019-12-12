@@ -26,7 +26,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use Output_Class                                                  ,only:    Output_Type
 use OFileFormated_Class                                           ,only:    OFileFormated_Type
-use OFileFormated_Vec_Class                                       ,only:    OFileFormated_Vec_Type
+use OFileFormatedContainer_Class                                  ,only:    OFileFormatedContainer_Type
 use OFileFormated_Factory_Class                                   ,only:    OFileFormated_Factory
 use LinkedList2D_Class                                            ,only:    LinkedList2D_Type 
 implicit none
@@ -40,7 +40,7 @@ type                                                                  ::    Cell
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Label
-  type(OFileFormated_Vec_Type), allocatable, dimension(:)             ::    OFile
+  type(OFileFormatedContainer_Type), allocatable, dimension(:)        ::    OFile
   integer                                                             ::    NbOFiles
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize_Cell

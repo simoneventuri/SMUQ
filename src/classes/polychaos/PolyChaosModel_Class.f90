@@ -51,10 +51,10 @@ public                                                                ::    Poly
 type                                                                  ::    Cell_Type
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  real(rkp), dimension(:), pointer                                    ::    Coefficients=>null()
-  integer, dimension(:,:), pointer                                    ::    Indices=>null()
+  real(rkp), dimension(:), allocatable                                ::    Coefficients
+  integer, dimension(:,:), allocatable                                ::    Indices
   real(rkp)                                                           ::    CVError=huge(One)
-  real(rkp), dimension(:), pointer                                    ::    Coordinate=>null()
+  real(rkp), dimension(:), allocatable                                ::    Coordinate
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize_Cell
   procedure, public                                                   ::    Reset                   =>    Reset_Cell
@@ -79,7 +79,7 @@ type, extends(Model_Type)                                             ::    Poly
   integer                                                             ::    NbDim=0
   type(String_Type), allocatable, dimension(:)                        ::    InputLabel
   integer                                                             ::    NbCells=0
-  type(Cell_Type), dimension(:), pointer                              ::    Cells=>null()
+  type(Cell_Type), allocatable, dimension(:)                          ::    Cells
   character(:), allocatable                                           ::    OutputLabel
   type(String_Type), allocatable, dimension(:)                        ::    CoordinateLabels
 contains
@@ -141,7 +141,7 @@ contains
     if ( allocated(This%InputLabel) ) deallocate(This%InputLabel, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
+    if ( allocated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
     This%NbCells = 0
 
@@ -788,7 +788,7 @@ contains
     if ( allocated(This%TransformedSpace) ) deallocate(This%TransformedSpace, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TransformedSpace', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
+    if ( allocated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%InputLabel) ) deallocate(This%InputLabel, stat=StatLoc)
@@ -830,13 +830,13 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
+    if ( allocated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coefficients', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
+    if ( allocated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Coordinate) ) deallocate(This%Coordinate, stat=StatLoc)
+    if ( allocated(This%Coordinate) ) deallocate(This%Coordinate, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coordinate', ProcName=ProcName, stat=StatLoc )
 
     call This%SetDefaults()
@@ -1035,7 +1035,7 @@ contains
 
     real(rkp), pointer, dimension(:)                                  ::    GetCoordPointer_Cell
 
-    class(Cell_Type), intent(inout)                                   ::    This
+    class(Cell_Type), target, intent(in)                              ::    This
 
     character(*), parameter                                           ::    ProcName='GetCoordPointer_Cell'
     integer                                                           ::    StatLoc=0    
@@ -1052,7 +1052,7 @@ contains
 
     real(rkp)                                                         ::    GetCVError_Cell
 
-    class(Cell_Type), intent(inout)                                   ::    This
+    class(Cell_Type), intent(in)                                      ::    This
 
     character(*), parameter                                           ::    ProcName='GetCVError_Cell'
     integer                                                           ::    StatLoc=0    
@@ -1069,7 +1069,7 @@ contains
 
     real(rkp), dimension(:), pointer                                  ::    GetCoeffsPointer_Cell
 
-    class(Cell_Type), intent(inout)                                   ::    This
+    class(Cell_Type), target, intent(in)                              ::    This
 
     character(*), parameter                                           ::    ProcName='GetCoeffsPointer_Cell'
     integer                                                           ::    StatLoc=0    
@@ -1086,7 +1086,7 @@ contains
 
     integer, dimension(:,:), pointer                                  ::    GetIndicesPointer_Cell
 
-    class(Cell_Type), intent(inout)                                   ::    This
+    class(Cell_Type), target, intent(in)                              ::    This
 
     character(*), parameter                                           ::    ProcName='GetIndicesPointer_Cell'
     integer                                                           ::    StatLoc=0    
@@ -1133,13 +1133,13 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer_Cell'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
+    if ( allocated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coefficients', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
+    if ( allocated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Coordinate) ) deallocate(This%Coordinate, stat=StatLoc)
+    if ( allocated(This%Coordinate) ) deallocate(This%Coordinate, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coordinate', ProcName=ProcName, stat=StatLoc )
 
   end subroutine

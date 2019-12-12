@@ -30,7 +30,7 @@ private
 public                                                                ::    List2D_Type
 
 type                                                                  ::    List2D_Type
-  class(*), dimension(:,:), pointer                                   ::    Values=>null()
+  class(*), dimension(:,:), allocatable                               ::    Values
   logical                                                             ::    Constructed=.false.
 contains
   procedure, public                                                   ::    Set
@@ -108,7 +108,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetR2DPointer( This, Values )
 
-    class(List2D_Type), intent(in)                                    ::    This
+    class(List2D_Type), target, intent(in)                            ::    This
     real(rkp), dimension(:,:), pointer, intent(inout)                 ::    Values
 
     character(*), parameter                                           ::    ProcName='GetR2DPointer'
@@ -153,7 +153,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetI2DPointer( This, Values )
 
-    class(List2D_Type), intent(in)                                    ::    This
+    class(List2D_Type), target, intent(in)                            ::    This
     integer, dimension(:,:), pointer, intent(inout)                   ::    Values
 
     character(*), parameter                                           ::    ProcName='GetI2DPointer'
@@ -198,7 +198,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetC2DPointer( This, Values )
 
-    class(List2D_Type), intent(in)                                    ::    This
+    class(List2D_Type), target, intent(in)                            ::    This
     character(:), dimension(:,:), pointer, intent(inout)              ::    Values
 
     character(*), parameter                                           ::    ProcName='GetC2DPointer'
@@ -243,7 +243,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetL2DPointer( This, Values )
 
-    class(List2D_Type), intent(in)                                    ::    This
+    class(List2D_Type), target, intent(in)                            ::    This
     logical, dimension(:,:), pointer, intent(inout)                   ::    Values
 
     character(*), parameter                                           ::    ProcName='GetL2DPointer'
@@ -288,7 +288,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetCX2DPointer( This, Values )
 
-    class(List2D_Type), intent(in)                                    ::    This
+    class(List2D_Type), target, intent(in)                            ::    This
     complex, dimension(:,:), pointer, intent(inout)                   ::    Values
 
     character(*), parameter                                           ::    ProcName='GetCX2DPointer'
@@ -316,7 +316,7 @@ contains
     character(*), parameter                                           ::    ProcName='Purge'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
+    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
     This%Constructed=.false.
@@ -353,7 +353,7 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
+    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
   end subroutine

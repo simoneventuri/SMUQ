@@ -30,7 +30,7 @@ private
 public                                                                ::    TestFunctionContainer_Type
 
 type                                                                  ::    TestFunctionContainer_Type
-  class(TestFunction_Type), pointer                                   ::    TestFunction=>null()
+  class(TestFunction_Type), allocatable                               ::    Object
 contains
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Get
@@ -53,11 +53,11 @@ contains
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%TestFunction) ) deallocate(This%TestFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TestFunction', ProcName=ProcName, stat=StatLoc)
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Object', ProcName=ProcName, stat=StatLoc)
     
-    allocate(This%TestFunction, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%TestFunction', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Object, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -72,9 +72,9 @@ contains
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. associated(This%TestFunction) ) call Error%Raise( Line='Object never defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Object never defined', ProcName=ProcName)
 
-    allocate(Get, source=This%TestFunction, stat=StatLoc)
+    allocate(Get, source=This%Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -85,13 +85,13 @@ contains
 
     class(TestFunction_Type), pointer                                 ::    GetPointer
 
-    class(TestFunctionContainer_Type), intent(in)                     ::    This
+    class(TestFunctionContainer_Type), target, intent(in)             ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
-    if ( .not. associated(This%TestFunction) ) call Error%Raise( Line='Object never defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Object never defined', ProcName=ProcName)
 
-    GetPointer => This%TestFunction
+    GetPointer => This%Object
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -108,11 +108,11 @@ contains
     select type (RHS)
   
       type is (TestFunctionContainer_Type)
-        if ( associated(RHS%TestFunction) ) then
-          if ( associated(LHS%TestFunction) ) deallocate( LHS%TestFunction, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%TestFunction', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%TestFunction, source=RHS%TestFunction, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%TestFunction', ProcName=ProcName, stat=StatLoc )
+        if ( allocated(RHS%Object) ) then
+          if ( allocated(LHS%Object) ) deallocate( LHS%Object, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%Object', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Object', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -131,8 +131,8 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( associated(This%TestFunction) ) deallocate(This%TestFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%TestFunction', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

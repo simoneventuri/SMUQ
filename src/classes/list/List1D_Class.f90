@@ -30,7 +30,7 @@ private
 public                                                                ::    List1D_Type
 
 type                                                                  ::    List1D_Type
-  class(*), dimension(:), pointer                                     ::    Values=>null()
+  class(*), dimension(:), allocatable                                 ::    Values
   logical                                                             ::    Constructed=.false.
 contains
   procedure, public                                                   ::    Set
@@ -108,7 +108,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetR1DPointer( This, Values )
 
-    class(List1D_Type), intent(in)                                    ::    This
+    class(List1D_Type), target, intent(in)                            ::    This
     real(rkp), dimension(:), pointer, intent(inout)                   ::    Values
 
     character(*), parameter                                           ::    ProcName='GetR1DPointer'
@@ -153,7 +153,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetI1DPointer( This, Values )
 
-    class(List1D_Type), intent(in)                                    ::    This
+    class(List1D_Type), target, intent(in)                            ::    This
     integer, dimension(:), pointer, intent(inout)                     ::    Values
 
     character(*), parameter                                           ::    ProcName='GetI1DPointer'
@@ -198,7 +198,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetC1DPointer( This, Values )
 
-    class(List1D_Type), intent(in)                                    ::    This
+    class(List1D_Type), target, intent(in)                            ::    This
     character(:), dimension(:), pointer, intent(inout)                ::    Values
 
     character(*), parameter                                           ::    ProcName='GetC1DPointer'
@@ -243,7 +243,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetL1DPointer( This, Values )
 
-    class(List1D_Type), intent(in)                                    ::    This
+    class(List1D_Type), target, intent(in)                            ::    This
     logical, dimension(:), pointer, intent(inout)                     ::    Values
 
     character(*), parameter                                           ::    ProcName='GetL1DPointer'
@@ -288,7 +288,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetCX1DPointer( This, Values )
 
-    class(List1D_Type), intent(in)                                    ::    This
+    class(List1D_Type), target, intent(in)                            ::    This
     complex, dimension(:), pointer, intent(inout)                     ::    Values
 
     character(*), parameter                                           ::    ProcName='GetCX1DPointer'
@@ -316,7 +316,7 @@ contains
     character(*), parameter                                           ::    ProcName='Purge'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
+    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
     This%Constructed=.false.
@@ -353,7 +353,7 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%Values) ) deallocate(This%Values, stat=StatLoc)
+    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
 
   end subroutine

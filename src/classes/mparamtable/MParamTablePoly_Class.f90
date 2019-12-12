@@ -26,7 +26,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use MParamTable_Class                                             ,only:    MParamTable_Type
 use PolyCoeff_Class                                               ,only:    PolyCoeff_Type
-use PolyCoeff_Vec_Class                                           ,only:    PolyCoeff_Vec_Type
+use PolyCoeffContainer_Class                                      ,only:    PolyCoeffContainer_Type
 use PolyCoeff_Factory_Class                                       ,only:    PolyCoeff_Factory
 use PolyCoeffScalar_Class                                         ,only:    PolyCoeffScalar_Type
 use InputDet_Class                                                ,only:    InputDet_Type
@@ -41,7 +41,7 @@ private
 public                                                                ::    MParamTablePoly_Type
 
 type, extends(MParamTable_Type)                                       ::    MParamTablePoly_Type
-  type(PolyCoeff_Vec_Type), dimension(:), allocatable                 ::    PolyCoeff
+  type(PolyCoeffContainer_Type), dimension(:), allocatable            ::    PolyCoeff
   integer                                                             ::    Order
 contains
   procedure, public                                                   ::    Initialize
@@ -170,7 +170,7 @@ contains
   subroutine ConstructCase1( This, PolyCoeff )
 
     class(MParamTablePoly_Type), intent(inout)                        ::    This
-    class(PolyCoeff_Vec_Type), dimension(:), intent(in)               ::    PolyCoeff
+    class(PolyCoeffContainer_Type), dimension(:), intent(in)               ::    PolyCoeff
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0

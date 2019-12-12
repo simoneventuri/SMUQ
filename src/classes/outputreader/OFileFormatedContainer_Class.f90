@@ -30,7 +30,7 @@ private
 public                                                                ::    OFileFormatedContainer_Type
 
 type                                                                  ::    OFileFormatedContainer_Type
-  class(OFileFormated_Type), pointer                                  ::    OFileFormated=>null()
+  class(OFileFormated_Type), allocatable                              ::    Object
 contains
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
@@ -50,8 +50,8 @@ contains
 
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
-    allocate(This%OFileFormated, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OFileFormated', ProcName=ProcName, stat=StatLoc )
+    allocate(This%Object, source=Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -65,9 +65,9 @@ contains
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
-    if ( .not. associated(This%OFileFormated) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    allocate(Get, source=This%OFileFormated, stat=StatLoc)
+    allocate(Get, source=This%Object, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
 
   end function
@@ -78,13 +78,13 @@ contains
 
     class(OFileFormated_Type), pointer                                ::    GetPointer
 
-    class(OFileFormatedContainer_Type), intent(in)                    ::    This
+    class(OFileFormatedContainer_Type), target, intent(in)            ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
     integer                                                           ::    StatLoc=0
-    if ( .not. associated(This%OFileFormated) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
+    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Member object defined', ProcName=ProcName)
 
-    GetPointer => This%OFileFormated
+    GetPointer => This%Object
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -101,11 +101,11 @@ contains
     select type (RHS)
   
       type is (OFileFormatedContainer_Type)
-        if ( associated(RHS%OFileFormated) ) then
-          if ( associated(LHS%OFileFormated) ) deallocate( LHS%OFileFormated, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%OFileFormated', Procname=ProcName, stat=StatLoc )
-          allocate(LHS%OFileFormated, source=RHS%OFileFormated, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OFileFormated', ProcName=ProcName, stat=StatLoc )
+        if ( allocated(RHS%Object) ) then
+          if ( allocated(LHS%Object) ) deallocate( LHS%Object, stat=StatLoc )
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%Object', Procname=ProcName, stat=StatLoc )
+          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Object', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -124,8 +124,8 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%OFileFormated) ) deallocate(This%OFileFormated, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%OFileFormated', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%Object', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

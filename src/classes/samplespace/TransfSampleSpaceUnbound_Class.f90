@@ -32,7 +32,7 @@ use TransfSampleSpace_Class                                       ,only:    Tran
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistInfBoundTransf_Class                                      ,only:    DistInfBoundTransf_Type
 use DistProb_Factory_Class                                        ,only:    DistProb_Factory
-use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
+use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
@@ -136,7 +136,7 @@ contains
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     type(DistInfBoundTransf_Type), allocatable                        ::    DistProb
     class(DistProb_Type), pointer                                     ::    DistProbPtr
-    class(DistProb_Vec_Type), allocatable, dimension(:)               ::    DistProbVec
+    class(DistProbContainer_Type), allocatable, dimension(:)          ::    DistProbVec
     type(ParamSpace_Type)                                             ::    OrigSampleSpace
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName

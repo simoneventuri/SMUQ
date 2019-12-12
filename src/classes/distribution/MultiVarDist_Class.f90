@@ -29,7 +29,7 @@ use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
-use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
+use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistProb_Factory_Class                                        ,only:    DistProb_Factory
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
@@ -44,7 +44,7 @@ type                                                                  ::    Mult
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  type(DistProb_Vec_Type), allocatable, dimension(:)                  ::    Distributions
+  type(DistProbContainer_Type), allocatable, dimension(:)             ::    Distributions
   real(rkp), dimension(:,:), allocatable                              ::    CorrMat
   integer                                                             ::    NbDim
   logical                                                             ::    Correlated
@@ -187,7 +187,7 @@ contains
   subroutine ConstructCase1( This, Distributions, CorrMat )
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
-    type(DistProb_Vec_Type), dimension(:), intent(in)                 ::    Distributions
+    type(DistProbContainer_Type), dimension(:), intent(in)                 ::    Distributions
     real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
     
     character(*), parameter                                           ::    ProcName='ConstructCase1'

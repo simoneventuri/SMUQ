@@ -56,8 +56,8 @@ type                                                                  ::    Cell
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   type(LinkedList0D_Type)                                             ::    OutputRecord
-  real(rkp), dimension(:), pointer                                    ::    Coefficients=>null()
-  integer, dimension(:,:), pointer                                    ::    Indices=>null()
+  real(rkp), dimension(:), allocatable                                ::    Coefficients
+  integer, dimension(:,:), allocatable                                ::    Indices
   real(rkp)                                                           ::    CVError=huge(1.0)                    
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize_Cell
@@ -1226,10 +1226,10 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( associated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
+    if ( allocated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coefficients', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
+    if ( allocated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
     call This%OutputRecord%Purge()
@@ -1491,10 +1491,10 @@ contains
 
     This%CVError = CVError
 
-    if ( associated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
+    if ( allocated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coefficients', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
+    if ( allocated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
     allocate( This%Coefficients, source=Coefficients, stat=StatLoc )
@@ -1530,13 +1530,13 @@ contains
 
     real(rkp), dimension(:), pointer                                  ::    GetCoeffsPointer_Cell
 
-    class(Cell_Type), intent(inout)                                   ::    This
+    class(Cell_Type), target, intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='GetCoeffsPointer_Cell'
     integer                                                           ::    StatLoc=0    
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-    if ( .not. associated(This%Coefficients) ) call Error%Raise( Line='Coefficients not yet supplied', ProcName=ProcName )
+    if ( .not. allocated(This%Coefficients) ) call Error%Raise( Line='Coefficients not yet supplied', ProcName=ProcName )
 
     GetCoeffsPointer_Cell => This%Coefficients
 
@@ -1548,13 +1548,13 @@ contains
 
     integer, dimension(:,:), pointer                                  ::    GetIndicesPointer_Cell
 
-    class(Cell_Type), intent(inout)                                   ::    This
+    class(Cell_Type), target, intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='GetIndicesPointer_Cell'
     integer                                                           ::    StatLoc=0    
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-    if ( .not. associated(This%Indices) ) call Error%Raise( Line='Indices not yet supplied', ProcName=ProcName )
+    if ( .not. allocated(This%Indices) ) call Error%Raise( Line='Indices not yet supplied', ProcName=ProcName )
     GetIndicesPointer_Cell => This%Indices
 
   end function
@@ -1594,9 +1594,9 @@ contains
     if ( RHS%Constructed ) then
       LHS%OutputRecord = RHS%OutputRecord
       LHS%CVError = RHS%CVError
-      if ( associated(RHS%Coefficients) ) allocate( LHS%Coefficients, source=RHS%Coefficients, stat=StatLoc )
+      if ( allocated(RHS%Coefficients) ) allocate( LHS%Coefficients, source=RHS%Coefficients, stat=StatLoc )
       if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Coefficients', ProcName=ProcName, stat=StatLoc )
-      if ( associated(RHS%Indices) ) allocate( LHS%Indices, source=RHS%Indices, stat=StatLoc )
+      if ( allocated(RHS%Indices) ) allocate( LHS%Indices, source=RHS%Indices, stat=StatLoc )
       if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Indices', ProcName=ProcName, stat=StatLoc )
     end if
 
@@ -1611,10 +1611,10 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer_Cell'
     integer                                                           ::    StatLoc=0
 
-    if ( associated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
+    if ( allocated(This%Coefficients) ) deallocate(This%Coefficients, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Coefficients', ProcName=ProcName, stat=StatLoc )
 
-    if ( associated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
+    if ( allocated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
     call This%OutputRecord%Purge()

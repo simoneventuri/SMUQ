@@ -28,7 +28,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use SurrogateMethod_Class                                         ,only:    SurrogateMethod_Type
 use OrthoPoly_Class                                               ,only:    OrthoPoly_Type
-use OrthoPoly_Vec_Class                                           ,only:    OrthoPoly_Vec_Type
+use OrthoPolyContainer_Class                                      ,only:    OrthoPolyContainer_Type
 use OrthoPoly_Factory_Class                                       ,only:    OrthoPoly_Factory
 use OrthoMultiVar_Class                                           ,only:    OrthoMultiVar_Type
 use OrthoNumerical_Class                                          ,only:    OrthoNumerical_Type
@@ -54,7 +54,7 @@ use LinkedList0D_Class                                            ,only:    Link
 use LinkedList1D_Class                                            ,only:    LinkedList1D_Type
 use LinkedList2D_Class                                            ,only:    LinkedList2D_Type
 use DistProb_Class                                                ,only:    DistProb_Type
-use DistProb_Vec_Class                                            ,only:    DistProb_Vec_Type
+use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use DistUnif_Class                                                ,only:    DistUnif_Type
 use DistLogUnif_Class                                             ,only:    DistLogUnif_Type
 use DistLog10Unif_Class                                           ,only:    DistLog10Unif_Type
@@ -559,10 +559,10 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructAskeyScheme'
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), allocatable                                 ::    DistProb
-    type(DistProb_Vec_Type), allocatable, dimension(:)                ::    DistProbVec
+    type(DistProbContainer_Type), allocatable, dimension(:)           ::    DistProbVec
     class(DistProb_Type), pointer                                     ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    type(OrthoPolyContainer_Type), allocatable, dimension(:)          ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
 
@@ -656,7 +656,7 @@ contains
 
     end do
 
-    call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
+    call Basis%Construct( Polynomials=OrthoPolyVec  )
 
     select type ( Object => SpaceTransform )
       type is (TransfSampleSpaceInt_Type)
@@ -685,7 +685,7 @@ contains
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), allocatable                                 ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    type(OrthoPolyContainer_Type), allocatable, dimension(:)               ::    OrthoPolyVec
     type(DistNorm_Type), allocatable, dimension(:)                    ::    DistNormal
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
@@ -717,7 +717,7 @@ contains
       call DistNormal(i)%Construct( Mu=One, Sigma=Zero )
     end do
 
-    call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
+    call Basis%Construct( Polynomials=OrthoPolyVec  )
   
     select type ( Object => SpaceTransform )
       type is (TransfSampleSpaceInt_Type)
@@ -748,10 +748,10 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructAskeyNumericalScheme'
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), allocatable                                 ::    DistProb
-    type(DistProb_Vec_Type), allocatable, dimension(:)                ::    DistProbVec
+    type(DistProbContainer_Type), allocatable, dimension(:)                ::    DistProbVec
     class(DistProb_Type), pointer                                     ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    type(OrthoPolyContainer_Type), allocatable, dimension(:)               ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
 
@@ -858,7 +858,7 @@ contains
 
     end do
 
-    call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
+    call Basis%Construct( Polynomials=OrthoPolyVec  )
 
     select type ( Object => SpaceTransform )
       type is (TransfSampleSpaceInt_Type)
@@ -887,7 +887,7 @@ contains
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), pointer                                     ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    type(OrthoPolyContainer_Type), allocatable, dimension(:)               ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
 
@@ -993,7 +993,7 @@ contains
 
     end do
 
-    call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
+    call Basis%Construct( Polynomials=OrthoPolyVec  )
 
     select type ( Object => SpaceTransform )
       type is (TransfSampleSpaceNone_Type)
@@ -1020,7 +1020,7 @@ contains
     class(DistProb_Type), allocatable                                 ::    DistProb
     class(DistProb_Type), pointer                                     ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPoly_Vec_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    type(OrthoPolyContainer_Type), allocatable, dimension(:)               ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
 
@@ -1053,7 +1053,7 @@ contains
 
     end do
 
-    call Basis%Construct( OrthoPolyVec=OrthoPolyVec  )
+    call Basis%Construct( Polynomials=OrthoPolyVec  )
 
     select type ( Object => SpaceTransform )
       type is (TransfSampleSpaceNone_Type)

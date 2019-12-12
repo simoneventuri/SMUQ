@@ -28,7 +28,7 @@ use Error_Class                                                   ,only:    Erro
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use MFileInput_Class                                              ,only:    MFileInput_Type
 use MParamScalar_Class                                            ,only:    MParamScalar_Type
-use MParamScalar_Vec_Class                                        ,only:    MParamScalar_Vec_Type
+use MParamScalarContainer_Class                                   ,only:    MParamScalarContainer_Type
 use MParamScalar_Factory_Class                                    ,only:    MParamScalar_Factory
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use InputDet_Class                                                ,only:    InputDet_Type
@@ -41,7 +41,7 @@ public                                                                ::    MFil
 
 type, extends(MFileInput_Type)                                        ::    MFileScalar_Type
   type(String_Type), allocatable, dimension(:)                        ::    TemplateTranscript
-  type(MParamScalar_Vec_Type), allocatable, dimension(:)              ::    MParam
+  type(MParamScalarContainer_Type), allocatable, dimension(:)         ::    MParam
   integer                                                             ::    NbMParams=0
   type(LinkedList0D_Type), allocatable, dimension(:)                  ::    LineLog
   type(String_Type), allocatable, dimension(:)                        ::    ParamIdentifier
