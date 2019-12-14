@@ -21,9 +21,12 @@ module MFileInput_Class
 use String_Library
 use Input_Library
 use Parameters_Library
+use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use InputDet_Class                                                ,only:    InputDet_Type
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
+
 
 implicit none
 
@@ -96,14 +99,16 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInput_MFileInput( This, Input, Strings )
-    use Parameters_Library
-    use String_Library
-    import                                                            ::    InputDet_Type
+  subroutine WriteInput_MFileInput( This, Input, Template, ProcessedTemplate, File )
     import                                                            ::    MFileInput_Type
+    import                                                            ::    InputDet_Type
+    import                                                            ::    String_Type
+    import                                                            ::    SMUQFile_Type
     class(MFileInput_Type), intent(inout)                             ::    This
-    type(String_Type), allocatable, dimension(:), intent(out)         ::    Strings
     type(InputDet_Type), intent(in)                                   ::    Input
+    type(String_Type), dimension(:), intent(in)                       ::    Template
+    type(String_Type), dimension(:), intent(inout)                    ::    ProcessedTemplate
+    type(SMUQFile_Type), intent(in)                                   ::    File
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

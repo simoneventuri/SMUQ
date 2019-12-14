@@ -20,6 +20,9 @@ module ParameterWriter_Class
 
 use Input_Library
 use Parameters_Library
+use StringRoutines_Module
+use String_Library
+use ArrayIORoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use MFileInput_Class                                              ,only:    MFileInput_Type
@@ -27,7 +30,6 @@ use MFileInputContainer_Class                                     ,only:    MFil
 use MFileInput_Factory_Class                                      ,only:    MFileInput_Factory
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use InputDet_Class                                                ,only:    InputDet_Type
-use String_Library
 
 implicit none
 
@@ -36,10 +38,14 @@ private
 public                                                                ::    ParameterWriter_Type
 
 type                                                                  ::    FileProcessor_Type
+  character(:), allocatable                                           ::    Name
+  logical                                                             ::    Initialized=.false.
+  logical                                                             ::    Constructed=.false.
   type(String_Type), allocatable, dimension(:)                        ::    TemplateTranscript
   type(MFileInputContainer_Type), allocatable, dimension(:)           ::    MFileInputs
   integer                                                             ::    NbMFileInputs
   type(SMUQFile_Type)                                                 ::    ModelFile
+  character(:), allocatable                                           ::    TemplateComment
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize_FP
   procedure, public                                                   ::    Reset                   =>    Reset_FP
@@ -50,7 +56,7 @@ contains
   procedure, public                                                   ::    WriteInput              =>    WriteInput_FP
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy                    =>    Copy_FP
-  final                                                               ::    Finalizer               =>    Finalizer_FP
+  final                                                               ::    Finalizer_FP
 end type
 
 type                                                                  ::    ParameterWriter_Type
@@ -343,9 +349,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput_FP( This, Input, Prefix )
 
-    use String_Library
-    use StringRoutines_Module
-    class(ParameterWriter_Type), intent(inout)                        ::    This
+    class(FileProcessor_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -359,10 +363,9 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    VarI0D
+    logical                                                           ::    Found
     integer                                                           ::    i
     class(MFileInput_Type), allocatable                               ::    MFileInput
-
-    
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -375,16 +378,9 @@ contains
     call ImportFile( Strings=This%TemplateTranscript, Input=InputSection, Prefix=PrefixLoc )
     nullify(InputSection)
 
-    allocate(This%WorkStrings1, source=This%TemplateTranscript, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%WorkStrings1', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%WorkStrings2, source=This%TemplateTranscript, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%WorkStrings2', ProcName=ProcName, stat=StatLoc )
-
     SectionName = 'file'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file'
-    call GetInput%AddSection( Section=This%ModelFile(i)%GetInput(MainSectionName=SectionName, Prefix=PrefixLoc,                   &
-                                                                              Directory=DirectorySub), To_SubSection=SectionName )
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call This%ModelFile%Construct( Input=InputSection, Prefix=PrefixLoc )
 
     SectionName = 'formats'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -409,11 +405,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput_FP( This, MainSectionName, Prefix, Directory )
 
-    use StringRoutines_Module
-
     type(InputSection_Type)                                           ::    GetInput_FP
 
-    class(ParameterWriter_Type), intent(in)                           ::    This
+    class(FileProcessor_Type), intent(in)                             ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -427,6 +421,7 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
     class(MFileInput_Type), pointer                                   ::    MFileInputPtr=>null()
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
@@ -443,8 +438,8 @@ contains
     
     SectionName = 'file'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file'
-    call GetInput_FP%AddSection( Section=This%ModelFile(i)%GetInput_FP(MainSectionName=SectionName, Prefix=PrefixLoc,             &
-                                                                              Directory=DirectorySub) )
+    call GetInput_FP%AddSection( Section=This%ModelFile%GetInput(MainSectionName=SectionName, Prefix=PrefixLoc,                   &
+                                                                                                         Directory=DirectorySub) )
 
     SectionName = 'template'
     call GetInput_FP%AddSection( SectionName=SectionName )
@@ -470,7 +465,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine WriteInput_FP( This, Input )
 
-    class(ParameterWriter_Type), intent(inout)                        ::    This
+    class(FileProcessor_Type), intent(inout)                          ::    This
     type(InputDet_Type), intent(in)                                   ::    Input
 
     character(*), parameter                                           ::    ProcName='WriteInput'
@@ -489,12 +484,14 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='WorkStrings2', ProcName=ProcName, stat=StatLoc )
 
     i = 1
-    do i = 1, This%NbFiles
+    do i = 1, This%NbMFileInputs
       WorkStrings1 = WorkStrings2
-      call This%MFileInputs(i)%WriteInput( Input=Input, Template=WorkStrings1, ProcessedTemplate=WorkStrings2 )
+      MFileInputPtr => This%MFileInputs(i)%GetPointer()
+      call MFileInputPtr%WriteInput( Input=Input, Template=WorkStrings1, ProcessedTemplate=WorkStrings2, File=This%ModelFile )
+      nullify(MFileInputPtr)
     end do
 
-    call This%ModelFile(i)%Export( Strings=WorkStrings2 )
+    call This%ModelFile%Export( Strings=WorkStrings2 )
 
     deallocate(Workstrings2, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Workstrings2', ProcName=ProcName, stat=StatLoc )
@@ -503,18 +500,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy_FP( LHS, RHS )
 
-    class(ParameterWriter_Type), intent(out)                          ::    LHS
-    class(ParameterWriter_Type), intent(in)                           ::    RHS
+    class(FileProcessor_Type), intent(out)                            ::    LHS
+    class(FileProcessor_Type), intent(in)                             ::    RHS
 
-    character(*), parameter                                           ::    ProcName='Copy'
+    character(*), parameter                                           ::    ProcName='Copy_FP'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
     select type (RHS)
   
-      type is (ParameterWriter_Type)
+      type is (FileProcessor_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -537,11 +534,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer_FP( This )
 
-    type(ParameterWriter_Type),intent(inout)                          ::    This
+    type(FileProcessor_Type),intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
+    character(*), parameter                                           ::    ProcName='Finalizer_FP'
     integer                                                           ::    StatLoc=0
 
     if ( allocated(This%MFileInputs) ) deallocate(This%MFileInputs, stat=StatLoc)

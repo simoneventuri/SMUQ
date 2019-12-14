@@ -248,12 +248,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInput( This, Input, Template, ProcessedTemplate )
+  subroutine WriteInput( This, Input, Template, ProcessedTemplate, File )
 
     class(MFileScalar_Type), intent(inout)                            ::    This
     type(InputDet_Type), intent(in)                                   ::    Input
     type(String_Type), dimension(:), intent(in)                       ::    Template
     type(String_Type), dimension(:), intent(inout)                    ::    ProcessedTemplate
+    type(SMUQFile_Type), intent(in)                                   ::    File
 
     character(*), parameter                                           ::    ProcName='WriteInput'
     integer                                                           ::    StatLoc=0
@@ -264,11 +265,14 @@ contains
     integer                                                           ::    ii
     integer                                                           ::    IndexLoc
     type(LinkedList0D_Type), allocatable, dimension(:)                ::    LineLog
+    character(:), allocatable                                         ::    CommentChar
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     if ( size(ProcessedTemplate,1) /= size(Template,1) ) call Error%Raise( Line='Mismatch in template and processed template ' // &
                                                                                                       'sizes', ProcName=ProcName )
+
+    CommentChar = File%GetComment()
 
     ProcessedTemplate = Template
 
@@ -279,6 +283,7 @@ contains
 
     i = 1
     do i = 1, This%NbMParams
+      if ( VarC0D(1:1) == CommentChar ) cycle
       VarC0D = '{' // This%ParamIdentifier(i)%GetValue() // '}'
 
       ii = 1
