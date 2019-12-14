@@ -41,10 +41,11 @@ public                                                                ::    OFil
 
 type, extends(OFileFormated_Type)                                     ::    OFileTable_Type
   type(SMUQFile_Type)                                                 ::    OutputFile
-  integer                                                             ::    OutputColumn
+  integer, allocatable, dimension(:)                                  ::    OutputColumn
   integer                                                             ::    AbscissaColumn
   real(rkp), allocatable, dimension(:)                                ::    InterpolationNodes
   logical                                                             ::    Interpolated
+  integer                                                             ::    NbColumns
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -87,6 +88,10 @@ contains
     if ( allocated(This%InterpolationNodes) ) deallocate(This%InterpolationNodes, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
 
+    if ( allocated(This%OutputColumn) ) deallocate(This%OutputColumn, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OutputColumn', ProcName=ProcName, stat=StatLoc )
+    This%NbColumns = 0
+
     call This%SetDefaults()
 
   end subroutine
@@ -99,7 +104,6 @@ contains
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
     This%AbscissaColumn = 0
-    This%OutputColumn = 0
     This%Interpolated = .false.
 
   end subroutine
@@ -137,8 +141,10 @@ contains
     This%AbscissaColumn = VarI0D
 
     ParameterName = 'output_column'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
-    This%OutputColumn = VarI0D
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%OutputColumn = ConvertToIntegers(VarC0D)
+
+    This%NbColumns = size(This%OutputColumn,1)
 
     SectionName = 'file'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -212,7 +218,7 @@ contains
     call GetInput%AddSection( Section=This%OutputFile%GetInput( MainSectionName='file', Prefix=PrefixLoc, Directory=DirectorySub))
 
     call GetInput%AddParameter( Name='abscissa_column', Value=Convert_To_String(This%AbscissaColumn) )
-    call GetInput%AddParameter( Name='output_column', Value=Convert_To_String(This%OutputColumn) )
+    call GetInput%AddParameter( Name='output_column', Value=ConvertToString(Values=This%OutputColumn) )
 
     if ( This%Interpolated ) then
       SectionName = 'interpolation_nodes'
@@ -250,15 +256,20 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    InterpolatedOutput
     integer                                                           ::    NbLines
     integer                                                           ::    i
+    integer                                                           ::    ii
     type(SMUQFile_Type)                                               ::    FileLoc
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     FileLoc = This%OutputFile
 
-    call ImportArray( Array=Strings, File=FileLoc )
+    call ImportArray( Array=Strings, File=FileLoc, RowMajor=.true. )
 
-    NbLines = size(Strings,2)
+    NbLines = size(Strings,1)
+
+    allocate(Values(NbLines*This%NbColumns,1), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+    Values = Zero
 
     allocate(TableOutput(NbLines), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='TableOutput', ProcName=ProcName, stat=StatLoc )
@@ -267,18 +278,25 @@ contains
 
     i = 1
     do i = 1, NbLines
-      TableOutput(i) = ConvertToReal( String=Strings(This%OutputColumn,i)%GetValue() )
-      Abscissa(i) = ConvertToReal( String=Strings(This%AbscissaColumn,i)%GetValue() )
+      Abscissa(i) = ConvertToReal( String=Strings(i,This%AbscissaColumn)%GetValue() )
     end do
 
-    allocate(Values(NbLines,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+    i = 1
+    do i = 1, This%NbColumns
 
-    if ( This%Interpolated ) then
-      Values(:,1) = Interpolate( Abscissa=Abscissa, Ordinate=TableOutput, Nodes=This%InterpolationNodes )
-    else
-      Values(:,1) = TableOutput
-    end if
+      ii = 1
+      do ii = 1, NbLines
+        TableOutput(ii) = ConvertToReal( String=Strings(ii,This%OutputColumn(i))%GetValue() )
+      end do
+
+      if ( This%Interpolated ) then
+        Values((ii-1)*NbLines+1:ii*NbLines,1) = Interpolate( Abscissa=Abscissa, Ordinate=TableOutput,                             &
+                                                                                                   Nodes=This%InterpolationNodes )
+      else
+        Values((ii-1)*NbLines+1:ii*NbLines,1) = TableOutput
+      end if
+  
+    end do
 
     deallocate(Strings, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
@@ -311,8 +329,10 @@ contains
         if ( RHS%Constructed ) then
           LHS%OutputFile = RHS%OutputFile
           LHS%AbscissaColumn = RHS%AbscissaColumn
-          LHS%OutputColumn = RHS%OutputColumn
           LHS%Interpolated = RHS%Interpolated
+          LHS%NbColumns = RHS%NbColumns
+          allocate(LHS%OutputColumn, source=RHS%OutputColumn, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OutputColumn', ProcName=ProcName, stat=StatLoc )
           if ( LHS%Interpolated ) then
             allocate(LHS%InterpolationNodes, source=RHS%InterpolationNodes, stat=StatLoc)
             if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
@@ -334,6 +354,9 @@ contains
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
+
+    if ( allocated(This%OutputColumn) ) deallocate(This%OutputColumn, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OutputColumn', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%InterpolationNodes) ) deallocate(This%InterpolationNodes, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
