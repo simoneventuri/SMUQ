@@ -357,7 +357,6 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    class(MFileInput_Type), allocatable                               ::    FileProcessor
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
@@ -387,13 +386,16 @@ contains
     This%NbMFileInputs = InputSection%GetNumberofSubSections()
     nullify(InputSection)
 
+    allocate(This%MFileInputs(This%NbMFileInputs), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MFileInputs', ProcName=ProcName, stat=StatLoc )
+
     i = 1
     do i = 1, This%NbMFileInputs
       SubSectionName = SectionName // '>format' // ConvertToString(Value=i)
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
       call MFileInput_Factory%Construct( Object=MFileInput, Input=InputSection, Prefix=PrefixLoc )
       call This%MFileInputs(i)%Set( Object=MFileInput )
-      deallocate(FileProcessor, stat=StatLoc)
+      deallocate(MFileInput, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='FileProcessor', ProcName=ProcName, stat=StatLoc )
     end do
 

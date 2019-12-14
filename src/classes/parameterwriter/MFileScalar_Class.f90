@@ -226,7 +226,7 @@ contains
 
     call GetInput%SetName( SectionName=trim(adjustl(MainSectionName)) )
 
-    call GetInput%AddParameter(Name='format', Value=This%ParamFormat(i)%GetValue() )
+
 
     SectionName = 'parameters'
     call GetInput%AddSection( SectionName=SectionName)
@@ -236,7 +236,7 @@ contains
       call GetInput%AddSection( SectionName='parameter' // ConvertToString(Value=i), To_SubSection=SectionName )
       SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
       call GetInput%AddParameter(Name='identifier', Value=This%ParamIdentifier(i)%GetValue(), SectionName=SubSectionName )
-
+      call GetInput%AddParameter(Name='format', Value=This%ParamFormat(i)%GetValue(), SectionName=SubSectionName )
       MParam => This%MParam(i)%GetPointer()
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/parameter' // ConvertToString(Value=i)
       call GetInput%AddSection( Section=MParamScalar_Factory%GetObjectInput(MainSectionName='parameter', Object=MParam,           &

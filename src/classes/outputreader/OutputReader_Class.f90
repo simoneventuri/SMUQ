@@ -143,7 +143,7 @@ contains
     if ( present(Prefix) ) PrefixLoc = Prefix
 
     SectionName = 'outputs'
-    This%NbCells = InputSection%GetNumberofSubSections( Name=SectionName )
+    This%NbCells = Input%GetNumberofSubSections( Name=SectionName )
 
     allocate(This%Cells(This%NbCells), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
