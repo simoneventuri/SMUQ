@@ -25,7 +25,6 @@ use Error_Class                                                   ,only:    Erro
 use MFileInput_Class                                              ,only:    MFileInput_Type
 use MFileScalar_Class                                             ,only:    MFileScalar_Type
 use MFileTable_Class                                              ,only:    MFileTable_Type
-use MFileMixed_Class                                              ,only:    MFileMixed_Type
 
 implicit none
 
@@ -69,9 +68,6 @@ contains
 
       case('table')
         allocate( MFileTable_Type :: Object )
-
-      case('mixed')
-        allocate( MFileMixed_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -134,9 +130,6 @@ contains
       case('table')
         allocate( MFileTable_Type :: Object )
 
-      case('mixed')
-        allocate( MFileMixed_Type :: Object )
-
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
 
@@ -196,9 +189,6 @@ contains
 
       type is (MFileTable_Type)
         GetOption = 'table'
-
-      type is (MFileMixed_Type)
-        GetOption = 'mixed'
 
       class default
         call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )

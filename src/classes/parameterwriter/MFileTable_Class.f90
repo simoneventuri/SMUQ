@@ -42,23 +42,19 @@ private
 public                                                                ::    MFileTable_Type
 
 type, extends(MFileInput_Type)                                        ::    MFileTable_Type
-  type(String_Type), allocatable, dimension(:)                        ::    TemplateTranscript
   type(MParamTableContainer_Type), allocatable, dimension(:)          ::    MParam
   integer                                                             ::    NbMParams=0
   character(:), allocatable                                           ::    Separator
   character(:), allocatable                                           ::    Comment
   integer                                                             ::    NbLinesSkip=0
   integer                                                             ::    AbscissaColumn=1
-  real(rkp), allocatable, dimension(:)                                ::    Abscissa
   type(LinkedList0D_Type), allocatable, dimension(:)                  ::    ParamColumn
   type(String_Type), allocatable, dimension(:)                        ::    ParamFormat
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
-  generic, public                                                     ::    Construct               =>    ConstructInput2
   procedure, private                                                  ::    ConstructInput
-  procedure, private                                                  ::    ConstructInput2
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    WriteInput
   procedure, public                                                   ::    Copy
@@ -95,12 +91,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MParam', ProcName=ProcName, stat=StatLoc )
 
     This%NbMParams = 0
-
-    if ( allocated(This%TemplateTranscript) ) deallocate(This%TemplateTranscript, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TemplateTranscript', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%Abscissa) ) deallocate(This%Abscissa, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Abscissa', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%ParamColumn) ) deallocate(This%ParamColumn, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamColumn', ProcName=ProcName, stat=StatLoc )
@@ -146,27 +136,16 @@ contains
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    VarI0D
     integer, allocatable, dimension(:)                                ::    VarI1D
-    type(LinkedList0D_Type)                                           ::    ColumnRecord
     logical                                                           ::    Found
     integer                                                           ::    i, ii
     integer                                                           ::    NbLines=0
     integer                                                           ::    NbColumns=0
-    integer                                                           ::    AbscissaLength=0
-    type(String_Type), allocatable, dimension(:)                      ::    VarString1D
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
-
-    SectionName = 'template'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call ImportFile( Strings=This%TemplateTranscript, Input=InputSection, Comment=This%Comment, Separator=This%Separator,    &
-                                                                                                                Prefix=PrefixLoc )
-    nullify(InputSection)
-
-    NbLines = size(This%TemplateTranscript,1)
 
     ParameterName = 'nb_lines_skip'
     call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
@@ -175,45 +154,13 @@ contains
       if ( This%NbLinesSkip > NbLines-1 ) call Error%Raise( Line='Specified too many number of lines to skip', ProcName=ProcName )   
     end if
 
-    AbscissaLength = 0
-    i = 1
-    do i = 1, NbLines
-      if ( i <= This%NbLinesSkip ) cycle
-      VarC0D = trim(adjustl(This%TemplateTranscript(i)%GetValue()))  
-      if ( VarC0D(1:1) == This%Comment ) cycle
-      call This%TemplateTranscript(i)%Parse(Strings=VarString1D, Separator=This%Separator )
-      NbColumns = size(VarString1D,1)
-      AbscissaLength = AbscissaLength + 1
-    end do
-
-    deallocate(VarString1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarString1D', ProcName=ProcName, stat=StatLoc )
-
     ParameterName = 'abscissa_column'
     call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
-    if ( Found ) then
-      This%AbscissaColumn = VarI0D
-      if ( This%AbscissaColumn > NbColumns ) call Error%Raise( Line='Specified abscissa column exceeds number columns',           &
-                                                                                                               ProcName=ProcName )   
-    end if
+    if ( Found ) This%AbscissaColumn = VarI0D  
 
-    allocate(This%Abscissa(AbscissaLength), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Abscissa', ProcName=ProcName, stat=StatLoc )
-    This%Abscissa=Zero
-
-    i = 1
-    do i = 1, NbLines
-      if ( i <= This%NbLinesSkip ) cycle
-      VarC0D = trim(adjustl(This%TemplateTranscript(i)%GetValue()))  
-      if ( VarC0D(1:1) == This%Comment ) cycle
-      call This%TemplateTranscript(i)%Parse(Strings=VarString1D, Separator=This%Separator )
-      This%Abscissa(i) = ConvertToReal( String=VarString1D(This%AbscissaColumn)%GetValue() )
-    end do
-
-    SectionName = 'params'
+    SectionName = 'parameters'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     This%NbMParams = InputSection%GetNumberofSubSections()
-    if ( This%NbMParams > NbColumns-1 ) call Error%Raise( Line='Specified too many parameters for the file', ProcName=ProcName )
 
     allocate(This%MParam(This%NbMParams), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MParam', ProcName=ProcName, stat=StatLoc )
@@ -234,7 +181,7 @@ contains
 
     i = 1
     do i = 1, This%NbMParams
-      SubSectionName = SectionName // '>param' // ConvertToString(Value=i)
+      SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
 
       ParameterName = 'format'
       call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SubSectionName, Mandatory=.false., Found=Found )
@@ -244,9 +191,6 @@ contains
       call Input%GetValue( Values=VarI1D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
       if ( any(VarI1D <= 0) ) call Error%Raise( Line='Specified column 0 or less', ProcName=ProcName )
       call This%ParamColumn(i)%Append( Values=VarI1D )
-      call ColumnRecord%Append( Values=VarI1D )
-      deallocate(VarI1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
 
       SubSectionName = SubSectionName // '>param'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
