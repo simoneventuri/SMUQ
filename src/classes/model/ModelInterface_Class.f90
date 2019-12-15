@@ -221,8 +221,8 @@ contains
               exit
             end if
           end do
-          if ( iii == 0 ) call Error%Raise( Line='Did not finding matching output label for response : ' //                     &
-                                                                          This%ResponseLabels(i)%GetValue(), ProcName=ProcName )
+          if ( iii == 0 ) call Error%Raise( Line='Did not finding matching output label for response : ' //                       &
+                                                                            This%ResponseLabels(i)%GetValue(), ProcName=ProcName )
 
           Output(i) = OutputLoc(iii)
         end do
@@ -231,13 +231,13 @@ contains
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )  
       end if
 
-    end if
-
-    i = 1
-    do i = 1, This%NbResponses
-      if ( Output(i)%GetNbNodes() /= This%ResponseNbNodes(i) ) call Error%Raise( Line='Mismatching number of ' //                 &
+      i = 1
+      do i = 1, This%NbResponses
+        if ( Output(i)%GetNbNodes() /= This%ResponseNbNodes(i) ) call Error%Raise( Line='Mismatching number of ' //               &
                                                                        'output nodes with specified response', ProcName=ProcName )
-    end do
+      end do
+
+    end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
