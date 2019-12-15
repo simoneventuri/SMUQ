@@ -343,17 +343,16 @@ contains
     if ( Size1 == 1 ) then
       Interpolate_R1D_R0D = Ordinate(1)
     else
+      i = 1
       do 
         if ( i >= Size1 ) exit
         if ( Abscissa(i) >= Node ) exit
         i=i+1
       end do
       if ( i > 1 ) then
-        Interpolate_R1D_R0D = (Ordinate(i)-Ordinate(i-1))/(Abscissa(i)-Abscissa(i-1)) *                                      &
-                                                                                      (Node-Abscissa(i-1)) + Ordinate(i-1)
+        Interpolate_R1D_R0D = (Ordinate(i)-Ordinate(i-1))/(Abscissa(i)-Abscissa(i-1)) * (Node-Abscissa(i-1)) + Ordinate(i-1)
       else
-        Interpolate_R1D_R0D = (Ordinate(i+1)-Ordinate(i))/(Abscissa(i+1)-Abscissa(i)) *                                      &
-                                                                                          (Node-Abscissa(i)) + Ordinate(i)
+        Interpolate_R1D_R0D = (Ordinate(i+1)-Ordinate(i))/(Abscissa(i+1)-Abscissa(i)) * (Node-Abscissa(i)) + Ordinate(i)
       end if
     end if
   

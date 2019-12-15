@@ -26,6 +26,7 @@ use StringRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use ComputingRoutines_Module
+use COmmandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
@@ -127,7 +128,6 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    VarC0D
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
     integer                                                           ::    i
     character(:), allocatable                                         ::    InterpNodesSource
     if ( This%Constructed ) call This%Reset()
@@ -162,17 +162,13 @@ contains
       select case ( InterpNodesSource )
         case ( 'values' )
           call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-          call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
+          call ImportArray( Input=InputSection, Array=This%InterpolationNodes, Prefix=PrefixLoc )
         case ( 'computed' )
           call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-          VarR1D = LinSpaceVec( Input=InputSection )
+          This%InterpolationNodes = LinSpaceVec( Input=InputSection )
         case default
           call Error%Raise( Line='Interpolation nodes source not recognized', ProcName=ProcName )
       end select
-      allocate(This%InterpolationNodes, source=VarR1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
-      deallocate(VarR1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
     end if
 
     This%Constructed = .true.
@@ -212,9 +208,12 @@ contains
 
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
+    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file'
+
     call GetInput%AddSection( Section=This%OutputFile%GetInput( MainSectionName='file', Prefix=PrefixLoc, Directory=DirectorySub))
 
     call GetInput%AddParameter( Name='abscissa_column', Value=Convert_To_String(This%AbscissaColumn) )
@@ -255,6 +254,7 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    Abscissa
     real(rkp), allocatable, dimension(:)                              ::    InterpolatedOutput
     integer                                                           ::    NbLines
+    integer                                                           ::    NbEntries
     integer                                                           ::    i
     integer                                                           ::    ii
     type(SMUQFile_Type)                                               ::    FileLoc
@@ -267,9 +267,16 @@ contains
 
     NbLines = size(Strings,1)
 
-    allocate(Values(NbLines*This%NbColumns,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
-    Values = Zero
+    if ( This%Interpolated ) then
+      NbEntries = size(This%InterpolationNodes,1)
+      allocate(Values(NbEntries*This%NbColumns,1), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+    else
+      NbEntries = NbLines
+      allocate(Values(NbLines*This%NbColumns,1), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+      Values = Zero
+    end if
 
     allocate(TableOutput(NbLines), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='TableOutput', ProcName=ProcName, stat=StatLoc )
@@ -290,10 +297,10 @@ contains
       end do
 
       if ( This%Interpolated ) then
-        Values((ii-1)*NbLines+1:ii*NbLines,1) = Interpolate( Abscissa=Abscissa, Ordinate=TableOutput,                             &
-                                                                                                   Nodes=This%InterpolationNodes )
+        Values((i-1)*NbEntries+1:i*NbEntries,1) = Interpolate( Abscissa=Abscissa, Ordinate=TableOutput,                           &
+                                                                                                    Nodes=This%InterpolationNodes)
       else
-        Values((ii-1)*NbLines+1:ii*NbLines,1) = TableOutput
+        Values((i-1)*NbEntries+1:i*NbEntries,1) = TableOutput
       end if
   
     end do

@@ -72,6 +72,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
+
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
       This%Name = 'ModelInterface'
@@ -88,6 +89,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
+
     This%Initialized=.false.
     This%Constructed=.false.
 
@@ -128,6 +130,7 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
+
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -167,19 +170,10 @@ contains
     character(:), allocatable                                         ::    LabelLoc
     integer                                                           ::    NbOutputs
     integer                                                           ::    i, ii, iii
-    if ( allocated(Output) ) then
-      if ( size(Output,1) /= This%NbResponses ) then
-        deallocate(Output, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-      end if
-    end if
+    logical                                                           ::    CorrectOrder
+    logical                                                           ::    CorrectSize
 
-    if ( .not. allocated(Output) ) then
-      allocate(Output(This%NbResponses), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-    end if
-
-    call This%Model%Run( Input=Input, Output=OutputLoc, Stat=StatLoc )
+    call This%Model%Run( Input=Input, Output=Output, Stat=StatLoc )
     if ( present(Stat) ) Stat = StatLoc
 
     if ( StatLoc /= 0 ) then
@@ -189,32 +183,61 @@ contains
         call Error%Raise( 'Model returned a non-zero status indicator: ' // ConvertToString(Value=StatLoc), ProcName=ProcName )
       end if
     else
-      NbOutputs = size(OutputLoc,1)
 
+      CorrectOrder = .true.
+      CorrectSize = .true.
+      NbOutputs = size(Output,1)
+
+      if ( size(Output,1) /= This%NbResponses ) CorrectSize = .false.      
+
+      if ( size(Output,1) < This%NbResponses ) call Error%Raise( Line='Insufficient number of outputs', ProcName=ProcName )      
+      
+      i = 1
       do i = 1, This%NbResponses
-        LabelLoc = This%ResponseLabels(i)%GetValue()
-
-        iii = 0
-        ii = 1
-        do ii = 1, NbOutputs
-          if ( LabelLoc == OutputLoc(ii)%GetLabel() ) then
-            iii = ii
-            exit
-          end if
-        end do
-        if ( iii == 0 ) call Error%Raise( Line='Did not finding matching output label for response : ' //                         &
-                                                                            This%ResponseLabels(i)%GetValue(), ProcName=ProcName )
-
-        if ( OutputLoc(iii)%GetNbNodes() /= This%ResponseNbNodes(i) ) call Error%Raise( Line='Mismatching number of ' //          &
-                                                                       'output nodes with specified response', ProcName=ProcName )
-        Output(i) = OutputLoc(iii)
-
+        if ( This%ResponseLabels(i)%GetValue() == Output(i)%GetLabel() ) cycle
+        CorrectOrder = .false.
+        exit
       end do
 
-      deallocate(OutputLoc, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )
+      if ( .not. CorrectOrder .or. .not. CorrectSize ) then
+
+        if ( .not. CorrectSize ) then
+          call move_alloc(Output, OutputLoc)
+          allocate(Output(This%NbResponses), stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+        else
+          allocate(OutputLoc, source=Output, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )
+        end if
+
+        do i = 1, This%NbResponses
+          LabelLoc = This%ResponseLabels(i)%GetValue()
+
+          iii = 0
+          ii = 1
+          do ii = 1, NbOutputs
+            if ( LabelLoc == OutputLoc(ii)%GetLabel() ) then
+              iii = ii
+              exit
+            end if
+          end do
+          if ( iii == 0 ) call Error%Raise( Line='Did not finding matching output label for response : ' //                     &
+                                                                          This%ResponseLabels(i)%GetValue(), ProcName=ProcName )
+
+          Output(i) = OutputLoc(iii)
+        end do
+
+        deallocate(OutputLoc, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )  
+      end if
 
     end if
+
+    i = 1
+    do i = 1, This%NbResponses
+      if ( Output(i)%GetNbNodes() /= This%ResponseNbNodes(i) ) call Error%Raise( Line='Mismatching number of ' //                 &
+                                                                       'output nodes with specified response', ProcName=ProcName )
+    end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -233,6 +256,7 @@ contains
     character(:), allocatable                                         ::    LabelLoc
     integer                                                           ::    NbInputs
     integer                                                           ::    i, ii
+
     NbInputs = size(Input,1)
 
     if ( allocated(Output) ) then
@@ -278,6 +302,7 @@ contains
     class(ModelInterface_Type), intent(in)                            ::    This
 
     character(*), parameter                                           ::    ProcName='GetNbResponses'
+
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetNbResponses = This%NbResponses

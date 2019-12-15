@@ -143,7 +143,9 @@ contains
     if ( present(Prefix) ) PrefixLoc = Prefix
 
     SectionName = 'outputs'
-    This%NbCells = Input%GetNumberofSubSections( Name=SectionName )
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    This%NbCells = InputSection%GetNumberofSubSections()
+    nullify(InputSection)
 
     allocate(This%Cells(This%NbCells), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
@@ -370,7 +372,9 @@ contains
     This%Label = VarC0D
 
     SectionName = 'files'
-    This%NbOFiles = InputSection%GetNumberofSubSections( Name=SectionName )
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    This%NbOFiles = InputSection%GetNumberofSubSections()
+    nullify(InputSection)
 
     allocate(This%OFile(This%NbOFiles), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OFile', ProcName=ProcName, stat=StatLoc )
@@ -472,6 +476,8 @@ contains
       OutputSize = OutputSize + size(VarR2D,1)
       call Outputs%Append( Values=VarR2D )
       nullify(OFile)
+      deallocate(VarR2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
     end do
 
     allocate(VarR2D(OutputSize,OutputNbDegen), stat=StatLoc)
