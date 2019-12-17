@@ -15,8 +15,8 @@
 !! Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
-! X~gamma(alpha,1), A = alpha-1
-module OrthoLaguerre_Class
+! [-1,1] beta distribution, A and B are shifted beta distribution beta and alpha parameters respectively
+module OrthoJacobi_Class
 
 use Input_Library
 use Logger_Class                                                  ,only:  Logger
@@ -33,7 +33,8 @@ private
 public                                                                ::    OrthoLaguerre_Type
 
 type, extends(OrthoPoly_Type)                                         ::    OrthoLaguerre_Type
-  real(rkp)                                                           ::    A=Zero
+  real(rkp)                                                           ::    A
+  real(rkp)                                                           ::    B
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -91,7 +92,8 @@ contains
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-    This%A = 0
+    This%A = Zero
+    This%B = Zero
     This%Normalized = .false.
 
   end subroutine
@@ -122,10 +124,15 @@ contains
 
     ParameterName = 'alpha'
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
-      if ( VarR0D < Zero ) call Error%Raise( Line='Alpha setting below minimum of 1', ProcName=ProcName )
-      This%A = VarR0D - One
-    end if
+    if ( Found ) This%B = VarR0D - 1
+
+    ParameterName = 'beta'
+    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%A = VarR0D - 1
+
+
+    if ( This%A < Zero ) call Error%Raise( Line='Beta setting below minimum of 1', ProcName=ProcName )
+    if ( This%B < Zero ) call Error%Raise( Line='Alpha setting below minimum of 1', ProcName=ProcName )
 
     ParameterName = 'normalized'
     call Input%GetValue( value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -137,10 +144,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Alpha, Normalized )
+  subroutine ConstructCase1( This, Alpha, Beta, Normalized )
     
     class(OrthoLaguerre_Type), intent(inout)                          ::    This
     real(rkp), optional, intent(in)                                   ::    Alpha
+    real(rkp), optional, intent(in)                                   ::    Beta
     logical, optional, intent(in)                                     ::    Normalized 
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
@@ -149,8 +157,13 @@ contains
     if ( .not. This%Initialized ) call This%Initialize()
 
     if ( present(Alpha) ) then
-      if ( Alpha < Zero ) call Error%Raise( Line='Alpha setting below minimum of 1', ProcName=ProcName )
-      This%A = Alpha - One
+      if ( Alpha <= Zero ) call Error%Raise( Line='Alpha setting below minimum of 1', ProcName=ProcName )
+      This%B = Alpha - One
+    end if
+
+    if ( present(Beta) ) then
+      if ( Beta <= Zero ) call Error%Raise( Line='Alpha setting below minimum of 1', ProcName=ProcName )
+      This%A = Beta - One
     end if
 
     if ( present(Normalized) ) This%Normalized = Normalized
@@ -189,7 +202,8 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%A + One ) )
+    call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%B + One ) )
+    call GetInput%AddParameter( Name='beta', Value=ConvertToString( Value=This%A + One ) )
     call GetInput%AddParameter( Name='normalized', Value=ConvertToString(Value=This%Normalized) )
 
   end function
@@ -209,7 +223,7 @@ contains
     real(rkp)                                                         ::    valnm1
     real(rkp)                                                         ::    valnp0
     real(rkp)                                                         ::    valnp1
-    real(rkp)                                                         ::    nt
+    real(rkp)                                                         ::    n
     integer                                                           ::    i
     logical                                                           ::    NormalizedLoc
 
@@ -231,15 +245,17 @@ contains
       valnm1 = This%polyorderm1
       valnp0 = This%polyorder0
       do i = 1, Order
-        nt = real(i-1,rkp)
-        valnp1 = ((Two*nt+One+This%A-X)*valnp0-(nt+This%A)*valnm1)/(nt+One)
+        n = real(n,rkp)
+        valnp1 = (Two*n+This%A+This%B-One)*((Two*n+This%A+This%B)*(Two*n+This%A+This%B-Two)*x+This%A**2-This%B**2)*valnp0 +       &
+                 -Two*(n+This%A-One)*(n+This%B-One)*(Two*n+This%A+This%B)*valnm1
+        valnp1 = valnp1 / ( Two*n*(n+This%A+This%B)*(Two*n+This%A+This%B-Two) )
         valnm1 = valnp0
         valnp0 = valnp1
       end do
       Eval_N = valnp1
     end if
 
-    if ( NormalizedLoc ) Eval_N = Eval_N / This%NFactor( Order=Order, A=This%A )
+    if ( NormalizedLoc ) Eval_N = Eval_N / This%NFactor( Order=Order, A=This%A, B=This%B )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -259,7 +275,7 @@ contains
     real(rkp)                                                         ::    valnm1
     real(rkp)                                                         ::    valnp0
     real(rkp)                                                         ::    valnp1
-    real(rkp)                                                         ::    nt
+    real(rkp)                                                         ::    n
     integer                                                           ::    i, i_offset, ii
     integer                                                           ::    StatLoc=0
     logical                                                           ::    NormalizedLoc
@@ -294,13 +310,15 @@ contains
       valnp0 = This%polyorder0
       ii = 0
       do i = 1, MaxOrder
-        nt = real(i-1,rkp)
-        valnp1 = ((Two*nt+One+This%A-X)*valnp0-(nt+This%A)*valnm1)/(nt+One)
+        n = real(n,rkp)
+        valnp1 = (Two*n+This%A+This%B-One)*((Two*n+This%A+This%B)*(Two*n+This%A+This%B-Two)*x+This%A**2-This%B**2)*valnp0 +       &
+                 -Two*(n+This%A-One)*(n+This%B-One)*(Two*n+This%A+This%B)*valnm1
+        valnp1 = valnp1 / ( Two*n*(n+This%A+This%B)*(Two*n+This%A+This%B-Two) )
         valnm1 = valnp0
         valnp0 = valnp1
         if ( i >= MinOrder ) then
           Eval_MN(i+i_offset-ii) = valnp1
-          if ( NormalizedLoc ) Eval_MN(i+i_offset-ii) = Eval_MN(i+i_offset-ii) / This%NFactor( Order=i, A=This%A )
+          if ( NormalizedLoc ) Eval_MN(i+i_offset-ii) = Eval_MN(i+i_offset-ii) / This%NFactor( Order=i, A=This%A, B=This%B )
         else
           ii = ii + 1
         end if
@@ -347,6 +365,7 @@ contains
         LHS%Constructed = RHS%Constructed
         if ( RHS%Constructed ) then
           LHS%A = RHS%A
+          LHS%B = RHS%B
           LHS%Normalized = RHS%Normalized
         end if
 

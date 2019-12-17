@@ -10,4 +10,5 @@ add_target_sources ( smuqApp
   HierDistLogUnif_Class.f90 
   HierDistLog10Unif_Class.f90
   HierDistLogistic_Class.f90
+  HierDistBeta_Class.f90
 )

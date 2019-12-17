@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 ! defined using shape and rate form
-module DistGamma_Class
+module DistBeta_Class
 
 use CDF_Library
 use Prob_Library
@@ -28,18 +28,16 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use DistProb_Class                                                ,only:    DistProb_Type
 use InputDet_Class                                                ,only:    InputDet_Type
-use SampleLHS_Class                                               ,only:    SampleLHS_Type
 
 implicit none
 
 private
 
-public                                                                ::    DistGamma_Type
+public                                                                ::    DistBeta_Type
 
-type, extends(DistProb_Type)                                          ::    DistGamma_Type
+type, extends(DistProb_Type)                                          ::    DistBeta_Type
   real(rkp)                                                           ::    Alpha=One
   real(rkp)                                                           ::    Beta=One
-  logical                                                             ::    DoubleTruncatedLeft
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -68,7 +66,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
-    class(DistGamma_Type), intent(inout)                              ::    This
+    class(DistBeta_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
@@ -84,7 +82,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
-    class(DistGamma_Type), intent(inout)                              ::    This
+    class(DistBeta_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
@@ -100,7 +98,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This )
 
-    class(DistGamma_Type), intent(inout)                              ::    This
+    class(DistBeta_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
@@ -108,9 +106,8 @@ contains
     This%B = One
     This%Alpha = One
     This%Beta = One
-    This%TruncatedRight = .false.
+    This%TruncatedRight = .true.
     This%TruncatedLeft = .true.
-    This%DoubleTruncatedLeft = .false.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -118,7 +115,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix )
 
-    class(DistGamma_Type), intent(inout)                              ::    This
+    class(DistBeta_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -148,21 +145,14 @@ contains
     ParameterName = 'a'
     call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%A = VarR0D
-    if ( This%A > Zero ) This%DoubleTruncatedLeft = .true.
 
     ParameterName = 'b'
     call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
-      This%B = VarR0D
-      This%TruncatedRight = .true.
-    end if
+    if ( Found ) This%B = VarR0D
 
     if ( This%Alpha <= Zero ) call Error%Raise( "Alpha parameter at or below zero" )
     if ( This%Beta <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
-    if ( This%A < Zero ) call Error%Raise( Line='Lower limit specified to be below minimum of 0', ProcName=ProcName )
-    if ( This%TruncatedRight ) then
-      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
-    end if
+    if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
 
     This%Constructed = .true.
 
@@ -172,7 +162,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1( This, Alpha, Beta, A, B )
     
-    class(DistGamma_Type), intent(inout)                              ::    This
+    class(DistBeta_Type), intent(inout)                               ::    This
     real(rkp), intent(in)                                             ::    Alpha
     real(rkp), intent(in)                                             ::    Beta
     real(rkp), optional, intent(in)                                   ::    A
@@ -183,21 +173,17 @@ contains
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
-    if ( Alpha <= Zero ) call Error%Raise( "Alpha parameter at or below zero" )
     This%Alpha = Alpha
 
-    if ( Beta <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
     This%Beta = Beta
 
     if ( present(A) ) This%A = A
-    if ( This%A > Zero ) This%DoubleTruncatedLeft = .true.
-    if ( This%A < Zero ) call Error%Raise( Line='Lower limit specified to be below minimum of 0', ProcName=ProcName )
 
-    if ( present(B) ) then
-      This%B = B
-      This%TruncatedRight = .true.
-      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
-    end if
+    if ( present(B) ) This%B = B
+
+    if ( Alpha <= Zero ) call Error%Raise( "Alpha parameter at or below zero" )
+    if ( Beta <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
+    if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
 
     This%Constructed = .true.
 
@@ -211,7 +197,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(DistGamma_Type), intent(in)                                 ::    This
+    class(DistBeta_Type), intent(in)                                  ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -235,8 +221,8 @@ contains
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
     call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%Alpha ) )
     call GetInput%AddParameter( Name='beta', Value=ConvertToString( Value=This%Beta ) )
-    if ( This%DoubleTruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
-    if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
+    call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
+    call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -246,22 +232,14 @@ contains
 
     real(rkp)                                                         ::    PDF_R0D
 
-    class(DistGamma_Type), intent(in)                                 ::    This
+    class(DistBeta_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
 
     character(*), parameter                                           ::    ProcName='PDF_R0D'
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
-      PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
-    else if ( This%DoubleTruncatedLeft ) then
-      PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
-    else if ( This%TruncatedRight ) then
-      PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
-    else
-      PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta )
-    end if
+    PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -279,45 +257,38 @@ contains
     real(rkp), optional, intent(in)                                   ::    B
 
     character(*), parameter                                           ::    ProcName='ComputePDF'
-    real(8)                                                           ::    CDFLeft
-    real(8)                                                           ::    CDFRight
-    real(8)                                                           ::    k
-    real(8)                                                           ::    theta
+    real(rkp)                                                         ::    ALoc
+    real(rkp)                                                         ::    BLoc
+    real(8)                                                           ::    AlphaLoc
+    real(8)                                                           ::    BetaLoc
+    real(8)                                                           ::    XLoc
     real(8)                                                           ::    VarR0D
-    real(8)                                                           ::    ALoc
-    real(8)                                                           ::    BLoc
     logical                                                           ::    TripFlag
 
     TripFlag = .false.
 
-    if ( present(A) ) then
-      if (X < A ) then
-        ComputePDF = Zero
-        TripFlag=.true.
-      end if
-    else
-      if ( X <= Zero ) then
-        ComputePDF = Zero
-        TripFlag = .true.
-      end if
+    ALoc = Zero
+    if ( present(A) ) ALoc = A
+
+    BLoc = One
+    if ( present(B) ) BLoc = B
+
+    if (X < ALoc ) then
+      ComputePDF = Zero
+      TripFlag=.true.
     end if
 
-    if ( present(B) ) then
-      if (X > B) then
-        ComputePDF = Zero
-        TripFlag=.true.
-      end if
+    if (X > BLoc) then
+      ComputPDF = Zero
+      TripFlag=.true.
     end if
 
     if ( .not. TripFlag ) then
-      k = real(Alpha,8)
-      theta = real(One/Beta,8)
-      CDFLeft = 0.
-      if ( present(A) ) call gamma_cdf( real(A,8), real(0,8), theta, k, CDFLeft )
-      CDFRight = 1.
-      if ( present(B) ) call gamma_cdf( real(B,8), real(0,8), theta, k, CDFRight )
-      call gamma_pdf( real(X,8), real(0,8), theta, k, VarR0D )
-      ComputePDF = real(VarR0D / ( CDFRight - CDFLeft ),rkp) 
+      XLoc = (X-ALoc)/(BLoc-ALoc)
+      AlphaLoc = real(Alpha,8)
+      BetaLoc = real(Beta,8)
+      call beta_pdf( XLoc, AlphaLoc, BetaLoc, VarR0D )
+      ComputePDF = real(VarR0D,rkp)/(BLoc-ALoc)
     end if
 
   end function
@@ -328,28 +299,19 @@ contains
 
     real(rkp)                                                         ::    CDF_R0D
 
-    class(DistGamma_Type), intent(in)                                 ::    This
+    class(DistBeta_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
 
     character(*), parameter                                           ::    ProcName='CDF_R0D'
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
-      CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
-    else if ( This%DoubleTruncatedLeft ) then
-      CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
-    else if ( This%TruncatedRight ) then
-      CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
-    else
-      CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta )
-    end if
+    CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  ! Assumes that A will not be passed unless it is above 0.0 and that all parameters are valid
   function ComputeCDF( X, Alpha, Beta, A, B )
 
     real(rkp)                                                         ::    ComputeCDF
@@ -361,43 +323,38 @@ contains
     real(rkp), intent(in), optional                                   ::    B
 
     character(*), parameter                                           ::    ProcName='ComputeCDF'
-    real(8)                                                           ::    CDFLeft
-    real(8)                                                           ::    CDFRight
-    real(8)                                                           ::    k
-    real(8)                                                           ::    theta
+    real(rkp)                                                         ::    ALoc
+    real(rkp)                                                         ::    BLoc
+    real(8)                                                           ::    AlphaLoc
+    real(8)                                                           ::    BetaLoc
+    real(8)                                                           ::    XLoc
     real(8)                                                           ::    VarR0D
     logical                                                           ::    TripFlag
 
     TripFlag = .false.
 
-    if ( present(A) ) then
-      if (X < A) then
-        ComputeCDF = Zero
-        TripFlag=.true.
-      end if
-    else
-      if ( X <= Zero ) then
-        ComputeCDF = Zero
-        TripFlag = .true.
-      end if
+    ALoc = Zero
+    if ( present(A) ) ALoc = A
+
+    BLoc = One
+    if ( present(B) ) BLoc = B
+
+    if (X < ALoc ) then
+      ComputeCDF = Zero
+      TripFlag=.true.
     end if
 
-    if ( present(B) ) then
-      if (X > B) then
-        ComputeCDF = One
-        TripFlag=.true.
-      end if
+    if (X > BLoc) then
+      ComputCDF = One
+      TripFlag=.true.
     end if
 
     if ( .not. TripFlag ) then
-      k = real(Alpha,8)
-      theta = real(One/Beta,8)
-      CDFLeft = 0.
-      if ( present(A) ) call gamma_cdf( real(A,8), real(0,8), theta, k, CDFLeft )
-      CDFRight = 1.
-      if ( present(B) ) call gamma_cdf( real(B,8), real(0,8), theta, k, CDFRight )
-      call gamma_cdf( real(X,8), real(0,8), theta, k, VarR0D )
-      ComputeCDF = real(( VarR0D - CDFLeft ) / ( CDFRight - CDFLeft ),rkp)
+      XLoc = (X-ALoc)/(BLoc-ALoc)
+      AlphaLoc = real(Alpha,8)
+      BetaLoc = real(Beta,8)
+      call beta_cdf( XLoc, AlphaLoc, BetaLoc, VarR0D )
+      ComputeCDF = real(VarR0D,rkp)
     end if 
 
   end function
@@ -408,22 +365,14 @@ contains
 
     real(rkp)                                                         ::    InvCDF_R0D
 
-    class(DistGamma_Type), intent(in)                                 ::    This
+    class(DistBeta_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    P
 
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
-      InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
-    else if ( This%DoubleTruncatedLeft ) then
-      InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A )
-    else if ( This%TruncatedRight ) then
-      InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, B=This%B )
-    else
-      InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta )
-    end if
+    InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -431,9 +380,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Assumes that A will not be passed unless it is above 0.0 and that all parameters are valid
   function ComputeInvCDF( P, Alpha, Beta, A, B )
-
-    use CDF_Library
-    use StringRoutines_Module
 
     real(rkp)                                                         ::    ComputeInvCDF
 
@@ -444,13 +390,12 @@ contains
     real(rkp), intent(in), optional                                   ::    B
 
     character(*), parameter                                           ::    ProcName='ComputeInvCDF'
-    real(8)                                                           ::    CDFLeft
-    real(8)                                                           ::    CDFRight
-    real(8)                                                           ::    k
-    real(8)                                                           ::    theta
-    real(8)                                                           ::    VarR0D
+    real(rkp)                                                         ::    ALoc
+    real(rkp)                                                         ::    BLoc
+    real(8)                                                           ::    AlphaLoc
+    real(8)                                                           ::    BetaLoc
+    real(8)                                                           ::    XLoc
     real(8)                                                           ::    PLoc
-    real(8)                                                           ::    QLoc
     integer                                                           ::    StatLoc=0
     logical                                                           ::    TripFlag
 
@@ -459,37 +404,28 @@ contains
 
     TripFlag = .false.
 
+    ALoc = Zero
+    if ( present(A) ) ALoc = A
+
+    BLoc = One
+    if ( present(B) ) BLoc = B
+
     if ( P == Zero ) then
-      if ( present(A) ) then
-        ComputeInvCDF = A
-      else
-        ComputeInvCDF = tiny(One)
-      end if
+      ComputeInvCDF = ALoc
       TripFlag=.true.
     end if
 
     if ( P == One ) then
-      if ( present(B) ) then
-        ComputeInvCDF = B
-      else
-        ComputeInvCDF = huge(One)
-      end if
+      ComputeInvCDF = BLoc
       TripFlag=.true.
     end if
 
     if ( .not. TripFlag ) then
-      k = real(Alpha,8)
-      theta = real(One/Beta,8)
-      CDFLeft = 0.
-      if ( present(A) ) call gamma_cdf( real(A,8), real(0,8), theta, k, CDFLeft )
-      CDFRight = 1.
-      if ( present(B) ) call gamma_cdf( real(B,8), real(0,8), theta, k, CDFRight )
-      PLoc = CDFLeft+real(P,8)*(CDFRight-CDFLeft)
-      QLoc = real(1,8) - PLoc
-      call gamma_inc_inv ( k, VarR0D, real(-1.,8), PLoc, QLoc, StatLoc )
-      if ( StatLoc < 0 ) call Error%Raise( Line='Something went wrong with gamma_inc_inv where stat=' //                          &
-                                                                                   ConvertToString( StatLoc ), ProcName=ProcName )
-      ComputeInvCDF = real(VarR0D,rkp) / Beta
+      PLoc = real(P,8)
+      AlphaLoc = real(Alpha,8)
+      BetaLoc = real(Beta,8)
+      call beta_cdf_inf( P, AlphaLoc, BetaLoc, XLoc )
+      ComputeInvCDF - real(XLoc,rkp)*(BLoc-ALoc) + ALoc
     end if
 
   end function
@@ -500,7 +436,7 @@ contains
 
     real(rkp)                                                         ::    GetAlpha
 
-    class(DistGamma_Type), intent(in)                                 ::    This
+    class(DistBeta_Type), intent(in)                                  ::    This
 
     character(*), parameter                                           ::    ProcName='GetAlpha'
 
@@ -516,7 +452,7 @@ contains
 
     real(rkp)                                                         ::    GetBeta
 
-    class(DistGamma_Type), intent(in)                                 ::    This
+    class(DistBeta_Type), intent(in)                                  ::    This
 
     character(*), parameter                                           ::    ProcName='GetBeta'
 
@@ -532,7 +468,7 @@ contains
 
     real(rkp)                                                         ::    GetMoment
 
-    class(DistGamma_Type), intent(in)                                 ::    This
+    class(DistBeta_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Moment
 
     character(*), parameter                                           ::    ProcName='GetMoment'
@@ -542,17 +478,14 @@ contains
 
     if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
 
-    if ( Moment > 0 ) then
-      if ( .not. ( This%DoubleTruncatedLeft .or. This%TruncatedRight ) ) then
-        GetMoment = One
-        i = 1
-        do i = 1, Moment
-          GetMoment = GetMoment * (-This%Alpha-real((i-1),rkp))*(-One/This%Beta)
-        end do
-      else
-        GetMoment = This%ComputeMomentNumerical( Moment=Moment )
-      end if
-    else
+    if ( Moment > 2 ) then
+      GetMoment = This%ComputeMomentNumerical( Moment=Moment )
+    elseif ( Moment == 1 ) then
+      GetMoment = (This%Alpha*This%B+This%Beta*This%A) / (This%Alpha+This%Beta)
+    elseif(Moment == 2 ) then
+      GetMoment = (This%Alpha*This%Beta(This%B-This%A)**2) /( (This%Alpha+This%Beta)**2*(This%Alpha+This%Beta+One) )
+      GetMoment = GetMoment + ( (This%Alpha*This%B+This%Beta*This%A) / (This%Alpha+This%Beta) )**2
+    else(Moment == 0 ) then
       GetMoment = One
     end if
 
@@ -562,7 +495,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(DistGamma_Type), intent(out)                                ::    LHS
+    class(DistBeta_Type), intent(out)                                 ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
@@ -570,7 +503,7 @@ contains
 
     select type (RHS)
   
-      type is (DistGamma_Type)
+      type is (DistBeta_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -582,7 +515,6 @@ contains
           LHS%Beta = RHS%Beta
           LHS%TruncatedLeft = RHS%TruncatedLeft
           LHS%TruncatedRight = RHS%TruncatedRight
-          LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedLeft
         end if
       
       class default
@@ -596,7 +528,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(DistGamma_Type), intent(inout)                               ::    This
+    type(DistBeta_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0

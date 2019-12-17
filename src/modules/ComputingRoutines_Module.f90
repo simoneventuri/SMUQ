@@ -42,6 +42,7 @@ public                                                                ::    Comp
 public                                                                ::    ScrambleArray
 public                                                                ::    Transform
 public                                                                ::    BernoulliNumbers
+public                                                                ::    Pochhammer
 
 logical, parameter                                                    ::    DebugGlobal = .false.
 
@@ -96,6 +97,13 @@ interface Transform
   module procedure                                                    ::    Transform_N_VarR0D
   module procedure                                                    ::    Transform_1_VarR1D
   module procedure                                                    ::    Transform_N_VarR1D
+end interface
+
+interface Pochhammer
+  module procedure                                                    ::    Pochhammer_R0D_8
+  module procedure                                                    ::    Pochhammer_R0D_4
+  module procedure                                                    ::    Pochhammer_I0D_8
+  module procedure                                                    ::    Pochhammer_I0D_4
 end interface
 
 contains
@@ -1063,6 +1071,70 @@ contains
         BernoulliNumbers(i+1) = -One / ( real(i,rkp) + One ) * BernoulliNumbers(i+1)
       end if
     end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Pochhammer_R0D_8( A, N )
+
+    real(rkp)                                                         ::    Pochhammer_R0D_8
+    
+    real(8), intent(in)                                               ::    A
+    integer, intent(in)                                               ::    N
+
+    character(*), parameter                                           ::    ProcName='Pochhammer_R0D_8'
+    integer                                                           ::    StatLoc=0
+
+    Pochhammer_R0D_8 = gamma(A+real(N,8)) / gamma(A)
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Pochhammer_R0D_4( A, N )
+
+    real(rkp)                                                         ::    Pochhammer_R0D_4
+    
+    real, intent(in)                                                  ::    A
+    integer, intent(in)                                               ::    N
+
+    character(*), parameter                                           ::    ProcName='Pochhammer_R0D_4'
+    integer                                                           ::    StatLoc=0
+
+    Pochhammer_R0D_4 = gamma(A+real(N)) / gamma(A)
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Pochhammer_I0D_8( A, N )
+
+    real(rkp)                                                         ::    Pochhammer_I0D_8
+    
+    integer(8), intent(in)                                            ::    A
+    integer, intent(in)                                               ::    N
+
+    character(*), parameter                                           ::    ProcName='Pochhammer_I0D_8'
+    integer                                                           ::    StatLoc=0
+
+    Pochhammer_I0D_8 = real(Factorial(A+integer(N-1,8)),rkp) / real(Factorial(A-integer(1,8)),rkp)
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Pochhammer_I0D_4( A, N )
+
+    real(rkp)                                                         ::    Pochhammer_I0D_4
+    
+    integer, intent(in)                                               ::    A
+    integer, intent(in)                                               ::    N
+
+    character(*), parameter                                           ::    ProcName='Pochhammer_I0D_4'
+    integer                                                           ::    StatLoc=0
+
+    Pochhammer_I0D_4 = real(Factorial(A+N-1),rkp) / real(Factorial(A-1),rkp)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
