@@ -279,7 +279,7 @@ contains
     end if
 
     if (X > BLoc) then
-      ComputPDF = Zero
+      ComputePDF = Zero
       TripFlag=.true.
     end if
 
@@ -345,7 +345,7 @@ contains
     end if
 
     if (X > BLoc) then
-      ComputCDF = One
+      ComputeCDF = One
       TripFlag=.true.
     end if
 
@@ -424,8 +424,8 @@ contains
       PLoc = real(P,8)
       AlphaLoc = real(Alpha,8)
       BetaLoc = real(Beta,8)
-      call beta_cdf_inf( P, AlphaLoc, BetaLoc, XLoc )
-      ComputeInvCDF - real(XLoc,rkp)*(BLoc-ALoc) + ALoc
+      call beta_cdf_inv( P, AlphaLoc, BetaLoc, XLoc )
+      ComputeInvCDF = real(XLoc,rkp)*(BLoc-ALoc) + ALoc
     end if
 
   end function
@@ -483,9 +483,9 @@ contains
     elseif ( Moment == 1 ) then
       GetMoment = (This%Alpha*This%B+This%Beta*This%A) / (This%Alpha+This%Beta)
     elseif(Moment == 2 ) then
-      GetMoment = (This%Alpha*This%Beta(This%B-This%A)**2) /( (This%Alpha+This%Beta)**2*(This%Alpha+This%Beta+One) )
+      GetMoment = (This%Alpha*This%Beta*(This%B-This%A)**2) /( (This%Alpha+This%Beta)**2*(This%Alpha+This%Beta+One) )
       GetMoment = GetMoment + ( (This%Alpha*This%B+This%Beta*This%A) / (This%Alpha+This%Beta) )**2
-    else(Moment == 0 ) then
+    else
       GetMoment = One
     end if
 

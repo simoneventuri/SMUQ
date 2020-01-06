@@ -30,9 +30,9 @@ implicit none
 
 private
 
-public                                                                ::    OrthoLaguerre_Type
+public                                                                ::    OrthoJacobi_Type
 
-type, extends(OrthoPoly_Type)                                         ::    OrthoLaguerre_Type
+type, extends(OrthoPoly_Type)                                         ::    OrthoJacobi_Type
   real(rkp)                                                           ::    A
   real(rkp)                                                           ::    B
 contains
@@ -56,12 +56,12 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
-    class(OrthoLaguerre_Type), intent(inout)                          ::    This
+    class(OrthoJacobi_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
     if ( .not. This%Initialized ) then
-      This%Name         =   'laguerre'
+      This%Name         =   'Jacobi'
       This%Initialized  =   .true.
       call This%SetDefaults()
     end if
@@ -72,7 +72,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
-    class(OrthoLaguerre_Type), intent(inout)                          ::    This
+    class(OrthoJacobi_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
@@ -88,7 +88,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults(This)
 
-    class(OrthoLaguerre_Type), intent(inout)                          ::    This
+    class(OrthoJacobi_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
@@ -104,7 +104,7 @@ contains
 
     use String_Library
 
-    class(OrthoLaguerre_Type), intent(inout)                          ::    This
+    class(OrthoJacobi_Type), intent(inout)                            ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -146,7 +146,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1( This, Alpha, Beta, Normalized )
     
-    class(OrthoLaguerre_Type), intent(inout)                          ::    This
+    class(OrthoJacobi_Type), intent(inout)                            ::    This
     real(rkp), optional, intent(in)                                   ::    Alpha
     real(rkp), optional, intent(in)                                   ::    Beta
     logical, optional, intent(in)                                     ::    Normalized 
@@ -179,7 +179,7 @@ contains
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
-    class(OrthoLaguerre_Type), intent(in)                             ::    This
+    class(OrthoJacobi_Type), intent(in)                               ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -214,7 +214,7 @@ contains
 
     real(rkp)                                                         ::    Eval_N
 
-    class(OrthoLaguerre_Type), intent(inout)                          ::    This
+    class(OrthoJacobi_Type), intent(inout)                            ::    This
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    Order
     logical, optional, intent(in)                                     ::    Normalized
@@ -245,8 +245,8 @@ contains
       valnm1 = This%polyorderm1
       valnp0 = This%polyorder0
       do i = 1, Order
-        n = real(n,rkp)
-        valnp1 = (Two*n+This%A+This%B-One)*((Two*n+This%A+This%B)*(Two*n+This%A+This%B-Two)*x+This%A**2-This%B**2)*valnp0 +       &
+        n = real(i,rkp)
+        valnp1 = (Two*n+This%A+This%B-One)*((Two*n+This%A+This%B)*(Two*n+This%A+This%B-Two)*X+This%A**2-This%B**2)*valnp0 +       &
                  -Two*(n+This%A-One)*(n+This%B-One)*(Two*n+This%A+This%B)*valnm1
         valnp1 = valnp1 / ( Two*n*(n+This%A+This%B)*(Two*n+This%A+This%B-Two) )
         valnm1 = valnp0
@@ -265,7 +265,7 @@ contains
 
     real(rkp), dimension(:), allocatable                              ::    Eval_MN
 
-    class(OrthoLaguerre_Type), intent(inout)                          ::    This
+    class(OrthoJacobi_Type), intent(inout)                            ::    This
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    MinOrder
     integer, intent(in)                                               ::    MaxOrder
@@ -310,8 +310,8 @@ contains
       valnp0 = This%polyorder0
       ii = 0
       do i = 1, MaxOrder
-        n = real(n,rkp)
-        valnp1 = (Two*n+This%A+This%B-One)*((Two*n+This%A+This%B)*(Two*n+This%A+This%B-Two)*x+This%A**2-This%B**2)*valnp0 +       &
+        n = real(i,rkp)
+        valnp1 = (Two*n+This%A+This%B-One)*((Two*n+This%A+This%B)*(Two*n+This%A+This%B-Two)*X+This%A**2-This%B**2)*valnp0 +       &
                  -Two*(n+This%A-One)*(n+This%B-One)*(Two*n+This%A+This%B)*valnm1
         valnp1 = valnp1 / ( Two*n*(n+This%A+This%B)*(Two*n+This%A+This%B-Two) )
         valnm1 = valnp0
@@ -330,17 +330,20 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function NFactor( Order, A )
+  function NFactor( Order, A, B )
 
     real(rkp)                                                         ::    NFactor
 
     integer, intent(in)                                               ::    Order
     real(rkp), intent(in)                                             ::    A
+    real(rkp), intent(in)                                             ::    B
 
     character(*), parameter                                           ::    ProcName='NFactor'
 
     if ( Order > 0 ) then
-      NFactor = dsqrt( BinomialCoeff( real(Order,rkp) + A, Order ) )
+      NFactor = dsqrt( ( Pochhammer(A=A+One, N=Order)*Pochhammer(A=B+One, N=Order) ) /                                            &
+                                                           ( Pochhammer(A=A+B+Two, N=Order-1) * (Two*real(Order,rkp)+A+B+One) ) )
+      NFactor = NFactor / SQRTFactorial( N=Order )
     else
       NFactor = One
     end if
@@ -351,7 +354,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(OrthoLaguerre_Type), intent(out)                            ::    LHS
+    class(OrthoJacobi_Type), intent(out)                              ::    LHS
     class(OrthoPoly_Type), intent(in)                                 ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
@@ -359,7 +362,7 @@ contains
 
     select type (RHS)
   
-      type is (OrthoLaguerre_Type)
+      type is (OrthoJacobi_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -380,7 +383,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(OrthoLaguerre_Type), intent(inout)                           ::    This
+    type(OrthoJacobi_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
