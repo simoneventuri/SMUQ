@@ -61,7 +61,7 @@ type, extends(UQMethod_Type)                                          ::    UQSa
   integer                                                             ::    ParamSampleStep
   logical                                                             ::    SamplesObtained
   logical                                                             ::    SamplesRan
-  integer                                                             ::    Step
+  integer                                                             ::    ModelRunCounter
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -105,7 +105,7 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    This%Step = 0
+    This%ModelRunCounter = 0
 
     if ( allocated(This%ParamRecord) ) deallocate(This%ParamRecord, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
@@ -292,9 +292,9 @@ contains
       call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
       if ( Found ) This%SamplesRan = VarL0D
 
-      ParameterName = 'step'
+      ParameterName = 'model_run_counter'
       call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-      if ( Found ) This%Step = VarI0D
+      if ( Found ) This%ModelRunCounter = VarI0D
 
     end if
 
@@ -397,7 +397,7 @@ contains
                                                                                                      SectionName=SubSectionName )
     end if
 
-    if ( This%Step > 0 ) then
+    if ( This%ModelRunCounter > 0 ) then
       SectionName = 'bin_counts'
       call GetInput%AddSection( SectionName=SectionName )
       i = 1
@@ -417,7 +417,7 @@ contains
 
     call GetInput%AddParameter( Name='samples_obtained', Value=ConvertToString(Value=This%SamplesObtained ) )
     call GetInput%AddParameter( Name='samples_ran', Value=ConvertToString(Value=This%SamplesRan ) )
-    call GetInput%AddParameter( Name='step', Value=ConvertToString(Value=This%Step ) )
+    call GetInput%AddParameter( Name='model_run_counter', Value=ConvertToString(Value=This%ModelRunCounter) )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -453,6 +453,7 @@ contains
     integer                                                           ::    NbOutputs
     type(ModelInterface_Type)                                         ::    ModelInterface
     type(InputDet_Type)                                               ::    Input
+    integer                                                           ::    ParamRecordLength
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
@@ -486,6 +487,9 @@ contains
       end do
     end if
 
+    ParamRecordLength = 0
+    if ( allocated(This%ParamRecord) ) ParamRecordLength = size(This%ParamRecord,2)
+
     StepExceededFlag = .false.
 
     do
@@ -495,7 +499,7 @@ contains
       if ( .not. This%SamplesObtained ) then
 
         if ( .not. SilentLoc ) then
-          if ( This%Step /= 0 ) then
+          if ( This%ModelRunCounter /= 0 ) then
             Line = 'Performing enrichment'
           else
             Line = 'Initial population of the linear system'
@@ -505,12 +509,11 @@ contains
           write(*,'(A)') '' 
         end if
 
-        if ( This%Step == 0 ) then
+        if ( This%ModelRunCounter == 0 ) then
           This%ParamSample = This%Sampler%Draw(SampleSpace=SampleSpace)
         else
           call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,        &
                                                                                                         Exceeded=StepExceededFlag)
-
           if ( StepExceededFlag ) exit
         end if
         allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
@@ -529,10 +532,10 @@ contains
         do
           i = i + 1
           if ( i > iEnd ) exit
-          This%Step = This%Step + 1
+          This%ModelRunCounter = This%ModelRunCounter + 1
 
           if ( .not. SilentLoc ) then
-            Line = 'Model run #' // ConvertToString(Value=This%Step)
+            Line = 'Model run #' // ConvertToString(Value=This%ModelRunCounter)
             write(*,'(A)') Line
           end if
 
@@ -542,13 +545,12 @@ contains
 
           if ( StatLoc /= 0 ) then
             if ( .not. SilentLoc ) then
-              Line = 'Model run #' // ConvertToString(Value=This%Step) // ' -- Failed'
+              Line = 'Model run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
               write(*,'(A)') Line
             end if
             StatLoc = 0
             if ( allocated(Outputs) ) deallocate(Outputs, stat=StatLoc)
             if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
-            This%Step = This%Step - 1
           else
             ! Binning outputs
             This%ParamSampleRan(i) = .true.
@@ -589,35 +591,28 @@ contains
 
           end if
 
-          if ( This%CheckpointFreq > 0 .and. mod(i, abs(This%CheckpointFreq)) == 0 ) then
-            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
-                            Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+          if ( This%CheckpointFreq > 0 .and. (mod(This%ModelRunCounter, abs(This%CheckpointFreq)) == 0 .and. i /= iEnd)  ) then
+            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),     &
+                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
           end if
     
         end do
 
         This%SamplesRan = .true.
 
-        allocate(VarR2D(NbDim,This%Step), stat=StatLoc)
+        iStart = ParamRecordLength
+        allocate(VarR2D(NbDim,count(This%ParamSampleRan)+ParamRecordLength), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-        if ( allocated(This%ParamRecord) ) then
-          iStart = size(This%ParamRecord,2)
-          VarR2D(:,1:size(This%ParamRecord,2)) = This%ParamRecord
-          deallocate(This%ParamRecord, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
-        else
-          iStart = 0
-        end if
+        if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = ParamRecord
 
         i = iStart+1
         ii = 0
         do i = iStart+1, size(VarR2D,2)
           ii = ii + 1
-          if ( This%ParamSampleRan(ii) ) then
-            VarR2D(:,i) = This%ParamSample(:,ii)
-          end if
+          if ( This%ParamSampleRan(ii) ) VarR2D(:,i) = This%ParamSample(:,ii)
         end do
         call move_alloc(VarR2D, This%ParamRecord)
+        ParamRecordLength = size(This%ParamRecord,2)
 
         deallocate(This%ParamSample, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
@@ -631,21 +626,20 @@ contains
       This%SamplesObtained = .false.
       This%SamplesRan = .false.
 
-    end do
+      if ( This%CheckpointFreq > 0 ) then
+        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
+                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+      end if
 
-    This%SamplesObtained = .true.
-    This%SamplesRan = .true.
+    end do
 
     if ( StepExceededFlag ) then
       Line = 'Maximum sampling step exceeded'
-      if ( This%Step == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',             &
+      if ( This%ModelRunCounter == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',  &
                                                                                                                ProcName=ProcName )
       write(*,'(A)') ''  
       write(*,'(A)') Line
     end if
-
-    call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),             &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
 
     if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, Responses=Responses )
 
@@ -655,7 +649,7 @@ contains
     deallocate(This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
 
-    This%Step = 0
+    This%ModelRunCounter = 0
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

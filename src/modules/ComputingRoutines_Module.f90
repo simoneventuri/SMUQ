@@ -1118,7 +1118,7 @@ contains
     character(*), parameter                                           ::    ProcName='Pochhammer_I0D_8'
     integer                                                           ::    StatLoc=0
 
-    Pochhammer_I0D_8 = real(Factorial(A+integer(N-1,8)),rkp) / real(Factorial(A-integer(1,8)),rkp)
+    Pochhammer_I0D_8 = real(Factorial(A+int(N-1,8)),rkp) / real(Factorial(A-int(1,8)),rkp)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

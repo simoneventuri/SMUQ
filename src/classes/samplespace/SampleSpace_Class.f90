@@ -72,6 +72,7 @@ contains
   procedure, public                                                   ::    GetDistPointer_Label
   procedure, public                                                   ::    GetDistPointer_Num
   procedure, public                                                   ::    GetCorrMat
+  procedure, public                                                   ::    GetCorrMatPointer
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure(Copy_SampleSpace), deferred, public                       ::    Copy
 end type
@@ -290,7 +291,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetDist1D( This )
 
-    type(DistProbContainer_Type), allocatable, dimension(:)                ::    GetDist1D
+    type(DistProbContainer_Type), allocatable, dimension(:)           ::    GetDist1D
 
     class(SampleSpace_Type), intent(in)                               ::    This
 
@@ -368,6 +369,20 @@ contains
 
     allocate(GetCorrMat, source=This%CorrMat, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetCorrMat', ProcName=ProcName, stat=StatLoc )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetCorrMatPointer( This )
+
+    real(rkp), allocatable, dimension(:,:)                            ::    GetCorrMatPointer
+    class(SampleSpace_Type), target, intent(in)                       ::    This
+
+    character(*), parameter                                           ::    ProcName='GetCorrMatPointer'
+    integer                                                           ::    StatLoc=0
+
+    GetCorrMatPointer => This%CorrMat
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

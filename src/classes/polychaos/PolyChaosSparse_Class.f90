@@ -101,7 +101,7 @@ end type
 type, extends(PolyChaosMethod_Type)                                   ::    PolyChaosSparse_Type
   logical                                                             ::    Silent
   real(rkp)                                                           ::    StopError
-  integer                                                             ::    Step
+  integer                                                             ::    ModelRunCounter
   integer                                                             ::    MaxNumOverfit
   integer                                                             ::    CheckpointFreq
   type(Cell_Type), allocatable, dimension(:)                          ::    Cells  
@@ -159,8 +159,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
     This%NbCells = 0
 
-    This%Step = 0
-
     if ( allocated(This%ParamRecord) ) deallocate(This%ParamRecord, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
     
@@ -196,6 +194,7 @@ contains
     This%SamplesRan = .false.
     This%SamplesAnalyzed = .false.
     This%ParamSampleStep = 0
+    This%ModelRunCounter = 0
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -265,9 +264,9 @@ contains
     SectionName = 'restart'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
 
-      ParameterName = 'step'
+      ParameterName = 'model_run_counter'
       call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-      This%Step = VarI0D
+      This%ModelRunCounter = VarI0D
 
       SubSectionName = SectionName // '>param_record'
       if ( Input%HasSection( SubSectionName=SubSectionName ) ) then
@@ -391,7 +390,7 @@ contains
     call GetInput%AddSection( Section=LinSolverSparse_Factory%GetObjectInput( Object=This%Solver, MainSectionName=SectionName,  &
                                                                                      Prefix=PrefixLoc, Directory=DirectorySub) )
 
-    if ( This%Step > 0 ) then
+    if ( This%ModelRunCounter > 0 ) then
       SectionName = 'restart'
       call GetInput%AddSection( SectionName=SectionName )
 
@@ -460,7 +459,8 @@ contains
 
       end if
 
-      call GetInput%AddParameter( Name='step', Value=ConvertToString(Value=This%Step ), SectionName=SectionName )
+      call GetInput%AddParameter( Name='model_run_counter', Value=ConvertToString(Value=This%ModelRunCounter ),                   &
+                                                                                                         SectionName=SectionName )
       call GetInput%AddParameter( Name='samples_obtained', Value=ConvertToString(Value=This%SamplesObtained ),                    &
                                                                                                          SectionName=SectionName )
       call GetInput%AddParameter( Name='samples_ran', Value=ConvertToString(Value=This%SamplesRan ), SectionName=SectionName )
@@ -535,6 +535,7 @@ contains
     integer                                                           ::    iMin
     integer                                                           ::    iMax
     type(ModelInterface_Type)                                         ::    ModelInterface
+    integer                                                           ::    ParamRecordLength
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
@@ -562,7 +563,7 @@ contains
 
     SilentLoc = This%Silent
 
-    if ( This%Step == 0 ) then
+    if ( This%ModelRunCounter == 0 ) then
       if ( ( present(InputSamples) .and. .not. present(OutputSamples) ) .or.                                                      &
                                                                     ( present(OutputSamples) .and. .not. present(InputSamples) ) )&
                 call Error%Raise( Line='Need both parameter and output samples to be passed at the same time', ProcName=ProcName )
@@ -603,7 +604,7 @@ contains
           end do
           nullify(VarR2DPointer)
         end do
-        This%Step = size(This%ParamRecord,2)
+        This%ModelRunCounter = size(This%ParamRecord,2)
         This%SamplesObtained = .true.
         This%SamplesRan = .true.
         This%SamplesAnalyzed = .false.
@@ -616,6 +617,9 @@ contains
 
     StepExceededFlag = .false.
     MaxIndexOrder = IndexSetScheme%GetMaxOrder()
+
+    ParamRecordLength = 0
+    if ( allocated(This%ParamRecord) ) ParamRecordLength = size(This%ParamRecord,2)
 
     do
 
@@ -662,7 +666,7 @@ contains
       if ( .not. This%SamplesObtained ) then
 
         if ( .not. SilentLoc ) then
-          if ( This%Step /= 0 ) then
+          if ( This%ModelRunCounter /= 0 ) then
             Line = 'Performing enrichment'
           else
             Line = 'Initial population of the linear system'
@@ -673,7 +677,7 @@ contains
         end if
 
         if ( This%Sampler%IsConstructed() ) then
-          if ( This%Step == 0 ) then
+          if ( This%ModelRunCounter == 0 ) then
             This%ParamSample = This%Sampler%Draw(SampleSpace=SampleSpace)
           else
             call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,      &
@@ -686,7 +690,8 @@ contains
           iEnd = size(This%ParamSample,2)
           This%SamplesObtained = .true.
         else
-          if ( This%Step == 0 ) call Error%Raise( 'More samples were required but sampler was never defined', ProcName=ProcName )
+          if ( This%ModelRunCounter == 0 ) call Error%Raise( 'More samples were required but sampler was never defined',          &
+                                                                                                               ProcName=ProcName )
           StepExceededFlag = .true.
           exit
         end if
@@ -701,10 +706,10 @@ contains
         do
           i = i + 1
           if ( i > iEnd ) exit
-          This%Step = This%Step + 1
+          This%ModelRunCounter = This%ModelRunCounter + 1
 
           if ( .not. SilentLoc ) then
-            Line = 'Model run #' // ConvertToString(Value=This%Step)
+            Line = 'Model run #' // ConvertToString(Value=This%ModelRunCounter)
             write(*,'(A)') Line
           end if
 
@@ -714,13 +719,12 @@ contains
 
           if ( StatLoc /= 0 ) then
             if ( .not. SilentLoc ) then
-              Line = 'Model run #' // ConvertToString(Value=This%Step) // ' -- Failed'
+              Line = 'Model run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
               write(*,'(A)') Line
             end if
             StatLoc = 0
             if ( allocated(Outputs) ) deallocate(Outputs, stat=StatLoc)
             if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
-            This%Step = This%Step - 1
           else
             This%ParamSampleRan(i) = .true.
 
@@ -741,7 +745,7 @@ contains
             end do
           end if
 
-          if ( This%CheckpointFreq > 0 .and. mod(i, abs(This%CheckpointFreq)) == 0 ) then
+          if ( This%CheckpointFreq > 0 .and. (mod(This%ModelRunCounter, abs(This%CheckpointFreq)) == 0 .and. i /= iEnd) ) then
             call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
                             Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
           end if
@@ -750,26 +754,19 @@ contains
 
         This%SamplesRan = .true.
 
-        allocate(VarR2D(NbDim,This%Step), stat=StatLoc)
+        iStart = ParamRecordLength
+        allocate(VarR2D(NbDim,count(This%ParamSampleRan)+ParamRecordLength), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-        if ( allocated(This%ParamRecord) ) then
-          iStart = size(This%ParamRecord,2)
-          VarR2D(:,1:size(This%ParamRecord,2)) = This%ParamRecord
-          deallocate(This%ParamRecord, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
-        else
-          iStart = 0
-        end if
+        if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = ParamRecord
 
         i = iStart+1
         ii = 0
         do i = iStart+1, size(VarR2D,2)
           ii = ii + 1
-          if ( This%ParamSampleRan(ii) ) then
-            VarR2D(:,i) = This%ParamSample(:,ii)
-          end if
+          if ( This%ParamSampleRan(ii) ) VarR2D(:,i) = This%ParamSample(:,ii)
         end do
         call move_alloc(VarR2D, This%ParamRecord)
+        ParamRecordLength = size(This%ParamRecord,2)
 
         deallocate(This%ParamSample, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
@@ -781,10 +778,11 @@ contains
       end if
      
       iEnd = size(This%ParamRecord,2)
-      This%Step = iEnd
 
-      call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),          &
+      if ( This%CheckpointFreq > 0 ) then
+        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+      end if
 
       !***************************************************************************************************************************
       ! Updating coefficients
@@ -867,8 +865,10 @@ contains
       This%SamplesRan = .false.
       This%SamplesAnalyzed = .false.
 
-      call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),          &
+      if ( This%CheckpointFreq > 0 ) then
+        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+      end if
 
     end do
 
@@ -878,7 +878,7 @@ contains
 
     if ( StepExceededFlag ) then
       Line = 'Maximum sampling step exceeded'
-      if ( This%Step == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',             &
+      if ( This%ModelRunCounter == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',  &
                                                                                                                ProcName=ProcName )
       write(*,'(A)') ''  
       write(*,'(A)') Line
@@ -897,10 +897,6 @@ contains
 
     if ( allocated(VarR1D_2) ) deallocate(VarR1D_1, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D_2', ProcName=ProcName, stat=StatLoc )
-
-
-    call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),             &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
 
     if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, Responses=Responses )
 
@@ -926,7 +922,7 @@ contains
       end do
     end do
 
-    This%Step = 0
+    This%ModelRunCounter = 0
 
     deallocate(This%ParamRecord, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
@@ -1080,7 +1076,7 @@ contains
           LHS%Solver = RHS%Solver
           LHS%Silent = RHS%Silent
           LHS%StopError = RHS%StopError
-          LHS%Step = RHS%Step
+          LHS%ModelRunCounter = RHS%ModelRunCounter
           LHS%MaxNumOverfit = RHS%MaxNumOverfit
           LHS%CheckpointFreq = RHS%CheckpointFreq
           if ( RHS%Sampler%IsConstructed() ) LHS%Sampler = RHS%Sampler

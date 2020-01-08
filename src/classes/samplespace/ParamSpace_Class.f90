@@ -217,7 +217,7 @@ contains
   subroutine ConstructCase1( This, Distributions, CorrMat, Labels, Names )
 
     class(ParamSpace_Type), intent(inout)                             ::    This
-    type(DistProbContainer_Type), dimension(:), intent(in)                 ::    Distributions
+    type(DistProbContainer_Type), dimension(:), intent(in)            ::    Distributions
     real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
     type(String_Type), dimension(:), intent(in)                       ::    Labels
     type(String_Type), dimension(:), optional, intent(in)             ::    Names
@@ -386,6 +386,60 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructCase4( This, SampleSpace1, SampleSpace2 )
+
+    class(ParamSpace_Type), intent(inout)                             ::    This
+
+    type(SampleSpace_Type), intent(in)                                ::    SampleSpace1
+    type(SampleSpace_Type), intent(in)                                ::    SampleSpace2
+
+    character(*), parameter                                           ::    ProcName='ConstructCase4'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    NbDim1
+    integer                                                           ::    NbDim2
+    integer                                                           ::    NbDim
+    real(rkp), allocatable, dimension(:,:)                            ::    CorrMat
+    type(String_Type), allocatable, dimension(:)                      ::    Names
+    type(DistProbContainer_Type), allocatable, dimension(:)           ::    Distributions
+    type(String_Type), allocatable, dimension(:)                      ::    Labels
+
+    if ( This%Constructed ) call This%Reset
+    if ( .not. This%Initialized ) call This%Initialize 
+
+    NbDim1 = ParameterSpace1%GetNbDim()
+    NbDim2 = ParameterSpace2%GetNbDim()
+
+    if ( NbDim1 == 0 .or. NbDim2 == 0 ) call Error%Raise( 'Passed an empty parameter space', ProcName=ProcName )
+
+    This%NbDim = NbDim1 + NbDim2
+
+    allocate(This%Names(This%NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Names', ProcName=ProcName, stat=StatLoc )
+    This%Names(1:NbDim1) = SampleSpace1%GetName()
+    This%Names(NbDim1+1:NbDim) = SampleSpace2%GetName()
+
+    allocate(This%CorrMat(NbDim,NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    This%CorrMat = Zero
+    This%CorrMat(1:NbDim1,1:NbDim1) = SampleSpace1%GetCorrMatPointer()
+    This%CorrMat(NbDim1+1:NbDim,NbDim1+1:NbDim) = SampleSpace2%GetCorrMatPointer()
+
+    allocate(This%Distributions(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Distributions', ProcName=ProcName, stat=StatLoc )
+    This%Distributions(1:NbDim1) = SampleSpace1%GetDistribution()
+    This%Distributions(NbDim1+1:NbDim) = SampleSpace2%GetDistribution()
+
+    allocate(This%Labels(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Labels', ProcName=ProcName, stat=StatLoc )
+    This%Labels(1:NbDim1) = SampleSpace1%GetLabel()
+    This%Labels(NbDim1+1:NbDim) = SampleSpace2%GetLabel()
+
+    This%Constructed=.true.
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput( This, MainSectionName, Prefix, Directory )
 
     type(InputSection_Type)                                           ::    GetInput
@@ -513,6 +567,57 @@ contains
 
     if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental function ConcatenateParamSpaces( ParameterSpace1, ParameterSpace2 )
+
+    type(ParamSpace_Type)                                             ::    ConcatenateParamSpaces
+
+    type(ParamSpace_Type),intent(in)                                  ::    ParameterSpace1
+    type(ParamSpace_Type),intent(in)                                  ::    ParameterSpace2
+
+    character(*), parameter                                           ::    ProcName='ConcatenateParamSpaces'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    NbDim1
+    integer                                                           ::    NbDim2
+    integer                                                           ::    NbDim
+    real(rkp), allocatable, dimension(:,:)                            ::    CorrMat
+    type(String_Type), allocatable, dimension(:)                      ::    Names
+    type(DistProbContainer_Type), allocatable, dimension(:)           ::    Distributions
+    type(String_Type), allocatable, dimension(:)                      ::    Labels
+
+    NbDim1 = ParameterSpace1%GetNbDim()
+    NbDim2 = ParameterSpace2%GetNbDim()
+
+    if ( NbDim1 == 0 .or. NbDim2 == 0 ) call Error%Raise( 'Passed an empty parameter space', ProcName=ProcName )
+
+    NbDim = NbDim1 + NbDim2
+
+    allocate(Names(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Names', ProcName=ProcName, stat=StatLoc )
+    Names(1:NbDim1) = ParameterSpace1%GetName()
+    Names(NbDim1+1:NbDim) = ParameterSpace2%GetName()
+
+    allocate(CorrMat(NbDim,NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='CorrMat', ProcName=ProcName, stat=StatLoc )
+    CorrMat = Zero
+    CorrMat(1:NbDim1,1:NbDim1) = ParameterSpace1%GetCorrMatPointer()
+    CorrMat(NbDim1+1:NbDim,NbDim1+1:NbDim) = ParameterSpace2%GetCorrMatPointer()
+
+    allocate(Distributions(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Distributions', ProcName=ProcName, stat=StatLoc )
+    Distributions(1:NbDim1) = ParameterSpace1%GetDistribution()
+    Distributions(NbDim1+1:NbDim) = ParameterSpace2%GetDistribution()
+
+    allocate(Labels(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
+    Labels(1:NbDim1) = ParameterSpace1%GetLabel()
+    Labels(NbDim1+1:NbDim) = ParameterSpace2%GetLabel()
+
+    call ConcatenateParamSpaces%Construct( Distributions=Distributions, CorrMat=CorrMat, Labels=Labels, Names=Names )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

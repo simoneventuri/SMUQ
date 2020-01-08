@@ -12,6 +12,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use DistNorm_Class                                                ,only:    DistNorm_Type
+use DistBeta_Class                                                ,only:    DistBeta_Type
 use DistLogNorm_Class                                             ,only:    DistLogNorm_Type
 use DistLog10Norm_Class                                           ,only:    DistLog10Norm_Type
 use DistUnif_Class                                                ,only:    DistUnif_Type
@@ -22,6 +23,7 @@ use DistGamma_Class                                               ,only:    Dist
 use DistKernel_Class                                              ,only:    DistKernel_Type
 use HierDistProb_Class                                            ,only:    HierDistProb_Type
 use HierDistNorm_Class                                            ,only:    HierDistNorm_Type
+use HierDistBeta_Class                                            ,only:    HierDistBeta_Type
 use HierDistLogNorm_Class                                         ,only:    HierDistLogNorm_Type
 use HierDistLog10Norm_Class                                       ,only:    HierDistLog10Norm_Type
 use HierDistUnif_Class                                            ,only:    HierDistUnif_Type
@@ -44,6 +46,7 @@ use Output_Class                                                  ,only:    Outp
 use OrthoNumerical_Class                                          ,only:    OrthoNumerical_Type
 use OrthoLegendre_Class                                           ,only:    OrthoLegendre_Type
 use OrthoHermite_Class                                            ,only:    OrthoHermite_Type
+use OrthoJacobi_Class                                             ,only:    OrthoJacobi_Type
 use OrthoLaguerre_Class                                           ,only:    OrthoLaguerre_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 
@@ -66,14 +69,20 @@ contains
     character(*), parameter                                           ::    ProcName='Test'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
-    type(DistUnif_Type)                                               ::    DistUnif
-    type(OrthoNumerical_Type)                                         ::    OrthoNumericalE
     type(OrthoNumerical_Type)                                         ::    OrthoNumerical
+    type(OrthoJacobi_Type)                                            ::    OrthoJacobi
+    type(DistBeta_Type)                                               ::    DistBeta
+    class(DistProb_Type), allocatable                                 ::    DistProb
     integer                                                           ::    i
 
-    call DistUnif%Construct( A=real(2.25478E-11,rkp), B=real(6.76434E-11,rkp) )
+    call DistBeta%Construct( Alpha=Four, Beta=Four, A=-One, B=One )
+    call OrthoNumerical%Construct( Weights=DistBeta, Normalized=.true., Order=20 )
+    call OrthoJacobi%Construct( Alpha=Four, Beta=Four, Normalized=.true. )
 
-    call OrthoNumerical%Construct( Weights=DistUnif, Normalized=.true., Order=30 )
+    i = 0
+    do i = 0, 20
+      write(*,*) OrthoNumerical%Eval( Order=i, X=0.7_rkp ), OrthoJacobi%Eval( Order=i, X=0.7_rkp )
+    end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
