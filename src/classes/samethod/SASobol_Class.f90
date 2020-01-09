@@ -28,7 +28,7 @@ use CommandRoutines_Module
 use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use UQMethod_Class                                                ,only:    UQMethod_Type
+use SAMethod_Class                                                ,only:    SAMethod_Type
 use InputDet_Class                                                ,only:    InputDet_Type
 use Output_Class                                                  ,only:    Output_Type
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
@@ -38,8 +38,9 @@ use Response_Class                                                ,only:    Resp
 use Restart_Class                                                 ,only:    RestartUtility
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use Model_Class                                                   ,only:    Model_Type
-use List2D_Class                                                  ,only:    List2D_Type
-use Histogram1D_Class                                             ,only:    Histogram1D_Type, BinValues
+use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
+use LinkedList1D_Class                                            ,only:    LinkedList1D_Type
+use OnlineVarEstimator_Class                                      ,only:    OnlineVarEstimator_Type
 
 implicit none
 
@@ -48,10 +49,7 @@ private
 public                                                                ::    SASobol_Type
 
 type                                                                  ::    Cell_Type
-  integer                                                             ::    NbSamples
-  real(rkp)                                                           ::    Mean
-  real(rkp)                                                           ::    Variance
-  real(rkp), allocatable, dimension(:)                                ::    M2
+  type(OnlineVarEstmator_Type)                                        ::    MomentEstimator
   real(rkp), allocatable, dimension(:)                                ::    StEstimator
   integer, allocatable, dimension(:)                                  ::    StEstimatorNbSamples
   type(LinkedList1D_Type)                                             ::    StHistory
@@ -66,9 +64,14 @@ contains
   procedure, private                                                  ::    ConstructInput          =>    ConstructInput_Cell
   procedure, private                                                  ::    ConstructCase1          =>    ConstructCase1_Cell
   procedure, public                                                   ::    GetInput                =>    GetInput_Cell
-  procedure, public                                                   ::    GetHistory              =>    GetHistory_Cell
   procedure, public                                                   ::    UpdateEstimators        =>    UpdateEstimators_Cell
   procedure, public                                                   ::    UpdateHistory           =>    UpdateHistory
+  procedure, public                                                   ::    GetSt                   =>    GetSt_Cell
+  procedure, public                                                   ::    GetMean                 =>    GetMean_Cell
+  procedure, public                                                   ::    GetVariance             =>    GetVariance_Cell
+  procedure, public                                                   ::    GetStHistory            =>    GetStHistory_Cell
+  procedure, public                                                   ::    GetMeanHistory          =>    GetMeanHistory_Cell
+  procedure, public                                                   ::    GetVarianceHistory      =>    GetVarianceHistory_Cell
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy                    =>    Copy_Cell
   final                                                               ::    Finalizer_Cell 
@@ -899,6 +902,511 @@ contains
 
     if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  !!------------------------------------------------------------------------------------------------------------------------------
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Initialize_Cell( This )
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='Initialize_Cell'
+
+    if ( .not. This%Initialized ) then
+      This%Initialized = .true.
+      call This%SetDefaults()
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Reset_Cell( This )
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='Reset_Cell'
+    integer                                                           ::    StatLoc=0
+
+    This%Initialized=.false.
+    This%Constructed=.false.
+
+    if ( allocated(This%StEstimator) ) deallocate(This%StEstimator, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StEstimator', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%StEstimatorNbSamples) ) deallocate(This%StEstimatorNbSamples, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
+
+    call This%StHistory%Purge()
+    call This%MeanHistory%Purge()
+    call This%VarianceHistory%Purge
+    
+    call This%MomentEstimator%Purge()
+
+    call This%SetDefaults()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine SetDefaults_Cell( This )
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='SetDefaults_Cell'
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructInput_Cell( This, Input, Prefix )
+
+    class(Cell_Type), intent(inout)                                   ::    This
+    type(InputSection_Type), intent(in)                               ::    Input
+    character(*), optional, intent(in)                                ::    Prefix
+
+    character(*), parameter                                           ::    ProcName='ConstructInput_Cell'
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    integer, allocatable, dimension(:)                                ::    VarI1D
+    character(:), allocatable                                         ::    ParameterName
+    character(:), allocatable                                         ::    SectionName
+    integer                                                           ::    i
+    logical                                                           ::    Found
+    character(:), allocatable                                         ::    PrefixLoc
+    integer                                                           ::    StatLoc=0
+
+    if ( This%Constructed ) call This%Reset()
+    if ( .not. This%Initialized ) call This%Initialize()
+
+    PrefixLoc = ''
+    if ( present(Prefix) ) PrefixLoc = Prefix
+
+    SectionName = 'moment_estimator'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call This%MomentEstimator%Construct( Input=InputSection, Prefix=PrefixLoc )
+    nullify( InputSection )
+
+    SectionName = 'sobol_total_estimator'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call move_alloc( VarR1D, This%StEstimator )
+
+    SectionName = 'sobol_estimator_nb_samples'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarI1D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call move_alloc( VarI1D, This%StEstimatorNbSamples )
+
+    SectionName = 'sobol_total_history'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call This%StHistory%Append( Values=VarR2D )
+    deallocate(VarR2D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+    SectionName = 'mean_history'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call This%Mean%Append( Values=VarR1D )
+    deallocate(VarR1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+    SectionName = 'variance_history'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call This%Variance%Append( Values=VarR1D )
+    deallocate(VarR1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+    This%Constructed = .true.
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructCase1_Cell( This, Dimensionality )
+
+    class(Cell_Type), intent(inout)                                   ::    This
+    integer, intent(in)                                               ::    Dimensionality
+
+    character(*), parameter                                           ::    ProcName='ConstructCase1_Cell'
+    integer                                                           ::    StatLoc=0
+
+    if ( This%Constructed ) call This%Reset()
+    if ( .not. This%Initialized ) call This%Initialize()
+
+    PrefixLoc = ''
+    if ( present(Prefix) ) PrefixLoc = Prefix
+
+    allocate(This%StEstimator(Dimensionality), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%StEstimator', ProcName=ProcName, stat=StatLoc )
+    This%StEstimator = Zero
+
+    allocate(This%StEstimatorNbSamples(Dimensionality), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
+    This%StEstimatorNbSamples = Zero
+
+    call This%MomentEstimator%Construct( SampleVariance=.true. )
+
+    This%Constructed = .true.
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetInput_Cell( This, MainSectionName, Prefix, Directory )
+
+    use CommandRoutines_Module
+    use ArrayRoutines_Module
+    use StringRoutines_Module
+    use SMUQFile_Class                                            ,only:    SMUQFile_Type
+
+    type(InputSection_Type)                                           ::    GetInput_Cell
+
+    class(Cell_Type), intent(inout)                                   ::    This
+    character(*), intent(in)                                          ::    MainSectionName
+    character(*), optional, intent(in)                                ::    Prefix
+    character(*), optional, intent(in)                                ::    Directory
+
+    character(*), parameter                                           ::    ProcName='GetInput_Cell'
+    character(:), allocatable                                         ::    PrefixLoc
+    character(:), allocatable                                         ::    DirectoryLoc
+    character(:), allocatable                                         ::    DirectorySub
+    logical                                                           ::    ExternalFlag=.false.
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    character(:), allocatable                                         ::    ParameterName
+    character(:), allocatable                                         ::    SectionName
+    character(:), allocatable                                         ::    FileName
+    integer                                                           ::    StatLoc=0
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    integer, allocatable, dimension(:)                                ::    VarI1D
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    type(SMUQFile_Type)                                               ::    File
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    DirectoryLoc = ''
+    PrefixLoc = ''
+    if ( present(Directory) ) DirectoryLoc = Directory
+    if ( present(Prefix) ) PrefixLoc = Prefix
+    DirectorySub = DirectoryLoc
+
+    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+
+    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+
+    call GetInput_Cell%SetName( SectionName = trim(adjustl(MainSectionName)) )
+
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/moment_estimator'
+    SectionName = 'moment_estimator'
+    call GetInput%AddSection( Section=This%MomentEstimator%GetInput( MainSectionName=SectionName,                                 &
+                                                                                       Prefix=PrefixLoc, Directory=DirectorySub) )
+
+    if ( ExternalFlag ) then
+      SectionName = 'sobol_total_estimator'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      FileName = DirectoryLoc // '/sobol_total_estimator.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Input=InputSection, Array=This%StEstimator, File=File )
+      nullify(InputSection)
+
+      SectionName = 'sobol_estimator_nb_samples'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      FileName = DirectoryLoc // '/sobol_estimator_nb_samples.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Input=InputSection, Array=This%StEstimatorNbSamples, File=File )
+      nullify(InputSection)
+
+      SectionName = 'sobol_total_history'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      FileName = DirectoryLoc // '/sobol_total_history.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call This%StHistory%Get( Values=VarR2D )
+      call ExportArray( Input=InputSection, Array=VarR2D, File=File )
+      deallocate(VarR2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+
+      SectionName = 'mean_history'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      FileName = DirectoryLoc // '/mean_history.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call This%MeanHistory%Get( Values=VarR1D )
+      call ExportArray( Input=InputSection, Array=VarR1D, File=File )
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+
+      SectionName = 'variance_history'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      FileName = DirectoryLoc // '/variance_history.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call This%VarianceHistory%Get( Values=VarR1D )
+      call ExportArray( Input=InputSection, Array=VarR1D, File=File )
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+    else
+      SectionName = 'sobol_total_estimator'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      allocate(VarR1D, source=This%StEstimator, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      call ExportArray( Input=InputSection, Array=VarR1D )
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+
+      SectionName = 'sobol_estimator_nb_samples'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      allocate(VarI1D, source=This%StEstimatorNbSamples, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+      call ExportArray( Input=InputSection, Array=VarI1D )
+      deallocate(VarI1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+
+      SectionName = 'sobol_total_history'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call This%StHistory%Get( Values=VarR2D )
+      call ExportArray( Input=InputSection, Array=VarR2D )
+      deallocate(VarR2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+
+      SectionName = 'mean_history'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call This%MeanHistory%Get( Values=VarR1D )
+      call ExportArray( Input=InputSection, Array=VarR1D )
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+
+      SectionName = 'variance_history'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call This%VarianceHistory%Get( Values=VarR1D )
+      call ExportArray( Input=InputSection, Array=VarR1D )
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+    end if
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine UpdateEstimators_Cell( This, OutputA, OutputAB, ABRan, Delta )
+
+    class(Cell_Type), intent(inout)                                   ::    This
+    real(rkp), intent(in)                                             ::    OutputA
+    real(rkp), dimension(:), intent(in)                               ::    OutputAB
+    logical, dimension(:), intent(in)                                 ::    ABRan
+    real(rkp), dimension(:), intent(inout)                            ::    Delta
+
+    character(*), parameter                                           ::    ProcName='UpdateEstimators_Cell'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    NbDim
+    real(rkp)                                                         ::    Variance
+
+    Delta = This%%GetSt()
+
+    NbDim = size(This%StEstimator,1)
+
+    call This%MomentEstimator%Update( Value=OutputA )
+    Variance = This%MomentEstimator%GetVariance()
+
+    i = 1
+    do i = 1, NbDIm
+      if ( ABRan(i) ) then
+        This%StEstimator(i) = This%StEstimator + (OutputA - OutputAB(i))**2
+        This%StEstimatorNbSamples(i) = This%StEstimatorNbSamples(i) + 1
+      end if
+    end do
+
+    Delta = Delta - This%%GetSt()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine UpdateHistory_Cell( This, OutputA, OutputAB, ABRan, Delta )
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='UpdateHistory_Cell'
+    integer                                                           ::    StatLoc=0
+
+    call This%MeanHistory%Append( Value=This%MomentEstimator%GetMean() )
+    call This%VarianceHistory%Append( Value=This%MomentEstimator%GetVariance() )
+    call This%StHistory%Append( Values=This%GetSt() )
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetSt_Cell( This )
+
+    real(rkp), allocatable, dimension(:,:)                            ::    GetSt_Cell
+
+    class(Cell_Type), intent(in)                                      ::    This
+
+    character(*), parameter                                           ::    ProcName='GetSt_Cell'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+
+    allocate(GetSt_Cell(size(This%StEstimator,1)), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='(GetSt_Cell', ProcName=ProcName, stat=StatLoc )
+    GetSt_Cell = Zero
+
+    i = 1
+    do i = 1, size(GetSt_Cell,1)
+      if ( This%StEstimatorNbSamples(i) < 2 ) cycle
+      GetSt_Cell(i) = This%StEstimator(i) / ( Two*real(This%StEstimatorNbSamples(i),rkp) * This%MomentEstimator%GetVariance() )
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetMean_Cell( This )
+
+    real(rkp)                                                         ::    GetMean_Cell
+
+    class(Cell_Type), intent(in)                                      ::    This
+
+    character(*), parameter                                           ::    ProcName='GetMean_Cell'
+    integer                                                           ::    StatLoc=0
+
+    GetMean_Cell = This%MomentEstimator%GetMean()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetVariance_Cell( This )
+
+    real(rkp)                                                         ::    GetVariance_Cell
+
+    class(Cell_Type), intent(in)                                      ::    This
+
+    character(*), parameter                                           ::    ProcName='GetVariance_Cell'
+    integer                                                           ::    StatLoc=0
+
+    GetVariance_Cell = This%MomentEstimator%GetVariance()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetMeanHistory_Cell( This )
+
+    real(rkp), allocatable, dimension(:)                              ::    GetMeanHistory_Cell
+
+    class(Cell_Type), intent(in)                                      ::    This
+
+    character(*), parameter                                           ::    ProcName='GetMean_Cell'
+    integer                                                           ::    StatLoc=0
+
+    call This%MeanHistory%GetValues( Values=GetMeanHistory_Cell )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetVarianceHistory_Cell( This )
+
+    real(rkp), allocatable, dimension(:)                              ::    GetVarianceHistory_Cell
+
+    class(Cell_Type), intent(in)                                      ::    This
+
+    character(*), parameter                                           ::    ProcName='GetVariance_Cell'
+    integer                                                           ::    StatLoc=0
+
+    call This%VarianceHistory%GetValues( Values=GetVarianceHistory_Cell )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetStHistory_Cell( This )
+
+    real(rkp), allocatable, dimension(:,:)                            ::    GetStHistory_Cell
+
+    class(Cell_Type), intent(in)                                      ::    This
+
+    character(*), parameter                                           ::    ProcName='GetStHistory_Cell'
+    integer                                                           ::    StatLoc=0
+
+    call This%StHistory%GetValues( Values=GetStHistory_Cell )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Copy_Cell( LHS, RHS )
+
+    class(Cell_Type), intent(out)                                     ::    LHS
+    class(Cell_Type), intent(in)                                      ::    RHS
+
+    character(*), parameter                                           ::    ProcName='Copy_Cell'
+    integer                                                           ::    i
+    integer                                                           ::    StatLoc=0
+
+    call LHS%Reset()
+    LHS%Initialized = RHS%Initialized
+    LHS%Constructed = RHS%Constructed
+
+    if ( RHS%Constructed ) then
+      LHS%MomentEstimator = RHS%MomentEstimator
+      allocate(LHS%StEstimator, source=RHS%Estimator, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%StEstimator', ProcName=ProcName, stat=StatLoc )
+      allocate(LHS%StEstimatorNbSamples, source=RHS%StEstimatorNbSamples, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
+      LHS%StHistory = RHS%StHistory
+      LHS%MeanHistory = RHS%MeanHistory
+      LHS%VarianceHistory / RHS%VarianceHistory
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Finalizer_Cell( This )
+
+    type(Cell_Type), intent(inout)                                    ::    This
+
+    character(*), parameter                                           ::    ProcName='Finalizer_Cell'
+    integer                                                           ::    StatLoc=0
+
+    if ( allocated(This%StEstimator) ) deallocate(This%StEstimator, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StEstimator', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%StEstimatorNbSamples) ) deallocate(This%StEstimatorNbSamples, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
+
+    call This%StHistory%Purge()
+    call This%MeanHistory%Purge()
+    call This%VarianceHistory%Purge()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

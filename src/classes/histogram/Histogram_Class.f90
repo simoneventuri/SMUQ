@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module Histogram1D_Class
+module Histogram_Class
 
 use Input_Library
 use Parameters_Library
@@ -34,10 +34,10 @@ implicit none
 
 private
 
-public                                                                ::    Histogram1D_Type
+public                                                                ::    Histogram_Type
 public                                                                ::    BinValues
 
-type                                                                  ::    Histogram1D_Type
+type                                                                  ::    Histogram_Type
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
@@ -78,7 +78,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
-    class(Histogram1D_Type), intent(inout)                            ::    This
+    class(Histogram_Type), intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
@@ -95,7 +95,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
-    class(Histogram1D_Type), intent(inout)                            ::    This
+    class(Histogram_Type), intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
@@ -119,7 +119,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This )
 
-    class(Histogram1D_Type), intent(inout)                            ::    This
+    class(Histogram_Type), intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
     integer                                                           ::    StatLoc=0
@@ -130,7 +130,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix )
 
-    class(Histogram1D_Type), intent(inout)                            ::    This
+    class(Histogram_Type), intent(inout)                              ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -203,7 +203,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(Histogram1D_Type), intent(in)                                  ::    This
+    class(Histogram_Type), intent(in)                                 ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -270,7 +270,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Bin_R0D( This, Value )
 
-    class(Histogram1D_Type), intent(inout)                            ::    This
+    class(Histogram_Type), intent(inout)                              ::    This
     real(rkp), intent(in)                                             ::    Value
 
     character(*), parameter                                           ::    ProcName='BinR0D'
@@ -288,7 +288,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Bin_R1D( This, Values )
 
-    class(Histogram1D_Type), intent(inout)                            ::    This
+    class(Histogram_Type), intent(inout)                              ::    This
     real(rkp), dimension(:), intent(in)                               ::    Values
 
     character(*), parameter                                           ::    ProcName='BinR1D'
@@ -382,7 +382,7 @@ contains
 
     real(rkp), allocatable, dimension(:)                              ::    GetBinEdges
 
-    class(Histogram1D_Type), intent(in)                               ::    This
+    class(Histogram_Type), intent(in)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='GetBinEdges'
     integer                                                           ::    StatLoc=0
@@ -400,7 +400,7 @@ contains
 
     real(rkp), pointer, dimension(:)                                  ::    GetBinEdgesPointer
 
-    class(Histogram1D_Type), target, intent(in)                       ::    This
+    class(Histogram_Type), target, intent(in)                         ::    This
 
     character(*), parameter                                           ::    ProcName='GetBinEdgesPointer'
     integer                                                           ::    StatLoc=0
@@ -417,7 +417,7 @@ contains
 
     integer, allocatable, dimension(:)                                ::    GetBinCounts
 
-    class(Histogram1D_Type), intent(in)                               ::    This
+    class(Histogram_Type), intent(in)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='GetBinCounts'
     integer                                                           ::    StatLoc=0
@@ -435,7 +435,7 @@ contains
 
     integer, pointer, dimension(:)                                    ::    GetBinCountsPointer
 
-    class(Histogram1D_Type), target, intent(in)                       ::    This
+    class(Histogram_Type), target, intent(in)                         ::    This
 
     character(*), parameter                                           ::    ProcName='GetBinCountsPointer'
     integer                                                           ::    StatLoc=0
@@ -452,7 +452,7 @@ contains
 
     character(:), allocatable                                         ::    GetName
 
-    class(Histogram1D_Type), intent(in)                               ::    This
+    class(Histogram_Type), intent(in)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='GetName'
     integer                                                           ::    StatLoc=0
@@ -469,7 +469,7 @@ contains
 
     integer                                                           ::    GetNbBins
 
-    class(Histogram1D_Type), intent(in)                               ::    This
+    class(Histogram_Type), intent(in)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='GetNbBins'
     integer                                                           ::    StatLoc=0
@@ -484,15 +484,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(Histogram1D_Type), intent(out)                              ::    LHS
-    class(Histogram1D_Type), intent(in)                               ::    RHS
+    class(Histogram_Type), intent(out)                                ::    LHS
+    class(Histogram_Type), intent(in)                                 ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (Histogram1D_Type)
+      type is (Histogram_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -517,7 +517,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(Histogram1D_Type), intent(inout)                             ::    This
+    type(Histogram_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0

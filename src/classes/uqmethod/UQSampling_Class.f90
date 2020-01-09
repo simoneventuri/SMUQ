@@ -39,7 +39,7 @@ use Restart_Class                                                 ,only:    Rest
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use Model_Class                                                   ,only:    Model_Type
 use List2D_Class                                                  ,only:    List2D_Type
-use Histogram1D_Class                                             ,only:    Histogram1D_Type, BinValues
+use Histogram_Class                                               ,only:    Histogram_Type, BinValues
 
 implicit none
 
@@ -51,7 +51,7 @@ type, extends(UQMethod_Type)                                          ::    UQSa
   integer                                                             ::    CheckpointFreq
   logical                                                             ::    Silent
   type(SpaceSampler_Type)                                             ::    Sampler
-  type(Histogram1D_Type), allocatable, dimension(:)                   ::    Histograms
+  type(Histogram_Type), allocatable, dimension(:)                     ::    Histograms
   type(List2D_Type), allocatable, dimension(:)                        ::    BinCounts
   type(String_Type), allocatable, dimension(:)                        ::    Labels
   integer                                                             ::    NbHistograms
