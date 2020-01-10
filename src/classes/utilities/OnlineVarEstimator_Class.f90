@@ -90,10 +90,6 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    This%NbSamples = 0
-    This%Mean = Zero
-    This%M2 = Zero
-
     call This%SetDefaults()
 
   end subroutine
@@ -107,6 +103,9 @@ contains
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
     This%SampleVariance = .true.
+    This%NbSamples = 0
+    This%Mean = Zero
+    This%M2 = Zero
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

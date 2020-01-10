@@ -399,7 +399,6 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbDim1
     integer                                                           ::    NbDim2
-    integer                                                           ::    NbDim
 
     if ( This%Constructed ) call This%Reset
     if ( .not. This%Initialized ) call This%Initialize 
@@ -414,23 +413,23 @@ contains
     allocate(This%ParamName(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Names', ProcName=ProcName, stat=StatLoc )
     This%ParamName(1:NbDim1) = SampleSpace1%GetName()
-    This%ParamName(NbDim1+1:NbDim) = SampleSpace2%GetName()
+    This%ParamName(NbDim1+1:This%NbDim) = SampleSpace2%GetName()
 
-    allocate(This%CorrMat(NbDim,NbDim), stat=StatLoc)
+    allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
     This%CorrMat = Zero
     This%CorrMat(1:NbDim1,1:NbDim1) = SampleSpace1%GetCorrMatPointer()
-    This%CorrMat(NbDim1+1:NbDim,NbDim1+1:NbDim) = SampleSpace2%GetCorrMatPointer()
+    This%CorrMat(NbDim1+1:This%NbDim,NbDim1+1:This%NbDim) = SampleSpace2%GetCorrMatPointer()
 
-    allocate(This%DistProb(NbDim), stat=StatLoc)
+    allocate(This%DistProb(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
     This%DistProb(1:NbDim1) = SampleSpace1%GetDistribution()
-    This%DistProb(NbDim1+1:NbDim) = SampleSpace2%GetDistribution()
+    This%DistProb(NbDim1+1:This%NbDim) = SampleSpace2%GetDistribution()
 
-    allocate(This%Label(NbDim), stat=StatLoc)
+    allocate(This%Label(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
     This%Label(1:NbDim1) = SampleSpace1%GetLabel()
-    This%Label(NbDim1+1:NbDim) = SampleSpace2%GetLabel()
+    This%Label(NbDim1+1:This%NbDim) = SampleSpace2%GetLabel()
 
     This%Constructed=.true.
 

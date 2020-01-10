@@ -12,12 +12,18 @@ implicit none
 
 private
 
+public                                                                ::    WriteArray
 public                                                                ::    ImportArray
 public                                                                ::    ExportArray
 public                                                                ::    ImportFile
 public                                                                ::    ExportFile
 
 logical, parameter                                                    ::    DebugGlobal = .false.
+
+interface WriteArray
+  module procedure                                                    ::    WriteArray_R42D
+  module procedure                                                    ::    WriteArray_R82D
+end interface
 
 interface ImportArray
   module procedure                                                    ::    ImportArrayInput_R1D
@@ -82,6 +88,64 @@ interface ExportArray
 end interface
 
 contains
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteArray_R42D( Array, RowMajor )
+
+    real(4), dimension(:,:), intent(in)                               ::    Array
+    logical, optional, intent(in)                                     ::    RowMajor
+
+    character(*), parameter                                           ::    ProcName='WriteArray_R42D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    logical                                                           ::    RowMajorLoc
+
+    RowMajorLoc = .true.
+    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+
+    if ( RowMajorLoc ) then
+      i = 1
+      do i = 1, size(Array,1)
+        write(*,*) Array(i,:)
+      end do
+    else  
+      i = 1
+      do i = 1, size(Array,2)
+        write(*,*) Array(:,i)
+      end do
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteArray_R82D( Array, RowMajor )
+
+    real(8), dimension(:,:), intent(in)                               ::    Array
+    logical, optional, intent(in)                                     ::    RowMajor
+
+    character(*), parameter                                           ::    ProcName='WriteArray_R82D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    logical                                                           ::    RowMajorLoc
+
+    RowMajorLoc = .true.
+    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+
+    if ( RowMajorLoc ) then
+      i = 1
+      do i = 1, size(Array,1)
+        write(*,*) Array(i,:)
+      end do
+    else  
+      i = 1
+      do i = 1, size(Array,2)
+        write(*,*) Array(:,i)
+      end do
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ImportArrayInput_R1D( Input, Array, Prefix, RowMajor )
@@ -3705,7 +3769,6 @@ contains
         if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
       end do
     end if
-
     if ( RowMajorLoc ) then
       i = 1
       do i = 1, size(Array,1)

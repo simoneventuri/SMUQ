@@ -561,10 +561,10 @@ contains
     if ( allocated(This%ParamRecord) ) ParamRecordLength = size(This%ParamRecord,2)
 
     if ( This%HistoryFreq > 0 .and. This%ModelRunCounter == 0 ) then
+      call This%HistoryStep%Append( Value=0 )
       ii = 1
       do ii = 1, This%NbCells
         call This%Cells(ii)%UpdateHistory()
-        call This%HistoryStep%Append( Value=0 )
       end do
     end if
 
@@ -590,7 +590,7 @@ contains
         if ( This%ModelRunCounter == 0 ) then
           This%ParamSample = This%Sampler%Draw(SampleSpace=ExtendedSampleSpace)
         else
-          call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,        &
+          call This%Sampler%Enrich( SampleSpace=ExtendedSampleSpace, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,&
                                                                                                         Exceeded=StepExceededFlag)
           if ( StepExceededFlag ) exit
         end if
@@ -602,7 +602,7 @@ contains
       end if
 
       iEnd = size(This%ParamSample,2)
- 
+
       !***************************************************************************************************************************
       ! Running samples
       if ( .not. This%SamplesRan ) then
@@ -610,12 +610,11 @@ contains
         do
           i = i + 1
           if ( i > iEnd ) exit
-          This%ModelRunCounter = This%ModelRunCounter + 1
           This%ParamSampleStep = i
           SubSampleRan = .false.
 
           if ( .not. SilentLoc ) then
-            Line = 'Running SubSamples of Sample #' // ConvertToString(Value=This%ModelRunCounter)
+            Line = 'Running SubSamples of Sample #' // ConvertToString(Value=ParamRecordLength+i)
             write(*,'(A)') Line
           end if
 
@@ -624,6 +623,7 @@ contains
             ParamSubSample = This%ParamSample(1:NbDim,i)
             if ( ii > 1 ) ParamSubSample(ii-1) = This%ParamSample(NbDim+ii-1,i)
 
+            This%ModelRunCounter = This%ModelRunCounter + 1
             if ( .not. SilentLoc ) then
               Line = '  Model Run #' // ConvertToString(Value=This%ModelRunCounter) // ', SubSample #' //ConvertToString(Value=ii)
               write(*,'(A)') Line
@@ -671,10 +671,10 @@ contains
 
           if ( This%HistoryFreq > 0 .and. (mod(ParamRecordLength+count(This%ParamSampleRan(1:i)), abs(This%HistoryFreq)) == 0     &
                                                                                                           .and. i /= iEnd)  ) then
+            call This%HistoryStep%Append( Value=count(This%ParamSampleRan(1:i))+ParamRecordLength )
             ii = 1
             do ii = 1, This%NbCells
               call This%Cells(ii)%UpdateHistory()
-              call This%HistoryStep%Append( Value=count(This%ParamSampleRan(1:i))+ParamRecordLength )
             end do
           end if
     
@@ -693,7 +693,9 @@ contains
           ii = ii + 1
           if ( This%ParamSampleRan(ii) ) VarR2D(:,i) = This%ParamSample(:,ii)
         end do
+
         call move_alloc(VarR2D, This%ParamRecord)
+
         ParamRecordLength = size(This%ParamRecord,2)
 
         deallocate(This%ParamSampleRan, stat=StatLoc)
@@ -715,10 +717,10 @@ contains
       end if
 
       if ( This%HistoryFreq > 0 ) then
+        call This%HistoryStep%Append( Value=ParamRecordLength )
         ii = 1
         do ii = 1, This%NbCells
           call This%Cells(ii)%UpdateHistory()
-          call This%HistoryStep%Append( Value=ParamRecordLength )
         end do
       end if
 
@@ -819,6 +821,8 @@ contains
         do iv = ii, iii
           v = v + 1
 
+          call MakeDirectory( Path=Directory // '/' // ResponseLabel // '/cell' // ConvertToString(Value=v), Options='-p' )
+
           FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mean.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
           call File%Export(String=ConvertToString(Value=This%Cells(iv)%GetMean()))
@@ -829,16 +833,17 @@ contains
 
           FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sobol_total.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(iv)%GetSt(), File=File, RowMajor=.true. )
+          call ExportArray( Array=This%Cells(iv)%GetSt(), File=File )
 
           if ( This%HistoryFreq > 0 ) then
             call This%HistoryStep%Get( Values=VarI1D )
             FileName = '/' // ResponseLabel // '/history_step.dat'
+            call This%HistoryStep%Get( Values=VarI1D )
             call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
             call ExportArray( Array=VarI1D, File=File, RowMajor=.true. )
 
             FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mean_history.dat'
-            call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+            call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' ) 
             call ExportArray( Array=This%Cells(iv)%GetMeanHistory(), File=File, RowMajor=.true. )
 
             FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/variance_history.dat'
@@ -847,7 +852,8 @@ contains
 
             FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sobol_total_history.dat'
             call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-            call ExportArray( Array=This%Cells(iv)%GetStHistory(), File=File, RowMajor=.true. )
+            call ExportArray( Array=This%Cells(iv)%GetStHistory(), File=File, RowMajor=.false. )
+
           end if
 
         end do

@@ -26,6 +26,7 @@ use AnalysisMethod_Class                                          ,only:    Anal
 use AnalysisSurrogate_Class                                       ,only:    AnalysisSurrogate_Type
 use AnalysisCalibration_Class                                     ,only:    AnalysisCalibration_Type
 use AnalysisUQ_Class                                              ,only:    AnalysisUQ_Type
+use AnalysisSA_Class                                              ,only:    AnalysisSA_Type
 
 implicit none
 
@@ -72,6 +73,9 @@ contains
 
       case('uncertainty_quantification')
         allocate( AnalysisUQ_Type :: Object )
+
+      case('sensitivity_analysis')
+        allocate( AnalysisSA_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -138,6 +142,9 @@ contains
       case('uncertainty_quantification')
         allocate( AnalysisUQ_Type :: Object )
 
+      case('sensitivity_analysis')
+        allocate( AnalysisSA_Type :: Object )
+
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
 
@@ -201,6 +208,9 @@ contains
 
       type is (AnalysisUQ_Type)
         GetOption = 'uncertainty_quantification'
+
+      type is (AnalysisSA_Type)
+        GetOption = 'sensitivity_analysis'
 
       class default
         call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )

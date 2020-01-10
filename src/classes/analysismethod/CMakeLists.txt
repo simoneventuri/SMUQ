@@ -4,4 +4,5 @@ add_target_sources ( smuqApp
   AnalysisSurrogate_Class.f90
   AnalysisCalibration_Class.f90
   AnalysisUQ_Class.f90
+  AnalysisSA_Class.f90
  )

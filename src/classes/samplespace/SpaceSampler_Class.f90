@@ -356,6 +356,7 @@ contains
       continue
     else
       NbEnrichSamples = size(EnrichmentSamples,2)
+
       if ( .not. SampleSpace%IsCorrelated() ) then
         i = 1
         do i = 1, NbEnrichSamples
