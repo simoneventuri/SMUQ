@@ -603,9 +603,6 @@ contains
           write(*,'(A)') Line
           write(*,'(A)') '' 
         end if
-write(*,*) Delta
-write(*,*) This%RelTolerance*dabs(StLoc)
-write(*,*) This%AbsTolerance
         exit
       end if
 
