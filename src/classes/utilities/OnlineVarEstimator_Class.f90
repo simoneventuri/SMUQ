@@ -22,6 +22,7 @@ module OnlineVarEstimator_Class
 use Input_Library
 use Parameters_Library
 use StringRoutines_Module
+use CommandROutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 
@@ -32,6 +33,9 @@ private
 public                                                                ::    OnlineVarEstimator_Type
 
 type                                                                  ::    OnlineVarEstimator_Type
+  character(:), allocatable                                           ::    Name
+  logical                                                             ::    Initialized=.false.
+  logical                                                             ::    Constructed=.false.
   integer                                                             ::    NbSamples
   real(rkp)                                                           ::    M2
   real(rkp)                                                           ::    Mean
@@ -40,7 +44,10 @@ contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
+  generic, public                                                     ::    Construct               =>    ConstructInput,         &
+                                                                                                          ConstructCase1
   procedure, private                                                  ::    ConstructInput
+  procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
   generic, public                                                     ::    Update                  =>    Update_0D,              &
                                                                                                           Update_1D
@@ -83,9 +90,9 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    NbSamples = 0
-    Mean = Zero
-    M2 = Zero
+    This%NbSamples = 0
+    This%Mean = Zero
+    This%M2 = Zero
 
     call This%SetDefaults()
 
@@ -99,7 +106,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-    SampleVariance = .true.
+    This%SampleVariance = .true.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -141,7 +148,7 @@ contains
 
     ParameterName = 'sample_variance'
     call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%SampleVariance = VarR0D
+    if ( Found ) This%SampleVariance = VarL0D
 
     This%Constructed = .true.
 
@@ -186,14 +193,6 @@ contains
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
-    character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    SectionName
-    integer                                                           ::    i
-    integer, dimension(:,:), pointer                                  ::    VarI2D=>null()
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    type(SMUQFile_Type)                                               ::    File
-    character(:), allocatable                                         ::    FileName
-    integer, allocatable, dimension(:)                                ::    VarI1D
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -232,7 +231,7 @@ contains
 
     This%NbSamples = This%NbSamples + 1
     del1 = Value - This%Mean
-    This%Mean = This%Mean + del/This%NbSamples
+    This%Mean = This%Mean + del1/This%NbSamples
     del2 = Value - This%Mean
     This%M2 = This%M2 + del1 * del2
 
@@ -240,7 +239,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Update_0D( This, Values )
+  subroutine Update_1D( This, Values )
 
     class(OnlineVarEstimator_Type), intent(inout)                     ::    This
     real(rkp), dimension(:), intent(in)                               ::    Values
@@ -279,9 +278,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetVariance( This, SampleVariance )
 
-    real(rkp)                                                         ::    GetMean
+    real(rkp)                                                         ::    GetVariance
 
     class(OnlineVarEstimator_Type), intent(in)                        ::    This
+    logical, optional, intent(in)                                     ::    SampleVariance
 
     character(*), parameter                                           ::    ProcName='GetVariance'
     integer                                                           ::    StatLoc=0
@@ -305,11 +305,6 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  integer                                                             ::    NbSamples
-  real(rkp)                                                           ::    M2
-  real(rkp)                                                           ::    Mean
-  logical                                                             ::    SampleVariance
-
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
@@ -322,7 +317,7 @@ contains
 
     select type (RHS)
   
-      type is (UQSampling_Type)
+      type is (OnlineVarEstimator_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -353,3 +348,4 @@ contains
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
+end module

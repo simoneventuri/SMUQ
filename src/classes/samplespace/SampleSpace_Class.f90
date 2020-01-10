@@ -376,7 +376,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetCorrMatPointer( This )
 
-    real(rkp), allocatable, dimension(:,:)                            ::    GetCorrMatPointer
+    real(rkp), pointer, dimension(:,:)                                ::    GetCorrMatPointer
     class(SampleSpace_Type), target, intent(in)                       ::    This
 
     character(*), parameter                                           ::    ProcName='GetCorrMatPointer'

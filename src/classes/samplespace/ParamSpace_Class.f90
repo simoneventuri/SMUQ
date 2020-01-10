@@ -47,11 +47,13 @@ contains
   procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1,         &
                                                                                                           ConstructCase2,         &
-                                                                                                          ConstructCase3
+                                                                                                          ConstructCase3,         &
+                                                                                                          ConstructCase4
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
   procedure, private                                                  ::    ConstructCase2
   procedure, private                                                  ::    ConstructCase3
+  procedure, private                                                  ::    ConstructCase4
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -390,33 +392,29 @@ contains
 
     class(ParamSpace_Type), intent(inout)                             ::    This
 
-    type(SampleSpace_Type), intent(in)                                ::    SampleSpace1
-    type(SampleSpace_Type), intent(in)                                ::    SampleSpace2
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace1
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace2
 
     character(*), parameter                                           ::    ProcName='ConstructCase4'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbDim1
     integer                                                           ::    NbDim2
     integer                                                           ::    NbDim
-    real(rkp), allocatable, dimension(:,:)                            ::    CorrMat
-    type(String_Type), allocatable, dimension(:)                      ::    Names
-    type(DistProbContainer_Type), allocatable, dimension(:)           ::    Distributions
-    type(String_Type), allocatable, dimension(:)                      ::    Labels
 
     if ( This%Constructed ) call This%Reset
     if ( .not. This%Initialized ) call This%Initialize 
 
-    NbDim1 = ParameterSpace1%GetNbDim()
-    NbDim2 = ParameterSpace2%GetNbDim()
+    NbDim1 = SampleSpace1%GetNbDim()
+    NbDim2 = SampleSpace2%GetNbDim()
 
     if ( NbDim1 == 0 .or. NbDim2 == 0 ) call Error%Raise( 'Passed an empty parameter space', ProcName=ProcName )
 
     This%NbDim = NbDim1 + NbDim2
 
-    allocate(This%Names(This%NbDim), stat=StatLoc)
+    allocate(This%ParamName(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Names', ProcName=ProcName, stat=StatLoc )
-    This%Names(1:NbDim1) = SampleSpace1%GetName()
-    This%Names(NbDim1+1:NbDim) = SampleSpace2%GetName()
+    This%ParamName(1:NbDim1) = SampleSpace1%GetName()
+    This%ParamName(NbDim1+1:NbDim) = SampleSpace2%GetName()
 
     allocate(This%CorrMat(NbDim,NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
@@ -424,15 +422,15 @@ contains
     This%CorrMat(1:NbDim1,1:NbDim1) = SampleSpace1%GetCorrMatPointer()
     This%CorrMat(NbDim1+1:NbDim,NbDim1+1:NbDim) = SampleSpace2%GetCorrMatPointer()
 
-    allocate(This%Distributions(NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Distributions', ProcName=ProcName, stat=StatLoc )
-    This%Distributions(1:NbDim1) = SampleSpace1%GetDistribution()
-    This%Distributions(NbDim1+1:NbDim) = SampleSpace2%GetDistribution()
+    allocate(This%DistProb(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    This%DistProb(1:NbDim1) = SampleSpace1%GetDistribution()
+    This%DistProb(NbDim1+1:NbDim) = SampleSpace2%GetDistribution()
 
-    allocate(This%Labels(NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Labels', ProcName=ProcName, stat=StatLoc )
-    This%Labels(1:NbDim1) = SampleSpace1%GetLabel()
-    This%Labels(NbDim1+1:NbDim) = SampleSpace2%GetLabel()
+    allocate(This%Label(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    This%Label(1:NbDim1) = SampleSpace1%GetLabel()
+    This%Label(NbDim1+1:NbDim) = SampleSpace2%GetLabel()
 
     This%Constructed=.true.
 
@@ -619,7 +617,7 @@ contains
 
     call ConcatenateParamSpaces%Construct( Distributions=Distributions, CorrMat=CorrMat, Labels=Labels, Names=Names )
 
-  end subroutine
+  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

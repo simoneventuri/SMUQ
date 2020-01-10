@@ -33,6 +33,7 @@ use InputDet_Class                                                ,only:    Inpu
 use Output_Class                                                  ,only:    Output_Type
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
+use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
 use Restart_Class                                                 ,only:    RestartUtility
@@ -49,7 +50,9 @@ private
 public                                                                ::    SASobol_Type
 
 type                                                                  ::    Cell_Type
-  type(OnlineVarEstmator_Type)                                        ::    MomentEstimator
+  logical                                                             ::    Initialized
+  logical                                                             ::    Constructed
+  type(OnlineVarEstimator_Type)                                       ::    MomentEstimator
   real(rkp), allocatable, dimension(:)                                ::    StEstimator
   integer, allocatable, dimension(:)                                  ::    StEstimatorNbSamples
   type(LinkedList1D_Type)                                             ::    StHistory
@@ -65,7 +68,7 @@ contains
   procedure, private                                                  ::    ConstructCase1          =>    ConstructCase1_Cell
   procedure, public                                                   ::    GetInput                =>    GetInput_Cell
   procedure, public                                                   ::    UpdateEstimators        =>    UpdateEstimators_Cell
-  procedure, public                                                   ::    UpdateHistory           =>    UpdateHistory
+  procedure, public                                                   ::    UpdateHistory           =>    UpdateHistory_Cell
   procedure, public                                                   ::    GetSt                   =>    GetSt_Cell
   procedure, public                                                   ::    GetMean                 =>    GetMean_Cell
   procedure, public                                                   ::    GetVariance             =>    GetVariance_Cell
@@ -77,7 +80,7 @@ contains
   final                                                               ::    Finalizer_Cell 
 end type
 
-type, extends(UQMethod_Type)                                          ::    SASobol_Type
+type, extends(SAMethod_Type)                                          ::    SASobol_Type
   type(Cell_Type), allocatable, dimension(:)                          ::    Cells
   integer                                                             ::    NbCells
   integer                                                             ::    CheckpointFreq
@@ -233,7 +236,7 @@ contains
 
     ParameterName = "relative_tolerance"
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%RelTolernace = VarR0D
+    if ( Found ) This%RelTolerance = VarR0D
 
     SectionName = 'sampler'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -242,7 +245,6 @@ contains
 
     SectionName = 'restart'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
-
       ParameterName = 'model_run_counter'
       call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
       This%ModelRunCounter = VarI0D
@@ -285,7 +287,7 @@ contains
       deallocate(VarL1D, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
 
-      NbCells = 0
+      This%NbCells = 0
       SubSectionName = SectionName // '>cells'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
       This%NbCells = InputSection%GetNumberofSubSections()
@@ -301,7 +303,7 @@ contains
       end do
 
       SubSectionName = SectionName // '>history_step'
-      if ( Input%HasSection( SubSectionName=SubSectionName ) then
+      if ( Input%HasSection(SubSectionName=SubSectionName) )then
         call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
         call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
         nullify( InputSection )
@@ -309,7 +311,6 @@ contains
         deallocate(VarR1D, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
       end if
-
     end if
 
     This%Constructed = .true.
@@ -506,14 +507,20 @@ contains
     integer                                                           ::    iStart
     integer                                                           ::    iEnd
     integer                                                           ::    ParamRecordLength
+    real(rkp), allocatable, dimension(:)                              ::    Delta
+    character(:), allocatable                                         ::    Line
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
-    call ExtendedParameterSpace%Construct( SampleSpace1=SampleSpace, SampleSpace2=SampleSpace )
+    call ExtendedSampleSpace%Construct( SampleSpace1=SampleSpace, SampleSpace2=SampleSpace )
 
     NbResponses = size(Responses,1)
     NbDim = SampleSpace%GetNbDim()
     SilentLoc = This%Silent
+
+    allocate(Delta(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Delta', ProcName=ProcName, stat=StatLoc )
+    Delta = Zero
 
     allocate(NbCellsOutput(NbResponses), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc )
@@ -540,7 +547,7 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='ParamSubSampleStep', ProcName=ProcName, stat=StatLoc )
     ParamSubSample = Zero
 
-    allocate(SubSampleOutput(NbDim+1,NbCells), stat=StatLoc)
+    allocate(SubSampleOutput(NbDim+1,This%NbCells), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SubSampleOutputA', ProcName=ProcName, stat=StatLoc )
     SubSampleOutput = Zero
 
@@ -639,7 +646,7 @@ contains
               iv = 1
               v = 0
               do iii = 1, NbResponses
-                v = v + NbCellsOutputs(iii)
+                v = v + NbCellsOutput(iii)
                 VarR2DPtr => Outputs(iii)%GetValuesPointer()
                 SubSampleOutput(ii,iv:v) = VarR2DPtr(:,1)
                 iv = v + 1
@@ -657,17 +664,17 @@ contains
             end do
           end if
 
-          if ( This%CheckpointFreq > 0 .and. (mod(ParamRecordLength+i), abs(This%CheckpointFreq)) == 0 .and. i /= iEnd)  ) then
+          if ( This%CheckpointFreq > 0 .and. (mod(ParamRecordLength+i, abs(This%CheckpointFreq)) == 0 .and. i /= iEnd)  ) then
             call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),     &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
           end if
 
-          if ( This%HistoryFreq > 0 .and. (mod(ParamRecordLength+sum(This%ParamSampleRan(1:i)), abs(This%HistoryFreq)) == 0       &
+          if ( This%HistoryFreq > 0 .and. (mod(ParamRecordLength+count(This%ParamSampleRan(1:i)), abs(This%HistoryFreq)) == 0     &
                                                                                                           .and. i /= iEnd)  ) then
             ii = 1
             do ii = 1, This%NbCells
               call This%Cells(ii)%UpdateHistory()
-              call This%HistoryStep%Append( Value=count(ParamSampleRan(1:i))+ParamRecordLength )
+              call This%HistoryStep%Append( Value=count(This%ParamSampleRan(1:i))+ParamRecordLength )
             end do
           end if
     
@@ -678,7 +685,7 @@ contains
         iStart = ParamRecordLength
         allocate(VarR2D(2*NbDim,count(This%ParamSampleRan)+ParamRecordLength), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-        if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = ParamRecord
+        if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = This%ParamRecord
 
         i = iStart+1
         ii = 0
@@ -772,6 +779,7 @@ contains
     integer                                                           ::    v
     integer                                                           ::    NbResponses
     integer, allocatable, dimension(:)                                ::    VarI1D
+    character(:), allocatable                                         ::    ResponseLabel
 
     if ( len_trim(Directory) /= 0 ) then
 
@@ -798,9 +806,11 @@ contains
       iii = 0
       do i = 1, NbResponses
 
-        call MakeDirectory( Path=Directory // '/' // This%Labels(i)%GetValue(), Options='-p' )
+        ResponseLabel = Responses(i)%GetLabel()
 
-        FileName = '/' // This%Labels(i)%GetValue() // '/coordinates.dat'
+        call MakeDirectory( Path=Directory // '/' // ResponseLabel, Options='-p' )
+
+        FileName = '/' // ResponseLabel // '/coordinates.dat'
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
         call ExportArray( Array=Responses(i)%GetCoordinatesPointer(), File=File, RowMajor=.true. )
 
@@ -809,33 +819,33 @@ contains
         do iv = ii, iii
           v = v + 1
 
-          FileName = '/' // This%Labels(i)%GetValue() // '/cell' // ConvertToString(Value=v) // '/mean.dat'
+          FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mean.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
           call File%Export(String=ConvertToString(Value=This%Cells(iv)%GetMean()))
 
-          FileName = '/' // This%Labels(i)%GetValue() // '/cell' // ConvertToString(Value=v) // '/variance.dat'
+          FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/variance.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
           call File%Export(String=ConvertToString(Value=This%Cells(iv)%GetVariance()))
 
-          FileName = '/' // This%Labels(i)%GetValue() // '/cell' // ConvertToString(Value=v) // '/sobol_total.dat'
+          FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sobol_total.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
           call ExportArray( Array=This%Cells(iv)%GetSt(), File=File, RowMajor=.true. )
 
-          if ( This%HistFreq > 0 ) then
+          if ( This%HistoryFreq > 0 ) then
             call This%HistoryStep%Get( Values=VarI1D )
-            FileName = '/' // This%Labels(i)%GetValue() // '/history_step.dat'
+            FileName = '/' // ResponseLabel // '/history_step.dat'
             call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
             call ExportArray( Array=VarI1D, File=File, RowMajor=.true. )
 
-            FileName = '/' // This%Labels(i)%GetValue() // '/cell' // ConvertToString(Value=v) // '/mean_history.dat'
+            FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mean_history.dat'
             call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
             call ExportArray( Array=This%Cells(iv)%GetMeanHistory(), File=File, RowMajor=.true. )
 
-            FileName = '/' // This%Labels(i)%GetValue() // '/cell' // ConvertToString(Value=v) // '/variance_history.dat'
+            FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/variance_history.dat'
             call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
             call ExportArray( Array=This%Cells(iv)%GetVarianceHistory(), File=File, RowMajor=.true. )
 
-            FileName = '/' // This%Labels(i)%GetValue() // '/cell' // ConvertToString(Value=v) // '/sobol_total_history.dat'
+            FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sobol_total_history.dat'
             call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
             call ExportArray( Array=This%Cells(iv)%GetStHistory(), File=File, RowMajor=.true. )
           end if
@@ -853,7 +863,7 @@ contains
   impure elemental subroutine Copy( LHS, RHS )
 
     class(SASobol_Type), intent(out)                                  ::    LHS
-    class(UQMethod_Type), intent(in)                                  ::    RHS
+    class(SAMethod_Type), intent(in)                                  ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
@@ -946,7 +956,7 @@ contains
     call This%MeanHistory%Purge()
     call This%VarianceHistory%Purge
     
-    call This%MomentEstimator%Purge()
+    call This%MomentEstimator%Reset()
 
     call This%SetDefaults()
 
@@ -1017,7 +1027,7 @@ contains
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
     nullify( InputSection )
-    call This%Mean%Append( Values=VarR1D )
+    call This%MeanHistory%Append( Values=VarR1D )
     deallocate(VarR1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
 
@@ -1025,7 +1035,7 @@ contains
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
     nullify( InputSection )
-    call This%Variance%Append( Values=VarR1D )
+    call This%VarianceHistory%Append( Values=VarR1D )
     deallocate(VarR1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
 
@@ -1045,9 +1055,6 @@ contains
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
-
-    PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
 
     allocate(This%StEstimator(Dimensionality), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%StEstimator', ProcName=ProcName, stat=StatLoc )
@@ -1110,7 +1117,7 @@ contains
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/moment_estimator'
     SectionName = 'moment_estimator'
-    call GetInput%AddSection( Section=This%MomentEstimator%GetInput( MainSectionName=SectionName,                                 &
+    call GetInput_Cell%AddSection( Section=This%MomentEstimator%GetInput( MainSectionName=SectionName,                            &
                                                                                        Prefix=PrefixLoc, Directory=DirectorySub) )
 
     if ( ExternalFlag ) then
@@ -1227,8 +1234,9 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbDim
     real(rkp)                                                         ::    Variance
+    integer                                                           ::    i
 
-    Delta = This%%GetSt()
+    Delta = This%GetSt()
 
     NbDim = size(This%StEstimator,1)
 
@@ -1238,18 +1246,18 @@ contains
     i = 1
     do i = 1, NbDIm
       if ( ABRan(i) ) then
-        This%StEstimator(i) = This%StEstimator + (OutputA - OutputAB(i))**2
+        This%StEstimator(i) = This%StEstimator(i) + (OutputA - OutputAB(i))**2
         This%StEstimatorNbSamples(i) = This%StEstimatorNbSamples(i) + 1
       end if
     end do
 
-    Delta = Delta - This%%GetSt()
+    Delta = Delta - This%GetSt()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine UpdateHistory_Cell( This, OutputA, OutputAB, ABRan, Delta )
+  subroutine UpdateHistory_Cell( This )
 
     class(Cell_Type), intent(inout)                                   ::    This
 
@@ -1266,7 +1274,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetSt_Cell( This )
 
-    real(rkp), allocatable, dimension(:,:)                            ::    GetSt_Cell
+    real(rkp), allocatable, dimension(:)                              ::    GetSt_Cell
 
     class(Cell_Type), intent(in)                                      ::    This
 
@@ -1322,12 +1330,12 @@ contains
 
     real(rkp), allocatable, dimension(:)                              ::    GetMeanHistory_Cell
 
-    class(Cell_Type), intent(in)                                      ::    This
+    class(Cell_Type), intent(inout)                                   ::    This
 
     character(*), parameter                                           ::    ProcName='GetMean_Cell'
     integer                                                           ::    StatLoc=0
 
-    call This%MeanHistory%GetValues( Values=GetMeanHistory_Cell )
+    call This%MeanHistory%Get( Values=GetMeanHistory_Cell )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1337,12 +1345,12 @@ contains
 
     real(rkp), allocatable, dimension(:)                              ::    GetVarianceHistory_Cell
 
-    class(Cell_Type), intent(in)                                      ::    This
+    class(Cell_Type), intent(inout)                                   ::    This
 
     character(*), parameter                                           ::    ProcName='GetVariance_Cell'
     integer                                                           ::    StatLoc=0
 
-    call This%VarianceHistory%GetValues( Values=GetVarianceHistory_Cell )
+    call This%VarianceHistory%Get( Values=GetVarianceHistory_Cell )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1352,12 +1360,12 @@ contains
 
     real(rkp), allocatable, dimension(:,:)                            ::    GetStHistory_Cell
 
-    class(Cell_Type), intent(in)                                      ::    This
+    class(Cell_Type), intent(inout)                                   ::    This
 
     character(*), parameter                                           ::    ProcName='GetStHistory_Cell'
     integer                                                           ::    StatLoc=0
 
-    call This%StHistory%GetValues( Values=GetStHistory_Cell )
+    call This%StHistory%Get( Values=GetStHistory_Cell )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1378,13 +1386,13 @@ contains
 
     if ( RHS%Constructed ) then
       LHS%MomentEstimator = RHS%MomentEstimator
-      allocate(LHS%StEstimator, source=RHS%Estimator, stat=StatLoc)
+      allocate(LHS%StEstimator, source=RHS%StEstimator, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%StEstimator', ProcName=ProcName, stat=StatLoc )
       allocate(LHS%StEstimatorNbSamples, source=RHS%StEstimatorNbSamples, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
       LHS%StHistory = RHS%StHistory
       LHS%MeanHistory = RHS%MeanHistory
-      LHS%VarianceHistory / RHS%VarianceHistory
+      LHS%VarianceHistory = RHS%VarianceHistory
     end if
 
   end subroutine

@@ -861,7 +861,7 @@ contains
         iStart = ParamRecordLength
         allocate(VarR2D(NbDim,count(This%ParamSampleRan)+ParamRecordLength), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-        if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = ParamRecord
+        if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = This%ParamRecord
 
         i = iStart+1
         ii = 0
