@@ -54,6 +54,7 @@ type                                                                  ::    Cell
   logical                                                             ::    Constructed
   type(OnlineVarEstimator_Type)                                       ::    MomentEstimator
   real(rkp), allocatable, dimension(:)                                ::    StEstimator
+  real(rkp), allocatable, dimension(:)                                ::    StSnapShot
   integer, allocatable, dimension(:)                                  ::    StEstimatorNbSamples
   type(LinkedList1D_Type)                                             ::    StHistory
   type(LinkedList0D_Type)                                             ::    MeanHistory
@@ -69,6 +70,8 @@ contains
   procedure, public                                                   ::    GetInput                =>    GetInput_Cell
   procedure, public                                                   ::    UpdateEstimators        =>    UpdateEstimators_Cell
   procedure, public                                                   ::    UpdateHistory           =>    UpdateHistory_Cell
+  procedure, public                                                   ::    TakeStSnapshot          =>    TakeStSnapShot_Cell
+  procedure, public                                                   ::    GetStSnapShot           =>    GetStSnapShot_Cell
   procedure, public                                                   ::    GetSt                   =>    GetSt_Cell
   procedure, public                                                   ::    GetMean                 =>    GetMean_Cell
   procedure, public                                                   ::    GetVariance             =>    GetVariance_Cell
@@ -176,7 +179,7 @@ contains
     This%SamplesRan = .false.
     This%ParamSampleStep = 0
     This%RelTolerance = 1.d-3
-    This%AbsTolerance = 1.d-5
+    This%AbsTolerance = 1.d-4
     This%ModelRunCounter = 0
 
   end subroutine
@@ -487,6 +490,7 @@ contains
     logical                                                           ::    StepExceededFlag=.false.
     logical                                                           ::    SilentLoc
     integer                                                           ::    NbDim
+    real(rkp), allocatable, dimension(:)                              ::    StLoc
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     real(rkp), pointer, dimension(:,:)                                ::    VarR2DPtr=>null()
     type(ParamSpace_Type)                                             ::    ExtendedSampleSpace
@@ -509,6 +513,7 @@ contains
     integer                                                           ::    ParamRecordLength
     real(rkp), allocatable, dimension(:)                              ::    Delta
     character(:), allocatable                                         ::    Line
+    logical                                                           ::    Converged
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
@@ -551,6 +556,10 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SubSampleOutputA', ProcName=ProcName, stat=StatLoc )
     SubSampleOutput = Zero
 
+    allocate(StLoc(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='StLoc', ProcName=ProcName, stat=StatLoc )
+    StLoc = Zero
+
     allocate(SubSampleRan(NbDim+1), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SubSampleStatLoc', ProcName=ProcName, stat=StatLoc )
     SubSampleRan = .false.
@@ -569,6 +578,36 @@ contains
     end if
 
     do
+
+      Converged = .true.
+      if ( ParamRecordLength < 2 ) Converged = .false.
+      i = 1
+      do i = 1, This%NbCells
+        Delta = This%Cells(i)%GetStSnapShot()
+        call This%Cells(i)%TakeStSnapShot()
+        if ( .not. Converged ) cycle
+        StLoc = This%Cells(i)%GetStSnapShot()
+        Delta = dabs(Delta - StLoc)
+        ii = 1
+        do ii = 1, NbDim
+          if ( Delta(ii) < max(This%AbsTolerance, This%RelTolerance*dabs(StLoc(ii))) ) cycle
+          Converged = .false.
+          exit
+        end do
+      end do
+
+      if ( Converged ) then
+        if ( .not. SilentLoc ) then
+          Line = 'All cells converged'
+          write(*,'(A)') '' 
+          write(*,'(A)') Line
+          write(*,'(A)') '' 
+        end if
+write(*,*) Delta
+write(*,*) This%RelTolerance*dabs(StLoc)
+write(*,*) This%AbsTolerance
+        exit
+      end if
 
       !***************************************************************************************************************************
       ! Obtaining samples
@@ -664,11 +703,6 @@ contains
             end do
           end if
 
-          if ( This%CheckpointFreq > 0 .and. (mod(ParamRecordLength+i, abs(This%CheckpointFreq)) == 0 .and. i /= iEnd)  ) then
-            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),     &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
-          end if
-
           if ( This%HistoryFreq > 0 .and. (mod(ParamRecordLength+count(This%ParamSampleRan(1:i)), abs(This%HistoryFreq)) == 0     &
                                                                                                           .and. i /= iEnd)  ) then
             call This%HistoryStep%Append( Value=count(This%ParamSampleRan(1:i))+ParamRecordLength )
@@ -676,6 +710,11 @@ contains
             do ii = 1, This%NbCells
               call This%Cells(ii)%UpdateHistory()
             end do
+          end if
+
+          if ( This%CheckpointFreq > 0 .and. (mod(ParamRecordLength+i, abs(This%CheckpointFreq)) == 0 .and. i /= iEnd)  ) then
+            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),     &
+                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
           end if
     
         end do
@@ -711,11 +750,6 @@ contains
       This%SamplesObtained = .false.
       This%SamplesRan = .false.
 
-      if ( This%CheckpointFreq > 0 ) then
-        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
-      end if
-
       if ( This%HistoryFreq > 0 ) then
         call This%HistoryStep%Append( Value=ParamRecordLength )
         ii = 1
@@ -724,13 +758,17 @@ contains
         end do
       end if
 
+      if ( This%CheckpointFreq > 0 ) then
+        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
+                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+      end if
+
     end do
 
     if ( StepExceededFlag ) then
       Line = 'Maximum sampling step exceeded'
       if ( This%ModelRunCounter == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',  &
                                                                                                                ProcName=ProcName )
-      write(*,'(A)') ''  
       write(*,'(A)') Line
     end if
 
@@ -958,6 +996,9 @@ contains
     if ( allocated(This%StEstimatorNbSamples) ) deallocate(This%StEstimatorNbSamples, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
 
+    if ( allocated(This%StSnapShot) ) deallocate(This%StSnapShot, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StSnapShot', ProcName=ProcName, stat=StatLoc )
+
     call This%StHistory%Purge()
     call This%MeanHistory%Purge()
     call This%VarianceHistory%Purge
@@ -1015,6 +1056,12 @@ contains
     nullify( InputSection )
     call move_alloc( VarR1D, This%StEstimator )
 
+    SectionName = 'sobol_total_snapshot'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
+    nullify( InputSection )
+    call move_alloc( VarR1D, This%StSnapShot )
+
     SectionName = 'sobol_estimator_nb_samples'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     call ImportArray( Input=InputSection, Array=VarI1D, Prefix=PrefixLoc )
@@ -1071,6 +1118,10 @@ contains
     This%StEstimatorNbSamples = Zero
 
     call This%MomentEstimator%Construct( SampleVariance=.true. )
+
+    allocate(This%StSnapShot(Dimensionality), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%StSnapShot', ProcName=ProcName, stat=StatLoc )
+    This%StSnapShot = Zero
 
     This%Constructed = .true.
 
@@ -1135,6 +1186,14 @@ contains
       call ExportArray( Input=InputSection, Array=This%StEstimator, File=File )
       nullify(InputSection)
 
+      SectionName = 'sobol_total_snapshot'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      FileName = DirectoryLoc // '/sobol_total_snapshot.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Input=InputSection, Array=This%StSnapShot, File=File )
+      nullify(InputSection)
+
       SectionName = 'sobol_estimator_nb_samples'
       call GetInput_Cell%AddSection( SectionName=SectionName )
       call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -1176,6 +1235,16 @@ contains
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
       nullify(InputSection)
     else
+      SectionName = 'sobol_total_snapshot'
+      call GetInput_Cell%AddSection( SectionName=SectionName )
+      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      allocate(VarR1D, source=This%StSnapShot, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      call ExportArray( Input=InputSection, Array=VarR1D )
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      nullify(InputSection)
+
       SectionName = 'sobol_total_estimator'
       call GetInput_Cell%AddSection( SectionName=SectionName )
       call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -1275,6 +1344,36 @@ contains
     call This%StHistory%Append( Values=This%GetSt() )
 
   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine TakeStSnapShot_Cell( This )
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='TakeStSnapShot_Cell'
+    integer                                                           ::    StatLoc=0
+
+    This%StSnapShot = This%GetSt()
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetStSnapShot_Cell( This )
+
+    real(rkp), allocatable, dimension(:)                              ::    GetStSnapShot_Cell
+
+    class(Cell_Type), intent(in)                                      ::    This
+
+    character(*), parameter                                           ::    ProcName='GetStSnapShot_Cell'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+
+    allocate(GetStSnapShot_Cell, source=This%StSnapShot, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetStSnapShot_Cell', ProcName=ProcName, stat=StatLoc )
+
+  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1399,6 +1498,8 @@ contains
       LHS%StHistory = RHS%StHistory
       LHS%MeanHistory = RHS%MeanHistory
       LHS%VarianceHistory = RHS%VarianceHistory
+      allocate(LHS%StSnapShot, source=RHS%StSnapShot, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%StSnapShot', ProcName=ProcName, stat=StatLoc )
     end if
 
   end subroutine
@@ -1417,6 +1518,9 @@ contains
 
     if ( allocated(This%StEstimatorNbSamples) ) deallocate(This%StEstimatorNbSamples, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%StSnapShot) ) deallocate(This%StSnapShot, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StSnapShot', ProcName=ProcName, stat=StatLoc )
 
     call This%StHistory%Purge()
     call This%MeanHistory%Purge()

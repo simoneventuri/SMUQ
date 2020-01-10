@@ -1000,7 +1000,6 @@ contains
       Line = 'Maximum sampling step exceeded'
       if ( This%ModelRunCounter == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',  &
                                                                                                                ProcName=ProcName )
-      write(*,'(A)') ''  
       write(*,'(A)') Line
     end if
 
