@@ -28,9 +28,8 @@ use Response_Class                                                ,only:    Resp
 use ProgramDefs_Class                                             ,only:    ProgramDefs
 use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use Model_Class                                                   ,only:    Model_Type
-use ModelExtTemplate_Class                                        ,only:    ModelExtTemplate_Type
-use ModelExt_Factory_Class                                        ,only:    ModelExt_Factory
-use ModelInterface_Class                                          ,only:    ModelInterface_Type
+use Model_Factory_Class                                           ,only:    Model_Factory
+use Restart_Class                                                 ,only:    RestartUtility
 
 implicit none
 
@@ -45,7 +44,7 @@ type                                                                  ::    Root
   class(AnalysisMethod_Type), allocatable                             ::    AnalysisMethod
   type(Response_Type), allocatable, dimension(:)                      ::    Responses
   type(ParamSpace_Type)                                               ::    ParameterSpace
-  class(ModelExtTemplate_Type), allocatable                           ::    Model
+  class(Model_Type), allocatable                                      ::    Model
   character(:), allocatable                                           ::    SectionChain                                             
 contains
   procedure, public                                                   ::    Initialize
@@ -62,7 +61,7 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
     class(Root_Type), intent(inout)                                   ::    This
@@ -77,9 +76,9 @@ contains
     end if
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
     class(Root_Type), intent(inout)                                   ::    This
@@ -93,10 +92,10 @@ contains
     if ( allocated(This%Model) ) deallocate(This%Model, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Model', ProcName=ProcName, stat=StatLoc )
 
-    deallocate(This%AnalysisMethod, stat=StatLoc)
+    if ( allocated(This%AnalysisMethod) ) deallocate(This%AnalysisMethod, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%AnalysisMethod', ProcName=ProcName, stat=StatLoc )
 
-    deallocate(This%Responses, stat=StatLoc)
+    if ( allocated(This%Responses) ) deallocate(This%Responses, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Responses', ProcName=ProcName, stat=StatLoc )
 
     call This%ParameterSpace%Reset()
@@ -104,9 +103,9 @@ contains
     call This%Initialize()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This )
 
     class(Root_Type), intent(inout)                                   ::    This
@@ -117,9 +116,9 @@ contains
     This%SectionChain = ''
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, SectionChain, Prefix )
 
     use StringRoutines_Module
@@ -142,6 +141,10 @@ contains
     integer                                                           ::    ii
     character(:), allocatable                                         ::    Label1
     character(:), allocatable                                         ::    Label2
+    character(:), allocatable                                         ::    VarC0D
+    type(InputReader_Type)                                            ::    ModelInput
+    character(:), allocatable                                         ::    FileName
+    logical                                                           ::    Found
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -151,7 +154,7 @@ contains
 
     This%SectionChain = SectionChain
 
-    SectionName = 'plugin'
+    SectionName = 'model'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     call ModelExt_Factory%Construct( Object=This%Model, Input=InputSection, Prefix=PrefixLoc )
     nullify ( InputSection )
@@ -196,9 +199,9 @@ contains
     This%Constructed = .true.
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
@@ -230,10 +233,10 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    SectionName = 'plugin'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/plugin'
-    call GetInput%AddSection( Section=ModelExt_Factory%GetObjectInput(Object=This%Model,                                          &
-                                                          MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub) )
+    SectionName = 'model'
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/model'
+    call GetInput%AddSection( Section=ModelExt_Factory%GetObjectInput(Object=This%Model, MainSectionName=SectionName,             &
+                                                                                       Prefix=PrefixLoc, Directory=DirectorySub) )
 
     SectionName = 'parameter_space'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/parameter_space'
@@ -255,13 +258,12 @@ contains
                                                           MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub) )
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Run( This )
 
     class(Root_Type), intent(inout)                                   ::    This
-
 
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
@@ -270,9 +272,9 @@ contains
                                                                                       OutputDirectory=ProgramDefs%GetOutputDir() )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
     class(Root_Type), intent(out)                                     ::    LHS
@@ -304,9 +306,9 @@ contains
     end select
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
     type(Root_Type), intent(inout)                                    ::    This
@@ -317,13 +319,13 @@ contains
     if ( allocated(This%Model) ) deallocate(This%Model, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Model', ProcName=ProcName, stat=StatLoc )
 
-    deallocate(This%AnalysisMethod, stat=StatLoc)
+    if ( allocated(This%AnalysisMethod) ) deallocate(This%AnalysisMethod, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%AnalysisMethod', ProcName=ProcName, stat=StatLoc )
 
-    deallocate(This%Responses, stat=StatLoc)
+    if ( allocated(This%Responses) ) deallocate(This%Responses, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Responses', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

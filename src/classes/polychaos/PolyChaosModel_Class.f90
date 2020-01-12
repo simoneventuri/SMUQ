@@ -27,7 +27,7 @@ use ArrayIORoutines_Module
 use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use Model_Class                                                   ,only:    Model_Type
+use ModelInternal_Class                                           ,only:    ModelInternal_Type
 use Response_Class                                                ,only:    Response_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use LinkedList1D_Class                                            ,only:    LinkedList1D_Type
@@ -86,16 +86,15 @@ contains
   procedure, public                                                   ::    Initialize              =>    Initialize
   procedure, public                                                   ::    Reset                   =>    Reset
   procedure, public                                                   ::    SetDefaults             =>    SetDefaults
-  generic, public                                                     ::    Construct               =>    ConstructInput,         &
-                                                                                                          ConstructInput2,        &
+  generic, public                                                     ::    Construct               =>    ConstructInput2,        &
                                                                                                           ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructInput2
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  generic, public                                                     ::    Run                     =>    RunCase2
-  procedure, public                                                   ::    RunCase1
-  procedure, public                                                   ::    RunCase2
+  generic, public                                                     ::    Run                     =>    Run_0D_Single
+  procedure, public                                                   ::    Run_0D
+  procedure, public                                                   ::    Run_0D_Single
   procedure, public                                                   ::    ReplaceInputLabel
   procedure, public                                                   ::    ReplaceOutputLabel
   procedure, public                                                   ::    GetNbInputs
@@ -165,6 +164,8 @@ contains
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
     This%OutputLabel = '<undefined>'
+    This%Label = 'polychaos'
+    This%NbOutputs = 1
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -202,6 +203,10 @@ contains
 
     FileName = PrefixLoc // '/PCModelInput.dat'
     call Input%Read( FileName=FileName )
+
+    ParameterName = 'label'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%Label = VarC0D
 
     SectionName = 'space_transform'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -289,6 +294,10 @@ contains
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
+
+    ParameterName = 'label'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%Label = VarC0D
 
     SectionName = 'space_transform'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -470,6 +479,8 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
+    call GetInput%AddParameter( Name='label', Value=This%Label )
+
     SectionName = 'space_transform'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/space_transform'
     call GetInput%AddSection( Section=TransfSampleSpace_Factory%GetObjectInput( Object=This%TransformedSpace,                     &
@@ -495,26 +506,18 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  subroutine RunCase1( This, Input, Output, Stat )
+  subroutine Run_0D( This, Input, Output, Stat )
     
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     class(Input_Type), intent(in)                                     ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat 
 
-    character(*), parameter                                           ::    ProcName='RunCase1'
+    character(*), parameter                                           ::    ProcName='Run_0D'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(Output) ) then
-      if ( size(Output,1) /= 1 ) then
-        deallocate(Output, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-      end if
-    end if
-    if ( .not. allocated(Output) ) then
-      allocate(Output(1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-    end if
+    if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( 'Passed down an output array of incorrect length',                  &
+                                                                                                               ProcName=ProcName )
 
     if ( present(Stat) ) then
       call This%Run( Input, Output(1), Stat )
@@ -526,14 +529,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RunCase2( This, Input, Output, Stat )
+  subroutine Run_0D_Single( This, Input, Output, Stat )
     
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     class(Input_Type), intent(in)                                     ::    Input
     type(Output_Type), intent(inout)                                  ::    Output
     integer, optional, intent(out)                                    ::    Stat 
 
-    character(*), parameter                                           ::    ProcName='RunCase1'
+    character(*), parameter                                           ::    ProcName='Run_0D_Single'
     real(rkp), dimension(:), pointer                                  ::    CoefficientsPointer=>null()
     integer, dimension(:,:), pointer                                  ::    IndicesPointer=>null()
     integer                                                           ::    i, ii
@@ -769,6 +772,8 @@ contains
           LHS%NbCells = RHS%NbCells
           allocate(LHS%CoordinateLabels, source=RHS%CoordinateLabels, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CoordinateLabels', ProcName=ProcName, stat=StatLoc )
+          LHS%NbOutputs = RHS%NbOutputs
+          LHS%Label = RHS%Label
         end if
       class default
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
