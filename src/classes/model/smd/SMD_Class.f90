@@ -149,8 +149,8 @@ contains
     if ( present(Prefix) ) PrefixLoc = Prefix
 
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Label = VarC0D
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Label = VarC0D
 
     SectionName = 'initial_conditions'
     if ( .not. Input%HasSection( SubSectionName=SectionName ) ) then

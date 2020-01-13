@@ -48,10 +48,10 @@ SMUQTask = Input%GetName()
 select case ( LowerCase(SMUQTask) )
   case('main')
     SectionChain = 'main'
+    call Root%Construct( Input=Input, SectionChain=SectionChain, Prefix=ProgramDefs%GetCaseDir() )
     call system( 'cp -rf ' // ProgramDefs%GetCaseDir() // '/* ' // ProgramDefs%GetRestartDir )
     call RestartUtility%Construct( Input=Root%GetInput(MainSectionName='main', Prefix=ProgramDefs%GetRestartDir() ,               &
                                  Directory=RestartUtility%GetDirectory(SectionChain='main')), Prefix=ProgramDefs%GetRestartDir() )
-    call Root%Construct( Input=Input, SectionChain=SectionChain, Prefix=ProgramDefs%GetCaseDir() )
     call Root%Run()   
   case('test')
     call Test( Input=Input, Prefix=ProgramDefs%GetCaseDir() )

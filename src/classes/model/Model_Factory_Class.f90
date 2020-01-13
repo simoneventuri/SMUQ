@@ -26,7 +26,6 @@ use Model_Class                                                   ,only:    Mode
 use TFUN_Class                                                    ,only:    TFUN_Type
 use SMD_Class                                                     ,only:    SMD_Type
 use PCESM_Class                                                   ,only:    PCESM_Type
-use PATOPI_Class                                                  ,only:    PATOPI_Type
 use NULLPI_Class                                                  ,only:    NULLPI_Type
 use ModelExternal_Class                                           ,only:    ModelExternal_Type
 
@@ -75,9 +74,6 @@ contains
 
       case('pcesm')
         allocate( PCESM_Type :: Object )
-
-      case('patopi')
-        allocate( PATOPI_Type :: Object )
 
       case('null')
         allocate( NULLPI_Type :: Object )
@@ -149,9 +145,6 @@ contains
       case('pcesm')
         allocate( PCESM_Type :: Object )
 
-      case('patopi')
-        allocate( PATOPI_Type :: Object )
-
       case('null')
         allocate( NULLPI_Type :: Object )
 
@@ -220,9 +213,6 @@ contains
 
       type is (PCESM_Type)
         GetOption = 'pcesm'
-
-      type is (PATOPI_Type)
-        GetOption = 'patopi'
 
       type is (NULLPI_Type)
         GetOption = 'null'

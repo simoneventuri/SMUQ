@@ -39,12 +39,15 @@ type, abstract                                                        ::    Mode
 contains
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    GetLabel
+  generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    Run                     =>    Run_0D,                 &
                                                                                                           Run_1D
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure(Initialize_Model), deferred, public                       ::    Initialize
   procedure(Reset_Model), deferred, public                            ::    Reset
   procedure(SetDefaults_Model), deferred, public                      ::    SetDefaults
+  procedure(ConstructInput_Model), deferred, private                  ::    ConstructInput
+  procedure(GetInput_Model), deferred, public                         ::    GetInput
   procedure(Run_0D_Model), deferred, public                           ::    Run_0D
   procedure(Run_1D_Model), deferred, public                           ::    Run_1D
   procedure(Copy_Model), deferred, public                             ::    Copy
@@ -76,7 +79,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_ModelInternal( This, Input, Prefix )
+  subroutine ConstructInput_Model( This, Input, Prefix )
     import                                                            ::    Model_Type
     import                                                            ::    InputSection_Type
     class(Model_Type), intent(inout)                                  ::    This
@@ -86,10 +89,10 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_ModelInternal( This, MainSectionName, Prefix, Directory )
+  function GetInput_Model( This, MainSectionName, Prefix, Directory )
     import                                                            ::    Model_Type
     import                                                            ::    InputSection_Type
-    type(InputSection_Type)                                           ::    GetInput_ModelInternal
+    type(InputSection_Type)                                           ::    GetInput_Model
     class(Model_Type), intent(in)                                     ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
