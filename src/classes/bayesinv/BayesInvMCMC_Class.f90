@@ -38,7 +38,7 @@ use LikelihoodFunction_Class                                      ,only:    Like
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use DistProb_Class                                                ,only:    DistProb_Type 
 use BayesInvMethod_Class                                          ,only:    BayesInvMethod_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use Model_Class                                                   ,only:    Model_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use ParamSpace_Class                                              ,only:    ParamSpace_Type
@@ -370,7 +370,7 @@ contains
       !!--------------------------------------------------------------------------------------------------------------------------
       subroutine MCMCPosterior( Input, Value, MiscValues )
 
-        type(InputDet_Type), intent(in)                                   ::    Input
+        type(Input_Type), intent(in)                                      ::    Input
         real(rkp), intent(out)                                            ::    Value
         real(rkp), allocatable, dimension(:), intent(inout)               ::    MiscValues
 
@@ -378,7 +378,7 @@ contains
         real(rkp)                                                         ::    Likelihood
         real(rkp)                                                         ::    Prior
         integer                                                           ::    RunStat
-        type(InputDet_Type)                                               ::    InputLoc
+        type(Input_Type)                                                  ::    InputLoc
 
         NbDimOrig = Input%GetNbInputs()
 
@@ -429,18 +429,18 @@ contains
       !!--------------------------------------------------------------------------------------------------------------------------
       subroutine MCMCPosteriorHier( Input, Value, MiscValues )
 
-        type(InputDet_Type), intent(in)                                   ::    Input
+        type(Input_Type), intent(in)                                      ::    Input
         real(rkp), intent(out)                                            ::    Value
         real(rkp), allocatable, dimension(:), intent(inout)               ::    MiscValues
 
         character(*), parameter                                           ::    ProcName='MCMCPosterior'
         real(rkp)                                                         ::    Prior
-        type(InputDet_Type), allocatable, dimension(:)                    ::    HierInput
+        type(Input_Type), allocatable, dimension(:)                       ::    HierInput
         integer                                                           ::    RunStat
         real(rkp)                                                         ::    Likelihood
         integer                                                           ::    iLoc
         integer                                                           ::    NbHierSamples
-        type(InputDet_Type)                                               ::    InputLoc
+        type(Input_Type)                                                  ::    InputLoc
 
         Likelihood = Zero
         Prior = Zero

@@ -27,7 +27,6 @@ use StatisticsRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use DistProb_Class                                                ,only:    DistProb_Type
-use InputDet_Class                                                ,only:    InputDet_Type
 use SampleLHS_Class                                               ,only:    SampleLHS_Type
 
 implicit none

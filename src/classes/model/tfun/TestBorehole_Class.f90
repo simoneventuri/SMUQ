@@ -27,8 +27,6 @@ use Output_Class                                                  ,only:    Outp
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 
 implicit none
 
@@ -299,7 +297,7 @@ contains
   subroutine Run( This, Input, Output )
 
     class(TestBorehole_Type), intent(inout)                           ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), intent(inout)                                  ::    Output
 
     character(*), parameter                                           ::    ProcName='ProcessInput'
@@ -316,110 +314,54 @@ contains
     integer                                                           ::    ii
     integer                                                           ::    iii
     character(:), allocatable                                         ::    VarC0D
-    type(InputDet_Type)                                               ::    InputDetLoc
     integer                                                           ::    StatLoc=0
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    select type (Input)
-      type is (InputDet_Type)
-        allocate(Ordinate(1,1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-        if ( len_trim(This%R_Dependency) /= 0 ) then
-          call Input%GetValue( Value=R, Label=This%R_Dependency )
-        else
-          R = This%R
-        end if
-        if ( len_trim(This%RW_Dependency) /= 0 ) then
-          call Input%GetValue( Value=RW, Label=This%RW_Dependency )
-        else
-          RW = This%RW
-        end if
-        if ( len_trim(This%TU_Dependency) /= 0 ) then
-          call Input%GetValue( Value=TU, Label=This%TU_Dependency )
-        else
-          TU = This%TU
-        end if
-        if ( len_trim(This%HU_Dependency) /= 0 ) then
-          call Input%GetValue( Value=HU, Label=This%HU_Dependency )
-        else
-          HU = This%HU
-        end if
-        if ( len_trim(This%TL_Dependency) /= 0 ) then
-          call Input%GetValue( Value=TL, Label=This%TL_Dependency )
-        else
-          TL = This%TL
-        end if
-        if ( len_trim(This%HL_Dependency) /= 0 ) then
-          call Input%GetValue( Value=HL, Label=This%HL_Dependency )
-        else
-          HL = This%HL
-        end if
-        if ( len_trim(This%L_Dependency) /= 0 ) then
-          call Input%GetValue( Value=L, Label=This%L_Dependency )
-        else
-          L = This%L
-        end if
-        if ( len_trim(This%KW_Dependency) /= 0 ) then
-          call Input%GetValue( Value=KW, Label=This%KW_Dependency )
-        else
-          KW = This%KW
-        end if
+    allocate(Ordinate(1,1), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
+    if ( len_trim(This%R_Dependency) /= 0 ) then
+      call Input%GetValue( Value=R, Label=This%R_Dependency )
+    else
+      R = This%R
+    end if
+    if ( len_trim(This%RW_Dependency) /= 0 ) then
+      call Input%GetValue( Value=RW, Label=This%RW_Dependency )
+    else
+      RW = This%RW
+    end if
+    if ( len_trim(This%TU_Dependency) /= 0 ) then
+      call Input%GetValue( Value=TU, Label=This%TU_Dependency )
+    else
+      TU = This%TU
+    end if
+    if ( len_trim(This%HU_Dependency) /= 0 ) then
+      call Input%GetValue( Value=HU, Label=This%HU_Dependency )
+    else
+      HU = This%HU
+    end if
+    if ( len_trim(This%TL_Dependency) /= 0 ) then
+      call Input%GetValue( Value=TL, Label=This%TL_Dependency )
+    else
+      TL = This%TL
+    end if
+    if ( len_trim(This%HL_Dependency) /= 0 ) then
+      call Input%GetValue( Value=HL, Label=This%HL_Dependency )
+    else
+      HL = This%HL
+    end if
+    if ( len_trim(This%L_Dependency) /= 0 ) then
+      call Input%GetValue( Value=L, Label=This%L_Dependency )
+    else
+      L = This%L
+    end if
+    if ( len_trim(This%KW_Dependency) /= 0 ) then
+      call Input%GetValue( Value=KW, Label=This%KW_Dependency )
+    else
+      KW = This%KW
+    end if
 
-        Ordinate(1,1) = This%ComputeBorehole( r, rw, tu, hu, tl, hl, l, kw )
-
-      type is (InputStoch_Type)
-        allocate(Ordinate(1,Input%GetNbDegen()), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-        i = 1
-        do i = 1, Input%GetNbDegen()
-          InputDetLoc = Input%GetDetInput(Num=i)
-          if ( len_trim(This%R_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=R, Label=This%R_Dependency )
-          else
-            R = This%R
-          end if
-          if ( len_trim(This%RW_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=RW, Label=This%RW_Dependency )
-          else
-            RW = This%RW
-          end if
-          if ( len_trim(This%TU_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=TU, Label=This%TU_Dependency )
-          else
-            TU = This%TU
-          end if
-          if ( len_trim(This%HU_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=HU, Label=This%HU_Dependency )
-          else
-            HU = This%HU
-          end if
-          if ( len_trim(This%TL_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=TL, Label=This%TL_Dependency )
-          else
-            TL = This%TL
-          end if
-          if ( len_trim(This%HL_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=HL, Label=This%HL_Dependency )
-          else
-            HL = This%HL
-          end if
-          if ( len_trim(This%L_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=L, Label=This%L_Dependency )
-          else
-            L = This%L
-          end if
-          if ( len_trim(This%KW_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=KW, Label=This%KW_Dependency )
-          else
-            KW = This%KW
-          end if
-          Ordinate(1,i) = This%ComputeBorehole( R, RW, TU, HU, TL, HL, L, KW )
-        end do
-
-      class default
-        call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
-    end select
+    Ordinate(1,1) = This%ComputeBorehole( r, rw, tu, hu, tl, hl, l, kw )
 
     call Output%Construct( Values=Ordinate, Label=This%Label )
 

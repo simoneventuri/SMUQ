@@ -24,8 +24,6 @@ use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 
 implicit none
 
@@ -49,7 +47,6 @@ contains
   procedure(ConstructInput_CovarianceConstructor), deferred, private  ::    ConstructInput
   procedure(GetInput_CovarianceConstructor), deferred, public         ::    GetInput
   procedure(AssembleCov_CovarianceConstructor), deferred, public      ::    AssembleCov
-  procedure(IsStochastic_CovarianceConstructor), deferred, public     ::    IsStochastic
   procedure(Copy_CovarianceConstructor), deferred, public             ::    Copy
 end type
 
@@ -104,24 +101,14 @@ abstract interface
   subroutine AssembleCov_CovarianceConstructor( This, Coordinates, CoordinateLabels, Input, Cov)
     use                                                               ::    Parameters_Library
     import                                                            ::    CovarianceConstructor_Type
-    import                                                            ::    InputDet_Type
+    import                                                            ::    Input_Type
     import                                                            ::    String_Type
     class(CovarianceConstructor_Type), intent(in)                     ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
     type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
   end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsStochastic_CovarianceConstructor( This, Input )
-    import                                                            ::    CovarianceConstructor_Type
-    import                                                            ::    Input_Type
-    logical                                                           ::    IsStochastic_CovarianceConstructor
-    class(CovarianceConstructor_Type), intent(in)                     ::    This
-    class(Input_Type), intent(in)                                     ::    Input
-  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

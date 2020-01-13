@@ -3,4 +3,4 @@
  - figure out a way to do lars without scaling and centering
  - make array import/export routines for real(4), real(8), etc instead of rkp
  - add the ability to specify a column for vector import and array export
-
+ - remove the bash script for code inititation ( its only used to have multiple bayesian inference chains )

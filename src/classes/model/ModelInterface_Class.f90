@@ -160,7 +160,7 @@ contains
   subroutine Run0D( This, Input, Output, Stat )
 
     class(ModelInterface_Type), intent(inout)                         ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
@@ -242,11 +242,16 @@ contains
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
+
+
+
+
+
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Run1D( This, Input, Output, Stat )
 
     class(ModelInterface_Type), intent(inout)                         ::    This
-    class(Input_Type), dimension(:), intent(in)                       ::    Input
+    type(Input_Type), dimension(:), intent(in)                        ::    Input
     type(Output_Type), dimension(:,:), allocatable, intent(inout)     ::    Output
     integer, optional, intent(out)                                    ::    Stat
 

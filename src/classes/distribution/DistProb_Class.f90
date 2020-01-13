@@ -24,7 +24,6 @@ use StringRoutines_Module
 use QuadPack_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use InputDet_Class                                                ,only:    InputDet_Type
 
 implicit none
 

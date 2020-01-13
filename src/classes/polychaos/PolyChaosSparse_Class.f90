@@ -36,7 +36,7 @@ use OrthoPoly_Factory_Class                                       ,only:    Orth
 use OrthoMultiVar_Class                                           ,only:    OrthoMultiVar_Type
 use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
 use LinSolverSparse_Class                                         ,only:    LinSolverSparse_Type
 use LinSolverSparse_Factory_Class                                 ,only:    LinSolverSparse_Factory
@@ -506,7 +506,7 @@ contains
     integer                                                           ::    NbDim
     type(Output_Type), allocatable, dimension(:)                      ::    Outputs
     integer                                                           ::    NbOutputs
-    type(InputDet_Type)                                               ::    Input
+    type(Input_Type)                                                  ::    Input
     real(rkp)                                                         ::    VarR0D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     real(rkp), pointer, dimension(:,:)                                ::    VarR2DPointer=>null()

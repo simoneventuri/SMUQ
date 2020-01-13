@@ -26,8 +26,6 @@ use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 use CovarianceConstructor_Class                                   ,only:    CovarianceConstructor_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
@@ -58,7 +56,6 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    AssembleCov
-  procedure, public                                                   ::    IsStochastic
   procedure, nopass, private                                          ::    Lz
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -282,7 +279,7 @@ contains
     class(CovarianceGExp2L_Type), intent(in)                          ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
     type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
 
     character(*), parameter                                           ::    ProcName='ConstructInput'
@@ -363,49 +360,6 @@ contains
     end do
 
   end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsStochastic( This, Input )
-
-    logical                                                           ::    IsStochastic
-
-    class(CovarianceGExp2L_Type), intent(in)                          ::    This
-    class(Input_Type), intent(in)                                     ::    Input
-
-    character(*), parameter                                           ::    ProcName='IsStochastic'
-    integer                                                           ::    StatLoc=0
-
-    IsStochastic = .false.
-
-    select type (Input)
-      type is (InputDet_Type)
-        IsStochastic = .false.
-      type is (InputStoch_Type)
-        if ( len_trim(This%L1_Dependency) /= 0 ) then
-          if ( Input%IsStochastic(Label=This%L1_Dependency) ) IsStochastic = .true.
-        end if
-
-        if ( len_trim(This%L2_Dependency) /= 0 ) then
-          if ( Input%IsStochastic(Label=This%L2_Dependency) ) IsStochastic = .true.
-        end if
-
-        if ( len_trim(This%Lr_Dependency) /= 0 ) then
-          if ( Input%IsStochastic(Label=This%Lr_Dependency) ) IsStochastic = .true.
-        end if
-
-        if ( len_trim(This%M_Dependency) /= 0 ) then
-          if ( Input%IsStochastic(Label=This%M_Dependency) ) IsStochastic = .true.
-        end if
-
-        if ( len_trim(This%Zs_Dependency) /= 0 ) then
-          if ( Input%IsStochastic(Label=This%Zs_Dependency) ) IsStochastic = .true.
-        end if
-      class default
-        call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
-    end select
-
-  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

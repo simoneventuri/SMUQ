@@ -29,7 +29,7 @@ use MFileInput_Class                                              ,only:    MFil
 use MFileInputContainer_Class                                     ,only:    MFileInputContainer_Type
 use MFileInput_Factory_Class                                      ,only:    MFileInput_Factory
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 
 implicit none
 
@@ -229,7 +229,7 @@ contains
   subroutine WriteInput( This, Input )
 
     class(ParameterWriter_Type), intent(inout)                        ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
 
     character(*), parameter                                           ::    ProcName='WriteInput'
     integer                                                           ::    StatLoc=0
@@ -468,7 +468,7 @@ contains
   subroutine WriteInput_FP( This, Input )
 
     class(FileProcessor_Type), intent(inout)                          ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
 
     character(*), parameter                                           ::    ProcName='WriteInput'
     integer                                                           ::    StatLoc=0

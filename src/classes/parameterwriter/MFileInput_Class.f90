@@ -24,7 +24,7 @@ use Parameters_Library
 use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 
@@ -101,11 +101,11 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine WriteInput_MFileInput( This, Input, Template, ProcessedTemplate, File )
     import                                                            ::    MFileInput_Type
-    import                                                            ::    InputDet_Type
+    import                                                            ::    Input_Type
     import                                                            ::    String_Type
     import                                                            ::    SMUQFile_Type
     class(MFileInput_Type), intent(inout)                             ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(String_Type), dimension(:), intent(in)                       ::    Template
     type(String_Type), dimension(:), intent(inout)                    ::    ProcessedTemplate
     type(SMUQFile_Type), intent(in)                                   ::    File

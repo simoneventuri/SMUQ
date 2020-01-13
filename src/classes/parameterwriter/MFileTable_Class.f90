@@ -32,7 +32,7 @@ use MParamTable_Class                                             ,only:    MPar
 use MParamTableContainer_Class                                    ,only:    MParamTableContainer_Type
 use MParamTable_Factory_Class                                     ,only:    MParamTable_Factory
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 
 implicit none
@@ -278,7 +278,7 @@ contains
   subroutine WriteInput( This, Input, Template, ProcessedTemplate, File )
 
     class(MFileTable_Type), intent(inout)                             ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(String_Type), dimension(:), intent(in)                       ::    Template
     type(String_Type), dimension(:), intent(inout)                    ::    ProcessedTemplate
     type(SMUQFile_Type), intent(in)                                   ::    File

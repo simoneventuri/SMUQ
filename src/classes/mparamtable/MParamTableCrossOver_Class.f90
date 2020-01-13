@@ -30,7 +30,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use MParamTable_Class                                             ,only:    MParamTable_Type
 use MParamTablePoly_Class                                         ,only:    MParamTablePoly_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 
@@ -244,7 +244,7 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    GetValue
 
     class(MParamTableCrossOver_Type), intent(in)                      ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
 
     character(*), parameter                                           ::    ProcName='GetValue'
@@ -304,7 +304,7 @@ contains
     type(String_Type), allocatable, dimension(:)                      ::    GetCharValue
 
     class(MParamTableCrossOver_Type), intent(in)                      ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
     character(*), optional, intent(in)                                ::    Format
 

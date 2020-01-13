@@ -27,7 +27,6 @@ use QuadPack_Library
 use DistProb_Class
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use InputDet_Class                                                ,only:    InputDet_Type
 use SampleLHS_Class                                               ,only:    SampleLHS_Type
 
 implicit none

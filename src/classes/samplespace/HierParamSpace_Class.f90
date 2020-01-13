@@ -25,7 +25,7 @@ use StringRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use HierDistProb_Class                                            ,only:    HierDistProb_Type
@@ -305,7 +305,7 @@ contains
   
     class(HierParamSpace_Type), intent(in)                            ::    This
     type(ParamSpace_Type), intent(out)                                ::    ParamSpace
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
 
     character(*), parameter                                           ::    ProcName='Generate'
     integer                                                           ::    StatLoc=0

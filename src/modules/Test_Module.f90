@@ -35,7 +35,7 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use Response_Class                                                ,only:    Response_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use SampleLHS_Class                                               ,only:    SampleLHS_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use List2DAllocInt_Class                                          ,only:    List2DAllocInt_Type
 use List1DAllocReal_Class                                         ,only:    List1DAllocReal_Type
 use ProgramDefs_Class                                             ,only:    ProgramDefs

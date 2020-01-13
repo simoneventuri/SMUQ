@@ -27,8 +27,6 @@ use Output_Class                                                  ,only:    Outp
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 
 implicit none
 
@@ -246,7 +244,7 @@ contains
   subroutine Run( This, Input, Output )
 
     class(TestIshigami_Type), intent(inout)                           ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), intent(inout)                                  ::    Output
 
     character(*), parameter                                           ::    ProcName='ProcessInput'
@@ -259,58 +257,27 @@ contains
     integer                                                           ::    iii
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    VarC0D
-    type(InputDet_Type)                                               ::    InputDetLoc
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    select type (Input)
-      type is (InputDet_Type)
-        allocate(Ordinate(1,1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-        if ( len_trim(This%X1_Dependency) /= 0 ) then
-          call Input%GetValue( Value=X1, Label=This%X1_Dependency )
-        else
-          X1 = This%X1
-        end if
-        if ( len_trim(This%X2_Dependency) /= 0 ) then
-          call Input%GetValue( Value=X2, Label=This%X2_Dependency )
-        else
-          X2 = This%X2
-        end if
-        if ( len_trim(This%X3_Dependency) /= 0 ) then
-          call Input%GetValue( Value=X3, Label=This%X3_Dependency )
-        else
-          X3 = This%X3
-        end if
-        Ordinate(1,1) = This%ComputeIshigami( This%A, This%B, This%C, X1, X2, X3 )
-
-      type is (InputStoch_Type)
-        allocate(Ordinate(1,Input%GetNbDegen()), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-        i = 1
-        do i = 1, Input%GetNbDegen()
-          InputDetLoc = Input%GetDetInput(Num=i)
-          if ( len_trim(This%X1_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=X1, Label=This%X1_Dependency )
-          else
-            X1 = This%X1
-          end if
-          if ( len_trim(This%X2_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=X2, Label=This%X2_Dependency )
-          else
-            X2 = This%X2
-          end if
-          if ( len_trim(This%X3_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=X3, Label=This%X3_Dependency )
-          else
-            X3 = This%X3
-          end if
-          Ordinate(1,i) = This%ComputeIshigami( This%A, This%B, This%C, X1, X2, X3 )
-        end do
-
-      class default
-        call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
-    end select
+    allocate(Ordinate(1,1), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
+    if ( len_trim(This%X1_Dependency) /= 0 ) then
+      call Input%GetValue( Value=X1, Label=This%X1_Dependency )
+    else
+      X1 = This%X1
+    end if
+    if ( len_trim(This%X2_Dependency) /= 0 ) then
+      call Input%GetValue( Value=X2, Label=This%X2_Dependency )
+    else
+      X2 = This%X2
+    end if
+    if ( len_trim(This%X3_Dependency) /= 0 ) then
+      call Input%GetValue( Value=X3, Label=This%X3_Dependency )
+    else
+      X3 = This%X3
+    end if
+    Ordinate(1,1) = This%ComputeIshigami( This%A, This%B, This%C, X1, X2, X3 )
 
     call Output%Construct( Values=Ordinate, Label=This%Label)
 

@@ -107,7 +107,7 @@ abstract interface
     use Input_Class                                               ,only:    Input_Type
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat
   end subroutine
@@ -120,7 +120,7 @@ abstract interface
     use Input_Class                                               ,only:    Input_Type
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
-    class(Input_Type), dimension(:), intent(in)                       ::    Input
+    type(Input_Type), dimension(:), intent(in)                        ::    Input
     type(Output_Type), dimension(:,:), intent(inout)                  ::    Output
     integer, dimension(:), optional, intent(inout)                    ::    Stat
   end subroutine

@@ -22,7 +22,7 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 
 implicit none
 
@@ -98,11 +98,11 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetValue_MParamTable( This, Input, Abscissa )
     use Parameters_Library
-    import                                                            ::    InputDet_Type
+    import                                                            ::    Input_Type
     import                                                            ::    MParamTable_Type  
     real(rkp), allocatable, dimension(:)                              ::    GetValue_MParamTable
     class(MParamTable_Type), intent(in)                               ::    This
-    type(InputDet_Type, intent(in)                                    ::    Input
+    type(Input_Type, intent(in)                                       ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -111,11 +111,11 @@ abstract interface
   function GetCharValue_MParamTable( This, Input, Abscissa, Format )
     use Parameters_Library
     use String_Library
-    import                                                            ::    InputDet_Type
+    import                                                            ::    Input_Type
     import                                                            ::    MParamTable_Type
     type(String_Type), allocatable, dimension(:)                      ::    GetCharValue_MParamTable
     class(MParamTable_Type), intent(in)                               ::    This
-    type(InputDet_Type, intent(in)                                    ::    Input
+    type(Input_Type, intent(in)                                       ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
     character(*), optional, intent(in)                                ::    Format
   end function

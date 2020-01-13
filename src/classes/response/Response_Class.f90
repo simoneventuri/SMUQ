@@ -33,7 +33,6 @@ use CovarianceConstructor_Class                                   ,only:    Cova
 use CovarianceConstructor_Factory_Class                           ,only:    CovarianceConstructor_Factory
 use CovariancePredefined_Class                                    ,only:    CovariancePredefined_Type
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
 
 implicit none
 

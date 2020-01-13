@@ -24,7 +24,7 @@ use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use MParamScalar_Class                                            ,only:    MParamScalar_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use StringRoutines_Module
 
 implicit none
@@ -161,7 +161,7 @@ contains
     real(rkp)                                                         ::    GetValue
 
     class(MParamScalarDirect_Type), intent(in)                        ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
 
     character(*), parameter                                           ::    ProcName='GetValue'
     integer                                                           ::    StatLoc=0
@@ -180,7 +180,7 @@ contains
     character(:), allocatable                                         ::    GetCharValue
 
     class(MParamScalarDirect_Type), intent(in)                        ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     character(*), optional, intent(in)                                ::    Format
 
     character(*), parameter                                           ::    ProcName='GetCharValue'

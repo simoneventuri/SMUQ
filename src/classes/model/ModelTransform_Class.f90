@@ -28,8 +28,6 @@ use TransfSampleSpace_Class                                       ,only:    Tran
 use TransfSampleSpace_Factory_Class                               ,only:    TransfSampleSpace_Factory
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 
 implicit none
 
@@ -133,49 +131,24 @@ contains
   subroutine RunCase1( This, Input, Output, Stat )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
     character(*), parameter                                           ::    ProcName='RunCase1'
     integer                                                           ::    StatLoc=0
     logical                                                           ::    ExternalFlag=.false.
-    class(Input_Type), allocatable                                    ::    InputLoc
+    type(Input_Type)                                                  ::    InputLoc
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
-    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    select type (Input)
-      type is (InputDet_Type)
-        allocate( InputDet_Type :: InputLoc )
-        select type (InputLoc)
-          type is (InputDet_Type)
-            call Input%GetValue( Values=VarR1D, Labels=This%InputLabels )
-            call InputLoc%Construct( Input=This%SpaceTransform%InvTransform(Z=VarR1D), Labels=This%InputLabels )
-            deallocate(VarR1D, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-          class default
-            call Error%Raise( Line='Something went wrong', ProcName=ProcName )
-        end select
-      type is (InputStoch_Type)
-        allocate( InputStoch_Type :: InputLoc )
-        select type (InputLoc)
-          type is (InputStoch_Type)
-            call Input%GetValue( Values=VarR2D, Labels=This%InputLabels )
-            call InputLoc%Construct( Input=This%SpaceTransform%InvTransform(Z=VarR2D), Labels=This%InputLabels )
-            deallocate(VarR2D, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-          class default
-            call Error%Raise( Line='Something went wrong', ProcName=ProcName )
-        end select
-      class default
-        call Error%Raise( Line='Class not recognized, update definitions', ProcName=ProcName )
-    end select
-
+    call Input%GetValue( Values=VarR1D, Labels=This%InputLabels )
+    call InputLoc%Construct( Input=This%SpaceTransform%InvTransform(Z=VarR1D), Labels=This%InputLabels )
+    deallocate(VarR1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+   
     call This%Model%Run( Input=InputLoc, Output=Output, Stat=Stat )
-
-    deallocate(InputLoc, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputLoc', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

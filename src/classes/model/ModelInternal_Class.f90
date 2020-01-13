@@ -43,7 +43,7 @@ contains
   subroutine Run_1D( This, Input, Output, Stat )
 
     class(ModelInternal_Type), intent(inout)                          ::    This
-    class(Input_Type), dimension(:), intent(in)                       ::    Input
+    type(Input_Type), dimension(:), intent(in)                        ::    Input
     type(Output_Type), dimension(:,:), intent(inout)                  ::    Output
     integer, dimension(:), optional, intent(inout)                    ::    Stat
 

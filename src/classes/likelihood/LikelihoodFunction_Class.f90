@@ -22,8 +22,7 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
+use Input_Class                                                   ,only:    Input_Type
 use Response_Class                                                ,only:    Response_Type
 use Output_Class                                                  ,only:    Output_Type
 
@@ -107,12 +106,12 @@ abstract interface
     use                                                               ::    Parameters_Library
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    Response_Type
-    import                                                            ::    InputDet_Type
+    import                                                            ::    Input_Type
     import                                                            ::    Output_Type
     real(rkp)                                                         ::    Evaluate_1D_LikelihoodFunction
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), intent(in)                       ::    Output
     logical, optional, intent(in)                                     ::    LogValue
   end function
@@ -123,12 +122,12 @@ abstract interface
     use                                                               ::    Parameters_Library
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    Response_Type
-    import                                                            ::    InputDet_Type
+    import                                                            ::    Input_Type
     import                                                            ::    Output_Type
     real(rkp)                                                         ::    Evaluate_0D_LikelihoodFunction
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
     type(Response_Type), intent(in)                                   ::    Response
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), intent(in)                                     ::    Output
     logical, optional, intent(in)                                     ::    LogValue
   end function

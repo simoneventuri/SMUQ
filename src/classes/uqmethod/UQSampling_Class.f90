@@ -29,7 +29,7 @@ use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use UQMethod_Class                                                ,only:    UQMethod_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use InputClass                                                    ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
@@ -452,7 +452,7 @@ contains
     type(Output_Type), allocatable, dimension(:)                      ::    Outputs
     integer                                                           ::    NbOutputs
     type(ModelInterface_Type)                                         ::    ModelInterface
-    type(InputDet_Type)                                               ::    Input
+    type(Input_Type)                                                  ::    Input
     integer                                                           ::    ParamRecordLength
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )

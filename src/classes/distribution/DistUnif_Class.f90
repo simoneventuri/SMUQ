@@ -24,7 +24,6 @@ use ComputingRoutines_Module
 use DistProb_Class                                                ,only:    DistProb_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use InputDet_Class                                                ,only:    InputDet_Type
 
 implicit none
 

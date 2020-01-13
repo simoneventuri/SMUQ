@@ -30,7 +30,7 @@ use ParameterWriter_Class                                         ,only:    Para
 use OutputReader_Class                                            ,only:    OutputReader_Type
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use InputStoch_Class                                              ,only:    InputStoch_Type
 
 implicit none
@@ -176,6 +176,8 @@ contains
     This%NbSubModels = InputSection%GetNumberOfSubSections()
     nullify(InputSection)
 
+    if ( This%NbConcurrentSubEvaluations > This%NbSubModels ) This%NbConcurrentSubEvaluations = This%NbSubModels
+
     allocate(This%ParameterWriter(This%NbSubModels), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParameterWriter', ProcName=ProcName, stat=StatLoc )
 
@@ -188,6 +190,8 @@ contains
     allocate(This%SubModelRunCommand(This%NbSubModels), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%SubModelRunCommand', ProcName=ProcName, stat=StatLoc )
 
+    call MakeDirectory( Path=This%FullWorkDirectory, Options='-p' )
+
     i = 1
     do i = 1, This%NbSubModels
       SubSectionName = SectionName // '>submodel' // ConvertToString(Value=i)
@@ -199,13 +203,6 @@ contains
       ParameterName = 'run_command'
       call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
       This%SubModelRunCommand(i) = VarC0D
-    end do
-
-    call MakeDirectory( Path=This%FullWorkDirectory, Options='-p' )
-
-    i = 1
-    do i = 1, This%NbSubModels
-      SubSectionName = SectionName // '>submodel' // ConvertToString(Value=i)
 
       WorkDirectoryLoc = This%FullWorkDirectory // '/' // ConvertToString(Value=i)
       DirectoryLoc = WorkDirectoryLoc // This%SubModelCaseDirectory(i)
@@ -224,15 +221,12 @@ contains
       nullify( InputSection )
     end do
 
+    This%NbOutputs = This%OutputReader(1)%GetNbOutputs() 
+
     This%Constructed = .true.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput( This, MainSectionName, Prefix, Directory )
@@ -251,6 +245,9 @@ contains
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
+    character(:), allocatable                                         ::    SectionName
+    character(:), allocatable                                         ::    SubSectionName
+    integer                                                           ::    i
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -263,25 +260,42 @@ contains
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddSection( Section=This%ModelExternalModel%GetInput(MainSectionName='model', Prefix=PrefixLoc,                         &
+
+    call GetInput%AddParameter( Name='label', Value=This%Label )
+    call GetInput%AddParameter( Name='work_directory', Value=This%WorkDirectory )
+    call GetInput%AddParameter( Name='nb_concurrent_evaluations', Value=This%NbConcurrentEvaluations )
+    call GetInput%AddParameter( Name='nb_concurrent_subevaluations', Value=This%NbConcurrentSubEvaluations )
+
+    call GetInput%AddSection( Section=This%ParameterWriter(1)%GetInput(MainSectionName='parameter_writer', Prefix=PrefixLoc,      &
                                                                                                          Directory=DirectorySub) )
-    call GetInput%AddSection( Section=This%ParameterWriter%GetInput(MainSectionName='parameter_writer', Prefix=PrefixLoc,         &
+    call GetInput%AddSection( Section=This%OutputReader(1)%GetInput(MainSectionName='output_reader', Prefix=PrefixLoc,            &
                                                                                                          Directory=DirectorySub) )
-    call GetInput%AddSection( Section=This%OutputReader%GetInput(MainSectionName='output_reader', Prefix=PrefixLoc,                &
-                                                                                                         Directory=DirectorySub) )
+
+    SectionName = 'submodels'
+    call GetInput%AddSection( SectionName=SectionName )
+
+    i = 1
+    do i = 1, This%NbSubModels
+      SubSectionName = 'submodel' // ConvertToString(Value=i)
+      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+      SubSectionName = SectionName // '>' // SubSectionName
+      call GetInput%AddParameter( Name='case_directory', Value=This%SubModelCaseDirectory(i)%GetValue(),                          &
+                                                                                                      SectionName=SubSectionName )
+      call GetInput%AddParameter( Name='run_command', Value=This%SubModelRunCommand(i)%GetValue(), SectionName=SubSectionName )
+    end do
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RunCase1( This, Input, Output, Stat )
+  subroutine Run_0D( This, Input, Output, Stat )
 
-    class(ModelExternal_Type), intent(inout)                                  ::    This
-    class(Input_Type), intent(in)                                     ::    Input
-    type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
+    class(ModelExternal_Type), intent(inout)                          ::    This
+    type(Input_Type), intent(in)                                      ::    Input
+    type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
-    character(*), parameter                                           ::    ProcName='RunCase1'
+    character(*), parameter                                           ::    ProcName='Run_0D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    StatRun=0
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D

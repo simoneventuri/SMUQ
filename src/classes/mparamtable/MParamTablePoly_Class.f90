@@ -29,7 +29,7 @@ use PolyCoeff_Class                                               ,only:    Poly
 use PolyCoeffContainer_Class                                      ,only:    PolyCoeffContainer_Type
 use PolyCoeff_Factory_Class                                       ,only:    PolyCoeff_Factory
 use PolyCoeffScalar_Class                                         ,only:    PolyCoeffScalar_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use String_Library
 use StringRoutines_Module
 
@@ -238,7 +238,7 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    GetValue
 
     class(MParamTablePoly_Type), intent(in)                           ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
 
     character(*), parameter                                           ::    ProcName='GetValue'
@@ -271,7 +271,7 @@ contains
     type(String_Type), allocatable, dimension(:)                      ::    GetCharValue
 
     class(MParamTablePoly_Type), intent(in)                           ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
     character(*), optional, intent(in)                                ::    Format
 

@@ -37,7 +37,7 @@ use OrthoMultiVar_Class                                           ,only:    Orth
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
 use SampleSpace_CLass                                             ,only:    SampleSpace_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
@@ -503,7 +503,7 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    DesignSpace
     integer                                                           ::    NbDim
     integer                                                           ::    NbCells
-    type(InputDet_Type)                                               ::    Input
+    type(Input_Type)                                                  ::    Input
     type(Output_Type), allocatable, dimension(:)                      ::    Outputs
     real(rkp), allocatable, dimension(:,:)                            ::    ParamSampleTemp
     integer                                                           ::    VarI0D

@@ -30,8 +30,6 @@ use Output_Class                                                  ,only:    Outp
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 
 implicit none
 
@@ -297,7 +295,7 @@ contains
   subroutine Run_0D( This, Input, Output, Stat )
 
     class(SMD_Type), intent(inout)                                    ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
@@ -326,7 +324,6 @@ contains
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    IState
     logical                                                           ::    Found
-    type(InputDet_Type)                                               ::    InputDetLoc
     integer                                                           ::    RunStatLoc
     real(8)                                                           ::    TOUT
     real(8)                                                           ::    RTOL
@@ -361,86 +358,42 @@ contains
 
     RunStatLoc = 0
 
-    select type (Input)
-      type is (InputDet_Type)
-        allocate( Ordinate(ii_max, 1), stat=StatLoc )
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-        Ordinate = Zero
-        if ( len_trim(This%M_Dependency) /= 0 ) then
-          call Input%GetValue( Value=M, Label=This%M_Dependency )
-        else
-          M = This%M
-        end if
-        if ( len_trim(This%C_Dependency) /= 0 ) then
-          call Input%GetValue( Value=C, Label=This%C_Dependency )
-        else
-          C = This%C
-        end if
-        if ( len_trim(This%K_Dependency) /= 0 ) then
-          call Input%GetValue( Value=K, Label=This%K_Dependency )
-        else
-          K = This%K
-        end if
+    allocate( Ordinate(ii_max, 1), stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
+    Ordinate = Zero
+    if ( len_trim(This%M_Dependency) /= 0 ) then
+      call Input%GetValue( Value=M, Label=This%M_Dependency )
+    else
+      M = This%M
+    end if
+    if ( len_trim(This%C_Dependency) /= 0 ) then
+      call Input%GetValue( Value=C, Label=This%C_Dependency )
+    else
+      C = This%C
+    end if
+    if ( len_trim(This%K_Dependency) /= 0 ) then
+      call Input%GetValue( Value=K, Label=This%K_Dependency )
+    else
+      K = This%K
+    end if
 
-        T = This%Abscissa(1)
-        Y = This%IC
-        ISTATE = 1
+    T = This%Abscissa(1)
+    Y = This%IC
+    ISTATE = 1
 
-        ii_max = size(This%Abscissa)
-        do ii = 1, ii_max
-          TOUT = This%Abscissa(ii)
-          call DLSODE(ODE, 2, Y, T, TOUT, ITOL, RTOL, ATOL, ITASK, ISTATE, IOPT, RWORK, LRW, IWORK, LIW,   &
-                      Dummy, MF)
-          T = TOUT
-          if (ISTATE .gt. 0) then  
-            Ordinate(ii,1)=Y(1)
-          else 
-            RunStatLoc = -1
-          end if
-          if ( RunStatLoc /= 0 ) exit
-        end do
-
-      type is (InputStoch_Type)
-        allocate(Ordinate(ii_max,Input%GetNbDegen()), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-        i = 1
-        do i = 1, Input%GetNbDegen()
-          InputDetLoc = Input%GetDetInput(Num=i)
-          if ( len_trim(This%M_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=M, Label=This%M_Dependency )
-          else
-            M = This%M
-          end if
-          if ( len_trim(This%C_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=C, Label=This%C_Dependency )
-          else
-            C = This%C
-          end if
-          if ( len_trim(This%K_Dependency) /= 0 ) then
-            call InputDetLoc%GetValue( Value=K, Label=This%K_Dependency )
-          else
-            K = This%K
-          end if
-          T = This%Abscissa(1)
-          Y = This%IC
-          ISTATE = 1
-
-          do ii = 1, ii_max
-            call DLSODE(ODE, 2, Y, T, This%Abscissa(ii), ITOL, This%RTOL, This%ATOL, ITASK, ISTATE, IOPT, RWORK, LRW, IWORK, LIW, &
-                        Dummy, MF)
-            if (ISTATE .gt. 0) then  
-              Ordinate(ii,i)=Y(1)
-            else 
-              RunStatLoc = -1
-            end if
-            if ( RunStatLoc /= 0 ) exit
-          end do
-          if ( RunStatLoc /= 0 ) exit
-        end do
-
-      class default
-        call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
-    end select
+    ii_max = size(This%Abscissa)
+    do ii = 1, ii_max
+      TOUT = This%Abscissa(ii)
+      call DLSODE(ODE, 2, Y, T, TOUT, ITOL, RTOL, ATOL, ITASK, ISTATE, IOPT, RWORK, LRW, IWORK, LIW,   &
+                  Dummy, MF)
+      T = TOUT
+      if (ISTATE .gt. 0) then  
+        Ordinate(ii,1)=Y(1)
+      else 
+        RunStatLoc = -1
+      end if
+      if ( RunStatLoc /= 0 ) exit
+    end do
 
     call Output(1)%Construct( Values=Ordinate, Label=This%Label )
 

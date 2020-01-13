@@ -222,7 +222,7 @@ contains
   subroutine Run_0D( This, Input, Output, Stat )
 
     class(TFUN_Type), intent(inout)                                   ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat
 

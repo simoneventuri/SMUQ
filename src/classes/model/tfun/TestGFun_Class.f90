@@ -27,8 +27,6 @@ use Output_Class                                                  ,only:    Outp
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 
 implicit none
 
@@ -255,7 +253,7 @@ contains
   subroutine Run( This, Input, Output )
 
     class(TestGFun_Type), intent(inout)                               ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), intent(inout)                                  ::    Output
 
     character(*), parameter                                           ::    ProcName='ProcessInput'
@@ -266,48 +264,22 @@ contains
     integer                                                           ::    ii
     integer                                                           ::    iii
     character(:), allocatable                                         ::    VarC0D
-    type(InputDet_Type)                                               ::    InputDetLoc
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    select type (Input)
-      type is (InputDet_Type)
-        allocate(Ordinate(1,1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-        allocate(X(This%NbParams), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='X', ProcName=ProcName, stat=StatLoc )
-        ii = 1
-        do ii = 1, This%NbParams
-          if ( len_trim(This%InputLabel(ii)%GetValue()) /= 0 ) then
-            call Input%GetValue( Value=X(ii), Label=This%InputLabel(ii)%GetValue() )
-          else
-            X(ii) = This%Parameters(ii)
-          end if
-        end do
-        Ordinate(1,1) = This%ComputeGFun( X, This%c )
-
-      type is (InputStoch_Type)
-        allocate(Ordinate(1,Input%GetNbDegen()), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-        allocate(X(This%NbParams), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='X', ProcName=ProcName, stat=StatLoc )
-        i = 1
-        do i = 1, Input%GetNbDegen()
-          InputDetLoc = Input%GetDetInput(Num=i)
-          ii = 1
-          do ii = 1, This%NbParams
-            if ( len_trim(This%InputLabel(ii)%GetValue()) /= 0 ) then
-              call InputDetLoc%GetValue( Value=X(ii), Label=This%InputLabel(ii)%GetValue() )
-            else
-              X(ii) = This%Parameters(ii)
-            end if
-          end do
-          Ordinate(1,i) = This%ComputeGFun( X, This%c )
-        end do
-
-      class default
-        call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
-    end select
+    allocate(Ordinate(1,1), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
+    allocate(X(This%NbParams), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='X', ProcName=ProcName, stat=StatLoc )
+    ii = 1
+    do ii = 1, This%NbParams
+      if ( len_trim(This%InputLabel(ii)%GetValue()) /= 0 ) then
+        call Input%GetValue( Value=X(ii), Label=This%InputLabel(ii)%GetValue() )
+      else
+        X(ii) = This%Parameters(ii)
+      end if
+    end do
+    Ordinate(1,1) = This%ComputeGFun( X, This%c )
 
     deallocate(X, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='X', ProcName=ProcName, stat=StatLoc )

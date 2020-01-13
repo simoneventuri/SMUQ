@@ -30,8 +30,6 @@ use Output_Class                                                  ,only:    Outp
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 
 implicit none
 
@@ -286,7 +284,7 @@ contains
   subroutine Run( This, Input, Output )
 
     class(TestSpill_Type), intent(inout)                              ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), intent(inout)                                  ::    Output
 
     character(*), parameter                                           ::    ProcName='ProcessInput'
@@ -299,77 +297,38 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
     character(:), allocatable                                         ::    VarC0D
-    type(InputDet_Type)                                               ::    InputLoc
     integer                                                           ::    NbTimes
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    select type (Input)
-      type is (InputDet_Type)
-        allocate(Ordinate(This%NbTimes*This%NbLocations,1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-        if ( len_trim(This%M_Dependency) /= 0 ) then
-          call Input%GetValue( Value=M, Label=This%M_Dependency )
-        else
-          M = This%M
-        end if
-        if ( len_trim(This%D_Dependency) /= 0 ) then
-          call Input%GetValue( Value=D, Label=This%D_Dependency )
-        else
-          D = This%D
-        end if
-        if ( len_trim(This%L_Dependency) /= 0 ) then
-          call Input%GetValue( Value=L, Label=This%L_Dependency )
-        else
-          L = This%L
-        end if
-        if ( len_trim(This%Tau_Dependency) /= 0 ) then
-          call Input%GetValue( Value=Tau, Label=This%Tau_Dependency )
-        else
-          Tau = This%Tau
-        end if
-        i = 1
-        do i = 1, This%NbLocations
-          call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time,                              &
-                                                                   Concentration=Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,1) )
-        end do
-        call Output%Construct( Values=Ordinate, Label=This%Label )
-      type is (InputStoch_Type)
-        allocate(Ordinate(This%NbTimes*This%NbLocations,Input%GetNbDegen()), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-        i = 1
-        do i = 1, This%NbLocations
-          ii = 1
-          do ii = 1, Input%GetNbDegen()
-            InputLoc = Input%GetDetInput(Num=ii)
-            if ( len_trim(This%M_Dependency) /= 0 ) then
-              call InputLoc%GetValue( Value=M, Label=This%M_Dependency )
-            else
-              M = This%M
-            end if
-            if ( len_trim(This%D_Dependency) /= 0 ) then
-              call InputLoc%GetValue( Value=D, Label=This%D_Dependency )
-            else
-              D = This%D
-            end if
-            if ( len_trim(This%L_Dependency) /= 0 ) then
-              call InputLoc%GetValue( Value=L, Label=This%L_Dependency )
-            else
-              L = This%L
-            end if
-            if ( len_trim(This%Tau_Dependency) /= 0 ) then
-              call InputLoc%GetValue( Value=Tau, Label=This%Tau_Dependency )
-            else
-              Tau = This%Tau
-            end if
-            call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time,                            &
-                                                                  Concentration=Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,ii) )
-          end do
-        end do
-        call Output%Construct( Values=Ordinate, Label=This%Label )
-      class default
-        call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
-    end select
+    allocate(Ordinate(This%NbTimes*This%NbLocations,1), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
+    if ( len_trim(This%M_Dependency) /= 0 ) then
+      call Input%GetValue( Value=M, Label=This%M_Dependency )
+    else
+      M = This%M
+    end if
+    if ( len_trim(This%D_Dependency) /= 0 ) then
+      call Input%GetValue( Value=D, Label=This%D_Dependency )
+    else
+      D = This%D
+    end if
+    if ( len_trim(This%L_Dependency) /= 0 ) then
+      call Input%GetValue( Value=L, Label=This%L_Dependency )
+    else
+      L = This%L
+    end if
+    if ( len_trim(This%Tau_Dependency) /= 0 ) then
+      call Input%GetValue( Value=Tau, Label=This%Tau_Dependency )
+    else
+      Tau = This%Tau
+    end if
+    i = 1
+    do i = 1, This%NbLocations
+      call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time,                              &
+                                                               Concentration=Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,1) )
+    end do
+    call Output%Construct( Values=Ordinate, Label=This%Label )
 
     deallocate(Ordinate, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )

@@ -29,7 +29,7 @@ use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SAMethod_Class                                                ,only:    SAMethod_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
@@ -494,7 +494,7 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     real(rkp), pointer, dimension(:,:)                                ::    VarR2DPtr=>null()
     type(ParamSpace_Type)                                             ::    ExtendedSampleSpace
-    type(InputDet_Type)                                               ::    Input
+    type(Input_Type)                                                  ::    Input
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii

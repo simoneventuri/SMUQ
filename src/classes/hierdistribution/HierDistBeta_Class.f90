@@ -25,7 +25,7 @@ use StatisticsRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use HierDistProb_Class                                            ,only:    HierDistProb_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use DistBeta_Class                                                ,only:    DistBeta_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 
@@ -214,7 +214,7 @@ contains
   subroutine Generate( This, Input, Distribution )
 
     class(HierDistBeta_Type), intent(in)                              ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
 
     character(*), parameter                                           ::    ProcName='Generate'

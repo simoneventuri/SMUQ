@@ -33,7 +33,7 @@ use MHProposalMethod_Factory_Class                                ,only:    MHPr
 use RandPseudo_Class                                              ,only:    RandPseudo_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistNorm_Class                                                ,only:    DistNorm_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                ,only:    Input_Type
 use MCMCMethod_Class
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
@@ -643,7 +643,7 @@ contains
     integer                                                           ::    NbClean
     character(:), allocatable                                         ::    Line
     logical                                                           ::    AcceptedFlag
-    type(InputDet_Type)                                               ::    Input
+    type(Input_Type)                                                  ::    Input
     real(rkp)                                                         ::    TransitionProb
     type(String_Type), allocatable, dimension(:)                      ::    Labels
     real(rkp), allocatable, dimension(:)                              ::    MiscValues

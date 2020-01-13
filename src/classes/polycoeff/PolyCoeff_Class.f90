@@ -22,7 +22,7 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 
 implicit none
 
@@ -98,22 +98,22 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetValue_PolyCoeff( This, Input )
     use Parameters_Library
-    import                                                            ::    InputDet_Type
+    import                                                            ::    Input_Type
     import                                                            ::    PolyCoeff_Type  
     real(rkp)                                                         ::    GetValue_PolyCoeff
     class(PolyCoeff_Type), intent(in)                                 ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetCharValue_PolyCoeff( This, Input )
     use Parameters_Library
-    import                                                            ::    InputDet_Type
+    import                                                            ::    Input_Type
     import                                                            ::    PolyCoeff_Type
     character(:), allocatable                                         ::    GetCharValue_PolyCoeff
     class(PolyCoeff_Type), intent(in)                                 ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 

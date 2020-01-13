@@ -24,7 +24,7 @@ use ArrayRoutines_Module
 use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use Response_Class                                                ,only:    Response_Type
 use Output_Class                                                  ,only:    Output_Type
 use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
@@ -200,7 +200,7 @@ contains
 
     class(LikelihoodProduct_Type), intent(inout)                      ::    This
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), intent(in)                       ::    Output
     logical, optional, intent(in)                                     ::    LogValue
 
@@ -259,7 +259,7 @@ contains
 
     class(LikelihoodProduct_Type), intent(inout)                      ::    This
     type(Response_Type), intent(in)                                   ::    Response
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), intent(in)                                     ::    Output
     logical, optional, intent(in)                                     ::    LogValue
 

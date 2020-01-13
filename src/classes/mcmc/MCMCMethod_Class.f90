@@ -24,7 +24,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use DistProb_Class                                                ,only:    DistProb_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 
 implicit none
 
@@ -128,10 +128,10 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine MCMCSamplingTarget( Input, Value, MiscValues )
     use Parameters_Library
-    import                                                            ::    InputDet_Type
+    import                                                            ::    Input_Type
     real(rkp), intent(out)                                            ::    Value
     real(rkp), allocatable, dimension(:), intent(inout)               ::    MiscValues
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

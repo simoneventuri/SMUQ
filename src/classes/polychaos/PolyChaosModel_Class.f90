@@ -38,8 +38,6 @@ use TransfSampleSpace_Class                                       ,only:    Tran
 use TransfSampleSpace_Factory_Class                               ,only:    TransfSampleSpace_Factory
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
@@ -509,7 +507,7 @@ contains
   subroutine Run_0D( This, Input, Output, Stat )
     
     class(PolyChaosModel_Type), intent(inout)                         ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat 
 
@@ -532,7 +530,7 @@ contains
   subroutine Run_0D_Single( This, Input, Output, Stat )
     
     class(PolyChaosModel_Type), intent(inout)                         ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), intent(inout)                                  ::    Output
     integer, optional, intent(out)                                    ::    Stat 
 
@@ -544,7 +542,7 @@ contains
     real(rkp), dimension(:), allocatable                              ::    Basis
     integer                                                           ::    NbCoefficients
     integer                                                           ::    StatLoc=0
-    type(InputDet_Type)                                               ::    InputDetLoc
+    type(Input_Type)                                                  ::    InputDetLoc
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(8), external                                                 ::    DDOT
     character(:), allocatable                                         ::    VarC0D
@@ -553,65 +551,29 @@ contains
 
     if ( Input%GetNbInputs() < This%NbDim ) call Error%Raise( Line='Incorrect input dimensionality', ProcName=ProcName )
 
-    select type (Input)
+    call Input%GetValue( Values=VarR1D, Labels=This%InputLabel )
 
-      type is (InputDet_Type)
+    allocate( Ordinate(This%NbCells,1), stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
 
-        call Input%GetValue( Values=VarR1D, Labels=This%InputLabel )
+    i = 1
+    do i = 1, This%NbCells
+      CoefficientsPointer => This%Cells(i)%GetCoefficientsPointer()
+      IndicesPointer => This%Cells(i)%GetIndicesPointer()
+      NbCoefficients = size(CoefficientsPointer,1)
+      Basis = This%Basis%Eval( X=This%TransformedSpace%Transform(X=VarR1D), Indices=IndicesPointer )
+      Ordinate(i,1) = dot_product(CoefficientsPointer, Basis )
+      nullify( IndicesPointer )
+      nullify( CoefficientsPointer )
+    end do
 
-        allocate( Ordinate(This%NbCells,1), stat=StatLoc )
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-    
-        i = 1
-        do i = 1, This%NbCells
-          CoefficientsPointer => This%Cells(i)%GetCoefficientsPointer()
-          IndicesPointer => This%Cells(i)%GetIndicesPointer()
-          NbCoefficients = size(CoefficientsPointer,1)
-          Basis = This%Basis%Eval( X=This%TransformedSpace%Transform(X=VarR1D), Indices=IndicesPointer )
-          Ordinate(i,1) = dot_product(CoefficientsPointer, Basis )
-          nullify( IndicesPointer )
-          nullify( CoefficientsPointer )
-        end do
+    deallocate(Basis, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Basis', ProcName=ProcName, stat=StatLoc )
 
-        deallocate(Basis, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Basis', ProcName=ProcName, stat=StatLoc )
+    call Output%Construct( Values=Ordinate, Label=This%OutputLabel )
 
-        call Output%Construct( Values=Ordinate, Label=This%OutputLabel )
-
-        deallocate(Ordinate, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-
-      type is (InputStoch_Type)
-
-        allocate( Ordinate(This%NbCells, Input%GetNbDegen()), stat=StatLoc )
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-    
-        i = 1
-        do i = 1, This%NbCells
-          CoefficientsPointer => This%Cells(i)%GetCoefficientsPointer()
-          IndicesPointer => This%Cells(i)%GetIndicesPointer()
-          NbCoefficients = size(CoefficientsPointer,1)
-          ii=1
-          do ii = 1, Input%GetNbDegen()
-            InputDetLoc = Input%GetDetInput(Num=ii)
-            call InputDetLoc%GetValue( Values=VarR1D, Labels=This%InputLabel )
-            Basis = This%Basis%Eval( X=This%TransformedSpace%Transform(X=VarR1D), Indices=IndicesPointer )
-            Ordinate(i,ii) = DDOT( NbCoefficients, CoefficientsPointer, 1, Basis, 1 )
-          end do
-        end do
-
-        deallocate(Basis, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Basis', ProcName=ProcName, stat=StatLoc )
-
-        call Output%Construct( Values=Ordinate, Label=This%OutputLabel )
-      
-        deallocate(Ordinate, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-
-      class default
-        call Error%Raise( Line='Type not recognized, update definitions', ProcName=ProcName )
-
-    end select
+    deallocate(Ordinate, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
 
     deallocate(VarR1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )

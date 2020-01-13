@@ -31,8 +31,6 @@ use ModelExtTemplate_Class                                        ,only:    Mode
 use Output_Class                                                  ,only:    Output_Type
 use PolyChaosModel_Class                                          ,only:    PolyChaosModel_Type
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 use List1DAllocChar_Class                                         ,only:    List1DAllocChar_Type
 
 implicit none
@@ -374,29 +372,21 @@ contains
   subroutine Run_0D( This, Input, Output, Stat )
 
     class(PCESM_Type), intent(inout)                                  ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
     character(*), parameter                                           ::    ProcName='Run_0D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i, ii
-    class(Input_Type), allocatable                                    ::    InputLoc
+    type(Input_Type)                                                  ::    InputLoc
 
     if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( 'Passed down an output array of incorrect length',                  &
                                                                                                                ProcName=ProcName )
 
     if ( This%NbFixedParams > 0 .or. This%NbTransformParams > 0 ) then
-      allocate(InputLoc, source=Input, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='InputLoc', ProcName=ProcName, stat=StatLoc )
-      select type (InputLoc)
-        type is ( InputDet_Type )
-          if ( This%NbFixedParams > 0 ) call InputLoc%Append( Values=This%FixedParamVals, Labels=This%FixedParamLabels )
-        type is ( InputStoch_Type )
-          if ( This%NbFixedParams > 0 ) call InputLoc%Append( Values=This%FixedParamVals, Labels=This%FixedParamLabels )
-        class default
-          call Error%Raise( Line='Update input type definitions', ProcName=ProcName )
-      end select
+      InputLoc = Input
+      if ( This%NbFixedParams > 0 ) call InputLoc%Append( Values=This%FixedParamVals, Labels=This%FixedParamLabels )
       if ( This%NbTransformParams > 0 ) then
         i = 1
         do i = 1, This%NbTransformParams
@@ -407,8 +397,6 @@ contains
       do i = 1, This%NbModels
         call This%PCEModels(i)%Run( Input=InputLoc, Output=Output(i) )
       end do
-      deallocate(InputLoc, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputLoc', ProcName=ProcName, stat=StatLoc )
     else
       i = 1
       do i = 1, This%NbModels

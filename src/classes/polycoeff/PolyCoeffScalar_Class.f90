@@ -20,11 +20,11 @@ module PolyCoeffScalar_Class
 
 use Input_Library
 use Parameters_Library
-    use StringRoutines_Module
+use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use PolyCoeff_Class                                               ,only:    PolyCoeff_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 
 implicit none
 
@@ -181,7 +181,7 @@ contains
     real(rkp)                                                         ::    GetValue
 
     class(PolyCoeffScalar_Type), intent(in)                           ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
 
     character(*), parameter                                           ::    ProcName='GetValue'
     integer                                                           ::    StatLoc=0
@@ -199,7 +199,7 @@ contains
     character(:), allocatable                                         ::    GetCharValue
 
     class(PolyCoeffScalar_Type), intent(in)                           ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
 
     character(*), parameter                                           ::    ProcName='GetCharValue'
     integer                                                           ::    StatLoc=0

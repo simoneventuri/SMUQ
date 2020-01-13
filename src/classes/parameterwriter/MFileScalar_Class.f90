@@ -31,7 +31,7 @@ use MParamScalar_Class                                            ,only:    MPar
 use MParamScalarContainer_Class                                   ,only:    MParamScalarContainer_Type
 use MParamScalar_Factory_Class                                    ,only:    MParamScalar_Factory
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 
 implicit none
 
@@ -251,7 +251,7 @@ contains
   subroutine WriteInput( This, Input, Template, ProcessedTemplate, File )
 
     class(MFileScalar_Type), intent(inout)                            ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(String_Type), dimension(:), intent(in)                       ::    Template
     type(String_Type), dimension(:), intent(inout)                    ::    ProcessedTemplate
     type(SMUQFile_Type), intent(in)                                   ::    File

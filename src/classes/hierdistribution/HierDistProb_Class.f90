@@ -22,7 +22,7 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use InputDet_Class                                                ,only:    InputDet_Type
+use Input_Class                                                   ,only:    Input_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 
 implicit none
@@ -94,9 +94,9 @@ abstract interface
   subroutine Generate_HierDistProb( This, Input, Distribution )
     import                                                            ::    HierDistProb_Type
     import                                                            ::    DistProb_Type
-    import                                                            ::    InputDet_Type
+    import                                                            ::    Input_Type
     class(HierDistProb_Type), intent(in)                              ::    This
-    type(InputDet_Type), intent(in)                                   ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

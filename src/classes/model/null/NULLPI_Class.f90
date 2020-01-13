@@ -28,8 +28,6 @@ use ParameterWriter_Class                                         ,only:    Para
 use OutputReader_Class                                            ,only:    OutputReader_Type
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
-use InputDet_Class                                                ,only:    InputDet_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
 
 implicit none
 
@@ -161,7 +159,7 @@ contains
   subroutine Run_0D( This, Input, Output, Stat )
 
     class(NULLPI_Type), intent(inout)                                 ::    This
-    class(Input_Type), intent(in)                                     ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
