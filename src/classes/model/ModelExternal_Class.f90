@@ -30,9 +30,7 @@ use ParameterWriter_Class                                         ,only:    Para
 use OutputReader_Class                                            ,only:    OutputReader_Type
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
-use Input_Class                                                   ,only:    Input_Type
-use InputStoch_Class                                              ,only:    InputStoch_Type
-
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 implicit none
 
 private
@@ -47,6 +45,9 @@ type, extends(Model_Type)                                             ::    Mode
   integer                                                             ::    NbSubModels
   integer                                                             ::    NbConcurrentEvaluations
   integer                                                             ::    NbConcurrentSubEvaluations
+  type(SMUQFile_Type)                                                 ::    BashLaunchFile
+  character(:), allocatable                                           ::    WorkDirectory
+  character(:), allocatable                                           ::    FullWorkDirectory
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -88,8 +89,7 @@ contains
 
     call This%SetDefaults()
 
-    call This%ParameterWriter%Reset()
-    call This%OutputReader%Reset()
+    call This%BashFile%Reset()
 
     if ( allocated(This%ParameterWriter) ) deallocate(This%ParameterWriter, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParameterWriter', ProcName=ProcName, stat=StatLoc )
@@ -122,7 +122,6 @@ contains
     This%NbConcurrentEvaluations = 1
     This%NbConcurrentSubEvaluations = 1
 
-
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -143,10 +142,10 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    WorkDirectoryLoc
     logical                                                           ::    Found
     integer                                                           ::    i
+    type(LinkedList0D_Type)                                           ::    Transcript
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -161,13 +160,11 @@ contains
     ParameterName = 'work_directory'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
     This%WorkDirectory = VarC0D
+
     This%FullWorkDirectory = PrefixLoc // This%WorkDirectory
+    call MakeDirectory( Path=This%FullWorkDirectory, Options='-p' )
 
     ParameterName = 'nb_concurrent_evaluations'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%NbConcurrentEvaluations = VarI0D
-
-    ParameterName = 'nb_concurrent_subevaluations'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%NbConcurrentEvaluations = VarI0D
 
@@ -176,21 +173,21 @@ contains
     This%NbSubModels = InputSection%GetNumberOfSubSections()
     nullify(InputSection)
 
+    ParameterName = 'nb_concurrent_subevaluations'
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    This%NbConcurrentEvaluations = This%NbSubModels
+    if ( Found ) This%NbConcurrentEvaluations = VarI0D
+
+    if ( This%NbConcurrentSubEvaluations == 0 ) call Error%Raise( 'Specified 0 number of concurrent submodel evaluations',        &
+                                                                                                               ProcName=ProcName )
+
     if ( This%NbConcurrentSubEvaluations > This%NbSubModels ) This%NbConcurrentSubEvaluations = This%NbSubModels
-
-    allocate(This%ParameterWriter(This%NbSubModels), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParameterWriter', ProcName=ProcName, stat=StatLoc )
-
-    allocate(This%OutputReader(This%NbSubModels), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OutputReader', ProcName=ProcName, stat=StatLoc )
 
     allocate(This%SubModelCaseDirectory(This%NbSubModels), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%SubModelCaseDirectory', ProcName=ProcName, stat=StatLoc )
 
     allocate(This%SubModelRunCommand(This%NbSubModels), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%SubModelRunCommand', ProcName=ProcName, stat=StatLoc )
-
-    call MakeDirectory( Path=This%FullWorkDirectory, Options='-p' )
 
     i = 1
     do i = 1, This%NbSubModels
@@ -204,24 +201,36 @@ contains
       call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
       This%SubModelRunCommand(i) = VarC0D
 
-      WorkDirectoryLoc = This%FullWorkDirectory // '/' // ConvertToString(Value=i)
-      DirectoryLoc = WorkDirectoryLoc // This%SubModelCaseDirectory(i)
-      call MakeDirectory( Path=DirectoryLoc, Options='-p' )
+      i = 1
+      do i = 1, This%NbConcurrentEvaluations
+        WorkDirectoryLoc = This%FullWorkDirectory // '/' // ConvertToString(Value=i) // This%SubModelCaseDirectory(i)
+        call MakeDirectory( Path=WorkDirectoryLoc, Options='-p' )
+        call system( 'cp -rf ' // PrefixLoc // This%SubModelCaseDirectory(i) // '/* ' // WorkDirectoryLoc )
+      end do
+    end do
 
-      call system( 'cp -rf ' // PrefixLoc // This%SubModelCaseDirectory(i) // '/* ' // DirectoryLoc // '/' )
+    allocate(This%ParameterWriter(This%NbConcurrentEvaluations), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParameterWriter', ProcName=ProcName, stat=StatLoc )
 
-      SubSectionName = 'parameter_writer'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call This%ParameterWriter%Construct( Input=InputSection, Prefix=WorkDirectoryLoc )
+    allocate(This%OutputReader(This%NbConcurrentEvaluations), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OutputReader', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, This%NbConcurrentEvaluations
+      WorkDirectoryLoc = This%FullWorkDirectory // '/' // ConvertToString(Value=i) 
+
+      SectionName = 'parameter_writer'
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call This%ParameterWriter(i)%Construct( Input=InputSection, Prefix=WorkDirectoryLoc )
       nullify( InputSection )
 
-      SubSectionName = 'output_reader'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call This%OutputReader%Construct( Input=InputSection, Prefix=WorkDirectoryLoc )
+      SectionName = 'output_reader'
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call This%OutputReader(i)%Construct( Input=InputSection, Prefix=WorkDirectoryLoc )
       nullify( InputSection )
     end do
 
-    This%NbOutputs = This%OutputReader(1)%GetNbOutputs() 
+    This%NbOutputs = This%OutputReader(1)%GetNbOutputs()
 
     This%Constructed = .true.
 
@@ -298,95 +307,156 @@ contains
     character(*), parameter                                           ::    ProcName='Run_0D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    StatRun=0
-    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
-    real(rkp), dimension(:,:), pointer                                ::    OrdinatePointer=>null()
-    real(rkp), dimension(:,:), pointer                                ::    OrdinateLocPointer=>null()
-    integer                                                           ::    NbDegen
-    integer                                                           ::    NbDegenLoc
-    integer                                                           ::    i, ii
-    type(InputDet_Type)                                               ::    InputLoc
-    type(Output_Type), allocatable, dimension(:)                      ::    OutputLoc
-    integer                                                           ::    NbOutputs
+    type(String_Type), allocatable, dimension(:)                      ::    Transcript
+    integer                                                           ::    i
+    integer                                                           ::    iLine
+    integer                                                           ::    iSubModel
+    character(:), allocatable                                         ::    Command
+    integer                                                           ::    NbCompletedSubModels
 
-    NbOutputs = This%OutputReader%GetNbOutputs()
+    if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( 'Passed down an output array of incorrect length',                  &
+                                                                                                               ProcName=ProcName )
 
-    if ( allocated(Output) ) then
-      if ( size(Output,1) /= NbOutputs ) then
-        deallocate(Output, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-      end if
-    end if
-    if ( .not. allocated(Output) ) then
-      allocate(Output(NbOutputs), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-    end if
+    Command = 'sh ' // This%BashFile%GetFullFile()
 
-    select type (Input)
+    call This%ParameterWriter%WriteInput( Input=Input )
 
-      type is (InputDet_Type)
-        call This%ParameterWriter%WriteInput( Input=Input )
+    allocate(Transcript(This%NbConcurrentSubEvaluations+2), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Transcript', ProcName=ProcName, stat=StatLoc )
+    Transcript(1) = '#!/bin/bash'
+    
+    NbCompletedSubModels = 0
 
-        call This%ModelExternalModel%Run( Stat=StatRun )
+    iSubModel = 1
+    do
+      iLine = 2
 
-        if ( present(Stat) ) Stat = StatRun
+      i = 1
+      do i = 1, This%NbConcurrentSubEvaluations
+        if ( iSubModel > This%NbSubModels ) exit
+        Transcript(iLine) = '( cd ' // This%FullWorkDirectory // '/1' // This%SubModelCaseDirectory(iSubModel)%GetValue() //      &
+                                                                   ' && ' // This%SubModelRunCommand(iSubModel)%GetValue() // ')&' 
+        iSubModel = iSubModel + 1
+        iLine = iLine + 1
+      end do
 
-        if ( StatRun == 0 ) call This%OutputReader%ReadOutput( Output=Output )
+      Transcript(iLine) = 'wait'
 
-      type is (InputStoch_Type)
-        allocate(OutputLoc(NbOutputs), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )
+      call This%BashFile%Export(Strings=Transcript(1:iLine))
+      call execute_command_line( Command=Command, Wait=.true. )
 
-        NbDegen = Input%GetNbDegen()
+      NbCompletedSubModels = min( This%NbSubModels, NbCompletedSubModels + This%NbCurrentSubEvaluations )
 
-        i = 1
-        do i = 1, NbDegen
-          InputLoc = Input%GetDetInput(Num=i)
-          call This%ParameterWriter%WriteInput( Input=InputLoc )
-          call This%ModelExternalModel%Run( Stat=StatRun )
-          if ( present(Stat) ) Stat = StatRun
+      if ( NbCompletedSubModels == This%NbSubModels ) exit
+    end do
 
-          if ( StatRun /= 0 ) exit
+    StatRun = 0
 
-          call This%OutputReader%ReadOutput( Output=OutputLoc )
-
-          if ( i == 1 ) then
-            ii = 1
-            do ii = 1, size(OutputLoc,1)
-              allocate(VarR2D(OutputLoc(ii)%GetNbNodes(),NbDegen*OutputLoc(ii)%GetNbDegen()), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-              VarR2D = Zero
-              call Output(ii)%Construct( Values=VarR2D, Label=OutputLoc(ii)%GetLabel() )
-              deallocate(VarR2D, stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-            end do
-          end if
-
-          ii = 1
-          do ii = 1, size(OutputLoc,1)
-            OrdinatePointer => Output(ii)%GetValuesPointer()
-            OrdinateLocPointer => OutputLoc(ii)%GetValuesPointer()
-            NbDegenLoc = OutputLoc(ii)%GetNbDegen()
-            OrdinatePointer(:,(i-1)*NbDegenLoc+1:i*NbDegenLoc) = OrdinateLocPointer(:,:)
-            nullify(OrdinatePointer)
-            nullify(OrdinateLocPointer)
-          end do
-        end do
-
-        deallocate(OutputLoc, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='OutputLoc', ProcName=ProcName, stat=StatLoc )
-
-      class default
-        call Error%Raise( Line='Update input class definitions', ProcName=ProcName )
-
-    end select
-
+    if ( StatRun == 0 ) call This%OutputReader%ReadOutput( Output=Output )
 
     if ( present(Stat) ) Stat = StatRun
 
-    if ( StatRun /= 0 .and. allocated(Output) ) then
-      deallocate(Output, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
-    end if
+    deallocate(Transcripts, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Transcripts', ProcName=ProcName, stat=StatLoc )
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Run_1D( This, Input, Output, Stat )
+
+    class(ModelExternal_Type), intent(inout)                          ::    This
+    type(Input_Type), dimension(:), intent(in)                        ::    Input
+    type(Output_Type), dimension(:,:), intent(inout)                  ::    Output
+    integer, dimension(:), optional, intent(inout)                    ::    Stat
+
+    character(*), parameter                                           ::    ProcName='Run_1D'
+    integer                                                           ::    StatLoc=0
+    integer, allocatable, dimension(:)                                ::    StatRun
+    integer                                                           ::    NbInputs
+    type(String_Type), allocatable, dimension(:)                      ::    Transcript
+    integer                                                           ::    i
+    integer                                                           ::    ii
+    integer                                                           ::    iLine
+    integer                                                           ::    iSubModel
+    integer                                                           ::    iInput
+    integer                                                           ::    NbCompletedSubModels
+    integer                                                           ::    NbCompletedInputs
+    character(:), allocatable                                         ::    Command
+
+    NbInputs = size(Input,1)
+
+    if ( size(Output,1) /= This%NbOutputs .or. size(Output,2) /= NbInputs )                                                       &
+                                       call Error%Raise( 'Passed an output array of incorrect dimensionality', ProcName=ProcName )
+
+    if ( size(Stat,1) /= NbInputs ) call Error%Raise( 'Passed a stat array of incorrect length', ProcName=ProcName )
+
+    Command = 'sh ' // This%BashFile%GetFullFile()
+
+    allocate(Transcript(This%NbConcurrentEvaluations*This%NbConcurrentSubEvaluations+2), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Transcript', ProcName=ProcName, stat=StatLoc )
+    Transcript(1) = '#!/bin/bash'
+
+    allocate(StatRun(This%NbConcurrentEvaluations), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='StatRun', ProcName=ProcName, stat=StatLoc )
+    StatRun = 0
+
+    NbCompletedSubModels = 0
+    NbCompletedInputs = 0
+
+    do
+      iLine = 2
+      iInput = NbCompletedInputs + 1
+
+      i = 1
+      do i = 1, This%NbConcurrentEvaluations
+        if ( iInput > NbInputs ) exit
+        iSubModel = NbCompletedSubModels + 1
+
+        if ( iSubModel == 1 ) call This%ParameterWriter(i)%WriteInput( Input=Input(iInput) )
+
+        ii = 1
+        do ii = 1, This%NbConcurrentSubEvaluations
+          if ( iSubModel > This%NbSubModels ) exit
+          Transcript(iLine) = '( cd ' // This%FullWorkDirectory // '/' // ConvertToString(Value=iInput) //                        &
+               This%SubModelCaseDirectory(iSubModel)%GetValue() // ' && ' // This%SubModelRunCommand(iSubModel)%GetValue() // ')&' 
+          iSubModel = iSubModel + 1
+          iLine = iLine + 1
+        end do
+
+        iInput = iInput + 1
+      end do
+
+      Transcript(iLine) = 'wait'
+
+      call This%BashFile%Export(Strings=Transcript(1:iLine))
+      call execute_command_line( Command=Command, Wait=.true. )
+
+      StatRun = 0
+
+      ii = 0
+      i = NbCompletedInputs + 1
+      do i = NbCompletedInputs + 1, min(NbInputs,NbCompletedInputs + This%NbConcurrentEvaluations)
+        ii = ii + 1
+        if ( StatRun(ii) == 0 ) call This%OutputReader%ReadOutput( Output=Output(:,i) )
+        if ( present(Stat) ) Stat(i) = StatRun(ii)
+      end do
+
+      NbCompletedSubModels = NbCompletedSubModels + This%NbConcurrentSubEvaluations
+
+      if ( iSubModel > This%NbSubModels ) then
+        NbCompletedSubModels = 0
+        NbCompletedInputs = min(NbInputs,NbCompletedInputs + This%NbConcurrentEvaluations)
+      end if
+
+      if ( NbCompletedInputs == NbInputs ) exit
+    end do
+
+    deallocate(Transcript, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Transcript', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(StatRun, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='StatRun', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -394,7 +464,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(ModelExternal_Type), intent(out)                                    ::    LHS
+    class(ModelExternal_Type), intent(out)                            ::    LHS
     class(Model_Type), intent(in)                                     ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
