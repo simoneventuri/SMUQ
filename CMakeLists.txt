@@ -121,11 +121,6 @@ if ( "${CMAKE_INSTALL_PREFIX}" STREQUAL "/usr/local")
   set( CMAKE_INSTALL_PREFIX "${SMUQ_SOURCE_DIR}" )
 endif()
 
-configure_file( "${PROJECT_SOURCE_DIR}/cmake/run-SMUQ.in" "${PROJECT_BINARY_DIR}/run-SMUQ.sh" @ONLY )
-install ( PROGRAMS "${PROJECT_BINARY_DIR}/run-SMUQ.sh"
-          DESTINATION ${CMAKE_INSTALL_BINDIR}
-        )
-
 install ( TARGETS smuqApp
           EXPORT smuqExport
           RUNTIME

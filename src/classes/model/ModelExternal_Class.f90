@@ -31,6 +31,7 @@ use OutputReader_Class                                            ,only:    Outp
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use ProgramDefs_Class                                             ,only:    ProgramDefs
 implicit none
 
 private
@@ -167,8 +168,9 @@ contains
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
     This%WorkDirectory = VarC0D
 
-    This%FullWorkDirectory = PrefixLoc // This%WorkDirectory
+    This%FullWorkDirectory = ProgramDefs%GetRunDir() // '/TMP_EXTERNAL_' // This%Label // '/' // This%WorkDirectory
     call MakeDirectory( Path=This%FullWorkDirectory, Options='-p' )
+    call execute_command_line( Command='rm -rf ' // This%FullWorkDirectory // '/*' )
 
     ParameterName = 'nb_concurrent_evaluations'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )

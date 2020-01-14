@@ -33,9 +33,8 @@ type                                                                  ::    Prog
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  integer                                                             ::    iProcess
-  integer                                                             ::    NbProcesses
   character(:), allocatable                                           ::    RunDir
+  character(:), allocatable                                           ::    SuppliedCaseDir
   character(:), allocatable                                           ::    CaseDir
   character(:), allocatable                                           ::    InputFilePath
   character(:), allocatable                                           ::    InputFilePrefix
@@ -43,23 +42,23 @@ type                                                                  ::    Prog
   character(:), allocatable                                           ::    OutputDir
   character(:), allocatable                                           ::    RestartDir
   character(:), allocatable                                           ::    LogDir
+  character(:), allocatable                                           ::    LogFilePath
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct                   =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
-  procedure, public                                                   ::    GetInput
+  procedure, public                                                   ::    GetSuppliedCaseDir
   procedure, public                                                   ::    GetCaseDir
   procedure, public                                                   ::    GetRunDir
+  procedure, public                                                   ::    GetLogDir
+  procedure, public                                                   ::    GetLogFilePath
+  procedure, public                                                   ::    GetOutputDir
+  procedure, public                                                   ::    GetRestartDir
   procedure, public                                                   ::    GetInputFilePath
   procedure, public                                                   ::    GetInputFilePrefix
   procedure, public                                                   ::    GetInputFileSuffix
-  procedure, public                                                   ::    GetOutputDir
-  procedure, public                                                   ::    GetRestartDir
-  procedure, public                                                   ::    GetNbProcesses
-  procedure, public                                                   ::    GetiProcess
-  procedure, private                                                  ::    WriteNbProcesses
   generic, public                                                     ::    assignment(=)               =>    Copy
   procedure, public                                                   ::    Copy
 end Type
@@ -109,16 +108,15 @@ contains
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-    This%iProcess = 0
-    This%NbProcesses = 0
-    This%RunDir = '<undefined>'
-    This%LogDir = '<undefined>'
-    This%CaseDir = '<undefined>'
-    This%InputFilePath = '<undefined>'
+    This%RunDir = ''
+    This%LogDir = ''
+    This%CaseDir = ''
+    This%SuppliedCaseDir = ''
+    This%InputFilePath = ''
     This%InputFilePrefix = '/input'
     This%InputFileSuffix = '/input.dat'
-    This%OutputDir = '<undefined>'
-    This%RestartDir = '<undefined>'
+    This%OutputDir = ''
+    This%RestartDir = ''
 
 
   end subroutine
@@ -136,7 +134,6 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructInput'
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    PrefixLoc
     logical                                                           ::    Found
 
@@ -146,107 +143,59 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    ParameterName = 'iprocess'
-    call Input%GetValue( VarI0D, ParameterName, Mandatory=.true. )
-    This%iProcess = VarI0D
+    This%RunDir = PrefixLoc
 
-    ParameterName = 'nbprocesses'
-    call Input%GetValue( VarI0D, ParameterName, Mandatory=.true. )
-    This%NbProcesses = VarI0D
+    ParameterName = 'log_directory'
+    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) then
+      This%LogDir = PrefixLoc // '/' // VarC0D
+    else
+      This%LogDir = PrefixLoc // '/log'
+    end if
 
-    ParameterName = 'rundir'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.true. )
-    This%RunDir = VarC0D
+    ParameterName = 'log_file_name'
+    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) then
+      This%LogFilePath = This%LogDir // '/' // VarC0D
+    else
+      This%LogFilePath = This%LogDir // '/log.dat'
+    end if
 
-    ParameterName = 'logdir'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.true. )
-    This%LogDir = VarC0D
+    ParameterName = 'output_directory'
+    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) then
+      This%OutputDir = PrefixLoc // '/' // VarC0D
+    else
+      This%OutputDir = PrefixLoc // '/output'
+    end if
 
-    ParameterName = 'casedir'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.true. )
-    This%CaseDir = VarC0D
+    ParameterName = 'restart_directory'
+    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) then
+      This%RestartDir = PrefixLoc // '/' // VarC0D
+    else
+      This%RestartDir = PrefixLoc // '/restart'
+    end if
+
+    ParameterName = 'case_directory'
+    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) then
+      This%CaseDir = PrefixLoc // '/' // VarC0D
+    else
+      This%CaseDir = PrefixLoc // '/case'
+    end if
 
     This%InputFilePath = This%CaseDir // This%InputFilePrefix // This%InputFileSuffix
 
-    ParameterName = 'outputdir'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.true. )
-    This%OutputDir = VarC0D
-
-    ParameterName = 'restartdir'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.true. )
-    This%RestartDir = VarC0D
+    ParameterName = 'case'
+    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
+    This%SuppliedCaseDir = VarC0D
 
     This%Constructed = .true.
 
     call This%WriteNbProcesses()
     
   end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
-
-    use StringRoutines_Module
-
-    type(InputSection_Type)                                           ::    GetInput
-
-    class(ProgramDefs_Type), intent(in)                               ::    This
-    character(*), intent(in)                                          ::    MainSectionName
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
-
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    character(:), allocatable                                         ::    SectionName
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
-
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
-
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-
-    call GetInput%AddParameter( Name='iprocess', Value=ConvertToString( Value=This%iProcess ) )
-    call GetInput%AddParameter( Name='nbprocesses', Value=ConvertToString( Value=This%NbProcesses ) )
-    call GetInput%AddParameter( Name='rundir', Value=This%RunDir )
-    call GetInput%AddParameter( Name='logdir', Value=This%LogDir )
-    call GetInput%AddParameter( Name='casedir', Value=This%CaseDir )
-    call GetInput%AddParameter( Name='outputdir', Value=This%OutputDir )
-    call GetInput%AddParameter( Name='restartdir', Value=This%RestartDir )
-    call GetInput%AddParameter( Name='logdir', Value=This%LogDir )
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  Subroutine WriteNbProcesses( This )
-    
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='WriteNbProcesses'
-    character(:), allocatable                                         ::    FileName
-    integer                                                           ::    UnitLoc
-    integer                                                           ::    IOLoc
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    if (This%iProcess == 1) then
-      FileName = This%OutputDir // "/NbProcesses.dat"
-      open(newunit=UnitLoc, FILE=FileName, status='replace', action='write' )
-        write(10,'(A)')        "# Number of Processes"
-        write(10,'(I0)')   This%NbProcesses
-      close(unit=10)
-    end if
-    
-  End Subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -330,6 +279,22 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  function GetSuppliedCaseDir( This )
+
+    character(:), allocatable                                         ::    GetSuppliedCaseDir
+
+    class(ProgramDefs_Type),intent(in)                                ::    This
+    
+    character(*), parameter                                           ::    ProcName='GetSuppliedCaseDir'
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    GetSuppliedCaseDir = This%SuppliedCaseDir
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetCaseDir( This )
 
     character(:), allocatable                                         ::    GetCaseDir
@@ -341,38 +306,6 @@ contains
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetCaseDir = This%CaseDir
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbProcesses( This )
-
-    integer                                                           ::    GetNbProcesses
-
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetNbProcesses'
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetNbProcesses = This%NbProcesses
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetiProcess( This )
-
-    integer                                                           ::    GetiProcess
-
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetiProcess'
-
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
-
-    GetiProcess = This%iProcess
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -394,6 +327,38 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  function GetLogDir( This )
+
+    character(:), allocatable                                         ::    GetLogDir
+
+    class(ProgramDefs_Type),intent(in)                                ::    This
+    
+    character(*), parameter                                           ::    ProcName='GetLogDir'
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    GetLogDir = This%LogDir
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetLogFilePath( This )
+
+    character(:), allocatable                                         ::    GetLogFilePath
+
+    class(ProgramDefs_Type),intent(in)                                ::    This
+    
+    character(*), parameter                                           ::    ProcName='GetLogFilePath'
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    GetLogFilePath = This%LogFilePath
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
     class(ProgramDefs_Type), intent(out)                              ::    LHS
@@ -408,11 +373,10 @@ contains
     LHS%Constructed = RHS%Constructed
     
     if ( RHS%Constructed ) then
-      LHS%iProcess = RHS%iProcess
-      LHS%NbProcesses = RHS%NbProcesses
       LHS%RunDir = RHS%RunDir
       LHS%LogDir = RHS%LogDir
       LHS%CaseDir = RHS%CaseDir
+      LHS%SuppliedCaseDir = RHS%SuppliedCaseDir
       LHS%InputFilePrefix = RHS%InputFilePrefix
       LHS%InputFileSuffix = RHS%InputFileSuffix
       LHS%InputFilePath = RHS%InputFilePath

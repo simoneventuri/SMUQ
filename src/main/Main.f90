@@ -3,6 +3,7 @@ program SMUQ
 use Input_Library
 use String_Library
 use Test_Module
+use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use ProgramDefs_Class                                             ,only:    ProgramDefs
@@ -17,28 +18,51 @@ type(Root_Type)                                                       ::    Root
 character(:), allocatable                                             ::    ParameterName
 character(:), allocatable                                             ::    SectionName
 character(:), allocatable                                             ::    FileName
-character(:), allocatable                                             ::    RunDir
-character(:), allocatable                                             ::    LogDir
+character(:), allocatable                                             ::    RunDirectory
 logical                                                               ::    Found
 logical                                                               ::    Debug_Loc = .false.
 character(:), allocatable                                             ::    SectionChain
 character(:), allocatable                                             ::    SMUQTask
+integer                                                               ::    StatLoc=0
+character(:), allocatable                                             ::    VarC0D
+logical                                                               ::    VarL0D
+
+
+StatLoc = GetCWD( RunDirectory )
+
+call Logger%Initialize( Status='REPLACE', Position='REWIND', Procedure='SMUQ', Indentation=2 )
 
 call CMDArgsSection%SetName( 'cmdargs' )
 call CMDArgsSection%AddCommandLineArguments()
-call CMDArgsSection%GetValue( Value=LogDir, ParameterName='logdir', Mandatory=.true. )
 
-FileName = LogDir // '/runlog.log'
-call Logger%Initialize( FileName=FileName,  &
-            Status          =       'REPLACE',                                                   &
-            Position        =       'REWIND',                                                    &
-            Procedure       =       'SurrogateModeling',                                         &
-            Indentation     =       2                                                            )
+call ProgramDefs%Construct( Input=CMDArgsSection, Prefix=RunDirectory )
 
-call ProgramDefs%Construct( Input=CMDArgsSection )
+call Logger%Initialize( FileName=ProgramDefs%GetLogFilePath(), Status='REPLACE', Position='REWIND', Procedure='SMUQ'              &
+                                                                                                                 , Indentation=2 )
+
+call MakeDirectory( Path=ProgramDefs%GetOutputDir(), Options='-p' )
+call execute_command_line( Command='rm -rf ' // ProgramDefs%GetOutputDir() // '/*' )
+call MakeDirectory( Path=ProgramDefs%GetLogDir(), Options='-p' )
+call execute_command_line( Command='rm -rf ' // ProgramDefs%GetLogDir() // '/*' )
+call MakeDirectory( Path=ProgramDefs%GetRestartDir(), Options='-p' )
+call execute_command_line( Command='rm -rf ' // ProgramDefs%GetRestartDir() // '/*' )
+call MakeDirectory( Path=ProgramDefs%GetCaseDir(), Options='-p' )
+
+VarC0D = ProgramDefs%GetSuppliedCaseDir()
+if ( len_trim(VarC0D) /= 0 ) then
+  FileName = VarC0D // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
+  inquire( File=FileName, Exist=VarL0D )
+  if ( .not. VarL0D ) call Error%Raise( 'Supplied an incompatible external case or it may not exist', ProcName=ProcName )
+  call execute_command_line( Command='rm -rf ' // ProgramDefs%GetCaseDir() // '/*' )
+  call execute_command_line( Command='cp -rf ' VarC0D // '/* ' // ProgramDefs%GetCaseDir() )
+else
+  FileName = ProgramDefs%GetCaseDir() // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
+  inquire( File=FileName, Exist=VarL0D )
+  if ( .not. VarL0D ) call Error%Raise( 'Did not find the case directory in the run directory and no external alternative was ' //&
+                                        'supplied', ProcName=ProcName )
+end if
 
 FileName = ProgramDefs%GetInputFilePath()
-
 call Input%Read( FileName=FileName )
 
 call Input%Write( Logger=Logger )
@@ -56,7 +80,7 @@ select case ( LowerCase(SMUQTask) )
   case('test')
     call Test( Input=Input, Prefix=ProgramDefs%GetCaseDir() )
   case default
-    call Error%Raise( Line='Specified SMUQTask (name of main input section) not recognized' )
+    call Error%Raise( Line='Specified task (name of main input section) not recognized' )
 end select
 
 end program
