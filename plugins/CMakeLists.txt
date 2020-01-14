@@ -1,7 +1,0 @@
-add_subdirectory ( factory )
-add_subdirectory ( genpi )
-add_subdirectory ( patopi )
-add_subdirectory ( tfun )
-add_subdirectory ( smd )
-add_subdirectory ( pcesm )
-add_subdirectory ( null )
