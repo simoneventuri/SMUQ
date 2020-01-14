@@ -542,6 +542,9 @@ contains
     NbOutputs = size(Responses,1)
     NbDim = SampleSpace%GetNbDim()
 
+    allocate(Outputs(NbOutputs), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
     allocate(NbCellsOutput(NbOutputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc )
 
@@ -723,8 +726,6 @@ contains
               write(*,'(A)') Line
             end if
             StatLoc = 0
-            if ( allocated(Outputs) ) deallocate(Outputs, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
           else
             This%ParamSampleRan(i) = .true.
 
@@ -922,6 +923,9 @@ contains
     end do
 
     This%ModelRunCounter = 0
+
+    deallocate(Outputs, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
 
     deallocate(This%ParamRecord, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )

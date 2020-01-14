@@ -455,6 +455,10 @@ contains
     type(Input_Type)                                                  ::    Input
     integer                                                           ::    ParamRecordLength
 
+    NbOutputs = size(Responses,1)
+    allocate(Outputs(NbOutputs), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
     NbDim = SampleSpace%GetNbDim()
@@ -549,12 +553,9 @@ contains
               write(*,'(A)') Line
             end if
             StatLoc = 0
-            if ( allocated(Outputs) ) deallocate(Outputs, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
           else
             ! Binning outputs
             This%ParamSampleRan(i) = .true.
-            NbOutputs = size(Outputs,1)
 
             ii = 1
             do ii = 1, This%NbHistograms
@@ -648,6 +649,9 @@ contains
 
     deallocate(This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(Outputs, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
 
     This%ModelRunCounter = 0
 

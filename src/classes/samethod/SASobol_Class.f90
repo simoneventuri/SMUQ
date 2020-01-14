@@ -523,6 +523,9 @@ contains
     NbDim = SampleSpace%GetNbDim()
     SilentLoc = This%Silent
 
+    allocate(Outputs(NbResponses), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
     allocate(Delta(NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Delta', ProcName=ProcName, stat=StatLoc )
     Delta = Zero
@@ -674,8 +677,6 @@ contains
                 write(*,'(A)') Line
               end if
               StatLoc = 0
-              if ( allocated(Outputs) ) deallocate(Outputs, stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
               if ( ii == 1 ) exit
             else
               SubSampleRan(ii) = .true.

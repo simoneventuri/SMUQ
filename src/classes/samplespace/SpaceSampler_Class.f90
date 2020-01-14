@@ -56,6 +56,7 @@ contains
   generic, public                                                     ::    Enrich                  =>    EnrichSpace
   procedure, private                                                  ::    EnrichSpace
   procedure, public                                                   ::    DrawMVarNormal
+  procedure, public                                                   ::    GetNbSamples
   procedure, public                                                   ::    IsConstructed
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
@@ -480,6 +481,21 @@ contains
 
     deallocate( CovLoc, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='CovLoc', ProcName=ProcName, stat=StatLoc )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetNbSamples( This )
+
+    integer                                                           ::    GetNbSamples
+
+    class(SpaceSampler_Type), intent(in)                              ::    This
+
+    character(*), parameter                                           ::    ProcName='GetNbSamples'
+    integer                                                           ::    StatLoc=0
+
+    GetNbSamples = This%Sampler%GetNbSamples()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

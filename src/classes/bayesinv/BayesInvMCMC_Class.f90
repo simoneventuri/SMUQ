@@ -270,6 +270,7 @@ contains
     integer                                                           ::    i
     type(Output_Type), allocatable, dimension(:)                      ::    Output
     type(Output_Type), allocatable, dimension(:,:)                    ::    HierOutput
+    integer, allocatable, dimension(:)                                ::    HierRunStat
     real(rkp), allocatable, dimension(:,:)                            ::    HierSamples
     real(rkp), allocatable, dimension(:)                              ::    HierSamplesRealization
     real(rkp), allocatable, dimension(:)                              ::    OrigInputValues
@@ -333,6 +334,9 @@ contains
     end do
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
+
+    allocate(Output(ModelInterface%GetNbResponses()), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
 
     if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/posterior_sampler'
 
@@ -436,7 +440,6 @@ contains
         character(*), parameter                                           ::    ProcName='MCMCPosterior'
         real(rkp)                                                         ::    Prior
         type(Input_Type), allocatable, dimension(:)                       ::    HierInput
-        integer                                                           ::    RunStat
         real(rkp)                                                         ::    Likelihood
         integer                                                           ::    iLoc
         integer                                                           ::    NbHierSamples
@@ -470,6 +473,31 @@ contains
           HierSamples = This%HierarchicalSampler%Draw( SampleSpace=ParamSpaceRealization )
           NbHierSamples = size(HierSamples,2)
 
+          if ( allocated(HierOutput) ) then
+            if ( size(HierOutput,2) /= NbHierSamples .or. size(HierOutput,1) /= ModelInterface%GetNbResponses() ) then
+              deallocate(HierOutput, stat=StatLoc)
+              if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierOutput', ProcName=ProcName, stat=StatLoc )
+            end if
+          end if
+
+          if ( .not. allocated(HierOutput) ) then
+            allocate(HierOutput(ModelInterface%GetNbResponses(),NbHierSamples), stat=StatLoc)
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='HierOutput', ProcName=ProcName, stat=StatLoc )
+          end if
+
+          if ( allocated(HierRunStat) ) then
+            if ( size(HierRunStat,1) /= NbHierSamples ) then
+              deallocate(HierRunStat, stat=StatLoc)
+              if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierRunStat', ProcName=ProcName, stat=StatLoc )
+            end if
+          end if
+
+          if ( .not. allocated(HierRunStat) ) then
+            allocate(HierRunStat(NbHierSamples), stat=StatLoc)
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='HierRunStat', ProcName=ProcName, stat=StatLoc )
+          end if
+          HierRunStat = 1
+
           HierSamplesRealization(1:NbDimOrig) = OrigInputValues
 
           allocate(HierInput(NbHierSamples), stat=StatLoc)
@@ -481,16 +509,17 @@ contains
             call HierInput(iLoc)%Construct( Input=HierSamplesRealization, Labels=Labels )
           end do
 
-          call ModelInterface%Run( Input=HierInput, Output=HierOutput, Stat=RunStat )
+          call ModelInterface%Run( Input=HierInput, Output=HierOutput, Stat=HierRunStat )
 
-          if ( RunStat == 0 ) then
+          if ( count(HierRunStat == 0) >= ceiling(0.75_rkp*real(NbHierSamples,rkp)) ) then
             Likelihood = Zero
             iLoc = 1
             do iLoc = 1, NbHierSamples
+              if ( HierRunStat(i) /= 0 ) cycle
               Likelihood = Likelihood + LikelihoodFunction%Evaluate( Responses=Responses, Input=HierInput(iLoc),                  &
                                                                                                        Output=HierOutput(:,iLoc) )
             end do
-            Likelihood = Likelihood / real(NbHierSamples,rkp)
+            Likelihood = Likelihood / real(count(HierRunStat == 0),rkp)
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
           else
