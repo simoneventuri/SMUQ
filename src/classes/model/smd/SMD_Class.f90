@@ -38,6 +38,7 @@ private
 public                                                                ::    SMD_Type
 
 type, extends(ModelInternal_Type)                                     ::    SMD_Type
+  character(:), allocatable                                           ::    OutputLabel
   real(rkp), dimension(2)                                             ::    IC=Zero
   real(rkp), allocatable, dimension(:)                                ::    Abscissa
   real(rkp)                                                           ::    RTOL=1.0d-6
@@ -105,6 +106,7 @@ contains
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
     This%Label = 'smd'
+    This%OutputLabel = 'smd'
     This%IC = Zero
     This%RTOL = 1.0d-6
     This%ATOL = 1.0d-10
@@ -150,6 +152,10 @@ contains
     ParameterName = 'label'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
     This%Label = VarC0D
+
+    ParameterName = 'output_label'
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%OutputLabel = VarC0D
 
     ParameterName = 'silent'
     call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -262,6 +268,7 @@ contains
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
     
     call GetInput%AddParameter( Name='label', Value=This%Label )
+    call GetInput%AddParameter( Name='output_label', Value=This%Label )
 
     SectionName='parameters'
     call GetInput%AddSection( SectionName=SectionName )
@@ -400,7 +407,7 @@ contains
       if ( RunStatLoc /= 0 ) exit
     end do
 
-    call Output(1)%Construct( Values=Ordinate, Label=This%Label )
+    call Output(1)%Construct( Values=Ordinate, Label=This%OutputLabel )
 
     deallocate(IWORK, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='IWORK', ProcName=ProcName, stat=StatLoc )
@@ -446,6 +453,7 @@ contains
         LHS%Constructed = RHS%Constructed
         if( RHS%Constructed ) then
           LHS%Label = RHS%Label
+          LHS%OutputLabel = RHS%OutputLabel
           LHS%M = RHS%M
           LHS%K = RHS%K
           LHS%C = RHS%C

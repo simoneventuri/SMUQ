@@ -709,6 +709,7 @@ contains
         if ( .not. SilentLoc ) then
           Line = 'Running Samples'
           write(*,'(A)') Line
+          write(*,*)
         end if
 
         i = This%ParamSampleStep
@@ -800,6 +801,7 @@ contains
         if ( .not. SilentLoc ) then
           Line = 'Computing PCE coefficients for each node'
           write(*,'(A)') Line
+          write(*,*)
         end if
 
         i = 1

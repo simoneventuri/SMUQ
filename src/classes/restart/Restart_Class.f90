@@ -118,7 +118,6 @@ contains
     integer                                                           ::    UnitLoc=0
     character(:), allocatable                                         ::    VarC0D
 
-
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
@@ -128,8 +127,7 @@ contains
 
     This%Prefix = Prefix
 
-    VarC0D = This%Prefix // ProgramDefs%GetInputFilePrefix()
-    call MakeDirectory( Path=VarC0D, Options='-p' )
+    call CopyDirectory( Source=ProgramDefs%GetCaseDir(), Destination=This%Prefix, ContentsOnly=.true. )
 
     call This%Input%AddSection( Section=Input )
 

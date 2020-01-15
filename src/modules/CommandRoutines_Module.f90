@@ -62,7 +62,7 @@ contains
     ContentsOnlyLoc = .false.
     if ( present(ContentsOnly) ) ContentsOnlyLoc = ContentsOnly
 
-    CommandLine = 'cp -rf ' // trim(adjustl(Source))
+    CommandLine = 'cp -rf ' // trim(adjustl(Source)) // '/'
     if ( ContentsOnlyLoc ) CommandLine = CommandLine // '/*'
     CommandLine = CommandLine // ' ' // trim(adjustl(Destination))
 

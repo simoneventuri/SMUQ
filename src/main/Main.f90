@@ -24,7 +24,6 @@ character(:), allocatable                                             ::    File
 character(:), allocatable                                             ::    RunDirectory
 character(:), allocatable                                             ::    SectionChain
 character(:), allocatable                                             ::    SMUQTask
-character(:), allocatable                                             ::    VarC0D
 logical                                                               ::    VarL0D
 
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -43,6 +42,17 @@ call ProgramDefs%Construct( Input=CMDArgsSection, Prefix=RunDirectory )
 !!--------------------------------------------------------------------------------------------------------------------------------                                                                             , 
 !! Setting up run environment
 !!--------------------------------------------------------------------------------------------------------------------------------
+if ( len_trim(ProgramDefs%GetSuppliedCaseDir()) /= 0 ) then
+  FileName = ProgramDefs%GetSuppliedCaseDir() // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
+  inquire( File=FileName, Exist=VarL0D )
+  if ( .not. VarL0D ) call Error%Raise( 'Supplied an incompatible external case or it may not exist', ProcName=ProcName )
+else
+  FileName = ProgramDefs%GetCaseDir() // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
+  inquire( File=FileName, Exist=VarL0D )
+  if ( .not. VarL0D ) call Error%Raise( 'Did not find the case directory in the run directory and no external alternative was ' //&
+                                        'supplied', ProcName=ProcName )
+end if
+
 call MakeDirectory( Path=ProgramDefs%GetOutputDir(), Options='-p' )
 call RemoveDirectory( Path=ProgramDefs%GetOutputDir(), ContentsOnly=.true. )
 
@@ -54,18 +64,9 @@ call RemoveDirectory( Path=ProgramDefs%GetRestartDir(), ContentsOnly=.true. )
 
 call MakeDirectory( Path=ProgramDefs%GetCaseDir(), Options='-p' )
 
-VarC0D = ProgramDefs%GetSuppliedCaseDir()
-if ( len_trim(VarC0D) /= 0 ) then
-  FileName = VarC0D // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
-  inquire( File=FileName, Exist=VarL0D )
-  if ( .not. VarL0D ) call Error%Raise( 'Supplied an incompatible external case or it may not exist', ProcName=ProcName )
+if ( len_trim(ProgramDefs%GetSuppliedCaseDir()) /= 0 ) then
   call RemoveDirectory( Path=ProgramDefs%GetCaseDir(), ContentsOnly=.true. )
-  call CopyDirectory( Source=VarC0D, Destination=ProgramDefs%GetCaseDir(), ContentsOnly=.true. )
-else
-  FileName = ProgramDefs%GetCaseDir() // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
-  inquire( File=FileName, Exist=VarL0D )
-  if ( .not. VarL0D ) call Error%Raise( 'Did not find the case directory in the run directory and no external alternative was ' //&
-                                        'supplied', ProcName=ProcName )
+  call CopyDirectory( Source=ProgramDefs%GetSuppliedCaseDir(), Destination=ProgramDefs%GetCaseDir(), ContentsOnly=.true. )
 end if
 
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -91,9 +92,8 @@ select case ( LowerCase(SMUQTask) )
   case('main')
     SectionChain = 'main'
     call Root%Construct( Input=Input, SectionChain=SectionChain, Prefix=ProgramDefs%GetCaseDir() )
-    call CopyDirectory( Source=ProgramDefs%GetCaseDir(), Destination=ProgramDefs%GetRestartDir(), ContentsOnly=.true. )
     call RestartUtility%Construct( Input=Root%GetInput(MainSectionName='main', Prefix=ProgramDefs%GetRestartDir(),                &
-                                                      Directory=ProgramDefs%GetRestartDir()), Prefix=ProgramDefs%GetRestartDir() )
+                                                                          Directory='/main'), Prefix=ProgramDefs%GetRestartDir() )
     call Root%Run()   
   case('test')
     call Test( Input=Input, Prefix=ProgramDefs%GetCaseDir() )
