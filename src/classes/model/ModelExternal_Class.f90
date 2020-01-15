@@ -370,7 +370,7 @@ contains
           Line = '  Evaluation ' // ConvertToString(Value=iRun) // ' : Input ' // ConvertToString(Value=1) // ' Submodel '        &
                                                                                                      // ConvertToString(iSubModel)
           write(*,'(A)') Line
-          Transcript(iLine) = 'echo "  Initializing evaluation ' // ConvertToString(Value=iRun) // '"'
+          Transcript(iLine) = 'echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Initializing"'
           iLine = iLine + 1
         end if
 
@@ -379,7 +379,7 @@ contains
         iLine = iLine + 1
         Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel)%GetValue() // ' \ '
         if ( .not. This%Silent ) then
-          Transcript(iLine) = ' && echo "  Evaluation ' // ConvertToString(Value=iRun) // ' Complete" \ '
+          Transcript(iLine) = ' && echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
           iLine = iLine + 1
         end if
 
@@ -506,7 +506,7 @@ contains
             Line = '  Evaluation ' // ConvertToString(Value=iRun) // ' : Input ' // ConvertToString(Value=iInput) // ' Submodel ' &
                                                                                                      // ConvertToString(iSubModel)
             write(*,'(A)') Line
-            Transcript(iLine) = 'echo "  Initializing evaluation ' // ConvertToString(Value=iRun) // '"'
+            Transcript(iLine) = 'echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Initializing"'
             iLine = iLine + 1
           end if
 
@@ -517,7 +517,7 @@ contains
           iLine = iLine + 1
 
           if ( .not. This%Silent ) then
-            Transcript(iLine) = ' && echo "  Evaluation ' // ConvertToString(Value=iRun) // ' Complete" \ '
+            Transcript(iLine) = ' && echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
             iLine = iLine + 1
           end if
 

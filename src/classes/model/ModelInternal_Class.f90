@@ -67,8 +67,8 @@ contains
 
     if ( .not. This%Silent ) then
       write(*,*)
-      Line = 'Scheduling ' // ConvertToString(Value=NbInputs) // ' inputs with' // ConvertToString(Value=NbSubModels) //          &
-                                      'submodels for a total of ' // ConvertToString(Value=NbInputs*NbSubModels) // ' evaluations'
+      Line = 'Scheduling ' // ConvertToString(Value=NbInputs) // ' inputs with ' // ConvertToString(Value=NbSubModels) //         &
+                                     ' submodels for a total of ' // ConvertToString(Value=NbInputs*NbSubModels) // ' evaluations'
       write(*,'(A)') Line
       Line = '  Number of concurrent input evaluations : 1'
       write(*,'(A)') Line
@@ -81,12 +81,12 @@ contains
       if ( .not. This%Silent ) then
         Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Input ' // ConvertToString(Value=i) // ' Submodel 1'
         write(*,'(A)') Line
-        Line = '  Initializing evaluation ' // ConvertToString(Value=i)
+        Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Initializing'
         write(*,'(A)') Line
       end if
       call This%Run(Input=Input(i), Output=Output(:,i), Stat=StatLoc )
       if ( .not. This%Silent ) then
-        Line = '  Evaluation ' // ConvertToString(Value=i) // ' Complete'
+        Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Complete'
         write(*,'(A)') Line
       end if
       if ( present(Stat) ) Stat(i) = StatLoc

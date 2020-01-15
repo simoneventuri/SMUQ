@@ -604,7 +604,6 @@ contains
           Line = 'All cells converged'
           write(*,'(A)') '' 
           write(*,'(A)') Line
-          write(*,'(A)') '' 
         end if
         exit
       end if
@@ -645,6 +644,11 @@ contains
       !***************************************************************************************************************************
       ! Running samples
       if ( .not. This%SamplesRan ) then
+        if ( .not. SilentLoc ) then
+          Line = 'Running Samples'
+          write(*,'(A)') Line
+          write(*,*) 
+        end if
         i = This%ParamSampleStep
         do
           i = i + 1
@@ -653,7 +657,7 @@ contains
           SubSampleRan = .false.
 
           if ( .not. SilentLoc ) then
-            Line = 'Running SubSamples of Sample #' // ConvertToString(Value=ParamRecordLength+i)
+            Line = '  Running SubSamples of Sample #' // ConvertToString(Value=ParamRecordLength+i)
             write(*,'(A)') Line
           end if
 
@@ -664,7 +668,8 @@ contains
 
             This%ModelRunCounter = This%ModelRunCounter + 1
             if ( .not. SilentLoc ) then
-              Line = '  Model Run #' // ConvertToString(Value=This%ModelRunCounter) // ', SubSample #' //ConvertToString(Value=ii)
+              Line = '    Model Run #' // ConvertToString(Value=This%ModelRunCounter) // ', SubSample #' //                       &
+                                                                                                         ConvertToString(Value=ii)
               write(*,'(A)') Line
             end if
 
@@ -673,7 +678,7 @@ contains
 
             if ( StatLoc /= 0 ) then
               if ( .not. SilentLoc ) then
-                Line = '  Model Run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
+                Line = '    Model Run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
                 write(*,'(A)') Line
               end if
               StatLoc = 0
@@ -697,7 +702,7 @@ contains
             ii = 1
             do ii = 1, This%NbCells
               call This%Cells(ii)%UpdateEstimators( OutputA=SubSampleOutput(1,ii) , OutputAB=SubSampleOutput(2:,ii),              &
-                                                                                             ABRan=SubSampleRan(2:), Delta=Delta )
+                                                                                                          ABRan=SubSampleRan(2:) )
             end do
           end if
 
@@ -764,10 +769,10 @@ contains
     end do
 
     if ( StepExceededFlag ) then
+      write(*,'(A)') Line
       Line = 'Maximum sampling step exceeded'
       if ( This%ModelRunCounter == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',  &
                                                                                                                ProcName=ProcName )
-      write(*,'(A)') Line
     end if
 
     if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, Responses=Responses )
@@ -1295,21 +1300,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine UpdateEstimators_Cell( This, OutputA, OutputAB, ABRan, Delta )
+  subroutine UpdateEstimators_Cell( This, OutputA, OutputAB, ABRan )
 
     class(Cell_Type), intent(inout)                                   ::    This
     real(rkp), intent(in)                                             ::    OutputA
     real(rkp), dimension(:), intent(in)                               ::    OutputAB
     logical, dimension(:), intent(in)                                 ::    ABRan
-    real(rkp), dimension(:), intent(inout)                            ::    Delta
 
     character(*), parameter                                           ::    ProcName='UpdateEstimators_Cell'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbDim
     real(rkp)                                                         ::    Variance
     integer                                                           ::    i
-
-    Delta = This%GetSt()
 
     NbDim = size(This%StEstimator,1)
 
@@ -1323,8 +1325,6 @@ contains
         This%StEstimatorNbSamples(i) = This%StEstimatorNbSamples(i) + 1
       end if
     end do
-
-    Delta = Delta - This%GetSt()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

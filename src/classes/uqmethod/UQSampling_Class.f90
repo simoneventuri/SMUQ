@@ -532,6 +532,13 @@ contains
       !***************************************************************************************************************************
       ! Running samples
       if ( .not. This%SamplesRan ) then
+
+        if ( .not. SilentLoc ) then
+          Line = 'Running Samples'
+          write(*,'(A)') Line
+          write(*,*)
+        end if
+
         i = This%ParamSampleStep
         do
           i = i + 1
@@ -539,7 +546,7 @@ contains
           This%ModelRunCounter = This%ModelRunCounter + 1
 
           if ( .not. SilentLoc ) then
-            Line = 'Model run #' // ConvertToString(Value=This%ModelRunCounter)
+            Line = '  Model run #' // ConvertToString(Value=This%ModelRunCounter)
             write(*,'(A)') Line
           end if
 
@@ -549,7 +556,7 @@ contains
 
           if ( StatLoc /= 0 ) then
             if ( .not. SilentLoc ) then
-              Line = 'Model run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
+              Line = '    Model run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
               write(*,'(A)') Line
             end if
             StatLoc = 0
@@ -638,7 +645,6 @@ contains
       Line = 'Maximum sampling step exceeded'
       if ( This%ModelRunCounter == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',  &
                                                                                                                ProcName=ProcName )
-      write(*,'(A)') ''  
       write(*,'(A)') Line
     end if
 
