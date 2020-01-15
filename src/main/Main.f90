@@ -28,27 +28,20 @@ character(:), allocatable                                             ::    VarC
 logical                                                               ::    VarL0D
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-! Getting Running DIrectory
+!! Getting Running DIrectory
 !!--------------------------------------------------------------------------------------------------------------------------------
-StatLoc = GetCWD( RunDirectory )
+call GetCurrentDirectoryPath( Path=RunDirectory )
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-! Reading in command line arguments
+!! Reading in command line arguments
 !!--------------------------------------------------------------------------------------------------------------------------------
-call Logger%Initialize( Status='REPLACE', Position='REWIND', Procedure='SMUQ', Indentation=2 )
-
 call CMDArgsSection%SetName( 'cmdargs' )
 call CMDArgsSection%AddCommandLineArguments()
 
 call ProgramDefs%Construct( Input=CMDArgsSection, Prefix=RunDirectory )
-!!--------------------------------------------------------------------------------------------------------------------------------
-! Initializing logger with log file
-!!--------------------------------------------------------------------------------------------------------------------------------
-call Logger%Initialize( FileName=ProgramDefs%GetLogFilePath(), Status='REPLACE', Position='REWIND', Procedure='SMUQ',             &
-                                                                                                                   Indentation=2 )
        
 !!--------------------------------------------------------------------------------------------------------------------------------                                                                             , 
-! Setting up run environment
+!! Setting up run environment
 !!--------------------------------------------------------------------------------------------------------------------------------
 call MakeDirectory( Path=ProgramDefs%GetOutputDir(), Options='-p' )
 call RemoveDirectory( Path=ProgramDefs%GetOutputDir(), ContentsOnly=.true. )
@@ -76,9 +69,14 @@ else
 end if
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-! Reading in input
+!! Initializing logger with log file
 !!--------------------------------------------------------------------------------------------------------------------------------
+call Logger%Initialize( FileName=ProgramDefs%GetLogFilePath(), Status='REPLACE', Position='REWIND', Procedure='SMUQ',             &
+                                                                                                                   Indentation=2 )
 
+!!--------------------------------------------------------------------------------------------------------------------------------
+!! Reading in input
+!!--------------------------------------------------------------------------------------------------------------------------------
 FileName = ProgramDefs%GetInputFilePath()
 call Input%Read( FileName=FileName )
 
@@ -87,7 +85,7 @@ call Input%Write( Logger=Logger )
 SMUQTask = Input%GetName()
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-! Constructing from input and running analysis
+!! Constructing from input and running analysis
 !!--------------------------------------------------------------------------------------------------------------------------------
 select case ( LowerCase(SMUQTask) )
   case('main')

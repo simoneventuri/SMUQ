@@ -811,6 +811,12 @@ contains
       !***************************************************************************************************************************
       ! Running samples
       if ( .not. This%SamplesRan ) then
+
+        if ( .not. SilentLoc ) then
+          Line = 'Running Samples'
+          write(*,'(A)') Line
+        end if
+
         i = This%ParamSampleStep
         do
           i = i + 1
@@ -818,7 +824,7 @@ contains
           This%ModelRunCounter = This%ModelRunCounter + 1
 
           if ( .not. SilentLoc ) then
-            Line = 'Model run #' // ConvertToString(Value=This%ModelRunCounter)
+            Line = '  Model run #' // ConvertToString(Value=This%ModelRunCounter)
             write(*,'(A)') Line
           end if
 
@@ -828,7 +834,7 @@ contains
 
           if ( StatLoc /= 0 ) then
             if ( .not. SilentLoc ) then
-              Line = 'Model run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
+              Line = '    Model run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
               write(*,'(A)') Line
             end if
             StatLoc = 0
@@ -880,6 +886,8 @@ contains
 
         This%ParamSampleStep = 0
 
+        write(*,*)
+
       end if
      
       iEnd = size(This%ParamRecord,2)
@@ -889,10 +897,14 @@ contains
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
       end if
 
-
       !***************************************************************************************************************************
       ! Updating coefficients
       if ( .not. This%SamplesAnalyzed ) then
+
+        if ( .not. SilentLoc ) then
+          Line = 'Computing PCE coefficients for each node'
+          write(*,'(A)') Line
+        end if
 
         if ( iEnd < NbIndices ) call Error%Raise( 'Initial number of samples must be greater than the number of indices',         &
                                                                                                                ProcName=ProcName )
@@ -949,7 +961,7 @@ contains
                                                                  Indices=IndicesLoc, CVError=CVError, IndexOrder=This%IndexOrder )
 
           if ( .not. SilentLoc ) then
-            Line = ' Node ' // ConvertToString(Value=ii) // ' -- Error = ' // ConvertToString(Value=CVError)
+            Line = '  Node ' // ConvertToString(Value=ii) // ' -- Error = ' // ConvertToString(Value=CVError)
             if ( CVError <= This%StopError ) Line = Line // ' -- Converged'
             write(*,'(A)') Line
           end if

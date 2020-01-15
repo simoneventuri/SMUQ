@@ -133,13 +133,13 @@ contains
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
-    logical                                                           ::    Found
     character(:), allocatable                                         ::    VarC0D
     real(rkp)                                                         ::    VarR0D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     integer                                                           ::    VarI0D
     logical                                                           ::    VarL0D
     logical                                                           ::    MandatoryLoc
+    logical                                                           ::    Found
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -152,8 +152,8 @@ contains
     This%Label = VarC0D
 
     ParameterName = 'silent'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.true. )
-    This%Silent = VarL0D
+    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%Silent = VarL0D
 
     SectionName = 'initial_conditions'
     if ( .not. Input%HasSection( SubSectionName=SectionName ) ) then

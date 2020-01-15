@@ -185,14 +185,15 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    VarC0D
+    logical                                                           ::    VarL0D
     character(:), allocatable, dimension(:)                           ::    Strings
     integer                                                           ::    i
-    logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    FileName
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
     integer                                                           ::    IOLoc
+    logical                                                           ::    Found
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()  
@@ -201,8 +202,12 @@ contains
     if ( present(Prefix) ) PrefixLoc = Prefix
 
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Label = VarC0D
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Label = VarC0D
+
+    ParameterName = 'silent'
+    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%Silent = VarL0D
 
     SectionName = 'space_transform'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -295,8 +300,8 @@ contains
     call Input%Read( FileName=FileName )
 
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Label = VarC0D
+    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Label = VarC0D
 
     SectionName = 'space_transform'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -355,7 +360,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Response, TransformedSpace, Basis, Coefficients, Indices, CVErrors )
+  subroutine ConstructCase1( This, Response, TransformedSpace, Basis, Coefficients, Indices, CVErrors, Silent )
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     type(Response_Type), intent(in)                                   ::    Response
@@ -364,6 +369,7 @@ contains
     type(LinkedList1D_Type), intent(inout)                            ::    Coefficients
     type(LinkedList2D_Type), intent(inout)                            ::    Indices
     type(LinkedList0D_Type), optional, intent(inout)                  ::    CVErrors
+    logical, optional, intent(in)                                     ::    Silent
 
     character(*), parameter                                           ::    ProcName='ConstructCase'
     integer                                                           ::    NbOutputs
@@ -377,6 +383,10 @@ contains
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
+
+    This%Label = Response%GetLabel()
+
+    if ( present(Silent) ) This%Silent = Silent
 
     This%Basis = Basis
 
