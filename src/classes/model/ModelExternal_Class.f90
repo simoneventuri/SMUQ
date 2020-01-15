@@ -333,8 +333,8 @@ contains
 
     if ( .not. This%Silent ) then
       write(*,*)
-      Line = 'Scheduling 1 input with' // ConvertToString(Value=This%NbSubModels) //      &
-                                    'submodels for a total of ' // ConvertToString(Value=This%NbModels) // ' evaluations'
+      Line = 'Scheduling 1 input with' // ConvertToString(Value=This%NbSubModels) //                                              &
+                                          'submodels for a total of ' // ConvertToString(Value=This%NbSubModels) // ' evaluations'
       write(*,'(A)') Line
       Line = '  Number of concurrent input evaluations : ' // ConvertToString(Value=This%NbConcurrentEvaluations)
       write(*,'(A)') Line
@@ -459,7 +459,7 @@ contains
     if ( .not. This%Silent ) then
       write(*,*)
       Line = 'Scheduling ' // ConvertToString(Value=NbInputs) // ' inputs with' // ConvertToString(Value=This%NbSubModels) //     &
-                                    'submodels for a total of ' // ConvertToString(Value=NbInputs*This%NbModels) // ' evaluations'
+                                 'submodels for a total of ' // ConvertToString(Value=NbInputs*This%NbSubModels) // ' evaluations'
       write(*,'(A)') Line
       Line = '  Number of concurrent input evaluations : ' // ConvertToString(Value=This%NbConcurrentEvaluations)
       write(*,'(A)') Line

@@ -121,6 +121,7 @@ contains
 
     This%Label = 'pcesm'
     This%NbOutputs = 0
+    This%Label = .false.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -147,6 +148,7 @@ contains
     character(:), allocatable                                         ::    VarC0D
     character(:), allocatable, dimension(:)                           ::    VarC1D
     real(rkp)                                                         ::    VarR0D
+    logical                                                           ::    VarL0D
     character(:), allocatable, dimension(:)                           ::    LabelMap
     logical                                                           ::    Found
 
@@ -159,6 +161,10 @@ contains
     ParameterName = 'label'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
     This%Label = VarC0D
+
+    ParameterName = 'silent'
+    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Silent = VarL0D
 
     SectionName = 'models'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )

@@ -116,6 +116,7 @@ contains
     This%K_Dependency = ''
     This%C_Dependency = ''
     This%NbOutputs = 1
+    This%Label = .false.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -138,6 +139,7 @@ contains
     real(rkp)                                                         ::    VarR0D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     integer                                                           ::    VarI0D
+    logical                                                           ::    VarL0D
     logical                                                           ::    MandatoryLoc
 
     if ( This%Constructed ) call This%Reset()
@@ -149,6 +151,10 @@ contains
     ParameterName = 'label'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
     This%Label = VarC0D
+
+    ParameterName = 'silent'
+    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Silent = VarL0D
 
     SectionName = 'initial_conditions'
     if ( .not. Input%HasSection( SubSectionName=SectionName ) ) then

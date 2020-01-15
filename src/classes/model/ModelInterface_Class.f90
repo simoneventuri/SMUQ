@@ -275,7 +275,7 @@ contains
 
     NbInputs = size(Input,1)
     NbOutputs = This%Model%GetNbOutputs()
-
+    
     allocate(StatRun(NbInputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='StatRun', ProcName=ProcName, stat=StatLoc )
     StatRun = 1

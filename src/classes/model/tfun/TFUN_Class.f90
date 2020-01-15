@@ -99,6 +99,7 @@ contains
 
     This%Label = 'tfun'
     This%NbOutputs = 0
+    This%Label = .false.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -119,6 +120,7 @@ contains
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    VarC0D
+    logical                                                           ::    VarL0D
     integer                                                           ::    i
     integer                                                           ::    ii
     class(TestFunction_Type), allocatable                             ::    TestFunction
@@ -133,6 +135,10 @@ contains
     ParameterName = 'label'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
     This%Label = VarC0D
+
+    ParameterName = 'silent'
+    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Silent = VarL0D
 
     This%NbFunctions = Input%GetNumberofSubSections()
 
