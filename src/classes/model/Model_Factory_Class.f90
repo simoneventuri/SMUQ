@@ -236,7 +236,7 @@ contains
     type(InputSection_Type)                                           ::    GetObjectInput
 
     class(Model_Factory_Type), intent(in)                             ::    This
-    class(Model_Type), intent(inout)                                  ::    Object
+    class(Model_Type), intent(in)                                     ::    Object
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory

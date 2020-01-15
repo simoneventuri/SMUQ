@@ -36,9 +36,11 @@ type, abstract                                                        ::    Mode
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   integer                                                             ::    NbOutputs
+  logical                                                             ::    Silent
 contains
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    GetLabel
+  procedure, public                                                   ::    GetNbOutputs
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    Run                     =>    Run_0D,                 &
                                                                                                           Run_1D

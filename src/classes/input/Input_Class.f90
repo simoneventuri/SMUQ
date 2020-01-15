@@ -1,4 +1,4 @@
-module Input_Type
+module Input_Class
 
 use Parameters_Library
 use String_Library
@@ -26,6 +26,7 @@ contains
   generic, public                                                     ::    Construct               =>    ConstructCase1,         &
                                                                                                           ConstructCase2
   procedure, private                                                  ::    ConstructCase1
+  procedure, private                                                  ::    ConstructCase2
   generic, public                                                     ::    GetValue                =>    GetValue0D_Label,       &
                                                                                                           GetValue1D_Labels,      &
                                                                                                           GetValue1D

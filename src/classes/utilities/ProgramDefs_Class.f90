@@ -192,8 +192,6 @@ contains
     This%SuppliedCaseDir = VarC0D
 
     This%Constructed = .true.
-
-    call This%WriteNbProcesses()
     
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

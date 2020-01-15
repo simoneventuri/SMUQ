@@ -107,7 +107,6 @@ endif()
 # Adding sources to smuqApp #
 ######################################################
 add_subdirectory( src )
-add_subdirectory( plugins )
 
 ######################################################
 # Linking required dependencies in ext to smuqApp #

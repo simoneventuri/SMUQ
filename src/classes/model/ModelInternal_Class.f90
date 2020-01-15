@@ -20,10 +20,13 @@ module ModelInternal_class
 
 use Input_Library
 use Parameters_Library
+use StringRoutines_Module
+use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
-
+use Input_Class                                                   ,only:    Input_Type
+use Output_Class                                                  ,only:    Output_Type
 implicit none
 
 private
@@ -31,7 +34,6 @@ private
 public                                                                ::    ModelInternal_Type
 
 type, abstract, extends(Model_Type)                                   ::    ModelInternal_Type
-  logical                                                             ::    Silent
 contains
   procedure, public                                                   ::    Run_1D
 end type
@@ -53,6 +55,7 @@ contains
     integer                                                           ::    NbSubModels
     integer                                                           ::    StatLoc
     integer                                                           ::    i, ii
+    character(:), allocatable                                         ::    Line
 
     NbInputs = size(Input,1)
     NbSubModels = 1
@@ -64,7 +67,7 @@ contains
 
     if ( .not. This%Silent ) then
       write(*,*)
-      Line = 'Scheduling ' // ConvertToString(Value=NbInputs) // ' inputs with' // ConvertToString(Value=NbSubModels //           &
+      Line = 'Scheduling ' // ConvertToString(Value=NbInputs) // ' inputs with' // ConvertToString(Value=NbSubModels) //          &
                                       'submodels for a total of ' // ConvertToString(Value=NbInputs*NbSubModels) // ' evaluations'
       write(*,'(A)') Line
       Line = '  Number of concurrent input evaluations : 1'

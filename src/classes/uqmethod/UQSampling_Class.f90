@@ -29,7 +29,7 @@ use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use UQMethod_Class                                                ,only:    UQMethod_Type
-use InputClass                                                    ,only:    Input_Type
+use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type

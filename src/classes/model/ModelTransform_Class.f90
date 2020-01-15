@@ -24,6 +24,7 @@ use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
+use Model_Factory_Class                                           ,only:    Model_Factory
 use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
 use TransfSampleSpace_Factory_Class                               ,only:    TransfSampleSpace_Factory
 use Output_Class                                                  ,only:    Output_Type
@@ -43,9 +44,12 @@ contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
-  procedure, public                                                   ::    RunCase1
   generic, public                                                     ::    Construct               =>    ConstructCase1
+  procedure, public                                                   ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
+  procedure, public                                                   ::    GetInput
+  procedure, public                                                   ::    Run_0D
+  procedure, public                                                   ::    Run_1D
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -54,7 +58,7 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
@@ -67,9 +71,9 @@ contains
     end if
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
@@ -88,9 +92,9 @@ contains
     call This%SetDefaults()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
@@ -98,9 +102,52 @@ contains
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructInput( This, Input, Prefix )
+
+    use String_Library
+
+    class(ModelTransform_Type), intent(inout)                         ::    This
+    class(InputSection_Type), intent(in)                              ::    Input
+    character(*), optional, intent(in)                                ::    Prefix
+
+    character(*), parameter                                           ::    ProcName='ConstructInput'
+    character(:), allocatable                                         ::    PrefixLoc
+    integer                                                           ::    StatLoc=0
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    character(:), allocatable                                         ::    SectionName
+
+    if ( This%Constructed ) call This%Reset()
+    if ( .not. This%Initialized ) call This%Initialize()
+
+    PrefixLoc = ''
+    if ( present(Prefix) ) PrefixLoc = Prefix
+
+    SectionName = 'model'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call Model_Factory%Construct( Object=This%Model, Input=InputSection, Prefix=PrefixLoc )
+    nullify(InputSection)
+
+    This%Label = This%Model%GetLabel()
+    This%NbOutputs = This%Model%GetNbOutputs()
+
+    SectionName = 'transformed_space'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call TransfSampleSpace_Factory%Construct( Object=This%SpaceTransform, Input=InputSection, Prefix=PrefixLoc )
+    nullify(InputSection)
+
+    allocate(This%InputLabels(This%SpaceTransform%GetNbDim()), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InputLabels', ProcName=ProcName, stat=StatLoc )
+    This%InputLabels = This%SpaceTransform%GetLabel()
+
+    This%Constructed = .true.
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1( This, SpaceTransform, Model )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
@@ -122,20 +169,64 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InputLabels', ProcName=ProcName, stat=StatLoc )
     This%InputLabels = This%SpaceTransform%GetLabel()
 
+    This%NbOutputs = This%Model%GetNbOutputs()
+    This%Label = This%Model%GetLabel()
+
     This%Constructed = .true.
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine RunCase1( This, Input, Output, Stat )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetInput( This, MainSectionName, Prefix, Directory )
+
+    use String_Library
+
+    type(InputSection_Type)                                           ::    GetInput
+
+    class(ModelTransform_Type), intent(in)                            ::    This
+    character(*), intent(in)                                          ::    MainSectionName
+    character(*), optional, intent(in)                                ::    Prefix
+    character(*), optional, intent(in)                                ::    Directory
+
+    character(*), parameter                                           ::    ProcName='GetInput'
+    character(:), allocatable                                         ::    PrefixLoc
+    character(:), allocatable                                         ::    DirectoryLoc
+    character(:), allocatable                                         ::    DirectorySub
+    logical                                                           ::    ExternalFlag=.false.
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    DirectoryLoc = ''
+    PrefixLoc = ''
+    if ( present(Directory) ) DirectoryLoc = Directory
+    if ( present(Prefix) ) PrefixLoc = Prefix
+    DirectorySub = DirectoryLoc
+
+    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+
+    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/model'
+    call GetInput%AddSection( Section=Model_Factory%GetObjectInput( Object=This%Model, MainSectionName='model',                   &
+                                                                                      Prefix=PrefixLoc, Directory=DirectorySub ) )
+
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/transformed_space'
+    call GetInput%AddSection( Section=TransfSampleSpace_Factory%GetObjectInput( Object=This%SpaceTransform,                       &
+                                                 MainSectionName='transformed_space', Prefix=PrefixLoc, Directory=DirectorySub ) )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Run_0D( This, Input, Output, Stat )
 
     class(ModelTransform_Type), intent(inout)                         ::    This
     type(Input_Type), intent(in)                                      ::    Input
-    type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
+    type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
-    character(*), parameter                                           ::    ProcName='RunCase1'
+    character(*), parameter                                           ::    ProcName='Run_0D'
     integer                                                           ::    StatLoc=0
     logical                                                           ::    ExternalFlag=.false.
     type(Input_Type)                                                  ::    InputLoc
@@ -151,9 +242,49 @@ contains
     call This%Model%Run( Input=InputLoc, Output=Output, Stat=Stat )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Run_1D( This, Input, Output, Stat )
+
+    class(ModelTransform_Type), intent(inout)                         ::    This
+    type(Input_Type), dimension(:), intent(in)                        ::    Input
+    type(Output_Type), dimension(:,:), intent(inout)                  ::    Output
+    integer, dimension(:), optional, intent(inout)                    ::    Stat
+
+    character(*), parameter                                           ::    ProcName='Run_1D'
+    integer                                                           ::    StatLoc=0
+    logical                                                           ::    ExternalFlag=.false.
+    type(Input_Type), allocatable, dimension(:)                       ::    InputLoc
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    integer                                                           ::    NbInputs
+    integer                                                           ::    i
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    NbInputs = size(Input,1)
+
+    allocate(InputLoc(NbInputs), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='InputLoc', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, NbInputs
+      call Input(i)%GetValue( Values=VarR1D, Labels=This%InputLabels )
+      call InputLoc(i)%Construct( Input=This%SpaceTransform%InvTransform(Z=VarR1D), Labels=This%InputLabels )
+    end do
+
+    deallocate(VarR1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+    call This%Model%Run( Input=InputLoc, Output=Output, Stat=Stat )
+
+    deallocate(InputLoc, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputLoc', ProcName=ProcName, stat=StatLoc )
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
     class(ModelTransform_Type), intent(out)                           ::    LHS
@@ -179,7 +310,7 @@ contains
     end select
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )

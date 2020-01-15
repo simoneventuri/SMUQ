@@ -40,8 +40,7 @@ use List2DAllocInt_Class                                          ,only:    List
 use List1DAllocReal_Class                                         ,only:    List1DAllocReal_Type
 use ProgramDefs_Class                                             ,only:    ProgramDefs
 use Model_Class                                                   ,only:    Model_Type
-use ModelExtTemplate_Class                                        ,only:    ModelExtTemplate_Type
-use ModelExt_Factory_Class                                        ,only:    ModelExt_Factory
+use Model_Factory_Class                                           ,only:    Model_Factory
 use Output_Class                                                  ,only:    Output_Type
 use OrthoNumerical_Class                                          ,only:    OrthoNumerical_Type
 use OrthoLegendre_Class                                           ,only:    OrthoLegendre_Type

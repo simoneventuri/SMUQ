@@ -27,6 +27,7 @@ use ArrayIORoutines_Module
 use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use Model_Class                                                   ,only:    Model_Type
 use ModelInternal_Class                                           ,only:    ModelInternal_Type
 use Response_Class                                                ,only:    Response_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
@@ -71,7 +72,7 @@ contains
   final                                                               ::    Finalizer_Cell  
 end type
 
-type, extends(Model_Type)                                             ::    PolyChaosModel_Type
+type, extends(ModelInternal_Type)                                     ::    PolyChaosModel_Type
   type(OrthoMultiVar_Type)                                            ::    Basis
   class(TransfSampleSpace_Type), allocatable                          ::    TransformedSpace
   integer                                                             ::    NbDim=0
@@ -169,15 +170,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Prefix )
+  subroutine ConstructInput( This, Input, Prefix )
 
     use StringRoutines_Module
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(InputSection_Type), intent(in)                              ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
     character(*), parameter                                           ::    ProcName='ConstructInput'
-    type(InputReader_Type)                                            ::    Input
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
@@ -198,9 +199,6 @@ contains
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
-
-    FileName = PrefixLoc // '/PCModelInput.dat'
-    call Input%Read( FileName=FileName )
 
     ParameterName = 'label'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -263,15 +261,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput2( This, Input, Prefix )
+  subroutine ConstructInput2( This, Prefix )
 
     use StringRoutines_Module
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
-    class(InputSection_Type), intent(in)                              ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
     character(*), parameter                                           ::    ProcName='ConstructInput2'
+    type(InputReader_Type)                                            ::    Input
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
@@ -292,6 +290,9 @@ contains
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
+
+    FileName = PrefixLoc // '/PCModelInput.dat'
+    call Input%Read( FileName=FileName )
 
     ParameterName = 'label'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -508,7 +509,7 @@ contains
     
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     type(Input_Type), intent(in)                                      ::    Input
-    type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
+    type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat 
 
     character(*), parameter                                           ::    ProcName='Run_0D'

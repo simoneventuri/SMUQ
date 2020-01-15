@@ -99,7 +99,7 @@ contains
 
     This%Label = 'tfun'
     This%NbOutputs = 0
-    This%Label = .false.
+    This%Silent = .false.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -156,7 +156,7 @@ contains
 
     SectionName = 'model'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call ModelExt_Factory%Construct( Object=This%Model, Input=InputSection, Prefix=PrefixLoc )
+    call Model_Factory%Construct( Object=This%Model, Input=InputSection, Prefix=PrefixLoc )
     nullify ( InputSection )
 
     SectionName = "parameter_space"
@@ -235,7 +235,7 @@ contains
 
     SectionName = 'model'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/model'
-    call GetInput%AddSection( Section=ModelExt_Factory%GetObjectInput(Object=This%Model, MainSectionName=SectionName,             &
+    call GetInput%AddSection( Section=Model_Factory%GetObjectInput(Object=This%Model, MainSectionName=SectionName,                &
                                                                                        Prefix=PrefixLoc, Directory=DirectorySub) )
 
     SectionName = 'parameter_space'

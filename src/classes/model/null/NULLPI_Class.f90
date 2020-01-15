@@ -22,8 +22,8 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use ModelInternal_Class                                           ,only:    ModelInternal_Type
 use Model_Class                                                   ,only:    Model_Type
-use ModelExtTemplate_Class                                        ,only:    ModelExtTemplate_Type
 use ParameterWriter_Class                                         ,only:    ParameterWriter_Type
 use OutputReader_Class                                            ,only:    OutputReader_Type
 use Output_Class                                                  ,only:    Output_Type
@@ -35,14 +35,13 @@ private
 
 public                                                                ::    NULLPI_Type
 
-type, extends(ModelExtTemplate_Type)                                  ::    NULLPI_Type
+type, extends(ModelInternal_Type)                                     ::    NULLPI_Type
 
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
-  procedure, private                                                  ::    ConstructCase
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run_0D
   procedure, public                                                   ::    Copy
@@ -161,7 +160,7 @@ contains
 
     class(NULLPI_Type), intent(inout)                                 ::    This
     type(Input_Type), intent(in)                                      ::    Input
-    type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
+    type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
     character(*), parameter                                           ::    ProcName='Run_0D'

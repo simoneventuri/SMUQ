@@ -181,7 +181,7 @@ contains
     if ( size(Output,1) /= This%NbResponses ) call Error%Raise( 'Passed an output array of incorrect length', ProcName=ProcName )
     if ( NbOutputs < This%NbResponses ) call Error%Raise( 'Insufficient number of model outputs', ProcName=ProcName )
 
-    if ( This%NbOutputs == This%NbResponses ) then
+    if ( NbOutputs == This%NbResponses ) then
       call This%Model%Run( Input=Input, Output=Output, Stat=StatRun )
     else
       allocate(OutputLoc(NbOutputs), stat=StatLoc)
@@ -263,8 +263,8 @@ contains
 
     character(*), parameter                                           ::    ProcName='Run_1D'
     integer                                                           ::    StatLoc=0
-    integer, allocatable, dimension(:)                                ::    StatRun=0
-    type(Output_Type), dimension(:), allocatable                      ::    OutputLoc
+    integer, allocatable, dimension(:)                                ::    StatRun
+    type(Output_Type), dimension(:,:), allocatable                    ::    OutputLoc
     character(:), allocatable                                         ::    LabelLoc
     integer                                                           ::    NbInputs
     integer                                                           ::    NbOutputs
@@ -280,10 +280,10 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='StatRun', ProcName=ProcName, stat=StatLoc )
     StatRun = 1
 
-    if ( size(Output,1) /= This%NbResponses .or. size(Output,2) /= This%NbInputs) call Error%Raise( 'Passed an output array of' //&
+    if ( size(Output,1) /= This%NbResponses .or. size(Output,2) /= NbInputs) call Error%Raise( 'Passed an output array of' //     &
                                                                                           ' incorrect length', ProcName=ProcName )
 
-    if ( This%NbOutputs == This%NbResponses ) then
+    if ( NbOutputs == This%NbResponses ) then
       call This%Model%Run( Input=Input, Output=Output, Stat=StatRun )
     else
       allocate(OutputLoc(NbOutputs, NbInputs), stat=StatLoc)
@@ -323,7 +323,7 @@ contains
         return
       end if
     else
-      if ( any(StatRun) /= 0 ) call Error%Raise( 'A model returned a non-zero status indicator: ' //                              &
+      if ( any(StatRun /= 0) ) call Error%Raise( 'A model returned a non-zero status indicator: ' //                              &
                                                                               ConvertToString(Values=StatRun), ProcName=ProcName )
     end if
 

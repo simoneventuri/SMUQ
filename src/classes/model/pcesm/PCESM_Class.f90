@@ -27,7 +27,7 @@ use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
-use ModelExtTemplate_Class                                        ,only:    ModelExtTemplate_Type
+use ModelInternal_Class                                           ,only:    ModelInternal_Type
 use Output_Class                                                  ,only:    Output_Type
 use PolyChaosModel_Class                                          ,only:    PolyChaosModel_Type
 use Input_Class                                                   ,only:    Input_Type
@@ -39,7 +39,7 @@ private
 
 public                                                                ::    PCESM_Type
 
-type, extends(ModelExtTemplate_Type)                                  ::    PCESM_Type
+type, extends(ModelInternal_Type)                                     ::    PCESM_Type
   type(PolyChaosModel_Type), allocatable, dimension(:)                ::    PCEModels
   integer                                                             ::    NbModels=0
   integer                                                             ::    NbFixedParams=0
@@ -53,7 +53,6 @@ contains
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
-  procedure, private                                                  ::    ConstructCase
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run_0D
   procedure, public                                                   ::    Copy
@@ -121,7 +120,7 @@ contains
 
     This%Label = 'pcesm'
     This%NbOutputs = 0
-    This%Label = .false.
+    This%Silent = .false.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -379,7 +378,7 @@ contains
 
     class(PCESM_Type), intent(inout)                                  ::    This
     type(Input_Type), intent(in)                                      ::    Input
-    type(Output_Type), dimension(:), allocatable, intent(inout)       ::    Output
+    type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
     character(*), parameter                                           ::    ProcName='Run_0D'
