@@ -1,0 +1,181 @@
+start(main)
+
+  start(model)
+    type=tfun
+    start(type)
+      label = tfun
+      silent = true
+      start(function1)
+        type = ishigami
+        start(type)
+          response_name = output1
+          label = output1
+          a = 1.0
+          b = 7.0
+          c = 0.1
+          start(parameters)
+            x1_dependency = p1
+            x2_dependency = p2
+            x3_dependency = p3
+          end(parameters)
+        end(type)
+      end(function1)
+
+      start(function2)
+        type = ishigami
+        start(type)
+          response_name = output2
+          label = output2
+          a = 1.0
+          b = 7.0
+          c = 0.1
+          start(parameters)
+            x1_dependency = p1
+            x2_dependency = p2
+            x3_dependency = p3
+          end(parameters)
+        end(type)
+      end(function2)
+
+      start(function3)
+        type = ishigami
+        start(type)
+          response_name = output3
+          label = output3
+          a = 1.0
+          b = 7.0
+          c = 0.1
+          start(parameters)
+            x1_dependency = p1
+            x2_dependency = p2
+            x3_dependency = p3
+          end(parameters)
+        end(type)
+      end(function3)
+    end(type)
+  end(model)
+
+  start(parameter_space)
+    start(parameters)
+      start(parameter1)
+        name = parameter1
+        label = p1
+        start(distribution)
+          type=uniform
+          start(type)
+            a = -3.14159265359
+            b = 3.14159265359
+          end(type)
+        end(distribution)
+      end(parameter1)
+      start(parameter2)
+        name = parameter2
+        label = p2
+        start(distribution)
+          type=uniform
+          start(type)
+            a = -3.14159265359
+            b = 3.14159265359
+          end(type)
+        end(distribution)
+      end(parameter2)
+      start(parameter3)
+        name = parameter3
+        label = p3
+        start(distribution)
+          type=uniform
+          start(type)
+            a = -3.14159265359
+            b = 3.14159265359
+          end(type)
+        end(distribution)
+      end(parameter3)
+    end(parameters)
+  end(parameter_space)
+
+  start(responses)
+    start(response1)
+      name = response1
+      label = output1
+
+      start(coordinates)
+        labels = x
+        start(values)
+          source = internal
+          start(source)
+            start(array)
+              row1 = 1.0
+            end(array)
+          end(source)
+        end(values)
+      end(coordinates)
+
+    end(response1)
+
+    start(response2)
+      name = response2
+      label = output2
+
+      start(coordinates)
+        labels = x
+        start(values)
+          source = internal
+          start(source)
+            start(array)
+              row1 = 1.0
+            end(array)
+          end(source)
+        end(values)
+      end(coordinates)
+
+    end(response2)
+
+    start(response3)
+      name = response3
+      label = output3
+
+      start(coordinates)
+        labels = x
+        start(values)
+          source = internal
+          start(source)
+            start(array)
+              row1 = 1.0
+            end(array)
+          end(source)
+        end(values)
+      end(coordinates)
+
+    end(response3)
+
+  end(responses)
+  
+  start(analysis)
+    type=sensitivity_analysis
+
+    start(type)
+      type = sobol
+      start(type)
+        silent = false
+        start(sampler)
+          start(scheme)
+            type = mc
+            start(type)
+              nb_samples = 1000
+              max_nb_samples = 16000
+              enrichment_scheme = increment
+              start(enrichment_scheme)
+                increment = 200
+              end(enrichment_scheme)
+            end(type)
+          end(scheme)
+        end(sampler)
+
+        history_frequency = 5
+
+      end(type)
+    end(type)
+
+  end(analysis)
+
+end(main)

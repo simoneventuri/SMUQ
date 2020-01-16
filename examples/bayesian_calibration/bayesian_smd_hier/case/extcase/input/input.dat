@@ -1,0 +1,23 @@
+start(main)
+
+  label = position
+
+  start(parameters)
+    m = 1.0
+    k_dependency = k
+    c_dependency = c
+  end(parameters)
+
+  start(initial_conditions)
+    position = 4.0
+    velocity = 0.0
+  end(initial_conditions)
+
+  start(abscissa)
+    source=internal
+    start(source)
+      value = 0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0
+    end(source)
+  end(abscissa)
+
+end(main)
