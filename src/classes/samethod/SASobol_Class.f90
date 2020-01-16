@@ -94,7 +94,7 @@ type, extends(SAMethod_Type)                                          ::    SASo
   integer                                                             ::    ModelRunCounter
   real(rkp), allocatable, dimension(:,:)                              ::    ParamRecord
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
-  logical, allocatable, dimension(:)                                  ::    ParamSampleRan
+  integer, allocatable, dimension(:)                                  ::    ParamSampleRan
   integer                                                             ::    ParamSampleStep
   real(rkp)                                                           ::    AbsTolerance
   real(rkp)                                                           ::    RelTolerance
@@ -211,7 +211,6 @@ contains
     integer, allocatable, dimension(:,:)                              ::    VarI2D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
-    logical, allocatable, dimension(:)                                ::    VarL1D
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -284,11 +283,11 @@ contains
 
       SubSectionName = SectionName // '>param_sample_ran'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=VarL1D, Prefix=PrefixLoc )
+      call ImportArray( Input=InputSection, Array=VarI1D, Prefix=PrefixLoc )
       nullify( InputSection )
-      This%ParamSampleRan = VarL1D
-      deallocate(VarL1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+      This%ParamSampleRan = VarI1D
+      deallocate(VarI1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
 
       This%NbCells = 0
       SubSectionName = SectionName // '>cells'
@@ -494,7 +493,7 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     real(rkp), pointer, dimension(:,:)                                ::    VarR2DPtr=>null()
     type(ParamSpace_Type)                                             ::    ExtendedSampleSpace
-    type(Input_Type)                                                  ::    Input
+    type(Input_Type), allocatable, dimension(:)                       ::    Input
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii
@@ -502,8 +501,11 @@ contains
     integer                                                           ::    v
     integer                                                           ::    vi
     integer                                                           ::    vii
+    integer                                                           ::    iSubRun
+    integer                                                           ::    iRun
+    integer                                                           ::    NbInputs
     real(rkp), allocatable, dimension(:)                              ::    ParamSubSample
-    type(Output_Type), allocatable, dimension(:)                      ::    Outputs
+    type(Output_Type), allocatable, dimension(:,:)                    ::    Outputs
     real(rkp), allocatable, dimension(:,:)                            ::    SubSampleOutput
     logical, allocatable, dimension(:)                                ::    SubSampleRan
     integer                                                           ::    NbResponses
@@ -514,6 +516,7 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    Delta
     character(:), allocatable                                         ::    Line
     logical                                                           ::    Converged
+    integer, allocatable, dimension(:)                                ::    RunStatLoc
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
@@ -522,9 +525,6 @@ contains
     NbResponses = size(Responses,1)
     NbDim = SampleSpace%GetNbDim()
     SilentLoc = This%Silent
-
-    allocate(Outputs(NbResponses), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
 
     allocate(Delta(NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Delta', ProcName=ProcName, stat=StatLoc )
@@ -635,7 +635,7 @@ contains
 
         allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-        This%ParamSampleRan = .false.
+        This%ParamSampleRan = 1
         This%SamplesObtained = .true.
       end if
 
@@ -649,83 +649,125 @@ contains
           write(*,'(A)') Line
           write(*,*) 
         end if
+
         i = This%ParamSampleStep
         do
-          i = i + 1
-          if ( i > iEnd ) exit
-          This%ParamSampleStep = i
-          SubSampleRan = .false.
+
+          if ( i >= iEnd ) exit
+
+          NbInputs = iEnd - i
+          if ( This%CheckPointFreq > 0 ) NbInputs = min(This%CheckPointFreq, iEnd-i)
+
+          allocate(Input((NbDim+1)*NbInputs), stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='Input', ProcName=ProcName, stat=StatLoc )
+
+          allocate(Outputs(NbResponses,(NbDim+1)*NbInputs), stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
+          allocate(RunStatLoc((NbDim+1)*NbInputs), stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='RunStatLoc', ProcName=ProcName, stat=StatLoc )
+          RunStatLoc = 1
+
+          iii = 0
+          ii = 1
+          do ii = 1, NbInputs
+            iii = iii + 1
+            call Input(iii)%Construct( Input=This%ParamSample(1:NbDim,i+ii), Labels=SampleSpace%GetLabel() )
+            iv = 1
+            do iv = 1, NbDim
+              iii = iii + 1
+              ParamSubSample = This%ParamSample(1:NbDim,i+ii)
+              ParamSubSample(iv) = This%ParamSample(NbDim+iv,i+ii)
+              call Input(iii)%Construct( Input=ParamSubSample, Labels=SampleSpace%GetLabel() )
+            end do
+          end do
 
           if ( .not. SilentLoc ) then
-            Line = '  Running SubSamples of Sample #' // ConvertToString(Value=ParamRecordLength+i)
+            Line = '  Running SubSamples of Sample #' // ConvertToString(Value=ParamRecordLength+i+1) 
+            if( NbInputs > 1 ) Line = Line // '-' // ConvertToString(Value=ParamRecordLength+i+NbInputs)
             write(*,'(A)') Line
           end if
+          
+          call ModelInterface%Run( Input=Input, Output=Outputs, Stat=RunStatLoc )
 
-          ii = 1
-          do ii = 1, NbDim+1
-            ParamSubSample = This%ParamSample(1:NbDim,i)
-            if ( ii > 1 ) ParamSubSample(ii-1) = This%ParamSample(NbDim+ii-1,i)
-
-            This%ModelRunCounter = This%ModelRunCounter + 1
-            if ( .not. SilentLoc ) then
-              Line = '    Model Run #' // ConvertToString(Value=This%ModelRunCounter) // ', SubSample #' //                       &
-                                                                                                         ConvertToString(Value=ii)
-              write(*,'(A)') Line
+          iSubRun = 0
+          iRun = 1
+          do iRun = 1, NbInputs
+            if ( RunStatLoc(iSubRun+1) /= 0 ) then
+              ii = 1
+              do ii = 1, NbDim + 1
+                iSubRun = iSubRun + 1
+                iii = 1
+                do iii = 1, NbResponses
+                  call Outputs(iii,iSubRun)%Reset()
+                end do
+              end do
+              cycle
             end if
 
-            call Input%Construct( Input=ParamSubSample, Labels=SampleSpace%GetLabel() )
-            call ModelInterface%Run( Input=Input, Output=Outputs, Stat=StatLoc )
+            This%ParamSampleRan(i+iRun) = 0
+            SubSampleRan = .false.
 
-            if ( StatLoc /= 0 ) then
-              if ( .not. SilentLoc ) then
-                Line = '    Model Run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
-                write(*,'(A)') Line
-              end if
-              StatLoc = 0
-              if ( ii == 1 ) exit
-            else
-              SubSampleRan(ii) = .true.
+            ii = 1
+            do ii = 1, NbDim+1
+              iSubRun = iSubRun + 1
+              if ( RunStatLoc(iSubRun) == 0 ) SubSampleRan(ii) = .true.
+              if ( .not. SubSampleRan(ii) ) cycle
               iv = 1
               v = 0
               do iii = 1, NbResponses
                 v = v + NbCellsOutput(iii)
-                VarR2DPtr => Outputs(iii)%GetValuesPointer()
+                if ( Outputs(iii,iSubRun)%GetNbDegen() > 1 ) call Error%Raise( 'SA sobol is not equiped to deal with ' //         &
+                                                                                          'stochastic output', ProcName=ProcName )
+                VarR2DPtr => Outputs(iii,iSubRun)%GetValuesPointer()
                 SubSampleOutput(ii,iv:v) = VarR2DPtr(:,1)
                 iv = v + 1
                 nullify(VarR2DPtr)
+                call Outputs(iii,iSubRun)%Reset()
               end do
-            end if
-          end do
+            end do 
 
-          if ( SubSampleRan(1) ) then
-            This%ParamSampleRan(i) = .true.
             ii = 1
             do ii = 1, This%NbCells
               call This%Cells(ii)%UpdateEstimators( OutputA=SubSampleOutput(1,ii) , OutputAB=SubSampleOutput(2:,ii),              &
                                                                                                           ABRan=SubSampleRan(2:) )
             end do
-          end if
+         
+            if ( This%HistoryFreq > 0 .and. (mod(ParamRecordLength+count(This%ParamSampleRan(1:i+iRun)==0),                     &
+                                                                       abs(This%HistoryFreq)) == 0 .and. i + iRun /= iEnd)  ) then
+              call This%HistoryStep%Append( Value=count(This%ParamSampleRan==0)+ParamRecordLength )
+              ii = 1
+              do ii = 1, This%NbCells
+                call This%Cells(ii)%UpdateHistory()
+              end do
+            end if
 
-          if ( This%HistoryFreq > 0 .and. (mod(ParamRecordLength+count(This%ParamSampleRan(1:i)), abs(This%HistoryFreq)) == 0     &
-                                                                                                          .and. i /= iEnd)  ) then
-            call This%HistoryStep%Append( Value=count(This%ParamSampleRan(1:i))+ParamRecordLength )
-            ii = 1
-            do ii = 1, This%NbCells
-              call This%Cells(ii)%UpdateHistory()
-            end do
-          end if
+          end do
 
-          if ( This%CheckpointFreq > 0 .and. (mod(ParamRecordLength+i, abs(This%CheckpointFreq)) == 0 .and. i /= iEnd)  ) then
+          deallocate(RunStatLoc, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='RunStatLoc', ProcName=ProcName, stat=StatLoc )
+
+          deallocate(Outputs, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
+          deallocate(Input, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='Input', ProcName=ProcName, stat=StatLoc )
+
+          This%ModelRunCounter = This%ModelRunCounter + (NbDim+1)*NbInputs
+          i = i + NbInputs
+          This%ParamSampleStep = i
+    
+          if ( This%CheckpointFreq > 0 .and. i /= iEnd  ) then
             call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),     &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
           end if
-    
+
         end do
 
         This%SamplesRan = .true.
 
         iStart = ParamRecordLength
-        allocate(VarR2D(2*NbDim,count(This%ParamSampleRan)+ParamRecordLength), stat=StatLoc)
+        allocate(VarR2D(2*NbDim,count(This%ParamSampleRan==0)+ParamRecordLength), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = This%ParamRecord
 
@@ -733,7 +775,7 @@ contains
         ii = 0
         do i = iStart+1, size(VarR2D,2)
           ii = ii + 1
-          if ( This%ParamSampleRan(ii) ) VarR2D(:,i) = This%ParamSample(:,ii)
+          if ( This%ParamSampleRan(ii) == 0 ) VarR2D(:,i) = This%ParamSample(:,ii)
         end do
 
         call move_alloc(VarR2D, This%ParamRecord)
@@ -784,9 +826,6 @@ contains
 
     deallocate(ParamSubSample, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='ParamSubSample', ProcName=ProcName, stat=StatLoc )
-
-    deallocate(Outputs, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
 
     deallocate(SubSampleOutput, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SubSampleOutput', ProcName=ProcName, stat=StatLoc )

@@ -107,7 +107,7 @@ type, extends(PolyChaosMethod_Type)                                   ::    Poly
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
   type(SpaceSampler_Type)                                             ::    Sampler
   integer                                                             ::    IndexOrder=0
-  logical, allocatable, dimension(:)                                  ::    ParamSampleRan
+  integer, allocatable, dimension(:)                                  ::    ParamSampleRan
   logical                                                             ::    SamplesObtained
   logical                                                             ::    SamplesRan
   logical                                                             ::    SamplesAnalyzed
@@ -218,8 +218,8 @@ contains
     integer                                                           ::    i
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
+    integer, allocatable, dimension(:)                                ::    VarI1D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
-    logical, allocatable, dimension(:)                                ::    VarL1D
     integer                                                           ::    NbOutputs
     integer                                                           ::    NbCells
 
@@ -290,9 +290,12 @@ contains
 
         SubSectionName = SectionName // '>param_sample_ran'
         call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ImportArray( Input=InputSection, Array=VarL1D, Prefix=PrefixLoc )
+        call ImportArray( Input=InputSection, Array=VarI1D, Prefix=PrefixLoc )
         nullify( InputSection )
-        This%ParamSampleRan = VarL1D
+        This%ParamSampleRan = VarI1D
+
+        deallocate(VarI1D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
 
         ParameterName = 'param_sample_step'
         call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
@@ -503,8 +506,8 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    DesignSpace
     integer                                                           ::    NbDim
     integer                                                           ::    NbCells
-    type(Input_Type)                                                  ::    Input
-    type(Output_Type), allocatable, dimension(:)                      ::    Outputs
+    type(Input_Type), allocatable, dimension(:)                       ::    Input
+    type(Output_Type), allocatable, dimension(:,:)                    ::    Outputs
     real(rkp), allocatable, dimension(:,:)                            ::    ParamSampleTemp
     integer                                                           ::    VarI0D
     integer, allocatable, dimension(:,:)                              ::    VarI2D
@@ -522,6 +525,7 @@ contains
     integer                                                           ::    ii
     integer                                                           ::    iii
     integer                                                           ::    iv
+    integer                                                           ::    iRun
     integer                                                           ::    im1
     integer                                                           ::    iMax
     integer                                                           ::    iMin
@@ -543,14 +547,12 @@ contains
     integer                                                           ::    NbOutputs
     type(ModelInterface_Type)                                         ::    ModelInterface
     integer                                                           ::    ParamRecordLength
+    integer                                                           ::    NbInputs
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
     NbOutputs = size(Responses,1)
     NbDim = SampleSpace%GetNbDim()
-
-    allocate(Outputs(NbOutputs), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
 
     allocate(NbCellsOutput(NbOutputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc )
@@ -772,7 +774,7 @@ contains
           if ( allocated(This%ParamSample) ) then
             allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
             if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-            This%ParamSampleRan = .false.
+            This%ParamSampleRan = 1
             iEnd = size(This%ParamSample,2)
           end if
           This%SamplesObtained = .true.
@@ -820,34 +822,46 @@ contains
 
         i = This%ParamSampleStep
         do
-          i = i + 1
-          if ( i > iEnd ) exit
-          This%ModelRunCounter = This%ModelRunCounter + 1
+          if ( i>= iEnd ) exit
+
+          NbInputs = iEnd - i
+          if ( This%CheckPointFreq > 0 ) NbInputs = min(This%CheckPointFreq, iEnd-i)
+
+          allocate(Input(NbInputs), stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='Input', ProcName=ProcName, stat=StatLoc )
+
+          allocate(Outputs(NbOutputs,NbInputs), stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
+          ii = 1
+          do ii = 1, NbInputs
+            call Input(ii)%Construct( Input=This%ParamSample(:,i+ii), Labels=SampleSpace%GetLabel() )
+          end do
 
           if ( .not. SilentLoc ) then
-            Line = '  Model run #' // ConvertToString(Value=This%ModelRunCounter)
+            Line = '  Model run # ' // ConvertToString(Value=This%ModelRunCounter+1) 
+            if( NbInputs > 1 ) Line = Line // '-' // ConvertToString(Value=This%ModelRunCounter+NbInputs)
             write(*,'(A)') Line
           end if
+          
+          call ModelInterface%Run( Input=Input, Output=Outputs, Stat=This%ParamSampleRan(i+1:i+NbInputs) )
 
-          This%ParamSampleStep = i
-          call Input%Construct( Input=This%ParamSample(:,This%ParamSampleStep), Labels=SampleSpace%GetLabel() )
-          call ModelInterface%Run( Input=Input, Output=Outputs, Stat=StatLoc )
-
-          if ( StatLoc /= 0 ) then
-            if ( .not. SilentLoc ) then
-              Line = '    Model run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
-              write(*,'(A)') Line
+          iRun = 1
+          do iRun = 1, NbInputs
+            if ( This%ParamSampleRan(i+iRun) /= 0 ) then
+              ii = 1
+              do ii = 1, NbOutputs
+                call Outputs(ii,iRun)%Reset()
+              end do
+              cycle
             end if
-            StatLoc = 0
-          else
-            This%ParamSampleRan(i) = .true.
 
             im1 = 0
             ii = 1
             do ii = 1, NbOutputs
-              if ( Outputs(ii)%GetNbDegen() > 1 ) call Error%Raise( 'Polychaos procedure cant deal with stochastic responses',    &
-                                                                                                               ProcName=ProcName )
-              VarR2DPointer => Outputs(ii)%GetValuesPointer()
+              VarR2DPointer => Outputs(ii,iRun)%GetValuesPointer()
+              if ( Outputs(ii,iRun)%GetNbDegen() > 1 ) call Error%Raise( 'Polychaos procedure cant deal with stochastic ' //      &
+                                                                                                  'responses', ProcName=ProcName )
               iv = 0
               iii = im1 + 1
               do iii = im1+1, im1+size(VarR2DPointer,1)
@@ -856,18 +870,31 @@ contains
               end do
               im1 = im1 + size(VarR2DPointer,1)
               nullify(VarR2DPointer)
+              call Outputs(ii,iRun)%Reset()
             end do
-          end if
+          end do
 
-          if ( This%CheckpointFreq > 0 .and. (mod(This%ModelRunCounter, abs(This%CheckpointFreq)) == 0 .and. i /= iEnd) ) then
+          deallocate(Outputs, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
+          deallocate(Input, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='Input', ProcName=ProcName, stat=StatLoc )
+
+          This%ModelRunCounter = This%ModelRunCounter + NbInputs
+          i = i + NbInputs
+          This%ParamSampleStep = i
+
+          if ( This%CheckpointFreq > 0 .and. i /= iEnd ) then
             call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
-                            Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
           end if
     
         end do
 
+        This%SamplesRan = .true.
+
         iStart = ParamRecordLength
-        allocate(VarR2D(NbDim,count(This%ParamSampleRan)+ParamRecordLength), stat=StatLoc)
+        allocate(VarR2D(NbDim,count(This%ParamSampleRan==0)+ParamRecordLength), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = This%ParamRecord
 
@@ -875,7 +902,7 @@ contains
         ii = 0
         do i = iStart+1, size(VarR2D,2)
           ii = ii + 1
-          if ( This%ParamSampleRan(ii) ) VarR2D(:,i) = This%ParamSample(:,ii)
+          if ( This%ParamSampleRan(ii) == 0 ) VarR2D(:,i) = This%ParamSample(:,ii)
         end do
         call move_alloc(VarR2D, This%ParamRecord)
         ParamRecordLength = size(This%ParamRecord,2)
@@ -887,7 +914,7 @@ contains
 
         This%ParamSampleStep = 0
 
-        write(*,*)
+        if ( .not. SilentLoc ) write(*,*)
 
       end if
      
@@ -1051,9 +1078,6 @@ contains
     end do
 
     This%ModelRunCounter = 0
-
-    deallocate(Outputs, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
 
     deallocate(This%ParamRecord, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )

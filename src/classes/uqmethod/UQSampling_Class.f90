@@ -57,7 +57,7 @@ type, extends(UQMethod_Type)                                          ::    UQSa
   integer                                                             ::    NbHistograms
   real(rkp), allocatable, dimension(:,:)                              ::    ParamRecord
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
-  logical, allocatable, dimension(:)                                  ::    ParamSampleRan
+  integer, allocatable, dimension(:)                                  ::    ParamSampleRan
   integer                                                             ::    ParamSampleStep
   logical                                                             ::    SamplesObtained
   logical                                                             ::    SamplesRan
@@ -173,7 +173,7 @@ contains
     integer                                                           ::    StatLoc=0
     integer, allocatable, dimension(:,:)                              ::    VarI2D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
-    logical, allocatable, dimension(:)                                ::    VarL1D
+    integer, allocatable, dimension(:)                                ::    VarI1D
     character(:), allocatable                                         ::    Label1
     character(:), allocatable                                         ::    Label2
 
@@ -254,9 +254,9 @@ contains
 
       SectionName = 'param_sample_ran'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=VarL1D, Prefix=PrefixLoc )
+      call ImportArray( Input=InputSection, Array=VarI1D, Prefix=PrefixLoc )
       nullify( InputSection )
-      This%ParamSampleRan = VarL1D
+      This%ParamSampleRan = VarI1D
 
       ParameterName = 'param_sample_step'
       call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
@@ -364,33 +364,42 @@ contains
     end do
 
     if ( allocated(This%ParamRecord) ) then
-      SubSectionName = 'param_record'
-      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
-                                                                                                                Mandatory=.true. )
-      FileName = DirectoryLoc // '/param_record.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%ParamRecord, File=File )
+      SectionName = 'param_record'
+      call GetInput%AddSection( SectionName=SectionName )
+      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      if ( ExternalFlag ) then
+        FileName = DirectoryLoc // '/param_record.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call ExportArray( Input=InputSection, Array=This%ParamRecord, File=File )
+      else
+        call ExportArray( Input=InputSection, Array=This%ParamRecord )
+      end if
       nullify(InputSection)
     end if
 
     if ( allocated(This%ParamSample) ) then
-      SubSectionName = 'param_sample'
-      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
-                                                                                                                Mandatory=.true. )
-      FileName = DirectoryLoc // '/param_sample.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%ParamSample, File=File )
+      SectionName = 'param_sample'
+      call GetInput%AddSection( SectionName=SectionName )
+      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      if ( ExternalFlag ) then
+        FileName = DirectoryLoc // '/param_sample.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call ExportArray( Input=InputSection, Array=This%ParamSample, File=File )
+      else
+        call ExportArray( Input=InputSection, Array=This%ParamSample )
+      end if
       nullify(InputSection)
 
-      SubSectionName = 'param_sample_ran'
-      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
-                                                                                                                Mandatory=.true. )
-      FileName = DirectoryLoc // '/param_sample_ran.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%ParamSampleRan, File=File )
+      SectionName = 'param_sample_ran'
+      call GetInput%AddSection( SectionName=SectionName )
+      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      if ( ExternalFlag ) then
+        FileName = DirectoryLoc // '/param_sample_ran.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call ExportArray( Input=InputSection, Array=This%ParamSampleRan, File=File )
+      else
+        call ExportArray( Input=InputSection, Array=This%ParamSampleRan )
+      end if
       nullify(InputSection)
 
       call GetInput%AddParameter( Name='param_sample_step', Value=ConvertToString(Value=This%ParamSampleStep),                    &
@@ -406,10 +415,14 @@ contains
         call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
         call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
                                                                                                                   Mandatory=.true. )
-        FileName = DirectoryLoc // '/bin_counts' // ConvertToString(Value=i) // '.dat'
-        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
         call This%BinCounts(i)%GetPointer(Values=VarI2D)
-        call ExportArray( Input=InputSection, Array=VarI2D, File=File )
+        if ( ExternalFlag ) then
+          FileName = DirectoryLoc // '/bin_counts' // ConvertToString(Value=i) // '.dat'
+          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+          call ExportArray( Input=InputSection, Array=VarI2D, File=File )
+        else
+          call ExportArray( Input=InputSection, Array=VarI2D )
+        end if
         nullify(InputSection)
         nullify(VarI2D)
       end do
@@ -445,19 +458,20 @@ contains
     integer                                                           ::    ii
     integer                                                           ::    iii
     integer                                                           ::    iv
+    integer                                                           ::    iRun
+    integer                                                           ::    iOutput
+    integer                                                           ::    NbInputs
     integer                                                           ::    iStart
     integer                                                           ::    iEnd
     logical                                                           ::    SilentLoc
     character(:), allocatable                                         ::    Line
-    type(Output_Type), allocatable, dimension(:)                      ::    Outputs
+    type(Output_Type), allocatable, dimension(:,:)                    ::    Outputs
     integer                                                           ::    NbOutputs
     type(ModelInterface_Type)                                         ::    ModelInterface
-    type(Input_Type)                                                  ::    Input
+    type(Input_Type), allocatable, dimension(:)                       ::    Input
     integer                                                           ::    ParamRecordLength
 
     NbOutputs = size(Responses,1)
-    allocate(Outputs(NbOutputs), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
@@ -522,7 +536,7 @@ contains
         end if
         allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-        This%ParamSampleRan = .false.
+        This%ParamSampleRan = 1
         iEnd = size(This%ParamSample,2)
         This%SamplesObtained = .true.
       else
@@ -541,50 +555,62 @@ contains
 
         i = This%ParamSampleStep
         do
-          i = i + 1
-          if ( i > iEnd ) exit
-          This%ModelRunCounter = This%ModelRunCounter + 1
+
+          if ( i >= iEnd ) exit
+
+          NbInputs = iEnd - i
+          if ( This%CheckPointFreq > 0 ) NbInputs = min(This%CheckPointFreq, iEnd-i)
+
+          allocate(Input(NbInputs), stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='Input', ProcName=ProcName, stat=StatLoc )
+
+          allocate(Outputs(NbOutputs,NbInputs), stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
+          ii = 1
+          do ii = 1, NbInputs
+            call Input(ii)%Construct( Input=This%ParamSample(:,i+ii), Labels=SampleSpace%GetLabel() )
+          end do
 
           if ( .not. SilentLoc ) then
-            Line = '  Model run #' // ConvertToString(Value=This%ModelRunCounter)
+            Line = '  Model run # ' // ConvertToString(Value=This%ModelRunCounter+1) 
+            if( NbInputs > 1 ) Line = Line // '-' // ConvertToString(Value=This%ModelRunCounter+NbInputs)
             write(*,'(A)') Line
           end if
+          
+          call ModelInterface%Run( Input=Input, Output=Outputs, Stat=This%ParamSampleRan(i+1:i+NbInputs) )
 
-          This%ParamSampleStep = i
-          call Input%Construct( Input=This%ParamSample(:,This%ParamSampleStep), Labels=SampleSpace%GetLabel() )
-          call ModelInterface%Run( Input=Input, Output=Outputs, Stat=StatLoc )
-
-          if ( StatLoc /= 0 ) then
-            if ( .not. SilentLoc ) then
-              Line = '    Model run #' // ConvertToString(Value=This%ModelRunCounter) // ' -- Failed'
-              write(*,'(A)') Line
+          iRun = 1
+          do iRun = 1, NbInputs
+            if ( This%ParamSampleRan(i+iRun) /= 0 ) then
+              ii = 1
+              do ii = 1, NbOutputs
+                call Outputs(ii,iRun)%Reset()
+              end do
+              cycle
             end if
-            StatLoc = 0
-          else
-            ! Binning outputs
-            This%ParamSampleRan(i) = .true.
 
             ii = 1
             do ii = 1, This%NbHistograms
               VarC0D = This%Labels(ii)%GetValue()
 
               iii = 1
-              iv = 0
+              iOutput = 0
               do iii = 1, NbOutputs
-                if ( Outputs(iii)%GetLabel() /= VarC0D ) cycle
-                iv = iii
+                if ( Outputs(iii,iRun)%GetLabel() /= VarC0D ) cycle
+                iOutput = iii
                 exit
               end do
-              if ( iv == 0 ) call Error%Raise( 'Did not find required output : ' // VarC0D, ProcName=ProcName )  
+              if ( iOutput == 0 ) call Error%Raise( 'Did not find required output : ' // VarC0D, ProcName=ProcName )  
 
               call This%BinCounts(ii)%GetPointer(Values=VarI2DPtr)
-              VarR2DPtr => Outputs(iv)%GetValuesPointer()
-              allocate(VarR1D(Outputs(iv)%GetNbDegen()), stat=StatLoc)
+              VarR2DPtr => Outputs(iOutput,iRun)%GetValuesPointer()
+              allocate(VarR1D(Outputs(iOutput,iRun)%GetNbDegen()), stat=StatLoc)
               if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
               VarR1D = Zero
 
               iii = 1
-              do iii = 1, Outputs(iv)%GetNbNodes()
+              do iii = 1, Outputs(iOutput,iRun)%GetNbNodes()
                 VarR1D = VarR2DPtr(iii,:)
                 call BinValues( Values=VarR1D, BinEdges=This%Histograms(ii)%GetBinEdgesPointer(), BinCounts=VarI2DPtr(:,iii) )
               end do  
@@ -594,13 +620,22 @@ contains
 
               nullify(VarR2DPtr)
               nullify(VarI2DPtr)
-
+              call Outputs(iOutput,iRun)%Reset()
             end do
+          end do
 
-          end if
+          deallocate(Outputs, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
 
-          if ( This%CheckpointFreq > 0 .and. (mod(This%ModelRunCounter, abs(This%CheckpointFreq)) == 0 .and. i /= iEnd)  ) then
-            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),     &
+          deallocate(Input, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Deallocate( Name='Input', ProcName=ProcName, stat=StatLoc )
+
+          This%ModelRunCounter = This%ModelRunCounter + NbInputs
+          i = i + NbInputs
+          This%ParamSampleStep = i
+
+          if ( This%CheckpointFreq > 0 .and. i /= iEnd ) then
+            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
           end if
     
@@ -609,7 +644,7 @@ contains
         This%SamplesRan = .true.
 
         iStart = ParamRecordLength
-        allocate(VarR2D(NbDim,count(This%ParamSampleRan)+ParamRecordLength), stat=StatLoc)
+        allocate(VarR2D(NbDim,count(This%ParamSampleRan==0)+ParamRecordLength), stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = This%ParamRecord
 
@@ -617,7 +652,7 @@ contains
         ii = 0
         do i = iStart+1, size(VarR2D,2)
           ii = ii + 1
-          if ( This%ParamSampleRan(ii) ) VarR2D(:,i) = This%ParamSample(:,ii)
+          if ( This%ParamSampleRan(ii) == 0 ) VarR2D(:,i) = This%ParamSample(:,ii)
         end do
         call move_alloc(VarR2D, This%ParamRecord)
         ParamRecordLength = size(This%ParamRecord,2)
@@ -655,9 +690,6 @@ contains
 
     deallocate(This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
-
-    deallocate(Outputs, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
 
     This%ModelRunCounter = 0
 
