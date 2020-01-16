@@ -2,7 +2,7 @@ COMPILATION AND EXECUTION
 ======================================================================================================================================
 
 Requirements:
-  Cmake ( 3.15.5 minimum )
+  Cmake (3.15.5 minimum )
   GCC ( 9.1.0 )
 
 - A) COMPILING SMUQ
