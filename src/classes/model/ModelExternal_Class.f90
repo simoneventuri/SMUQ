@@ -168,6 +168,8 @@ contains
     call MakeDirectory( Path=This%FullWorkDirectory, Options='-p' )
     call RemoveDirectory( Path=This%FullWorkDirectory, ContentsOnly=.true. )
 
+    call This%BashLaunchFIle%Construct( File='/LaunchFile.sh', Prefix=This%FullWorkDirectory )
+
     ParameterName = 'nb_concurrent_evaluations'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%NbConcurrentEvaluations = VarI0D
@@ -175,6 +177,7 @@ contains
     SectionName = 'submodels'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     This%NbSubModels = InputSection%GetNumberOfSubSections()
+    if ( This%NbSubModels == 0 ) call Error%Raise( Line='Provided no submodels', ProcName=ProcName )
     nullify(InputSection)
 
     ParameterName = 'nb_concurrent_subevaluations'
@@ -503,14 +506,14 @@ contains
             iLine = iLine + 1
           end if
 
-          Transcript(iLine) = '( cd ' // This%FullWorkDirectory // '/' // ConvertToString(Value=iInput) //                        &
+          Transcript(iLine) = '( cd ' // This%FullWorkDirectory // '/' // ConvertToString(Value=i) //                             &
                                                                          This%SubModelCaseDirectory(iSubModel)%GetValue() // ' \ '
           iLine = iLine + 1
           Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel)%GetValue() // ' \ '
           iLine = iLine + 1
 
           if ( .not. This%Silent ) then
-            Transcript(iLine) = ' && echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
+            Transcript(iLine) = 'echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
             iLine = iLine + 1
           end if
 
@@ -532,7 +535,7 @@ contains
       Transcript(iLine) = 'wait'
 
       call This%BashLaunchFile%Export(Strings=Transcript(1:iLine))
-      call execute_command_line( Command=Command, Wait=.true. )
+      call ExecuteSysCommand( SysCommand=Command, Wait=.true. )
 
       StatRun = 0
 
@@ -540,7 +543,8 @@ contains
 
       if ( NbCompletedSubModels == This%NbSubModels ) then
         if ( .not. This%Silent ) then
-          Line = '  Retrieving output data corresponding to inputs ' // ConvertToString(Value=NbCompletedInputs + 1) // '-' //    &
+          Line = '  Retrieving output data corresponding to input ' // ConvertToString(Value=NbCompletedInputs + 1) 
+          if ( This%NbConcurrentEvaluations > 1 ) Line = Line // '-' //    &
                                              ConvertToString(Value=min(NbInputs,NbCompletedInputs + This%NbConcurrentEvaluations))
           write(*,'(A)') Line
         end if
@@ -548,7 +552,7 @@ contains
         i = NbCompletedInputs + 1
         do i = NbCompletedInputs + 1, min(NbInputs,NbCompletedInputs + This%NbConcurrentEvaluations)
           ii = ii + 1
-          if ( StatRun(ii) == 0 ) call This%OutputReader(i)%ReadOutput( Output=Output(:,i) )
+          if ( StatRun(ii) == 0 ) call This%OutputReader(ii)%ReadOutput( Output=Output(:,i) )
           if ( present(Stat) ) Stat(i) = StatRun(ii)
         end do
         NbCompletedInputs = min(NbInputs,NbCompletedInputs + This%NbConcurrentEvaluations)
