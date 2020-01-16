@@ -1,53 +1,28 @@
 COMPILATION AND EXECUTION
 ======================================================================================================================================
 
+Requirements:
+  Cmake ( 3.15.5 minimum )
+  GCC ( 9.1.0 )
 
-- A) Coupling the Spring-Mass-Damper (SMD) and compiling SMUQ:
+- A) COMPILING SMUQ
 ——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
 
-1. Add the following lines to the bashrc file (vim ~/.bashrc)
+1. Crate a build directory inside of the main SMUQ directory ( ex. build )
 
--------------------------------------------------------------------------------------------
+2. Change current directory to the build directory ( ex. cd ${SMUQDIR}/build )
 
-####################################################### SMUQ #####################################################################
-alias SMUQ-COMPILE-INSTALL='"$SMUQ_PATH"/SMUQ-"$SMUQ_VERSION"/exec/CompileInstall-SMUQ.sh'
+3. Type in " cmake .. "
 
-function SMUQ-gfortran-release-application {  
-export SMUQ_COMPILER="gfortran"
-export SMUQ_COMPILER_VERSION="gnu-7.3.0"
-export SMUQ_DISTRIBUTION="release"
-export SMUQ_VERSION="3.0"
-export SMUQ_PATH="/home/rstkwsk2/workspace/repos/smuq/SMUQ"
-export SMUQ_TASK="application"
-eval 'source "$SMUQ_PATH"/SMUQ-"$SMUQ_VERSION"/exec/Export-SMUQ.sh'
-}
-##################################################################################################################################
-
--------------------------------------------------------------------------------------------  
-
-2. Upload the environment variables of external code handlers ( SMD )
-
-3. Update the bashrc file (source ~/.bashrc)
-
-4. Upload the environmental variables and libraries by typing SMUQ-$SMUQ_COMPILER-$SMUQ_DISTRIBUTION-$SMUQ_TASK.
-
-5. Finally, type SMUQ-COMPILE-INSTALL. SMUQ is now installed in the folder $SMUQ_INSTALL_DIR.
-
+4. Build and install with " make install " ( Can use parallel build with make -jn install where n is the number of processors )
 
 - B) TESTING SMUQ:
 ——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
 
-1. Create a run directory
+1. Create a run directory anywhere on your system
 
-2. Copy from ${SMUQ_PATH}/SMUQ-${SMUQ_VERSION}/exec the run_SMUQ.sh script into the run directory
+2. Copy any one of the example cases in the ${SMUQDIR}/example directory
 
-3. Copy ${SMUQ_PATH}/SMUQ-${SMUQ_VERSION}/cases/SMD/bayesian_kcdeterministic to run directory and rename as 'case'
+3. Run the SMUQ executable located in ${SMUQDIR}/bin/smuqApp
 
-4. Copy ${SMD_PATH}/SMD-${SMD_VERSION}/cases/basickc to run directory and rename as 'extcase'
-
-5. Run the run-SMUQ.sh bashscript inside the run directory
-  -- can specify number of concurrent chains as nprocesses=<nbchains>
-  -- can perform steps 3 and 4 in step 5 by adding case=<casedir> and extcase=<extcasedir>
-  -- order of script arguments does not matter
-
-6. When the simulation is done, postprocess the results by executing from the output folder the appropriate MATLAB script
+4. When the simulation is done, the results will be located by default in the output directory of ${SMUQDIR}
