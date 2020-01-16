@@ -936,6 +936,8 @@ contains
 
           end if
 
+          ii = iii + 1
+
         end do
 
       end do
