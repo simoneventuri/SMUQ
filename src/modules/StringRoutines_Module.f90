@@ -13,6 +13,8 @@ public                                                                ::    Conv
 public                                                                ::    ConvertToStrings
 public                                                                ::    ConvertToInteger
 public                                                                ::    ConvertToIntegers
+public                                                                ::    ConvertToInteger4
+public                                                                ::    ConvertToInteger4s
 public                                                                ::    ConvertToInteger8
 public                                                                ::    ConvertToInteger8s
 public                                                                ::    ConvertToReal
@@ -30,15 +32,17 @@ logical, parameter                                                    ::    Debu
 
 
 interface ConvertToString
-  module procedure                                                    ::    Convert_R0D_To_C0D
-  module procedure                                                    ::    Convert_I0D_To_C0D
+  module procedure                                                    ::    Convert_R40D_To_C0D
+  module procedure                                                    ::    Convert_R80D_To_C0D
+  module procedure                                                    ::    Convert_I40D_To_C0D
   module procedure                                                    ::    Convert_I80D_To_C0D
   module procedure                                                    ::    Convert_C0D_To_C0D
   module procedure                                                    ::    Convert_L0D_To_C0D
   module procedure                                                    ::    Convert_CX0D_To_C0D
   module procedure                                                    ::    Convert_String0D_To_C0D
-  module procedure                                                    ::    Convert_R1D_To_C0D
-  module procedure                                                    ::    Convert_I1D_To_C0D
+  module procedure                                                    ::    Convert_R41D_To_C0D
+  module procedure                                                    ::    Convert_R81D_To_C0D
+  module procedure                                                    ::    Convert_I41D_To_C0D
   module procedure                                                    ::    Convert_I81D_To_C0D
   module procedure                                                    ::    Convert_C1D_To_C0D
   module procedure                                                    ::    Convert_L1D_To_C0D
@@ -51,15 +55,6 @@ interface ConvertToStrings
   module procedure                                                    ::    Convert_C1D_To_String1D
 end interface
 
-interface ConvertToInteger8                                            
-  module procedure                                                    ::    Convert_C0D_To_I80D
-end interface
-
-interface ConvertToInteger8s                                            
-  module procedure                                                    ::    Convert_C0D_To_I81D
-  module procedure                                                    ::    Convert_C1D_To_I81D
-end interface
-
 interface ConvertToInteger                                            
   module procedure                                                    ::    Convert_C0D_To_I0D
 end interface
@@ -67,6 +62,24 @@ end interface
 interface ConvertToIntegers                                            
   module procedure                                                    ::    Convert_C0D_To_I1D
   module procedure                                                    ::    Convert_C1D_To_I1D
+end interface
+
+interface ConvertToInteger4                                            
+  module procedure                                                    ::    Convert_C0D_To_I40D
+end interface
+
+interface ConvertToInteger4s                                            
+  module procedure                                                    ::    Convert_C0D_To_I41D
+  module procedure                                                    ::    Convert_C1D_To_I41D
+end interface
+
+interface ConvertToInteger8                                            
+  module procedure                                                    ::    Convert_C0D_To_I80D
+end interface
+
+interface ConvertToInteger8s                                            
+  module procedure                                                    ::    Convert_C0D_To_I81D
+  module procedure                                                    ::    Convert_C1D_To_I81D
 end interface
 
 interface ConvertToReal                                            
@@ -115,6 +128,68 @@ interface ConvertToComplexs
 end interface
 
 contains
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_C0D_To_I40D( String )
+
+    integer(4)                                                        ::    Convert_C0D_To_I40D
+
+    character(*), intent(in)                                          ::    String
+
+
+    character(*), parameter                                           ::    ProcName='Convert_C0D_To_I40D'
+    integer                                                           ::    StatLoc=0
+
+    read(unit=String, fmt=*, iostat=StatLoc) Convert_C0D_To_I40D
+    if ( StatLoc /= 0 ) call Error%Read( Message='Error when performing an internal read', ProcName=ProcName, Status=StatLoc )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_C0D_To_I41D( String, Separator )
+
+    integer(4), allocatable, dimension(:)                             ::    Convert_C0D_To_I41D
+
+    character(*), intent(in)                                          ::    String
+    character(*), optional, intent(in)                                ::    Separator
+
+    character(*), parameter                                           ::    ProcName='Convert_C0D_To_I41D'
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    SeparatorLoc
+    character(:), allocatable, dimension(:)                           ::    Strings
+
+    SeparatorLoc = ' '
+    if ( present(Separator) ) SeparatorLoc = Separator
+
+    call Parse( Input=String, Separator=SeparatorLoc, Output=Strings )
+
+    Convert_C0D_To_I41D = ConvertToInteger4s( Strings=Strings )
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_C1D_To_I41D( Strings )
+
+    integer(4), allocatable, dimension(:)                             ::    Convert_C1D_To_I41D
+
+    character(*), dimension(:), intent(in)                            ::    Strings
+
+    character(*), parameter                                           ::    ProcName='Convert_C1D_To_I41D'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+
+    allocate(Convert_C1D_To_I41D(size(Strings,1)), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Convert_C1D_To_I41D', ProcName=ProcName, stat=StatLoc )
+
+    do i = 1, size(Strings,1)
+      read(unit=Strings(i), fmt=*, iostat=StatLoc) Convert_C1D_To_I41D(i)
+      if ( StatLoc /= 0 ) call Error%Read( Message='Error when performing an internal read', ProcName=ProcName, Status=StatLoc )
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function Convert_C0D_To_I80D( String )
@@ -544,15 +619,15 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  !----------------------------------------------------------------------------------------------------------------------------!!
-  function Convert_R0D_To_C0D( Value, Format )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_R40D_To_C0D( Value, Format )
 
-    character(:), allocatable                                         ::    Convert_R0D_To_C0D
+    character(:), allocatable                                         ::    Convert_R40D_To_C0D
 
-    real(rkp), intent(in)                                             ::    Value
+    real(4), intent(in)                                               ::    Value
     character(*), optional, intent(in)                                ::    Format
 
-    character(*), parameter                                           ::    ProcName='Convert_R0D_To_C0D'
+    character(*), parameter                                           ::    ProcName='Convert_R40D_To_C0D'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FormatLoc
     character(1000)                                                   ::    VarC0D
@@ -564,20 +639,20 @@ contains
 
     write(unit=VarC0D, fmt=FormatLoc, iostat=StatLoc) Value
     if ( StatLoc /= 0 ) call Error%Write( Line='Error when performing an internal write', ProcName=ProcName, iostat=StatLoc )
-    Convert_R0D_To_C0D = trim(adjustl(VarC0D))
+    Convert_R40D_To_C0D = trim(adjustl(VarC0D))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  !----------------------------------------------------------------------------------------------------------------------------!!
-  function Convert_I0D_To_C0D( Value, Format )
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_R80D_To_C0D( Value, Format )
 
-    character(:), allocatable                                         ::    Convert_I0D_To_C0D
+    character(:), allocatable                                         ::    Convert_R80D_To_C0D
 
-    integer, intent(in)                                               ::    Value
+    real(8), intent(in)                                               ::    Value
     character(*), optional, intent(in)                                ::    Format
 
-    character(*), parameter                                           ::    ProcName='Convert_I0D_To_C0D'
+    character(*), parameter                                           ::    ProcName='Convert_R80D_To_C0D'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    FormatLoc
     character(1000)                                                   ::    VarC0D
@@ -589,12 +664,37 @@ contains
 
     write(unit=VarC0D, fmt=FormatLoc, iostat=StatLoc) Value
     if ( StatLoc /= 0 ) call Error%Write( Line='Error when performing an internal write', ProcName=ProcName, iostat=StatLoc )
-    Convert_I0D_To_C0D = trim(adjustl(VarC0D))
+    Convert_R80D_To_C0D = trim(adjustl(VarC0D))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  !----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_I40D_To_C0D( Value, Format )
+
+    character(:), allocatable                                         ::    Convert_I40D_To_C0D
+
+    integer(4), intent(in)                                            ::    Value
+    character(*), optional, intent(in)                                ::    Format
+
+    character(*), parameter                                           ::    ProcName='Convert_I40D_To_C0D'
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    FormatLoc
+    character(1000)                                                   ::    VarC0D
+
+    FormatLoc = 'G0'
+    if ( present(Format) ) FormatLoc = Format
+
+    FormatLoc = '(' // FormatLoc // ')'
+
+    write(unit=VarC0D, fmt=FormatLoc, iostat=StatLoc) Value
+    if ( StatLoc /= 0 ) call Error%Write( Line='Error when performing an internal write', ProcName=ProcName, iostat=StatLoc )
+    Convert_I40D_To_C0D = trim(adjustl(VarC0D))
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Convert_I80D_To_C0D( Value, Format )
 
     character(:), allocatable                                         ::    Convert_I80D_To_C0D
@@ -619,7 +719,7 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  !----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Convert_C0D_To_C0D( Value, Format )
 
     character(:), allocatable                                         ::    Convert_C0D_To_C0D
@@ -644,7 +744,7 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  !----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Convert_L0D_To_C0D( Value, Format )
 
     character(:), allocatable                                         ::    Convert_L0D_To_C0D
@@ -669,7 +769,7 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  !----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Convert_CX0D_To_C0D( Value, Format )
 
     character(:), allocatable                                         ::    Convert_CX0D_To_C0D
@@ -694,7 +794,7 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  !----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Convert_String0D_To_C0D( Value, Format )
 
     character(:), allocatable                                         ::    Convert_String0D_To_C0D
@@ -718,15 +818,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Convert_R1D_To_C0D( Values, Format, Separator )
+  function Convert_R41D_To_C0D( Values, Format, Separator )
 
-    character(:), allocatable                                         ::    Convert_R1D_To_C0D
+    character(:), allocatable                                         ::    Convert_R41D_To_C0D
 
-    real(rkp), dimension(:), intent(in)                               ::    Values
+    real(4), dimension(:), intent(in)                                 ::    Values
     character(*), optional, intent(in)                                ::    Separator
     character(*), optional, intent(in)                                ::    Format
 
-    character(*), parameter                                           ::    ProcName='Convert_R1D_To_C0D'
+    character(*), parameter                                           ::    ProcName='Convert_R41D_To_C0D'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    SeparatorLoc
     character(:), allocatable                                         ::    FormatLoc
@@ -746,21 +846,21 @@ contains
 
     write(unit=VarC0D, fmt=FormatLoc, iostat=StatLoc) Values
     if ( StatLoc /= 0 ) call Error%Write( Line='Error when performing an internal write', ProcName=ProcName, iostat=StatLoc)
-    Convert_R1D_To_C0D = trim(adjustl(VarC0D))
+    Convert_R41D_To_C0D = trim(adjustl(VarC0D))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Convert_I1D_To_C0D( Values, Format, Separator )
+  function Convert_R81D_To_C0D( Values, Format, Separator )
 
-    character(:), allocatable                                         ::    Convert_I1D_To_C0D
+    character(:), allocatable                                         ::    Convert_R81D_To_C0D
 
-    integer, dimension(:), intent(in)                                 ::    Values
+    real(8), dimension(:), intent(in)                                 ::    Values
     character(*), optional, intent(in)                                ::    Separator
     character(*), optional, intent(in)                                ::    Format
 
-    character(*), parameter                                           ::    ProcName='Convert_I1D_To_C0D'
+    character(*), parameter                                           ::    ProcName='Convert_R81D_To_C0D'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    SeparatorLoc
     character(:), allocatable                                         ::    FormatLoc
@@ -780,7 +880,41 @@ contains
 
     write(unit=VarC0D, fmt=FormatLoc, iostat=StatLoc) Values
     if ( StatLoc /= 0 ) call Error%Write( Line='Error when performing an internal write', ProcName=ProcName, iostat=StatLoc)
-    Convert_I1D_To_C0D = trim(adjustl(VarC0D))
+    Convert_R81D_To_C0D = trim(adjustl(VarC0D))
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_I41D_To_C0D( Values, Format, Separator )
+
+    character(:), allocatable                                         ::    Convert_I41D_To_C0D
+
+    integer(4), dimension(:), intent(in)                              ::    Values
+    character(*), optional, intent(in)                                ::    Separator
+    character(*), optional, intent(in)                                ::    Format
+
+    character(*), parameter                                           ::    ProcName='Convert_I41D_To_C0D'
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    SeparatorLoc
+    character(:), allocatable                                         ::    FormatLoc
+    integer                                                           ::    i
+    integer                                                           ::    Size1
+    character(10000)                                                  ::    VarC0D
+
+    SeparatorLoc = ' '
+    if ( present(Separator) ) SeparatorLoc = Separator
+
+    FormatLoc = 'G0'
+    if ( present(Format) ) FormatLoc = Format
+
+    if ( SeparatorLoc == ' ' ) SeparatorLoc = '1X'
+
+    FormatLoc = '(' // FormatLoc // ',*(' // SeparatorLoc // ',' // FormatLoc // '))'
+
+    write(unit=VarC0D, fmt=FormatLoc, iostat=StatLoc) Values
+    if ( StatLoc /= 0 ) call Error%Write( Line='Error when performing an internal write', ProcName=ProcName, iostat=StatLoc)
+    Convert_I41D_To_C0D = trim(adjustl(VarC0D))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
