@@ -1077,9 +1077,9 @@ contains
     FormatLoc = 'G0'
     if ( present(Format) ) FormatLoc = Format
 
-    if ( SeparatorLoc == ' ' ) SeparatorLoc = '1X'
-
-    FormatLoc = '(' // FormatLoc // ',*(' // SeparatorLoc // ',' // FormatLoc // '))'
+!    if ( SeparatorLoc == ' ' ) SeparatorLoc = '1X'
+! 
+!    FormatLoc = '(' // FormatLoc // ',*(' // SeparatorLoc // ',' // FormatLoc // '))'
 
     Convert_String1D_To_C0D = Values(1)%GetValue()
     i = 2

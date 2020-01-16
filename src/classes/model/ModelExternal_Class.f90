@@ -118,7 +118,6 @@ contains
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
     This%Silent = .false.
-    This%WorkDirectory = ''
     This%FullWorkDirectory = ''
     This%Label = 'external'
     This%NbConcurrentEvaluations = 1
@@ -165,13 +164,9 @@ contains
     call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%Silent = VarL0D
 
-    ParameterName = 'work_directory'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
-    This%WorkDirectory = VarC0D
-
-    This%FullWorkDirectory = ProgramDefs%GetRunDir() // '/TMP_EXTERNAL_' // This%Label // '/' // This%WorkDirectory
+    This%FullWorkDirectory = ProgramDefs%GetRunDir() // '/TMP_EXTERNAL_' // This%Label
     call MakeDirectory( Path=This%FullWorkDirectory, Options='-p' )
-    call execute_command_line( Command='rm -rf ' // This%FullWorkDirectory // '/*' )
+    call RemoveDirectory( Path=This%FullWorkDirectory, ContentsOnly=.true. )
 
     ParameterName = 'nb_concurrent_evaluations'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -184,12 +179,11 @@ contains
 
     ParameterName = 'nb_concurrent_subevaluations'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    This%NbConcurrentEvaluations = This%NbSubModels
+    This%NbConcurrentSubEvaluations = This%NbSubModels
     if ( Found ) This%NbConcurrentEvaluations = VarI0D
 
     if ( This%NbConcurrentSubEvaluations == 0 ) call Error%Raise( 'Specified 0 number of concurrent submodel evaluations',        &
                                                                                                                ProcName=ProcName )
-
     if ( This%NbConcurrentSubEvaluations > This%NbSubModels ) This%NbConcurrentSubEvaluations = This%NbSubModels
 
     allocate(This%SubModelCaseDirectory(This%NbSubModels), stat=StatLoc)
@@ -280,7 +274,6 @@ contains
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
     call GetInput%AddParameter( Name='label', Value=This%Label )
-    call GetInput%AddParameter( Name='work_directory', Value=This%WorkDirectory )
     call GetInput%AddParameter( Name='nb_concurrent_evaluations', Value=ConvertToString(Value=This%NbConcurrentEvaluations) )
     call GetInput%AddParameter( Name='nb_concurrent_subevaluations', Value=ConvertToString(Value=This%NbConcurrentSubEvaluations))
 
