@@ -50,6 +50,8 @@ contains
   procedure, private                                                  ::    ConstructInput_Cell
   procedure, public                                                   ::    GetInput                =>    GetInput_Cell
   procedure, public                                                   ::    ReadOutput              =>    ReadOutput_Cell
+  procedure, public                                                   ::    GetLabel                =>    GetLabel_Cell
+  procedure, public                                                   ::    Exists                  =>    Exists_Cell
   generic, public                                                     ::    assignment(=)           =>    Copy_Cell
   procedure, public                                                   ::    Copy_Cell
   final                                                               ::    Finalizer_Cell
@@ -69,6 +71,7 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    ReadOutput
+  procedure, public                                                   ::    AllFound
   procedure, public                                                   ::    GetNbOutputs
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
@@ -211,24 +214,71 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReadOutput( This, Output )
+  subroutine ReadOutput( This, Output, AllMandatory, AllFound, Found )
 
     class(OutputReader_Type), intent(inout)                           ::    This
     type(Output_Type), dimension(:), intent(inout)                    ::    Output
+    logical, optional, intent(in)                                     ::    AllMandatory
+    logical, optional, intent(out)                                    ::    AllFound
+    logical, dimension(:), optional, intent(inout)                    ::    Found
 
     character(*), parameter                                           ::    ProcName='ReadOutput'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
+    logical                                                           ::    AllMandatoryLoc
+    logical                                                           ::    AllFoundLoc
+
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     if ( size(Output,1) /= This%NbCells ) call Error%Raise( Line='Passed down incorrect size Output array', ProcName=ProcName )
 
+    if ( present(Found) ) then
+      if ( size(Found,1) /= This%NbCells ) call Error%Raise( Line='Passed down incorrect size Output array', ProcName=ProcName )
+    end if
+
+    AllMandatoryLoc = .true.
+    if ( present(AllMandatory) ) AllMandatoryLoc = AllMandatory
+
+    AllFound = .true.
+
+    if ( present(Found) ) Found = .true.
+
     i = 1
     do i = 1, This%NbCells
+      if ( .not. This%Cells(i)%Exists() ) then
+        if ( AllMandatory ) call Error%Raise( 'Could not find output : ' // This%Cells(i)%GetLabel(), ProcName=ProcName )
+        AllFound = .false.
+        Found(i) = .false.
+        cycle
+      end if
       call This%Cells(i)%ReadOutput( Output=Output(i) )
     end do
 
   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function AllFound( This )
+
+    logical                                                           ::    AllFound
+
+    class(OutputReader_Type), intent(inout)                           ::    This
+
+    character(*), parameter                                           ::    ProcName='AllFound'
+    integer                                                           ::    i
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    AllFound = .true.
+
+    i = 1
+    do i = 1, This%NbCells
+      if ( This%Cells(i)%Exists() ) cycle
+      AllFound = .false.
+      exit
+    end do
+
+  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -500,6 +550,45 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Exists_Cell( This )
+
+    logical, allocatable                                              ::    Exists_Cell
+
+    class(Cell_Type), intent(inout)                                   ::    This
+
+    character(*), parameter                                           ::    ProcName='Exists_Cell'
+    integer                                                           ::    i
+    class(OFileFormated_Type), pointer                                ::    OFile=>null()
+
+    Exists_Cell = .true.
+    i = 1
+    do i = 1, This%NbOFiles
+      OFile => This%OFile(i)%GetPointer()
+      if ( OFile%Exists() ) cycle
+      Exists_Cell = .false.
+      exit
+    end do
+
+    nullify(OFile)
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetLabel_Cell( This )
+
+    Character(:), allocatable                                         ::    GetLabel_Cell
+
+    class(Cell_Type), intent(in)                                      ::    This
+
+    character(*), parameter                                           ::    ProcName='GetLabel_Cell'
+
+    GetLabel_Cell = This%Label
+
+  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

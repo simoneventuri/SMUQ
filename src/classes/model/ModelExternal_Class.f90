@@ -430,11 +430,11 @@ contains
 
     character(*), parameter                                           ::    ProcName='Run_1D'
     integer                                                           ::    StatLoc=0
-    integer, allocatable, dimension(:)                                ::    StatRun
     integer                                                           ::    NbInputs
     type(String_Type), allocatable, dimension(:)                      ::    Transcript
     integer                                                           ::    i
     integer                                                           ::    ii
+    integer                                                           ::    iii
     integer                                                           ::    iPass
     integer                                                           ::    iRun
     integer                                                           ::    iLine
@@ -468,10 +468,6 @@ contains
     allocate(Transcript(This%NbConcurrentEvaluations*This%NbConcurrentSubEvaluations*5+3), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Transcript', ProcName=ProcName, stat=StatLoc )
     Transcript(1) = '#!/bin/bash'
-
-    allocate(StatRun(This%NbConcurrentEvaluations), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='StatRun', ProcName=ProcName, stat=StatLoc )
-    StatRun = 0
 
     iPass = 1
     iRun = 1
@@ -537,7 +533,7 @@ contains
       call This%BashLaunchFile%Export(Strings=Transcript(1:iLine))
       call ExecuteSysCommand( SysCommand=Command, Wait=.true. )
 
-      StatRun = 0
+      if ( present(Stat) ) Stat = 1
 
       NbCompletedSubModels = min(This%NbSubModels,NbCompletedSubModels + This%NbConcurrentSubEvaluations)
 
@@ -552,8 +548,19 @@ contains
         i = NbCompletedInputs + 1
         do i = NbCompletedInputs + 1, min(NbInputs,NbCompletedInputs + This%NbConcurrentEvaluations)
           ii = ii + 1
-          if ( StatRun(ii) == 0 ) call This%OutputReader(ii)%ReadOutput( Output=Output(:,i) )
-          if ( present(Stat) ) Stat(i) = StatRun(ii)
+          if ( .not. This%OutputReader(ii)%AllFound() ) then
+            if ( .not. This%Silent ) then
+              Line = '  Detected a failed run with input ' // ConvertToString(Value=i)
+              write(*,'(A)') Line
+            end if
+            iii = 1
+            do iii = 1, This%NbOutputs
+              call Output(iii,i)%Reset()
+            end do
+            cycle
+          end if
+          call This%OutputReader(ii)%ReadOutput( Output=Output(:,i) )
+          if ( present(Stat) ) Stat(i) = 0
         end do
         NbCompletedInputs = min(NbInputs,NbCompletedInputs + This%NbConcurrentEvaluations)
         NbCompletedSubModels = 0
@@ -566,9 +573,6 @@ contains
 
     deallocate(Transcript, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='Transcript', ProcName=ProcName, stat=StatLoc )
-
-    deallocate(StatRun, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='StatRun', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -35,8 +35,10 @@ type, abstract                                                        ::    OFil
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
+  type(SMUQFile_Type)                                                 ::    OutputFile
 contains
   procedure, public                                                   ::    GetName
+  procedure, public                                                   ::    Exists
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(Initialize_OFileFormated), deferred, public               ::    Initialize
@@ -126,6 +128,20 @@ contains
     character(*), parameter                                           ::    ProcName='GetName'
 
     GetName = This%Name
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Exists( This )
+
+    logical, allocatable                                              ::    Exists
+
+    class(OFileFormated_Type), intent(inout)                          ::    This
+
+    character(*), parameter                                           ::    ProcName='Exists'
+
+    Exists = This%OutputFile%Exists()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -41,7 +41,6 @@ private
 public                                                                ::    OFileTable_Type
 
 type, extends(OFileFormated_Type)                                     ::    OFileTable_Type
-  type(SMUQFile_Type)                                                 ::    OutputFile
   integer, allocatable, dimension(:)                                  ::    OutputColumn
   integer                                                             ::    AbscissaColumn
   real(rkp), allocatable, dimension(:)                                ::    InterpolationNodes
