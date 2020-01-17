@@ -246,7 +246,7 @@ contains
     i = 1
     do i = 1, This%NbCells
       if ( .not. This%Cells(i)%Exists() ) then
-        if ( AllMandatory ) call Error%Raise( 'Could not find output : ' // This%Cells(i)%GetLabel(), ProcName=ProcName )
+        if ( AllMandatoryLoc ) call Error%Raise( 'Could not find output : ' // This%Cells(i)%GetLabel(), ProcName=ProcName )
         if ( present(AllFound) ) AllFound = .false.
         if ( present(Found) ) Found(i) = .false.
         cycle

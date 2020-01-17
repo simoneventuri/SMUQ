@@ -456,8 +456,8 @@ contains
 
     if ( .not. This%Silent ) then
       write(*,*)
-      Line = 'Scheduling ' // ConvertToString(Value=NbInputs) // ' inputs with' // ConvertToString(Value=This%NbSubModels) //     &
-                                 'submodels for a total of ' // ConvertToString(Value=NbInputs*This%NbSubModels) // ' evaluations'
+      Line = 'Scheduling ' // ConvertToString(Value=NbInputs) // ' inputs with ' // ConvertToString(Value=This%NbSubModels) //    &
+                                 ' submodels for a total of ' // ConvertToString(Value=NbInputs*This%NbSubModels) // ' evaluations'
       write(*,'(A)') Line
       Line = '  Number of concurrent input evaluations : ' // ConvertToString(Value=This%NbConcurrentEvaluations)
       write(*,'(A)') Line
@@ -469,6 +469,7 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Transcript', ProcName=ProcName, stat=StatLoc )
     Transcript(1) = '#!/bin/bash'
 
+    if ( present(Stat) ) Stat = 1
     iPass = 1
     iRun = 1
     NbCompletedSubModels = 0
@@ -476,6 +477,7 @@ contains
 
     do
       if ( .not. This%Silent ) then
+        write(*,*)
         Line = '  Blocking pass ' // ConvertToString(Value=iPass)
         write(*,'(A)') Line
       end if
@@ -495,10 +497,10 @@ contains
         do ii = 1, This%NbConcurrentSubEvaluations
           if ( iSubModel > This%NbSubModels ) exit
           if ( .not. This%Silent ) then
-            Line = '  Evaluation ' // ConvertToString(Value=iRun) // ' : Input ' // ConvertToString(Value=iInput) // ' Submodel ' &
-                                                                                                     // ConvertToString(iSubModel)
+            Line = '    Evaluation ' // ConvertToString(Value=iRun) // ' : Input ' // ConvertToString(Value=iInput) //            &
+                                                                                        ' Submodel ' // ConvertToString(iSubModel)
             write(*,'(A)') Line
-            Transcript(iLine) = 'echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Initializing"'
+            Transcript(iLine) = 'echo "    Evaluation ' // ConvertToString(Value=iRun) // ' : Initializing"'
             iLine = iLine + 1
           end if
 
@@ -509,7 +511,7 @@ contains
           iLine = iLine + 1
 
           if ( .not. This%Silent ) then
-            Transcript(iLine) = 'echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
+            Transcript(iLine) = 'echo "    Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
             iLine = iLine + 1
           end if
 
@@ -530,10 +532,15 @@ contains
 
       Transcript(iLine) = 'wait'
 
+      if ( .not. This%Silent ) then
+        Line = '  Initializing evaluation ' // ConvertToString(Value=iRun -                                                       &
+                                                                     This%NbConcurrentEvaluations*This%NbConcurrentSubEvaluations)
+        if ( This%NbConcurrentEvaluations > 1 ) Line = Line // '-' //    &
+                                           ConvertToString(Value=min(NbInputs,NbCompletedInputs + This%NbConcurrentEvaluations))
+        write(*,'(A)') Line
+      end if
       call This%BashLaunchFile%Export(Strings=Transcript(1:iLine))
       call ExecuteSysCommand( SysCommand=Command, Wait=.true. )
-
-      if ( present(Stat) ) Stat = 1
 
       NbCompletedSubModels = min(This%NbSubModels,NbCompletedSubModels + This%NbConcurrentSubEvaluations)
 
@@ -550,7 +557,7 @@ contains
           ii = ii + 1
           if ( .not. This%OutputReader(ii)%AllFound() ) then
             if ( .not. This%Silent ) then
-              Line = '  Detected a failed run with input ' // ConvertToString(Value=i)
+              Line = '    Detected a failed run with input ' // ConvertToString(Value=i)
               write(*,'(A)') Line
             end if
             iii = 1
