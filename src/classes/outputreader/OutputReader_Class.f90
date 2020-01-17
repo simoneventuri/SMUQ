@@ -239,7 +239,7 @@ contains
     AllMandatoryLoc = .true.
     if ( present(AllMandatory) ) AllMandatoryLoc = AllMandatory
 
-    AllFound = .true.
+    if ( present(AllFound) ) AllFound = .true.
 
     if ( present(Found) ) Found = .true.
 
@@ -247,8 +247,8 @@ contains
     do i = 1, This%NbCells
       if ( .not. This%Cells(i)%Exists() ) then
         if ( AllMandatory ) call Error%Raise( 'Could not find output : ' // This%Cells(i)%GetLabel(), ProcName=ProcName )
-        AllFound = .false.
-        Found(i) = .false.
+        if ( present(AllFound) ) AllFound = .false.
+        if ( present(Found) ) Found(i) = .false.
         cycle
       end if
       call This%Cells(i)%ReadOutput( Output=Output(i) )
