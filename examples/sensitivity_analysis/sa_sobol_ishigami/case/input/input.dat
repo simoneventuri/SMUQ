@@ -5,53 +5,55 @@ start(main)
     start(type)
       label = tfun
       silent = true
-      start(function1)
-        type = ishigami
-        start(type)
-          response_name = output1
-          label = output1
-          a = 1.0
-          b = 7.0
-          c = 0.1
-          start(parameters)
-            x1_dependency = p1
-            x2_dependency = p2
-            x3_dependency = p3
-          end(parameters)
-        end(type)
-      end(function1)
+      start(functions)
+        start(function1)
+          type = ishigami
+          start(type)
+            response_name = output1
+            label = output1
+            a = 1.0
+            b = 7.0
+            c = 0.1
+            start(parameters)
+              x1_dependency = p1
+              x2_dependency = p2
+              x3_dependency = p3
+            end(parameters)
+          end(type)
+        end(function1)
 
-      start(function2)
-        type = ishigami
-        start(type)
-          response_name = output2
-          label = output2
-          a = 1.0
-          b = 7.0
-          c = 0.1
-          start(parameters)
-            x1_dependency = p1
-            x2_dependency = p2
-            x3_dependency = p3
-          end(parameters)
-        end(type)
-      end(function2)
+        start(function2)
+          type = ishigami
+          start(type)
+            response_name = output2
+            label = output2
+            a = 1.0
+            b = 7.0
+            c = 0.1
+            start(parameters)
+              x1_dependency = p1
+              x2_dependency = p2
+              x3_dependency = p3
+            end(parameters)
+          end(type)
+        end(function2)
 
-      start(function3)
-        type = ishigami
-        start(type)
-          response_name = output3
-          label = output3
-          a = 1.0
-          b = 7.0
-          c = 0.1
-          start(parameters)
-            x1_dependency = p1
-            x2_dependency = p2
-            x3_dependency = p3
-          end(parameters)
-        end(type)
-      end(function3)
+        start(function3)
+          type = ishigami
+          start(type)
+            response_name = output3
+            label = output3
+            a = 1.0
+            b = 7.0
+            c = 0.1
+            start(parameters)
+              x1_dependency = p1
+              x2_dependency = p2
+              x3_dependency = p3
+            end(parameters)
+          end(type)
+        end(function3)
+      end(functions)
     end(type)
   end(model)
 
