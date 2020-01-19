@@ -263,7 +263,7 @@ contains
 
     call GetInput%AddParameter( Name='m', Value=ConvertToString(This%M) )
     if ( len_trim(This%M_Dependency) /= 0 )call GetInput%AddParameter( Name='m_dependency', Value=This%M_Dependency )
-    if ( len_trim(This%M_Transform) > 0 ) call GetInput%AddParameter( Name='m_transform', Value=This%M_Transform ) )
+    if ( len_trim(This%M_Transform) > 0 ) call GetInput%AddParameter( Name='m_transform', Value=This%M_Transform )
 
     call GetInput%AddParameter( Name='tolerance', Value=ConvertToString(This%Tolerance) )
 
@@ -335,7 +335,7 @@ contains
     if ( len_trim(This%Zs_Dependency) /= 0 ) call Input%GetValue( Value=ZsLoc, Label=This%Zs_Dependency )
     MLoc = This%M
     if ( len_trim(This%M_Dependency) /= 0 ) call Input%GetValue( Value=MLoc, Label=This%M_Dependency )
-    if ( len_trim(This%M_Transform > 0 ) call Transform( Transformations=This%M_Transform, Value=MLoc )
+    if ( len_trim(This%M_Transform) > 0 ) call Transform( Transformation=This%M_Transform, Value=MLoc )
 
     if ( L1Loc < Zero ) call Error%Raise( Line='Characteristic length 1 scale value below 0', ProcName=ProcName )
     if ( L2Loc < Zero ) call Error%Raise( Line='Characteristic length 2 scale value below 0', ProcName=ProcName )

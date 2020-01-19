@@ -227,7 +227,7 @@ contains
 
     call GetInput%AddParameter( Name='m', Value=ConvertToString(This%M) )
     if ( len_trim(This%M_Dependency) /= 0 ) call GetInput%AddParameter( Name='m_dependency', Value=This%M_Dependency)
-    if ( len_trim(This%M_Transform) > 0 ) call GetInput%AddParameter( Name='m_transform', Value=This%M_Transform ) )
+    if ( len_trim(This%M_Transform) > 0 ) call GetInput%AddParameter( Name='m_transform', Value=This%M_Transform )
 
     call GetInput%AddParameter( Name='gamma', Value=ConvertToString(This%Gam) )
     if ( len_trim(This%Gam_Dependency) /= 0 )call GetInput%AddParameter( Name='gamma_dependency', Value=This%Gam_Dependency )
@@ -290,7 +290,7 @@ contains
     MLoc = This%M
     if ( len_trim(This%M_Dependency) /= 0 ) call Input%GetValue( Value=MLoc, Label=This%M_Dependency )
 
-    if ( len_trim(This%M_Transform > 0 ) call Transform( Transformations=This%M_Transform, Value=MLoc )
+    if ( len_trim(This%M_Transform) > 0 ) call Transform( Transformation=This%M_Transform, Value=MLoc )
 
     GamLoc = This%Gam
     if ( len_trim(This%Gam_Dependency) /= 0 ) call Input%GetValue( Value=GamLoc, Label=This%Gam_Dependency )

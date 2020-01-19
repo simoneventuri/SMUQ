@@ -192,7 +192,7 @@ contains
 
     call GetInput%AddParameter( Name='m', Value=ConvertToString(This%M) )
     if ( len_trim(This%M_Dependency) /= 0 ) call GetInput%AddParameter( Name='m_dependency', Value=This%M_Dependency )
-    if ( len_trim(This%M_Transform) > 0 ) call GetInput%AddParameter( Name='m_transform', Value=This%M_Transform ) )
+    if ( len_trim(This%M_Transform) > 0 ) call GetInput%AddParameter( Name='m_transform', Value=This%M_Transform )
 
     SectionName = 'predefined_covariance'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/predefined_covariance'
@@ -241,7 +241,7 @@ contains
       MLoc = This%M
     end if
 
-    if ( len_trim(This%M_Transform > 0 ) call Transform( Transformations=This%M_Transform, Value=MLoc )
+    if ( len_trim(This%M_Transform) > 0 ) call Transform( Transformation=This%M_Transform, Value=MLoc )
 
     Cov = Cov * MLoc
 

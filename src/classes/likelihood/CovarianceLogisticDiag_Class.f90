@@ -224,7 +224,7 @@ contains
 
     call GetInput%AddParameter( Name='m', Value=ConvertToString(This%M) )
     if ( len_trim(This%M_Dependency) /= 0 )call GetInput%AddParameter( Name='m_dependency', Value=This%M_Dependency )
-    if ( len_trim(This%M_Transform) > 0 ) call GetInput%AddParameter( Name='m_transform', Value=This%M_Transform ) )
+    if ( len_trim(This%M_Transform) > 0 ) call GetInput%AddParameter( Name='m_transform', Value=This%M_Transform )
 
     call GetInput%AddParameter( Name='k', Value=ConvertToString(This%K) )
     if ( len_trim(This%K_Dependency) /= 0 )call GetInput%AddParameter( Name='k_dependency', Value=This%K_Dependency )
@@ -286,7 +286,7 @@ contains
 
     MLoc = This%M
     if ( len_trim(This%M_Dependency) /= 0 ) call Input%GetValue( Value=MLoc, Label=This%M_Dependency )
-    if ( len_trim(This%M_Transform > 0 ) call Transform( Transformations=This%M_Transform, Value=MLoc )
+    if ( len_trim(This%M_Transform) > 0 ) call Transform( Transformation=This%M_Transform, Value=MLoc )
     KLoc = This%K
     if ( len_trim(This%K_Dependency) /= 0 ) call Input%GetValue( Value=KLoc, Label=This%K_Dependency )
     X0Loc = This%X0

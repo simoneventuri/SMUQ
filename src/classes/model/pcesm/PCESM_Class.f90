@@ -32,6 +32,7 @@ use Output_Class                                                  ,only:    Outp
 use PolyChaosModel_Class                                          ,only:    PolyChaosModel_Type
 use Input_Class                                                   ,only:    Input_Type
 use List1DAllocChar_Class                                         ,only:    List1DAllocChar_Type
+use InputProcessor_Class                                          ,only:    InputProcessor_Type
 
 implicit none
 
@@ -42,12 +43,6 @@ public                                                                ::    PCES
 type, extends(ModelInternal_Type)                                     ::    PCESM_Type
   type(PolyChaosModel_Type), allocatable, dimension(:)                ::    PCEModels
   integer                                                             ::    NbModels=0
-  integer                                                             ::    NbFixedParams=0
-  real(rkp), allocatable, dimension(:)                                ::    FixedParamVals
-  type(String_Type), allocatable, dimension(:)                        ::    FixedParamLabels   
-  integer                                                             ::    NbTransformParams=0   
-  type(List1DAllocChar_Type), allocatable, dimension(:)               ::    ParamTransform      
-  type(String_Type), allocatable, dimension(:)                        ::    ParamTransformLabel 
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -90,21 +85,7 @@ contains
     if ( allocated(This%PCEModels) ) deallocate(This%PCEModels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PCEModels', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%FixedParamLabels) ) deallocate(This%FixedParamLabels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FixedParamLabels', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%FixedParamVals) ) deallocate(This%FixedParamVals, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FixedParamVals', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%ParamTransform) ) deallocate(This%ParamTransform, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamTransform', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%ParamTransformLabel) ) deallocate(This%ParamTransform, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamTransform', ProcName=ProcName, stat=StatLoc )
-
     This%NbModels = 0
-    This%NbFixedParams = 0
-    This%NbTransformParams = 0
 
     call This%SetDefaults()
 
@@ -206,91 +187,10 @@ contains
       end if
     end do
 
-    SectionName = 'fixed_parameters'
-    if ( Input%HasSection(SubSectionName=SectionName) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      This%NbFixedParams = InputSection%GetNumberOfSubSections()
-      nullify(InputSection)
-
-      allocate(This%FixedParamLabels(This%NbFixedParams), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%FixedParamLabels', ProcName=ProcName, stat=StatLoc )
-
-      allocate(This%FixedParamVals(This%NbFixedParams), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%FixedParamVals', ProcName=ProcName, stat=StatLoc )
-      This%FixedParamVals = Zero
-
-      i = 1
-      do i = 1, This%NbFixedParams
-        SubSectionName = SectionName // '>parameter' // ConvertToString(i)
-        ParameterName = 'label'
-        call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-        This%FixedParamLabels(i) = VarC0D
-
-        ParameterName = 'value'
-        call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-        This%FixedParamVals(i) = VarR0D
-      end do
-
-      i = 1
-      do i = 1, This%NbFixedParams
-        ii = 1
-        do ii = i + 1 , This%NbFixedParams
-          if ( This%FixedParamLabels(i)%GetValue() == This%FixedParamLabels(ii)%GetValue() ) call Error%Raise(                    &
-                             Line='Duplicate fixed parameter labels : ' // This%FixedParamLabels(i)%GetValue(), ProcName=ProcName)
-        end do
-      end do
-
-    end if
-
-    SectionName = 'transformed_parameters'
-    if ( Input%HasSection(SubSectionName=SectionName) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      This%NbTransformParams = InputSection%GetNumberOfSubSections()
-      nullify(InputSection)
-
-      allocate(This%ParamTransform(This%NbTransformParams), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%FixedParamLabels', ProcName=ProcName, stat=StatLoc )
-
-      allocate(This%ParamTransformLabel(This%NbTransformParams), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamTransformLabel', ProcName=ProcName, stat=StatLoc )
-
-      i = 1
-      do i = 1, This%NbTransformParams
-        SubSectionName = SectionName // '>parameter' // ConvertToString(i)
-        ParameterName = 'label'
-        call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-        This%ParamTransformLabel(i) = VarC0D
-
-        ParameterName = 'transform'
-        call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-        call This%ParamTransform(i)%Set( Values=VarC1D )
-      end do
-
-      i = 1
-      do i = 1, This%NbTransformParams
-        ii = 1
-        do ii = i + 1 , This%NbTransformParams
-          if ( This%ParamTransformLabel(i)%GetValue() == This%ParamTransformLabel(ii)%GetValue() ) call Error%Raise(              &
-                      Line='Duplicate transform parameter labels : ' // This%ParamTransformLabel(i)%GetValue(), ProcName=ProcName)
-        end do
-      end do
-
-    end if
-
-    i = 1
-    do i = 1, This%NbTransformedParams
-      ii = 1
-      do ii = 1, This%NbFixedParams
-        if ( This%ParamTransformLabel(i)%GetValue() == This%FixedParamLabels(ii)%GetValue() ) call Error%Raise(                   &
-                        'Cant have a parameter that is fixed and transformed : ' // This%FixedParamLabels(ii), ProcName=ProcName )
-      end do
-    end do
-
     SectionName = 'input_preprocessor'
     if ( Input%HasSection(SubSectionName=SectionName) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%InputPreprocessor%Construct( Input=InputSection, Prefix=PrefixLoc )
+      call This%InputProcessor%Construct( Input=InputSection, Prefix=PrefixLoc )
       nullify(InputSection)
     end if
 
@@ -353,40 +253,7 @@ contains
                                                                           Directory=DirectorySub ), To_SubSection=SubSectionName )
     end do
 
-    if ( This%NbFixedParams > 0 ) then
-      SectionName = 'fixed_parameters'
-      call GetInput%AddSection( SectionName=SectionName )
-
-      i = 1
-      do i = 1, This%NbFixedParams
-        SubSectionName ='parameter' // ConvertToString(i)
-        call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-
-        SubSectionName = SectionName // '>parameter' // ConvertToString(i)
-        call GetInput%AddParameter(Name='value', Value=ConvertToString(Value=This%FixedParamVals(i)), SectionName=SubSectionName )
-        call GetInput%AddParameter(Name='label', Value=This%FixedParamLabels(i)%GetValue(), SectionName=SubSectionName )
-      end do
-
-    end if
-
-    if ( This%NbTransformParams > 0 ) then
-      SectionName = 'transformed_parameters'
-      call GetInput%AddSection( SectionName=SectionName )
-
-      i = 1
-      do i = 1, This%NbTransformParams
-        SubSectionName ='parameter' // ConvertToString(i)
-        call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-
-        SubSectionName = SectionName // '>parameter' // ConvertToString(i)
-        call GetInput%AddParameter(Name='transform', Value=ConvertToString(Values=This%ParamTransform(i)%Values, Separator=' ' ),  &
-                                                                                                      SectionName=SubSectionName )
-        call GetInput%AddParameter(Name='label', Value=This%ParamTransformLabel(i)%GetValue(), SectionName=SubSectionName )
-      end do
-
-    end if
-
-    if ( This%InputPreprocessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputPreprocessor%GetInput(              &
+    if ( This%InputProcessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputProcessor%GetInput(                    &
                                                  MainSectionName='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub) )
 
   end function
@@ -402,31 +269,15 @@ contains
 
     character(*), parameter                                           ::    ProcName='Run_0D'
     integer                                                           ::    StatLoc=0
-    integer                                                           ::    i, ii
-    type(Input_Type)                                                  ::    InputLoc
+    integer                                                           ::    i
 
     if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( 'Passed down an output array of incorrect length',                  &
                                                                                                                ProcName=ProcName )
 
-    if ( This%NbFixedParams > 0 .or. This%NbTransformParams > 0 ) then
-      InputLoc = Input
-      if ( This%NbFixedParams > 0 ) call InputLoc%Append( Values=This%FixedParamVals, Labels=This%FixedParamLabels )
-      if ( This%NbTransformParams > 0 ) then
-        i = 1
-        do i = 1, This%NbTransformParams
-          call InputLoc%Transform( Transformations=This%ParamTransform(i)%Values, Label=This%ParamTransformLabel(i)%GetValue() )
-        end do
-      end if 
-      i = 1
-      do i = 1, This%NbModels
-        call This%PCEModels(i)%Run( Input=InputLoc, Output=Output(i) )
-      end do
-    else
-      i = 1
-      do i = 1, This%NbModels
-        call This%PCEModels(i)%Run( Input=Input, Output=Output(i) )
-      end do
-    end if
+    i = 1
+    do i = 1, This%NbModels
+      call This%PCEModels(i)%Run( Input=Input, Output=Output(i) )
+    end do
 
     if ( present(Stat) ) Stat = 0
 
@@ -456,28 +307,7 @@ contains
           LHS%NbModels = RHS%NbModels
           allocate(LHS%PCEModels, source=RHS%PCEModels, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PCEModels', ProcName=ProcName, stat=StatLoc )
-          LHS%NbTransformParams = RHS%NbTransformParams
-          LHS%NbFixedParams = RHS%NbFixedParams
-          if ( RHS%NbFixedParams > 0 ) then
-            allocate(LHS%FixedParamVals, source=RHS%FixedParamVals, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%FixedParamVals', ProcName=ProcName, stat=StatLoc )
-            allocate(LHS%FixedParamLabels(RHS%NbFixedParams), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%FixedParamLabels', ProcName=ProcName, stat=StatLoc )
-            i = 1
-            do i = 1, RHS%NbFixedParams
-              LHS%FixedParamLabels(i) = RHS%FixedParamLabels(i)%GetValue()
-            end do
-          end if
-          if ( RHS%NbTransformParams > 0 ) then
-            allocate(LHS%ParamTransform, source=RHS%ParamTransform, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ParamTransformLabel', ProcName=ProcName, stat=StatLoc )
-            allocate(LHS%ParamTransformLabel(RHS%NbTransformParams), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ParamTransformLabel', ProcName=ProcName, stat=StatLoc )
-            i = 1
-            do i = 1, RHS%NbTransformParams
-              LHS%ParamTransformLabel(i) = RHS%ParamTransformLabel(i)%GetValue()
-            end do
-          end if
+          LHS%InputProcessor = RHS%InputProcessor
         end if
 
       class default
@@ -498,18 +328,6 @@ contains
   
     if ( allocated(This%PCEModels) ) deallocate(This%PCEModels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PCEModels', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%FixedParamLabels) ) deallocate(This%FixedParamLabels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FixedParamLabels', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%FixedParamVals) ) deallocate(This%FixedParamVals, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FixedParamVals', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%ParamTransform) ) deallocate(This%ParamTransform, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='ParamTransform', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%ParamTransformLabel) ) deallocate(This%ParamTransformLabel, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamTransformLabel', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

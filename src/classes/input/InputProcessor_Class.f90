@@ -20,6 +20,8 @@ module InputProcessor_Class
 
 use StringRoutines_Module
 use String_Library
+use Parameters_Library
+use Input_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
@@ -38,7 +40,7 @@ type                                                                  ::    Inpu
   real(rkp), allocatable, dimension(:)                                ::    FixedParamVals
   type(String_Type), allocatable, dimension(:)                        ::    FixedParamLabels
   integer                                                             ::    NbTransformParams=0   
-  type(List1DAllocChar_Type), allocatable, dimension(:)               ::    ParamTransform 
+  type(String_Type), allocatable, dimension(:)                        ::    ParamTransform 
   type(String_Type), allocatable, dimension(:)                        ::    ParamTransformLabel
 contains
   procedure, public                                                   ::    Initialize
@@ -129,6 +131,7 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
@@ -136,6 +139,7 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
     character(:), allocatable                                         ::    VarC0D
+    real(rkp)                                                         ::    VarR0D
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -201,8 +205,7 @@ contains
 
         ParameterName = 'transform'
         call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-        call This%ParamTransform(i)%Set( Values=VarC1D )
+        This%ParamTransform(i) = VarC0D
       end do
 
       i = 1
@@ -238,6 +241,7 @@ contains
     logical                                                           ::    ExternalFlag=.false.
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
+    integer                                                           ::    i
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
@@ -275,8 +279,7 @@ contains
         call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
 
         SubSectionName = SectionName // '>parameter' // ConvertToString(i)
-        call GetInput%AddParameter(Name='transform', Value=ConvertToString(Values=This%ParamTransform(i)%Values, Separator=' ' ),  &
-                                                                                                      SectionName=SubSectionName )
+        call GetInput%AddParameter(Name='transform', Value=This%ParamTransform(i)%GetValue(), SectionName=SubSectionName )
         call GetInput%AddParameter(Name='label', Value=This%ParamTransformLabel(i)%GetValue(), SectionName=SubSectionName )
       end do
 
@@ -293,6 +296,7 @@ contains
     type(Input_Type), intent(out)                                     ::    ProcessedInput
 
     character(*), parameter                                           ::    ProcName='ProcessInput_0D'
+    integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     real(rkp)                                                         ::    VarR0D
 
@@ -300,21 +304,9 @@ contains
 
     ProcessedInput = Input
     if ( This%NbFixedParams > 0 .or. This%NbTransformParams > 0 ) then
-
-      if ( This%NbFixedParams > 0 ) then
-        i = 1
-        do i = 1, This%NbFixedParams
-          if ( Input%HasParameter( Label=This%FixedParamLabels(i) ) ) call Error%Raise( 'Tried to add a fixed parameter to ' //   &
-                                           'input that already had it defined : ' // This%FixedParamLabels(i), ProcName=ProcName ) 
-        end do
-        call InputLoc%Append( Values=This%FixedParamVals, Labels=This%FixedParamLabels )
-      end if
-
-      if ( This%NbTransformParams > 0 ) then
-        call Input%Transform( Transformations=This%ParamTransform, Labels=This%ParamTransformLabel, Mandatory=.true. )
-      end if 
-    else
-      ProcessedInput = Input
+      if ( This%NbFixedParams > 0 ) call ProcessedInput%Append( Values=This%FixedParamVals, Labels=This%FixedParamLabels )
+      if ( This%NbTransformParams > 0 ) call ProcessedInput%Transform( Transformations=This%ParamTransform,                       &
+                                                                                                 Labels=This%ParamTransformLabel )
     end if
 
   end subroutine
@@ -328,12 +320,13 @@ contains
     type(Input_Type), allocatable, dimension(:), intent(out)          ::    ProcessedInput
 
     character(*), parameter                                           ::    ProcName='ProcessInput_1D'
+    integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    NbInputs
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    NbInputs = size(Input)
+    NbInputs = size(Input,1)
 
     allocate(ProcessedInput(NbInputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='ProcessedInput', ProcName=ProcName, stat=StatLoc )

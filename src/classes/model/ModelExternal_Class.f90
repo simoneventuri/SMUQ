@@ -32,6 +32,8 @@ use Output_Class                                                  ,only:    Outp
 use Input_Class                                                   ,only:    Input_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use ProgramDefs_Class                                             ,only:    ProgramDefs
+use InputProcessor_Class                                          ,only:    InputProcessor_Type
+
 implicit none
 
 private
@@ -241,7 +243,7 @@ contains
     SectionName = 'input_preprocessor'
     if ( Input%HasSection(SubSectionName=SectionName) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%InputPreprocessor%Construct( Input=InputSection, Prefix=PrefixLoc )
+      call This%InputProcessor%Construct( Input=InputSection, Prefix=PrefixLoc )
       nullify(InputSection)
     end if
 
@@ -306,7 +308,7 @@ contains
     end do
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/input_preprocessor'
-    if ( This%InputPreprocessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputPreprocessor%GetInput(              &
+    if ( This%InputProcessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputProcessor%GetInput(                    &
                                                  MainSectionName='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub) )
 
   end function
@@ -627,6 +629,7 @@ contains
           LHS%WorkDirectory = RHS%WorkDirectory
           LHS%FullWorkDirectory = RHS%FullWorkDirectory
           LHS%Silent = RHS%Silent
+          LHS%InputProcessor = RHS%InputProcessor
         end if
 
       class default

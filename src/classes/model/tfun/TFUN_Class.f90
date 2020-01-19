@@ -30,6 +30,7 @@ use ModelInternal_Class                                           ,only:    Mode
 use Model_Class                                                   ,only:    Model_Type
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
+use InputProcessor_Class                                          ,only:    InputProcessor_Type
 
 implicit none
 
@@ -176,7 +177,7 @@ contains
     SectionName = 'input_preprocessor'
     if ( Input%HasSection(SubSectionName=SectionName) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%InputPreprocessor%Construct( Input=InputSection, Prefix=PrefixLoc )
+      call This%InputProcessor%Construct( Input=InputSection, Prefix=PrefixLoc )
       nullify(InputSection)
     end if
 
@@ -229,7 +230,7 @@ contains
                                                                                        Prefix=PrefixLoc, Directory=DirectorySub) )
     end do
 
-    if ( This%InputPreprocessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputPreprocessor%GetInput(              &
+    if ( This%InputProcessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputProcessor%GetInput(                    &
                                                  MainSectionName='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub) )
 
   end function
@@ -286,6 +287,7 @@ contains
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%TestFunctions', ProcName=ProcName, stat=StatLoc )
           LHS%NbOutputs = RHS%NbOutputs
           LHS%Label = RHS%Label
+          LHS%InputProcessor = RHS%InputProcessor
         end if
 
       class default

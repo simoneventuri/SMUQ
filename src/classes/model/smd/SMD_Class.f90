@@ -30,6 +30,7 @@ use Output_Class                                                  ,only:    Outp
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use InputProcessor_Class                                          ,only:    InputProcessor_Type
 
 implicit none
 
@@ -132,6 +133,7 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
@@ -234,7 +236,7 @@ contains
     SectionName = 'input_preprocessor'
     if ( Input%HasSection(SubSectionName=SectionName) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%InputPreprocessor%Construct( Input=InputSection, Prefix=PrefixLoc )
+      call This%InputProcessor%Construct( Input=InputSection, Prefix=PrefixLoc )
       nullify(InputSection)
     end if
 
@@ -255,6 +257,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetInput'
     integer                                                           ::    StatLoc=0
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
@@ -307,7 +310,7 @@ contains
     call GetInput%AddParameter( Name='relative_tolerance', Value=Convert_To_String(This%RTOL), SectionName=SectionName )
     call GetInput%AddParameter( Name='absolute_tolerance', Value=Convert_To_String(This%ATOL), SectionName=SectionName )
 
-    if ( This%InputPreprocessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputPreprocessor%GetInput(              &
+    if ( This%InputProcessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputProcessor%GetInput(                    &
                                                  MainSectionName='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub) )
 
   end function
@@ -477,6 +480,7 @@ contains
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Abscissa', ProcName=ProcName, stat=StatLoc )
           LHS%NbOutputs = RHS%NbOutputs
           LHS%Label = RHS%Label
+          LHS%InputProcessor = RHS%InputProcessor
         end if
 
       class default

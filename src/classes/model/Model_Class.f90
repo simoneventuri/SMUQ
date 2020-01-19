@@ -23,6 +23,8 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use InputProcessor_Class                                          ,only:    InputProcessor_Type
+use Output_Class                                                  ,only:    Output_Type
 
 implicit none
 
@@ -107,9 +109,8 @@ abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Run_0D_Model( This, Input, Output, Stat )
-    use Parameters_Library
-    use Output_Class                                              ,only:    Output_Type
-    use Input_Class                                               ,only:    Input_Type
+    import                                                            ::    Output_Type
+    import                                                            ::    Input_Type
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -120,9 +121,8 @@ abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Run_1D_Model( This, Input, Output, Stat )
-    use Parameters_Library
-    use Output_Class                                              ,only:    Output_Type
-    use Input_Class                                               ,only:    Input_Type
+    import                                                            ::    Output_Type
+    import                                                            ::    Input_Type
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
     type(Input_Type), dimension(:), intent(in)                        ::    Input
@@ -191,19 +191,20 @@ contains
     integer, optional, intent(out)                                    ::    Stat
 
     character(*), parameter                                           ::    ProcName='RunPreProcess_0D'
+    integer                                                           ::    StatLoc=0
     type(Input_Type)                                                  ::    InputLoc
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     if ( This%InputProcessor%IsConstructed() ) then
       call This%InputProcessor%ProcessInput( Input=Input, ProcessedInput=InputLoc )
-      if ( present(Stat) then
+      if ( present(Stat) ) then
         call This%Run_0D( Input=InputLoc, Output=Output, Stat=Stat )
       else
         call This%Run_0D( Input=InputLoc, Output=Output )
       end if
     else
-      if ( present(Stat) then
+      if ( present(Stat) ) then
         call This%Run_0D( Input=Input, Output=Output, Stat=Stat )
       else
         call This%Run_0D( Input=Input, Output=Output )
@@ -222,13 +223,14 @@ contains
     integer, dimension(:), optional, intent(inout)                    ::    Stat
 
     character(*), parameter                                           ::    ProcName='RunPreProcess_1D'
+    integer                                                           ::    StatLoc=0
     type(Input_Type), allocatable, dimension(:)                       ::    InputLoc
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     if ( This%InputProcessor%IsConstructed() ) then
       call This%InputProcessor%ProcessInput( Input=Input, ProcessedInput=InputLoc )
-      if ( present(Stat) then
+      if ( present(Stat) ) then
         call This%Run_1D( Input=InputLoc, Output=Output, Stat=Stat )
       else
         call This%Run_1D( Input=InputLoc, Output=Output )
@@ -236,7 +238,7 @@ contains
       deallocate(InputLoc, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputLoc', ProcName=ProcName, stat=StatLoc )
     else
-      if ( present(Stat) then
+      if ( present(Stat) ) then
         call This%Run_1D( Input=Input, Output=Output, Stat=Stat )
       else
         call This%Run_1D( Input=Input, Output=Output )

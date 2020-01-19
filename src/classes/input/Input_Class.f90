@@ -64,6 +64,8 @@ contains
                                                                                                           HasParameter1D
   procedure, public                                                   ::    HasParameter0D
   procedure, public                                                   ::    HasParameter1D
+  generic, public                                                     ::    HasParameters           =>    HasParameters1D
+  procedure, public                                                   ::    HasParameters1D
   generic, public                                                     ::    Transform               =>    Transform0D,            &
                                                                                                           Transform1D
   procedure, public                                                   ::    Transform0D
@@ -201,15 +203,12 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
+    if ( This%HasParameter( Label=Label ) ) call Error%Raise( 'Tried to append an input that was already part ' //                &
+                                                                                        'of the input object', ProcName=ProcName )
+
     allocate(LabelsLoc(This%NbInputs+1), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='LabelsLoc', ProcName=ProcName, stat=StatLoc )
-    
-    i = 1
-    do i = 1, This%NbInputs
-      LabelsLoc(i) = This%Label(i)%GetValue()
-      if ( LabelsLoc(i)%GetValue() == Label ) call Error%Raise( Line='Tried to append an input that was already part of the ' //  &
-                                                                                    'input object :' // Label, ProcName=ProcName )
-    end do
+    LabelsLoc(1:THis%NbInputs) = This%Label
     LabelsLoc(This%NbInputs+1) = Label
 
     allocate(ValuesLoc(This%NbInputs+1), stat=StatLoc)
@@ -246,25 +245,15 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
+    if ( This%HasParameters(Labels=Labels) ) call Error%Raise( 'Tried to append inputs where at least one was already ' //        &
+                                                                                   'part of the input object', ProcName=ProcName )
+
     NbAppendInputs = size(Values,1)
 
     allocate(LabelsLoc(This%NbInputs+NbAppendInputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='LabelsLoc', ProcName=ProcName, stat=StatLoc )
-
-    i = 1
-    do i = 1, This%NbInputs
-      LabelsLoc(i) = This%Label(i)%GetValue()
-      ii = 1
-      do ii = 1, NbAppendInputs
-        if ( LabelsLoc(i)%GetValue() == Labels(ii)%GetValue()) call Error%Raise( Line='Tried to append an input that was ' //     &
-                                               ' already part of the input object :' // Labels(ii)%GetValue(), ProcName=ProcName )
-      end do
-    end do
-
-    i = 1
-    do i = 1, NbAppendInputs
-      LabelsLoc(i+This%NbInputs) = Labels(i)%GetValue()
-    end do
+    LabelsLoc(1:This%NbInputs) = This%Label
+    LabelsLoc(This%NbInputs+1:This%NbInputs+NbAppendInputs) = Labels
 
     allocate(ValuesLoc(This%NbInputs+NbAppendInputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='ValuesLoc', ProcName=ProcName, stat=StatLoc )
@@ -426,11 +415,11 @@ contains
 
     HasParameter0D = .false.
 
-    if ( len_trim(LabelLoc) > 0 ) then
+    if ( len_trim(Label) > 0 ) then
       i = 1
       do i = 1, This%NbInputs
         if ( This%Label(i)%GetValue() /= Label ) cycle
-        HasParameter0D(ii) = .true.
+        HasParameter0D = .true.
         exit
       end do
     else
@@ -449,6 +438,7 @@ contains
     type(String_Type), dimension(:), intent(in)                       ::    Labels
 
     character(*), parameter                                           ::    ProcName='HasParameter1D'
+    integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    ii
     character(:), allocatable                                         ::    LabelLoc
@@ -465,7 +455,7 @@ contains
 
     ii = 1
     do ii = 1, NbLabels
-      LabelLoc = Labels(ii)
+      LabelLoc = Labels(ii)%GetValue()
       if ( len_trim(LabelLoc) > 0 ) then
         i = 1
         do i = 1, This%NbInputs
@@ -482,6 +472,46 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  function HasParameters1D( This, Labels )
+
+    logical                                                           ::    HasParameters1D
+
+    class(Input_Type), target, intent(in)                             ::    This
+    type(String_Type), dimension(:), intent(in)                       ::    Labels
+
+    character(*), parameter                                           ::    ProcName='HasParameters1D'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    ii
+    character(:), allocatable                                         ::    LabelLoc
+    integer                                                           ::    NbLabels
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
+
+    NbLabels = size(Labels,1)
+
+    HasParameters1D = .true.
+
+    ii = 1
+    do ii = 1, NbLabels
+      LabelLoc = Labels(ii)%GetValue()
+      if ( len_trim(LabelLoc) > 0 ) then
+        i = 1
+        do i = 1, This%NbInputs
+          if ( This%Label(i)%GetValue() == LabelLoc ) cycle
+          HasParameters1D = .false.
+          exit
+        end do
+      else
+        call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
+      end if
+      if ( .not. HasParameters1D ) exit
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Replace0D( This, Value, Label )
 
     class(Input_Type), intent(inout)                                  ::    This
@@ -491,6 +521,7 @@ contains
     character(*), parameter                                           ::    ProcName='Replace0D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
+    logical                                                           ::    Found
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
@@ -503,7 +534,7 @@ contains
         Found = .true.  
         exit
       end do
-      if ( .not. Found ) call Error%Raise( 'Did not find input with label :' // LabelLoc, ProcName=ProcName )
+      if ( .not. Found ) call Error%Raise( 'Did not find input with label :' // Label, ProcName=ProcName )
     else
       call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
     end if
@@ -528,19 +559,19 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
-    if ( size(Label,1) /= size(Values,1) ) call Error%Raise( 'Mismatch in number of labels and values', ProcName=ProcName )
-
     NbLabels = size(Labels,1)
+
+    if ( NbLabels /= size(Values,1) ) call Error%Raise( 'Mismatch in number of labels and values', ProcName=ProcName )
 
     ii = 1
     do ii = 1, NbLabels
-      LabelLoc = Labels(ii)
+      LabelLoc = Labels(ii)%GetValue()
       if ( len_trim(LabelLoc) > 0 ) then
         Found = .false.
         i = 1
         do i = 1, This%NbInputs
           if ( This%Label(i)%GetValue() /= LabelLoc ) cycle
-          This%Input(i) = Value(ii)
+          This%Input(i) = Values(ii)
           Found = .true.
           exit
         end do
@@ -559,8 +590,8 @@ contains
     class(Input_Type), intent(inout)                                  ::    This
     character(*), intent(in)                                          ::    Transformation
     character(*), intent(in)                                          ::    Label
-    logical, intent(in)                                               ::    Mandatory
-    logical, intent(out)                                              ::    Found
+    logical, optional, intent(in)                                     ::    Mandatory
+    logical, optional, intent(out)                                    ::    Found
     
     character(*), parameter                                           ::    ProcName='Transform0D'
     integer                                                           ::    StatLoc=0
@@ -601,8 +632,8 @@ contains
     class(Input_Type), intent(inout)                                  ::    This
     type(String_Type), dimension(:), intent(in)                       ::    Transformations
     type(String_Type), dimension(:), intent(in)                       ::    Labels
-    logical, intent(in)                                               ::    Mandatory
-    logical, intent(out)                                              ::    Found
+    logical, optional, intent(in)                                     ::    Mandatory
+    logical, optional, intent(out)                                    ::    Found
     
     character(*), parameter                                           ::    ProcName='Transform1D'
     integer                                                           ::    StatLoc=0
@@ -620,7 +651,7 @@ contains
 
     i = 1
     do i = 1, size(Labels,1)
-      call This%Transform( Transformation=Tranformations(i)%GetValue(), Label=Labels(i)%GetValue(), Mandatory=MandatoryLoc,       &
+      call This%Transform( Transformation=Transformations(i)%GetValue(), Label=Labels(i)%GetValue(), Mandatory=MandatoryLoc,      &
                                                                                                                   Found=FoundLoc )
     end do
 

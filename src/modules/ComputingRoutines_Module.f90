@@ -905,7 +905,7 @@ contains
     character(:), allocatable, dimension(:)                           ::    TransformationsLoc
     integer                                                           ::    i
 
-    call Parse( Input=Value, Separator=' ', Output=TransformationsLoc )
+    call Parse( Input=Transformation, Separator=' ', Output=TransformationsLoc )
 
     i = 1
     do i = 1, size(TransformationsLoc)
@@ -947,7 +947,7 @@ contains
     character(:), allocatable, dimension(:)                           ::    TransformationsLoc
     integer                                                           ::    i
 
-    call Parse( Input=Value, Separator=SeparatorLoc, Output=TransformationsLoc )
+    call Parse( Input=Transformation, Separator=' ', Output=TransformationsLoc )
 
     i = 1
     do i = 1, size(TransformationsLoc)
