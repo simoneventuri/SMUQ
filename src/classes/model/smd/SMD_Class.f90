@@ -231,6 +231,13 @@ contains
       if ( Found ) This%ATOL = VarR0D
     end if
 
+    SectionName = 'input_preprocessor'
+    if ( Input%HasSection(SubSectionName=SectionName) ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call This%InputPreprocessor%Construct( Input=InputSection, Prefix=PrefixLoc )
+      nullify(InputSection)
+    end if
+
     This%Constructed = .true.
 
   end subroutine
@@ -299,6 +306,9 @@ contains
     call GetInput%AddSection( SectionName=SectionName )
     call GetInput%AddParameter( Name='relative_tolerance', Value=Convert_To_String(This%RTOL), SectionName=SectionName )
     call GetInput%AddParameter( Name='absolute_tolerance', Value=Convert_To_String(This%ATOL), SectionName=SectionName )
+
+    if ( This%InputPreprocessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputPreprocessor%GetInput(              &
+                                                 MainSectionName='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub) )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

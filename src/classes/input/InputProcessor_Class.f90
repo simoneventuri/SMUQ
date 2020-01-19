@@ -51,6 +51,7 @@ contains
                                                                                                           ProcessInput_1D
   procedure, private                                                  ::    ProcessInput_0D
   procedure, private                                                  ::    ProcessInput_1D
+  procedure, public                                                   ::    IsConstructed
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -343,6 +344,20 @@ contains
     end do
 
   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsConstructed( This )
+
+    logical                                                           ::    IsConstructed
+
+    class(InputProcessor_Type), intent(in)                            ::    This
+
+    character(*), parameter                                           ::    ProcName='IsConstructed'
+
+    IsConstructed = .true.
+
+  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

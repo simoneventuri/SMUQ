@@ -173,6 +173,13 @@ contains
 
     This%NbOutputs = This%NbFunctions
 
+    SectionName = 'input_preprocessor'
+    if ( Input%HasSection(SubSectionName=SectionName) ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call This%InputPreprocessor%Construct( Input=InputSection, Prefix=PrefixLoc )
+      nullify(InputSection)
+    end if
+
     This%Constructed = .true.
 
   end subroutine
@@ -221,6 +228,9 @@ contains
       call GetInput%AddSection( Section=TestFunction_Factory%GetObjectInput(Object=TestFunctionPtr, MainSectionName=SectionName,  &
                                                                                        Prefix=PrefixLoc, Directory=DirectorySub) )
     end do
+
+    if ( This%InputPreprocessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputPreprocessor%GetInput(              &
+                                                 MainSectionName='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub) )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
