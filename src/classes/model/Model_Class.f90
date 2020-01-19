@@ -37,13 +37,16 @@ type, abstract                                                        ::    Mode
   logical                                                             ::    Constructed=.false.
   integer                                                             ::    NbOutputs
   logical                                                             ::    Silent
+  type(InputProcessor_Type)                                           ::    InputProcessor
 contains
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    GetLabel
   procedure, public                                                   ::    GetNbOutputs
   generic, public                                                     ::    Construct               =>    ConstructInput
-  generic, public                                                     ::    Run                     =>    Run_0D,                 &
-                                                                                                          Run_1D
+  generic, public                                                     ::    Run                     =>    RunPreprocess_0D,       &
+                                                                                                          RunPreprocess_1D
+  procedure, private                                                  ::    RunPreprocess_0D
+  procedure, private                                                  ::    RunPreprocess_1D
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure(Initialize_Model), deferred, public                       ::    Initialize
   procedure(Reset_Model), deferred, public                            ::    Reset
@@ -177,6 +180,70 @@ contains
     GetNbOutputs = This%NbOutputs
 
   end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine RunPreProcess_0D( This, Input, Output, Stat )
+ 
+    class(Model_Type), intent(inout)                                  ::    This
+    type(Input_Type), intent(in)                                      ::    Input
+    type(Output_Type), dimension(:), intent(inout)                    ::    Output
+    integer, optional, intent(out)                                    ::    Stat
+
+    character(*), parameter                                           ::    ProcName='RunPreProcess_0D'
+    type(Input_Type)                                                  ::    InputLoc
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    if ( This%InputProcessor%IsConstructed() ) then
+      call This%InputProcessor%ProcessInput( Input=Input, ProcessedInput=InputLoc )
+      if ( present(Stat) then
+        call This%Run_0D( Input=InputLoc, Output=Output, Stat=Stat )
+      else
+        call This%Run_0D( Input=InputLoc, Output=Output )
+      end if
+    else
+      if ( present(Stat) then
+        call This%Run_0D( Input=Input, Output=Output, Stat=Stat )
+      else
+        call This%Run_0D( Input=Input, Output=Output )
+      end if
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine RunPreprocess_1D( This, Input, Output, Stat )
+ 
+    class(Model_Type), intent(inout)                                  ::    This
+    type(Input_Type), dimension(:), intent(in)                        ::    Input
+    type(Output_Type), dimension(:,:), intent(inout)                  ::    Output
+    integer, dimension(:), optional, intent(inout)                    ::    Stat
+
+    character(*), parameter                                           ::    ProcName='RunPreProcess_1D'
+    type(Input_Type), allocatable, dimension(:)                       ::    InputLoc
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    if ( This%InputProcessor%IsConstructed() ) then
+      call This%InputProcessor%ProcessInput( Input=Input, ProcessedInput=InputLoc )
+      if ( present(Stat) then
+        call This%Run_1D( Input=InputLoc, Output=Output, Stat=Stat )
+      else
+        call This%Run_1D( Input=InputLoc, Output=Output )
+      end if
+      deallocate(InputLoc, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputLoc', ProcName=ProcName, stat=StatLoc )
+    else
+      if ( present(Stat) then
+        call This%Run_1D( Input=Input, Output=Output, Stat=Stat )
+      else
+        call This%Run_1D( Input=Input, Output=Output )
+      end if
+    end if
+
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -26,6 +26,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
 use Input_Class                                                   ,only:    Input_Type
+use InputProcessor_Class                                          ,only:    InputProcessor_Type
 use Output_Class                                                  ,only:    Output_Type
 implicit none
 

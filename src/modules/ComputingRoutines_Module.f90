@@ -93,10 +93,8 @@ interface ScrambleArray
 end interface
 
 interface Transform
-  module procedure                                                    ::    Transform_1_VarR0D
-  module procedure                                                    ::    Transform_N_VarR0D
-  module procedure                                                    ::    Transform_1_VarR1D
-  module procedure                                                    ::    Transform_N_VarR1D
+  module procedure                                                    ::    Transform_VarR0D
+  module procedure                                                    ::    Transform_VarR1D
 end interface
 
 interface Pochhammer
@@ -897,53 +895,21 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_1_VarR0D( Transformation, Value )
+  subroutine Transform_VarR0D( Transformation, Value )
 
     character(*), intent(in)                                          ::    Transformation
     real(rkp), intent(inout)                                          ::    Value
 
     character(*), parameter                                           ::    ProcName='Transform_1_VarR0D'
     integer                                                           ::    StatLoc
-
-    select case (trim(adjustl(Transformation)))
-      case ('^2')
-        Value = Value**2
-      case('sqrt')
-        if ( Value < Zero ) call Error%Raise( Line='Tried to take square root of a negative number', ProcName=ProcName )
-        Value = dsqrt(Value)
-      case('log')
-        if ( Value <= Zero ) call Error%Raise( Line='Tried to take log of a number at or below zero', ProcName=ProcName )
-        Value = dlog(Value)
-      case('log10')
-        if ( Value <= Zero ) call Error%Raise( Line='Tried to take log10 of a number at or below zero', ProcName=ProcName )
-        Value = dlog10(Value)
-      case('exp')
-        Value = dexp(Value)
-      case('10^')
-        Value = Ten**Value
-      case default
-        call Error%Raise( Line='Did not recognize the transformation option', ProcName=ProcName )
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_N_VarR0D( Transformations, Value )
-
-    character(*), dimension(:), intent(in)                            ::    Transformations
-    real(rkp), intent(inout)                                          ::    Value
-
-    character(*), parameter                                           ::    ProcName='Transform_N_VarR0D'
-    integer                                                           ::    StatLoc
-    integer                                                           ::    NbTransformations
+    character(:), allocatable, dimension(:)                           ::    TransformationsLoc
     integer                                                           ::    i
 
-    NbTransformations = size(Transformations,1)
+    call Parse( Input=Value, Separator=' ', Output=TransformationsLoc )
 
-    i = NbTransformations
-    do i = NbTransformations, 1, -1
-      select case (trim(adjustl(Transformations(i))))
+    i = 1
+    do i = 1, size(TransformationsLoc)
+      select case (trim(adjustl(TransformationsLoc(i))))
         case ('^2')
           Value = Value**2
         case('sqrt')
@@ -964,57 +930,28 @@ contains
       end select
     end do
 
+    deallocate(TransformationsLoc, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc )
+
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_1_VarR1D( Transformation, Values )
+  subroutine Transform_VarR1D( Transformation, Values )
 
     character(*), intent(in)                                          ::    Transformation
     real(rkp), dimension(:), intent(inout)                            ::    Values
 
     character(*), parameter                                           ::    ProcName='Transform_1_VarR0D'
     integer                                                           ::    StatLoc
-
-    select case (trim(adjustl(Transformation)))
-      case ('^2')
-        Values = Values**2
-      case('sqrt')
-        if ( any(Values < Zero) ) call Error%Raise( Line='Tried to take square root of a negative number', ProcName=ProcName )
-        Values = dsqrt(Values)
-      case('log')
-        if ( any(Values <= Zero) ) call Error%Raise( Line='Tried to take log of a number at or below zero', ProcName=ProcName )
-        Values = dlog(Values)
-      case('log10')
-        if ( any(Values <= Zero) ) call Error%Raise( Line='Tried to take log10 of a number at or below zero', ProcName=ProcName )
-        Values = dlog10(Values)
-      case('exp')
-        Values = dexp(Values)
-      case('10^')
-        Values = Ten**Values
-      case default
-        call Error%Raise( Line='Did not recognize the transformation option', ProcName=ProcName )
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_N_VarR1D( Transformations, Values )
-
-    character(*), dimension(:), intent(in)                            ::    Transformations
-    real(rkp), dimension(:), intent(inout)                            ::    Values
-
-    character(*), parameter                                           ::    ProcName='Transform_N_VarR0D'
-    integer                                                           ::    StatLoc
-    integer                                                           ::    NbTransformations
+    character(:), allocatable, dimension(:)                           ::    TransformationsLoc
     integer                                                           ::    i
 
-    NbTransformations = size(Transformations,1)
+    call Parse( Input=Value, Separator=SeparatorLoc, Output=TransformationsLoc )
 
-    i = NbTransformations
-    do i = NbTransformations, 1, -1
-      select case (trim(adjustl(Transformations(i))))
+    i = 1
+    do i = 1, size(TransformationsLoc)
+      select case (trim(adjustl(TransformationsLoc(i))))
         case ('^2')
           Values = Values**2
         case('sqrt')
@@ -1034,6 +971,9 @@ contains
           call Error%Raise( Line='Did not recognize the transformation option', ProcName=ProcName )
       end select
     end do
+
+    deallocate(TransformationsLoc, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

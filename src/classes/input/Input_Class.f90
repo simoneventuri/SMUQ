@@ -1,3 +1,21 @@
+! -*-f90-*-
+!!--------------------------------------------------------------------------------------------------------------------------------
+!!
+!! Stochastic Modeling & Uncertainty Quantification (SMUQ)
+!!
+!! Copyright (C) 2016 Venturi, Simone & Rostkowski, Przemyslaw (University of Illinois at Urbana-Champaign)
+!!
+!! This program is free software; you can redistribute it and/or modify it under the terms of the Version 2.1 GNU Lesser General
+!! Public License as published by the Free Software Foundation.
+!!
+!! This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+!! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+!!
+!! You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free 
+!! Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+!!
+!!--------------------------------------------------------------------------------------------------------------------------------
+
 module Input_Class
 
 use Parameters_Library
@@ -38,6 +56,14 @@ contains
                                                                                                           AppendInput1D
   procedure, public                                                   ::    AppendInput0D
   procedure, public                                                   ::    AppendInput1D
+  generic, public                                                     ::    Replace                 =>    Replace0D,              &
+                                                                                                          Replace1D
+  procedure, public                                                   ::    Replace0D
+  procedure, public                                                   ::    Replace1D
+  generic, public                                                     ::    HasParameter            =>    HasParameter0D,         &
+                                                                                                          HasParameter1D
+  procedure, public                                                   ::    HasParameter0D
+  procedure, public                                                   ::    HasParameter1D
   generic, public                                                     ::    Transform               =>    Transform0D,            &
                                                                                                           Transform1D
   procedure, public                                                   ::    Transform0D
@@ -106,7 +132,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-   end subroutine
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------ 
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -386,17 +412,168 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform0D( This, Transformation, Label )
+  function HasParameter0D( This, Label )
+
+    logical                                                           ::    HasParameter0D
+
+    class(Input_Type), target, intent(in)                             ::    This
+    character(*), intent(in)                                          ::    Label
+
+    character(*), parameter                                           ::    ProcName='HasParameter0D'
+    integer                                                           ::    i
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
+
+    HasParameter0D = .false.
+
+    if ( len_trim(LabelLoc) > 0 ) then
+      i = 1
+      do i = 1, This%NbInputs
+        if ( This%Label(i)%GetValue() /= Label ) cycle
+        HasParameter0D(ii) = .true.
+        exit
+      end do
+    else
+      call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
+    end if
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function HasParameter1D( This, Labels )
+
+    logical, allocatable, dimension(:)                                ::    HasParameter1D
+
+    class(Input_Type), target, intent(in)                             ::    This
+    type(String_Type), dimension(:), intent(in)                       ::    Labels
+
+    character(*), parameter                                           ::    ProcName='HasParameter1D'
+    integer                                                           ::    i
+    integer                                                           ::    ii
+    character(:), allocatable                                         ::    LabelLoc
+    integer                                                           ::    NbLabels
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
+
+    NbLabels = size(Labels,1)
+
+    allocate(HasParameter1D(NbLabels), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='HasParameter1D', ProcName=ProcName, stat=StatLoc )
+
+    HasParameter1D = .false.
+
+    ii = 1
+    do ii = 1, NbLabels
+      LabelLoc = Labels(ii)
+      if ( len_trim(LabelLoc) > 0 ) then
+        i = 1
+        do i = 1, This%NbInputs
+          if ( This%Label(i)%GetValue() /= LabelLoc ) cycle
+          HasParameter1D(ii) = .true.
+          exit
+        end do
+      else
+        call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
+      end if
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Replace0D( This, Value, Label )
 
     class(Input_Type), intent(inout)                                  ::    This
-    character(*), intent(in)                                          ::    Transformation
+    real(rkp), intent(in)                                             ::    Value
     character(*), intent(in)                                          ::    Label
     
-    character(*), parameter                                           ::    ProcName='Transform0D'
+    character(*), parameter                                           ::    ProcName='Replace0D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
+
+    if ( len_trim(Label) > 0 ) then
+      Found = .false.
+      i = 1
+      do i = 1, This%NbInputs
+        if ( This%Label(i)%GetValue() /= Label ) cycle
+        This%Input(i) = Value
+        Found = .true.  
+        exit
+      end do
+      if ( .not. Found ) call Error%Raise( 'Did not find input with label :' // LabelLoc, ProcName=ProcName )
+    else
+      call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
+    end if
+
+   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Replace1D( This, Values, Labels )
+
+    class(Input_Type), intent(inout)                                  ::    This
+    real(rkp), dimension(:), intent(in)                               ::    Values
+    type(String_Type), dimension(:), intent(in)                       ::    Labels
+    
+    character(*), parameter                                           ::    ProcName='Replace1D'
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    LabelLoc
+    integer                                                           ::    i
+    integer                                                           ::    ii
+    logical                                                           ::    Found
+    integer                                                           ::    NbLabels
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
+
+    if ( size(Label,1) /= size(Values,1) ) call Error%Raise( 'Mismatch in number of labels and values', ProcName=ProcName )
+
+    NbLabels = size(Labels,1)
+
+    ii = 1
+    do ii = 1, NbLabels
+      LabelLoc = Labels(ii)
+      if ( len_trim(LabelLoc) > 0 ) then
+        Found = .false.
+        i = 1
+        do i = 1, This%NbInputs
+          if ( This%Label(i)%GetValue() /= LabelLoc ) cycle
+          This%Input(i) = Value(ii)
+          Found = .true.
+          exit
+        end do
+        if ( .not. Found ) call Error%Raise( 'Did not find input with label :' // LabelLoc, ProcName=ProcName )
+      else
+        call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
+      end if
+    end do
+
+   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Transform0D( This, Transformation, Label, Mandatory, Found )
+
+    class(Input_Type), intent(inout)                                  ::    This
+    character(*), intent(in)                                          ::    Transformation
+    character(*), intent(in)                                          ::    Label
+    logical, intent(in)                                               ::    Mandatory
+    logical, intent(out)                                              ::    Found
+    
+    character(*), parameter                                           ::    ProcName='Transform0D'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    logical                                                           ::    MandatoryLoc
+    logical                                                           ::    FoundLoc
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
+
+    MandatoryLoc = .true.
+    if ( present(Mandatory) ) MandatoryLoc = Mandatory
+
+    FoundLoc = .true.
 
     if ( len_trim(Label) > 0 ) then
       i = 1
@@ -405,92 +582,51 @@ contains
           call Transform( Transformation=Transformation, Value=This%Input(i) )
           exit
         end if
+        if ( i == This%NbInputs ) FoundLoc = .false.
       end do
+      if ( .not. FoundLoc .and. MandatoryLoc ) call Error%Raise( 'Did not find mandatory input parameter : ' // Label,            &
+                                                                                                               ProcName=ProcName )
     else
       call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
     end if
+
+    if ( present(Found) ) Found = FoundLoc
 
    end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform1D( This, Transformations, Label )
+  subroutine Transform1D( This, Transformations, Labels, Mandatory, Found )
 
     class(Input_Type), intent(inout)                                  ::    This
-    character(*), dimension(:), intent(in)                            ::    Transformations
-    character(*), intent(in)                                          ::    Label
+    type(String_Type), dimension(:), intent(in)                       ::    Transformations
+    type(String_Type), dimension(:), intent(in)                       ::    Labels
+    logical, intent(in)                                               ::    Mandatory
+    logical, intent(out)                                              ::    Found
     
     character(*), parameter                                           ::    ProcName='Transform1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
+    logical                                                           ::    MandatoryLoc
+    logical                                                           ::    FoundLoc
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object not constructed', ProcName=ProcName )
 
-    if ( len_trim(Label) > 0 ) then
-      i = 1
-      do i = 1, This%NbInputs
-        if ( This%Label(i)%GetValue() == Label ) then
-          call Transform( Transformations=Transformations, Value=This%Input(i) )
-          exit
-        end if
-      end do
-    else
-      call Error%Raise( Line='Specified an empty parameter label', ProcName=ProcName )
-    end if
+    if ( size(Labels,1) /= size(Transformations,1) ) call Error%Raise( 'Mismatch in number of transformation and labels',         &
+                                                                                                               ProcName=ProcName )
+
+    MandatoryLoc = .true.
+    if ( present(Mandatory) ) MandatoryLoc = Mandatory
+
+    i = 1
+    do i = 1, size(Labels,1)
+      call This%Transform( Transformation=Tranformations(i)%GetValue(), Label=Labels(i)%GetValue(), Mandatory=MandatoryLoc,       &
+                                                                                                                  Found=FoundLoc )
+    end do
+
+    if ( present(Found) ) Found = FoundLoc
 
    end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
-
-    class(Input_Type), intent(out)                                    ::    LHS
-    class(Input_Type), intent(in)                                     ::    RHS
-
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    select type (RHS)
-  
-      type is (Input_Type)
-        call LHS%Reset
-
-        LHS%Initialized = LHS%Initialized
-        LHS%Constructed = RHS%Constructed
-
-        if ( RHS%Constructed ) then
-          allocate(LHS%Input, source=RHS%Input, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Input', ProcName=ProcName, stat=StatLoc )
-          LHS%NbInputs = RHS%NbInputs
-          allocate(LHS%Label, source=RHS%Label, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%InputLabel', ProcName=ProcName, stat=StatLoc )
-        end if
-
-      class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
-
-    end select
-
-   end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
-
-    type(Input_Type),intent(inout)                                    ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-    if ( allocated(This%Input) ) deallocate(This%Input, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Input', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
-
-   end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetNbInputs( This )
 
@@ -541,6 +677,56 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetLabel1D', ProcName=ProcName, stat=StatLoc )
 
   end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Copy( LHS, RHS )
+
+    class(Input_Type), intent(out)                                    ::    LHS
+    class(Input_Type), intent(in)                                     ::    RHS
+
+    character(*), parameter                                           ::    ProcName='Copy'
+    integer                                                           ::    StatLoc=0
+
+    select type (RHS)
+  
+      type is (Input_Type)
+        call LHS%Reset
+
+        LHS%Initialized = LHS%Initialized
+        LHS%Constructed = RHS%Constructed
+
+        if ( RHS%Constructed ) then
+          allocate(LHS%Input, source=RHS%Input, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Input', ProcName=ProcName, stat=StatLoc )
+          LHS%NbInputs = RHS%NbInputs
+          allocate(LHS%Label, source=RHS%Label, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%InputLabel', ProcName=ProcName, stat=StatLoc )
+        end if
+
+      class default
+        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+
+    end select
+
+   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Finalizer( This )
+
+    type(Input_Type),intent(inout)                                    ::    This
+
+    character(*), parameter                                           ::    ProcName='Finalizer'
+    integer                                                           ::    StatLoc=0
+
+    if ( allocated(This%Input) ) deallocate(This%Input, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Input', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

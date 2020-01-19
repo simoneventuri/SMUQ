@@ -16,45 +16,42 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module PCESM_Class
+module InputProcessor_Class
 
-use Input_Library
-use Parameters_Library
-use String_Library
 use StringRoutines_Module
 use String_Library
-use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use Model_Class                                                   ,only:    Model_Type
-use ModelInternal_Class                                           ,only:    ModelInternal_Type
-use Output_Class                                                  ,only:    Output_Type
-use PolyChaosModel_Class                                          ,only:    PolyChaosModel_Type
 use Input_Class                                                   ,only:    Input_Type
-use List1DAllocChar_Class                                         ,only:    List1DAllocChar_Type
 
 implicit none
 
 private
 
-public                                                                ::    PCESM_Type
+public                                                                ::    InputProcessor_Type
 
-type, extends(ModelInternal_Type)                                     ::    PCESM_Type
-  type(PolyChaosModel_Type), allocatable, dimension(:)                ::    PCEModels
-  integer                                                             ::    NbModels=0
+type                                                                  ::    InputProcessor_Type
+  character(:), allocatable                                           ::    Name
+  logical                                                             ::    Constructed
+  logical                                                             ::    Initialized
   integer                                                             ::    NbFixedParams=0
   real(rkp), allocatable, dimension(:)                                ::    FixedParamVals
-  type(String_Type), allocatable, dimension(:)                        ::    FixedParamLabels   
+  type(String_Type), allocatable, dimension(:)                        ::    FixedParamLabels
   integer                                                             ::    NbTransformParams=0   
-  type(List1DAllocChar_Type), allocatable, dimension(:)               ::    ParamTransform      
-  type(String_Type), allocatable, dimension(:)                        ::    ParamTransformLabel 
+  type(List1DAllocChar_Type), allocatable, dimension(:)               ::    ParamTransform 
+  type(String_Type), allocatable, dimension(:)                        ::    ParamTransformLabel
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
+  generic, public                                                     ::    Construct               =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    Run_0D
+  generic, public                                                     ::    ProcessInput            =>    ProcessInput_0D,        &
+                                                                                                          ProcessInput_1D
+  procedure, private                                                  ::    ProcessInput_0D
+  procedure, private                                                  ::    ProcessInput_1D
+  generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -66,29 +63,30 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
-    class(PCESM_Type), intent(inout)                                  ::    This
+    class(InputProcessor_Type), intent(inout)                         ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
+    integer                                                           ::    StatLoc=0
 
     if ( .not. This%Initialized ) then
-      This%Name = 'pcesmmodel'
       This%Initialized = .true.
+      This%Name = 'InputProcessor'
       call This%SetDefaults()
     end if
 
-  end subroutine
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
-    class(PCESM_Type), intent(inout)                                  ::    This
+    class(InputProcessor_Type), intent(inout)                         ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%PCEModels) ) deallocate(This%PCEModels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PCEModels', ProcName=ProcName, stat=StatLoc )
+    This%Initialized=.false.
+    This%Constructed=.false.
 
     if ( allocated(This%FixedParamLabels) ) deallocate(This%FixedParamLabels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FixedParamLabels', ProcName=ProcName, stat=StatLoc )
@@ -102,109 +100,48 @@ contains
     if ( allocated(This%ParamTransformLabel) ) deallocate(This%ParamTransform, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamTransform', ProcName=ProcName, stat=StatLoc )
 
-    This%NbModels = 0
     This%NbFixedParams = 0
     This%NbTransformParams = 0
 
-    call This%SetDefaults()
+    call This%Initialize()
 
-  end subroutine
+   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This )
 
-    class(PCESM_Type), intent(inout)                                  ::    This
+    class(InputProcessor_Type),intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-    This%Label = 'pcesm'
-    This%NbOutputs = 0
-    This%Silent = .false.
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------ 
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix )
 
-    use String_Library
-
-    class(PCESM_Type), intent(inout)                                  ::    This
-    class(InputSection_Type), intent(in)                              ::    Input
+    class(InputProcessor_Type), intent(inout)                         ::    This
+    type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
     character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
-    integer                                                           ::    VarI0D
-    integer                                                           ::    i, ii
-    integer, allocatable, dimension(:)                                ::    OutputMap
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
-    real(rkp)                                                         ::    VarR0D
-    logical                                                           ::    VarL0D
-    character(:), allocatable, dimension(:)                           ::    LabelMap
     logical                                                           ::    Found
+    integer                                                           ::    i
+    integer                                                           ::    ii
+    character(:), allocatable                                         ::    VarC0D
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
-
+    
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
-    This%Label = VarC0D
-
-    ParameterName = 'silent'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Silent = VarL0D
-
-    SectionName = 'models'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    This%NbModels = InputSection%GetNumberOfSubSections()
-    allocate(This%PCEModels(This%NbModels), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cell', ProcName=ProcName, stat=StatLoc )
-
-    This%NbOutputs = This%NbModels
-
-    Found = .false.
-
-    i = 1
-    do i = 1, This%NbModels
-      SubSectionName = SectionName // '>model' // ConvertToString(Value=i)
-      ParameterName = 'directory'
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found, SectionName=SubSectionName )
-      if ( Found ) then
-        call This%PCEModels(i)%Construct( Prefix=PrefixLoc // VarC0D )
-
-        ParameterName = 'output_label'
-        call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-        call This%PCEModels(i)%ReplaceOutputLabel( NewLabel=VarC0D )
-
-        SubSectionName = SectionName // '>model' // ConvertToString(Value=i) // '>input_label_map'
-        if ( Input%HasSection( SubSectionName=SubSectionName ) ) then
-          ii = 1
-          do ii = 1, Input%GetNumberofParameters(FromSubSection=SubSectionName)
-            ParameterName = 'map' // ConvertToString(Value=ii)
-            call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-            call Parse( Input=VarC0D, Separator=' ', Output=LabelMap )
-            if ( size(LabelMap,1) /= 2 ) call Error%Raise( Line='Incorrect input label map format', ProcName=ProcName )
-            call This%PCEModels(i)%ReplaceInputLabel( OldLabel=trim(adjustl(LabelMap(1))),  NewLabel=trim(adjustl(LabelMap(2))) )
-          end do
-        end if
-      else
-        SubSectionName = SubSectionName // '>pce_input'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call This%PCEModels(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
-        nullify(InputSection)
-      end if
-    end do
 
     SectionName = 'fixed_parameters'
     if ( Input%HasSection(SubSectionName=SectionName) ) then
@@ -272,20 +209,11 @@ contains
         ii = 1
         do ii = i + 1 , This%NbTransformParams
           if ( This%ParamTransformLabel(i)%GetValue() == This%ParamTransformLabel(ii)%GetValue() ) call Error%Raise(              &
-                      Line='Duplicate transform parameter labels : ' // This%ParamTransformLabel(i)%GetValue(), ProcName=ProcName)
+            Line='Duplicate transform and fixed parameter labels : ' // This%ParamTransformLabel(i)%GetValue(), ProcName=ProcName)
         end do
       end do
 
     end if
-
-    i = 1
-    do i = 1, This%NbTransformedParams
-      ii = 1
-      do ii = 1, This%NbFixedParams
-        if ( This%ParamTransformLabel(i)%GetValue() == This%FixedParamLabels(ii)%GetValue() ) call Error%Raise(                   &
-                        'Cant have a parameter that is fixed and transformed : ' // This%FixedParamLabels(ii), ProcName=ProcName )
-      end do
-    end do
 
     This%Constructed = .true.
 
@@ -297,7 +225,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(PCESM_Type), intent(in)                                     ::    This
+    class(InputProcessor_Type), intent(in)                            ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -309,42 +237,16 @@ contains
     logical                                                           ::    ExternalFlag=.false.
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    ParameterName
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    integer                                                           ::    i
-    character(:), allocatable                                         ::    VarC0D
-    real(rkp)                                                         ::    VarR0D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    DirectoryLoc = '<undefined>'
+    DirectoryLoc = ''
     PrefixLoc = ''
-    DirectorySub = DirectoryLoc
     if ( present(Directory) ) DirectoryLoc = Directory
     if ( present(Prefix) ) PrefixLoc = Prefix
-
-    if ( DirectoryLoc /= '<undefined>' ) ExternalFlag = .true.
-
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
-
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    DirectorySub = DirectoryLoc
 
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
-
-    call GetInput%AddParameter( Name='label', Value=This%Label )
-
-    SectionName = 'models'
-    call GetInput%AddSection( SectionName=SectionName )
-
-    i = 1
-    do i = 1, This%NbModels
-      SubSectionName = 'model' // ConvertToString(Value=i)
-      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-      SubSectionName = SectionName // '>' // SubSectionName
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/model' // ConvertToString(Value=i)
-      call GetInput%AddSection( Section=This%PCEModels(i)%GetInput(MainSectionName='pce_input', Prefix=PrefixLoc,                 &
-                                                                          Directory=DirectorySub ), To_SubSection=SubSectionName )
-    end do
 
     if ( This%NbFixedParams > 0 ) then
       SectionName = 'fixed_parameters'
@@ -383,42 +285,62 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_0D( This, Input, Output, Stat )
+  subroutine ProcessInput_0D( This, Input, ProcessedInput )
 
-    class(PCESM_Type), intent(inout)                                  ::    This
+    class(InputProcessor_Type), intent(in)                            ::    This
     type(Input_Type), intent(in)                                      ::    Input
-    type(Output_Type), dimension(:), intent(inout)                    ::    Output
-    integer, optional, intent(out)                                    ::    Stat
+    type(Input_Type), intent(out)                                     ::    ProcessedInput
 
-    character(*), parameter                                           ::    ProcName='Run_0D'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i, ii
-    type(Input_Type)                                                  ::    InputLoc
+    character(*), parameter                                           ::    ProcName='ProcessInput_0D'
+    integer                                                           ::    i
+    real(rkp)                                                         ::    VarR0D
 
-    if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( 'Passed down an output array of incorrect length',                  &
-                                                                                                               ProcName=ProcName )
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
+    ProcessedInput = Input
     if ( This%NbFixedParams > 0 .or. This%NbTransformParams > 0 ) then
-      InputLoc = Input
-      if ( This%NbFixedParams > 0 ) call InputLoc%Append( Values=This%FixedParamVals, Labels=This%FixedParamLabels )
-      if ( This%NbTransformParams > 0 ) then
+
+      if ( This%NbFixedParams > 0 ) then
         i = 1
-        do i = 1, This%NbTransformParams
-          call InputLoc%Transform( Transformations=This%ParamTransform(i)%Values, Label=This%ParamTransformLabel(i)%GetValue() )
+        do i = 1, This%NbFixedParams
+          if ( Input%HasParameter( Label=This%FixedParamLabels(i) ) ) call Error%Raise( 'Tried to add a fixed parameter to ' //   &
+                                           'input that already had it defined : ' // This%FixedParamLabels(i), ProcName=ProcName ) 
         end do
+        call InputLoc%Append( Values=This%FixedParamVals, Labels=This%FixedParamLabels )
+      end if
+
+      if ( This%NbTransformParams > 0 ) then
+        call Input%Transform( Transformations=This%ParamTransform, Labels=This%ParamTransformLabel, Mandatory=.true. )
       end if 
-      i = 1
-      do i = 1, This%NbModels
-        call This%PCEModels(i)%Run( Input=InputLoc, Output=Output(i) )
-      end do
     else
-      i = 1
-      do i = 1, This%NbModels
-        call This%PCEModels(i)%Run( Input=Input, Output=Output(i) )
-      end do
+      ProcessedInput = Input
     end if
 
-    if ( present(Stat) ) Stat = 0
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ProcessInput_1D( This, Input, ProcessedInput )
+
+    class(InputProcessor_Type), intent(in)                            ::    This
+    type(Input_Type), dimension(:), intent(in)                        ::    Input
+    type(Input_Type), allocatable, dimension(:), intent(out)          ::    ProcessedInput
+
+    character(*), parameter                                           ::    ProcName='ProcessInput_1D'
+    integer                                                           ::    i
+    integer                                                           ::    NbInputs
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    NbInputs = size(Input)
+
+    allocate(ProcessedInput(NbInputs), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='ProcessedInput', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, NbInputs
+      call This%ProcessInput( Input=Input(i), ProcessedInput=ProcessedInput(i) )
+    end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -426,54 +348,41 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(PCESM_Type), intent(out)                                    ::    LHS
-    class(Model_Type), intent(in)                                     ::    RHS
+    class(InputProcessor_Type), intent(out)                           ::    LHS
+    class(InputProcessor_Type), intent(in)                            ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
-    select type (RHS)
-  
-      type is (PCESM_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+    call LHS%Reset()
+    LHS%Initialized = RHS%Initialized
+    LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
-          LHS%NbOutputs = RHS%NbOutputs
-          LHS%Label = RHS%Label
-          LHS%NbModels = RHS%NbModels
-          allocate(LHS%PCEModels, source=RHS%PCEModels, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PCEModels', ProcName=ProcName, stat=StatLoc )
-          LHS%NbTransformParams = RHS%NbTransformParams
-          LHS%NbFixedParams = RHS%NbFixedParams
-          if ( RHS%NbFixedParams > 0 ) then
-            allocate(LHS%FixedParamVals, source=RHS%FixedParamVals, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%FixedParamVals', ProcName=ProcName, stat=StatLoc )
-            allocate(LHS%FixedParamLabels(RHS%NbFixedParams), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%FixedParamLabels', ProcName=ProcName, stat=StatLoc )
-            i = 1
-            do i = 1, RHS%NbFixedParams
-              LHS%FixedParamLabels(i) = RHS%FixedParamLabels(i)%GetValue()
-            end do
-          end if
-          if ( RHS%NbTransformParams > 0 ) then
-            allocate(LHS%ParamTransform, source=RHS%ParamTransform, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ParamTransformLabel', ProcName=ProcName, stat=StatLoc )
-            allocate(LHS%ParamTransformLabel(RHS%NbTransformParams), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ParamTransformLabel', ProcName=ProcName, stat=StatLoc )
-            i = 1
-            do i = 1, RHS%NbTransformParams
-              LHS%ParamTransformLabel(i) = RHS%ParamTransformLabel(i)%GetValue()
-            end do
-          end if
-        end if
-
-      class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
-
-    end select
+    if ( RHS%Constructed ) then
+      LHS%NbTransformParams = RHS%NbTransformParams
+      LHS%NbFixedParams = RHS%NbFixedParams
+      if ( RHS%NbFixedParams > 0 ) then
+        allocate(LHS%FixedParamVals, source=RHS%FixedParamVals, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%FixedParamVals', ProcName=ProcName, stat=StatLoc )
+        allocate(LHS%FixedParamLabels(RHS%NbFixedParams), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%FixedParamLabels', ProcName=ProcName, stat=StatLoc )
+        i = 1
+        do i = 1, RHS%NbFixedParams
+          LHS%FixedParamLabels(i) = RHS%FixedParamLabels(i)%GetValue()
+        end do
+      end if
+      if ( RHS%NbTransformParams > 0 ) then
+        allocate(LHS%ParamTransform, source=RHS%ParamTransform, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ParamTransform', ProcName=ProcName, stat=StatLoc )
+        allocate(LHS%ParamTransformLabel(RHS%NbTransformParams), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ParamTransformLabel', ProcName=ProcName, stat=StatLoc )
+        i = 1
+        do i = 1, RHS%NbTransformParams
+          LHS%ParamTransformLabel(i) = RHS%ParamTransformLabel(i)%GetValue()
+        end do
+      end if
+    end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -481,13 +390,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(PCESM_Type), intent(inout)                                   ::    This
+    type(InputProcessor_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
-  
-    if ( allocated(This%PCEModels) ) deallocate(This%PCEModels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PCEModels', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%FixedParamLabels) ) deallocate(This%FixedParamLabels, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FixedParamLabels', ProcName=ProcName, stat=StatLoc )

@@ -42,7 +42,7 @@ public                                                                ::    Cova
 type, extends(CovarianceConstructor_Type)                             ::    CovarianceMultiplier_Type
   character(:), allocatable                                           ::    M_Dependency
   real(rkp)                                                           ::    M
-  character(:), allocatable, dimension(:)                             ::    M_Transform
+  character(:), allocatable                                           ::    M_Transform
   type(CovariancePredefined_Type)                                     ::    ConstructorPredefined
 contains
   procedure, public                                                   ::    Initialize
@@ -88,9 +88,6 @@ contains
 
     call This%ConstructorPredefined%Reset()
 
-    if ( allocated(This%M_Transform) ) deallocate(This%M_Transform, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%M_Transform', ProcName=ProcName, stat=StatLoc )
-
     call This%SetDefaults()
 
   end subroutine
@@ -105,6 +102,7 @@ contains
 
     This%M = One
     This%M_Dependency = ''
+    This%M_Transform = ''
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -145,7 +143,7 @@ contains
 
     ParameterName = 'm_transform'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) call Parse( Input=VarC0D, Separator=' ', Output=This%M_Transform )
+    if ( Found ) This%M_Transform = VarC0D
 
     SectionName = 'predefined_covariance'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -194,8 +192,7 @@ contains
 
     call GetInput%AddParameter( Name='m', Value=ConvertToString(This%M) )
     if ( len_trim(This%M_Dependency) /= 0 ) call GetInput%AddParameter( Name='m_dependency', Value=This%M_Dependency )
-    if ( allocated(This%M_Transform) ) call GetInput%AddParameter( Name='m_transform',                                            &
-                                                                   Value=ConvertToString(Values=This%M_Transform, Separator=' ') )
+    if ( len_trim(This%M_Transform) > 0 ) call GetInput%AddParameter( Name='m_transform', Value=This%M_Transform ) )
 
     SectionName = 'predefined_covariance'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/predefined_covariance'
@@ -244,7 +241,7 @@ contains
       MLoc = This%M
     end if
 
-    if ( allocated(This%M_Transform) ) call Transform( Transformations=This%M_Transform, Value=MLoc )
+    if ( len_trim(This%M_Transform > 0 ) call Transform( Transformations=This%M_Transform, Value=MLoc )
 
     Cov = Cov * MLoc
 
@@ -271,8 +268,7 @@ contains
         if ( RHS%Constructed ) then
           LHS%M_Dependency = RHS%M_Dependency
           LHS%M = RHS%M
-          allocate(LHS%M_Transform, source=RHS%M_Transform, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%M_Transform', ProcName=ProcName, stat=StatLoc )
+          LHS%M_Transform = RHS%M_Transform
           LHS%ConstructorPredefined = RHS%ConstructorPredefined
         end if
       
@@ -291,9 +287,6 @@ contains
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
-
-    if ( allocated(This%M_Transform) ) deallocate(This%M_Transform, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%M_Transform', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
