@@ -120,6 +120,7 @@ contains
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
+    character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    VarC0D
     logical                                                           ::    VarL0D
     integer                                                           ::    i
@@ -142,7 +143,10 @@ contains
     call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%Silent = VarL0D
 
-    This%NbFunctions = Input%GetNumberofSubSections()
+    SectionName = 'functions'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    This%NbFunctions = InputSection%GetNumberofSubSections()
+    nullify(InputSection)
 
     allocate(This%TestFunctions(This%NbFunctions), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%TestFunctions', ProcName=ProcName, stat=StatLoc )
@@ -152,8 +156,8 @@ contains
 
     i = 1
     do i = 1, This%NbFunctions
-      SectionName = 'function' // ConvertToString(Value=i)
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      SubSectionName = SectionName // '>function' // ConvertToString(Value=i)
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
       call TestFunction_Factory%Construct( Object=TestFunction, Input=InputSection, Prefix=PrefixLoc )
       nullify(InputSection)
       call This%TestFunctions(i)%Set( Object=TestFunction )
@@ -221,13 +225,15 @@ contains
 
     call GetInput%AddParameter( Name='label', Value=This%Label )
 
+    call GetInput%AddSection( SectionName='functions' )
+
     i = 1
     do i = 1, This%NbFunctions
       SectionName = 'function' // ConvertToString(Value=i)
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/function' // ConvertToString(Value=i)
       TestFunctionPtr => This%TestFunctions(i)%GetPointer()
       call GetInput%AddSection( Section=TestFunction_Factory%GetObjectInput(Object=TestFunctionPtr, MainSectionName=SectionName,  &
-                                                                                       Prefix=PrefixLoc, Directory=DirectorySub) )
+                                                            Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection='functions' )
     end do
 
     if ( This%InputProcessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputProcessor%GetInput(                    &

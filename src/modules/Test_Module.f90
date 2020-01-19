@@ -67,21 +67,63 @@ contains
 
     character(*), parameter                                           ::    ProcName='Test'
     integer                                                           ::    StatLoc=0
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    PrefixLoc
-    type(OrthoNumerical_Type)                                         ::    OrthoNumerical
-    type(OrthoJacobi_Type)                                            ::    OrthoJacobi
-    type(DistBeta_Type)                                               ::    DistBeta
-    class(DistProb_Type), allocatable                                 ::    DistProb
     integer                                                           ::    i
+    class(Model_Type), allocatable                                    ::    Model1
+    class(Model_Type), allocatable                                    ::    Model2
+    real(rkp), dimension(9)                                           ::    param
+    real(rkp), dimension(9)                                           ::    paramtransf
+    type(String_Type), dimension(9)                                   ::    paramlabel
+    type(String_Type), dimension(9)                                   ::    paramlabeltransf
+    type(Input_Type)                                                  ::    InputTarget
+    type(Input_Type)                                                  ::    InputPreProcess
+    type(Output_Type), dimension(1)                                   ::    Output
 
-    call DistBeta%Construct( Alpha=Four, Beta=Four, A=-One, B=One )
-    call OrthoNumerical%Construct( Weights=DistBeta, Normalized=.true., Order=20 )
-    call OrthoJacobi%Construct( Alpha=Four, Beta=Four, Normalized=.true. )
+    param(1) = 0.1
+    param(2) = 0.2
+    param(3) = 0.3
+    param(4) = 0.4
+    param(5) = 0.5
+    param(6) = 0.6
+    param(7) = 0.7
+    param(8) = 0.8
+    param(9) = 0.9
 
-    i = 0
-    do i = 0, 20
-      write(*,*) OrthoNumerical%Eval( Order=i, X=0.7_rkp ), OrthoJacobi%Eval( Order=i, X=0.7_rkp )
-    end do
+    paramtransf(1:3) = dexp(dsqrt(param(1:3)))**2
+    paramtransf(4:6) = param(7:9)
+
+    paramlabel(1) = 'p1'
+    paramlabel(2) = 'p2'
+    paramlabel(3) = 'p3'
+    paramlabel(4) = 'p4'
+    paramlabel(5) = 'p5'
+    paramlabel(6) = 'p6'
+    paramlabel(7) = 'p7'
+    paramlabel(8) = 'p8'
+    paramlabel(9) = 'p9'
+
+    paramlabeltransf(1:3) = paramlabel(1:3)
+    paramlabeltransf(4:6) = paramlabel(7:9)
+
+    call InputTarget%Construct( Input=param, Labels=paramlabel )
+    call InputPreProcess%Construct( Input=paramtransf, Labels=paramlabeltransf )
+
+    SectionName = 'model1'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call Model_Factory%Construct( Object=Model1, Input=InputSection, Prefix=PrefixLoc )
+    nullify ( InputSection )
+
+    SectionName = 'model2'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call Model_Factory%Construct( Object=Model2, Input=InputSection, Prefix=PrefixLoc )
+    nullify ( InputSection )
+
+    call Model1%Run(Input=InputPreProcess,Output=Output)
+    write(*,*) 'postprocess : ', Output(1)%GetValues()
+    call Model2%Run(Input=InputTarget,Output=Output)
+    write(*,*) 'original : ', Output(1)%GetValues()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

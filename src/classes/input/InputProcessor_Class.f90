@@ -34,8 +34,8 @@ public                                                                ::    Inpu
 
 type                                                                  ::    InputProcessor_Type
   character(:), allocatable                                           ::    Name
-  logical                                                             ::    Constructed
-  logical                                                             ::    Initialized
+  logical                                                             ::    Constructed=.false.
+  logical                                                             ::    Initialized=.false.
   integer                                                             ::    NbFixedParams=0
   real(rkp), allocatable, dimension(:)                                ::    FixedParamVals
   type(String_Type), allocatable, dimension(:)                        ::    FixedParamLabels
@@ -348,7 +348,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='IsConstructed'
 
-    IsConstructed = .true.
+    IsConstructed = This%Constructed
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
