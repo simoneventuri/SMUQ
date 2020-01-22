@@ -546,8 +546,7 @@ contains
       Transcript(iLine) = 'wait'
 
       if ( .not. This%Silent ) then
-        Line = '  Initializing evaluation ' // ConvertToString(Value=iRun -                                                       &
-                                                                     This%NbConcurrentEvaluations*This%NbConcurrentSubEvaluations)
+        Line = '  Initializing evaluation ' // ConvertToString(Value=NbCompletedInputs + 1) 
         if ( This%NbConcurrentEvaluations > 1 ) Line = Line // '-' //    &
                                            ConvertToString(Value=min(NbInputs,NbCompletedInputs + This%NbConcurrentEvaluations))
         write(*,'(A)') Line
