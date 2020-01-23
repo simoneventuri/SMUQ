@@ -367,13 +367,6 @@ contains
     call This%CovarianceConstructor%AssembleCov( Input=Input, Coordinates=Response%GetCoordinatesPointer(),                       &
                                                                      CoordinateLabels=Response%GetCoordinateLabels(), Cov=This%L )
 
-    if ( This%DebugFlag ) then
-      write(*,*)
-      write(*,*) 'Covariance Array : ' // ConvertToString(Value=ZeroExit)
-      write(*,*)
-      call WriteArray(Array=This%L)
-    end if
-
     IsDiagonalFlag = IsDiagonal( Array=This%L )
 
     ZeroExit = .false.
