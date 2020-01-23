@@ -389,7 +389,7 @@ contains
         Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel)%GetValue() // ' \ '
         iLine = iLine + 1
         if ( .not. This%Silent ) then
-          Transcript(iLine) = ' && echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
+          Transcript(iLine) = 'echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
           iLine = iLine + 1
         end if
 
