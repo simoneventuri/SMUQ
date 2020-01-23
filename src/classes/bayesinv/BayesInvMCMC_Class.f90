@@ -61,6 +61,7 @@ type, extends(BayesInvMethod_Type)                                    ::    Baye
   type(SpaceSampler_Type)                                             ::    HierarchicalSampler
   logical                                                             ::    Hierarchical
   logical                                                             ::    TransformBounded
+  logical                                                             ::    DebugStop
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -124,6 +125,7 @@ contains
 
     This%Hierarchical = .false.
     This%TransformBounded = .false.
+    This%DebugStop = .false.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -157,6 +159,10 @@ contains
     if ( present(Prefix) ) PrefixLoc = Prefix
 
     This%SectionChain = SectionChain
+
+    ParameterName = 'debug_stop'
+    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%DebugStop = VarL0D
 
     ParameterName = 'transform_bounded_distributions'
     call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -223,6 +229,7 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
+    call GetInput%AddParameter( Name='debug_stop', Value=ConvertToString(Value=This%DebugStop) )
     call GetInput%AddParameter( Name='transform_bounded_distributions', Value=ConvertToString(Value=This%TransformBounded) )
 
     SectionName = 'mcmc'
@@ -427,6 +434,8 @@ contains
           Value = Zero
         end if
 
+        if ( This%DebugStop ) stop
+
       end subroutine
       !!--------------------------------------------------------------------------------------------------------------------------
 
@@ -534,6 +543,8 @@ contains
           Value = Zero
         end if
 
+        if ( This%DebugStop ) stop
+
       end subroutine
       !!--------------------------------------------------------------------------------------------------------------------------
 
@@ -614,6 +625,7 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
+          LHS%DebugStop = RHS%DebugStop
           LHS%Hierarchical = RHS%Hierarchical
           allocate(LHS%MCMC, source=RHS%MCMC, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MCMC', ProcName=ProcName, stat=StatLoc )

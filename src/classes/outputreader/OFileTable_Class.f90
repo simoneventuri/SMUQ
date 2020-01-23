@@ -22,7 +22,6 @@ use Input_Library
 use Parameters_Library
 use String_Library
 use StringRoutines_Module
-use StringRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use ComputingRoutines_Module
@@ -46,6 +45,7 @@ type, extends(OFileFormated_Type)                                     ::    OFil
   real(rkp), allocatable, dimension(:)                                ::    InterpolationNodes
   logical                                                             ::    Interpolated
   integer                                                             ::    NbColumns
+  logical                                                             ::    DebugFlag
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -103,8 +103,10 @@ contains
     class(OFileTable_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
+
     This%AbscissaColumn = 0
     This%Interpolated = .false.
+    This%DebugFlag = .false.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -127,6 +129,8 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    VarC0D
+    logical                                                           ::    Found
+    logical                                                           ::    VarL0D
     integer                                                           ::    i
     character(:), allocatable                                         ::    InterpNodesSource
     if ( This%Constructed ) call This%Reset()
@@ -134,6 +138,10 @@ contains
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
+
+    ParameterName = 'debug'
+    call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
+    if ( Found ) This%DebugFlag = VarL0D
 
     ParameterName = 'abscissa_column'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
@@ -215,6 +223,7 @@ contains
 
     call GetInput%AddSection( Section=This%OutputFile%GetInput( MainSectionName='file', Prefix=PrefixLoc, Directory=DirectorySub))
 
+    call GetInput%AddParameter( Name='debug', Value=Convert_To_String(This%DebugFlag) )
     call GetInput%AddParameter( Name='abscissa_column', Value=Convert_To_String(This%AbscissaColumn) )
     call GetInput%AddParameter( Name='output_column', Value=ConvertToString(Values=This%OutputColumn) )
 
@@ -260,6 +269,12 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
+    if ( This%DebugFlag ) then
+      write(*,*) '*****************************************************************************'
+      write(*,*) 'Debug information for reading of output file  ' // This%OutputFile%GetFullFile()
+      write(*,*) '*****************************************************************************'
+    end if
+
     FileLoc = This%OutputFile
 
     call ImportArray( Array=Strings, File=FileLoc, RowMajor=.true. )
@@ -287,6 +302,20 @@ contains
       Abscissa(i) = ConvertToReal( String=Strings(i,This%AbscissaColumn)%GetValue() )
     end do
 
+    if ( This%DebugFlag ) then
+      write(*,*)
+      write(*,*) 'Interpolation Nodes'
+      write(*,*)
+      write(*,*) This%InterpolationNodes
+    end if
+
+    if ( This%DebugFlag ) then
+      write(*,*)
+      write(*,*) 'Read in Abscissa'
+      write(*,*)
+      write(*,*) Abscissa
+    end if
+
     i = 1
     do i = 1, This%NbColumns
 
@@ -298,8 +327,20 @@ contains
       if ( This%Interpolated ) then
         Values((i-1)*NbEntries+1:i*NbEntries,1) = Interpolate( Abscissa=Abscissa, Ordinate=TableOutput,                           &
                                                                                                     Nodes=This%InterpolationNodes)
+        if ( This%DebugFlag ) then
+          write(*,*)
+          write(*,*) 'Interpolated values from column ' // ConvertToString(Value=This%OutputColumn(i))
+          write(*,*)
+          write(*,*) Values((i-1)*NbEntries+1:i*NbEntries,1)
+        end if
       else
         Values((i-1)*NbEntries+1:i*NbEntries,1) = TableOutput
+        if ( This%DebugFlag ) then
+          write(*,*)
+          write(*,*) 'Read in values from column ' // ConvertToString(Value=This%OutputColumn(i))
+          write(*,*)
+          write(*,*) Values((i-1)*NbEntries+1:i*NbEntries,1)
+        end if
       end if
   
     end do
@@ -333,6 +374,7 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
+          LHS%DebugFlag = RHS%DebugFlag
           LHS%OutputFile = RHS%OutputFile
           LHS%AbscissaColumn = RHS%AbscissaColumn
           LHS%Interpolated = RHS%Interpolated

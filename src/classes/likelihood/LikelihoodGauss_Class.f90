@@ -22,9 +22,10 @@ use Input_Library
 use Parameters_Library
 use ArrayRoutines_Module
 use StringRoutines_Module
+use ArrayIORoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use Input_Class                                                ,only:    Input_Type
+use Input_Class                                                   ,only:    Input_Type
 use Response_Class                                                ,only:    Response_Type
 use Output_Class                                                  ,only:    Output_Type
 use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
@@ -46,6 +47,7 @@ type, extends(LikelihoodFunction_Type)                                ::    Like
   real(rkp), allocatable, dimension(:,:)                              ::    XmMean
   logical                                                             ::    StochCovFlag
   real(rkp)                                                           ::    lnPreExp
+  logical                                                             ::    DebugFlag
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -113,6 +115,7 @@ contains
     This%MultiplicativeError = .false.
     This%Scalar = Zero
     This%Label = ''
+    This%DebugFlag = .false.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -142,6 +145,10 @@ contains
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
+
+    ParameterName = 'debug'
+    call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
+    if ( Found ) This%DebugFlag = VarL0D
 
     ParameterName = 'multiplicative_error'
     call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
@@ -197,6 +204,7 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
+    call GetInput%AddParameter( Name='debug', Value=ConvertToString(Value=This%DebugFlag) )
     call GetInput%AddParameter( Name='multiplicative_error', Value=ConvertToString(Value=This%MultiplicativeError) )
     call GetInput%AddParameter( Name='scalar', Value=ConvertToString(Value=This%Scalar) )
     call GetInput%AddParameter( Name='label', Value=This%Label )
@@ -260,6 +268,12 @@ contains
       Evaluate_1D = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput) )
     end if
 
+    if ( This%DebugFlag ) then
+      write(*,*)
+      write(*,*) 'Likelihood value : ' // ConvertToString(Value=Evaluate_1D)
+      write(*,*)
+    end if
+
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -298,6 +312,12 @@ contains
 
     if ( Response%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect response', ProcName=ProcName )
     if ( Output%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect output', ProcName=ProcName )
+
+    if ( This%DebugFlag ) then
+      write(*,*) '*****************************************************************************'
+      write(*,*) 'Debug information for likelihood function of response ' // Response%GetLabel()
+      write(*,*) '*****************************************************************************'
+    end if
 
     LogValueLoc = .false.
     if ( present(LogValue) ) LogValueLoc = LogValue
@@ -347,6 +367,13 @@ contains
     call This%CovarianceConstructor%AssembleCov( Input=Input, Coordinates=Response%GetCoordinatesPointer(),                       &
                                                                      CoordinateLabels=Response%GetCoordinateLabels(), Cov=This%L )
 
+    if ( This%DebugFlag ) then
+      write(*,*)
+      write(*,*) 'Covariance Array : ' // ConvertToString(Value=ZeroExit)
+      write(*,*)
+      call WriteArray(Array=This%L)
+    end if
+
     IsDiagonalFlag = IsDiagonal( Array=This%L )
 
     ZeroExit = .false.
@@ -356,6 +383,12 @@ contains
 !      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DPOTRF', ProcName=ProcName )
     else
       This%L = dsqrt(This%L)
+    end if
+
+    if ( This%DebugFlag ) then
+      write(*,*)
+      write(*,*) 'Is covariance not innvertible? : ' // ConvertToString(Value=ZeroExit)
+      write(*,*)
     end if
 
     if ( ZeroExit ) then
@@ -375,8 +408,20 @@ contains
       VarR0D = Zero
       ii = 1
       do ii = 1, NbDataSets
+        if ( This%DebugFlag ) then
+          write(*,*)
+          write(*,*) 'Data set # ' // ConvertToString(Value=ii)
+          write(*,*)
+          write(*,*) DataPtr(:,ii)
+        end if
         iii = 1
         do iii = 1, NbDegen
+          if ( This%DebugFlag ) then
+            write(*,*)
+            write(*,*) 'Output set # ' // ConvertToString(Value=ii)
+            write(*,*)
+            write(*,*) OutputPtr(:,iii)
+          end if
           if ( This%MultiplicativeError ) then
             This%XmMean(:,1) = DataPtr(:,ii) / OutputPtr(:,iii)
             This%XmMean(:,1) = dlog(This%XmMean(:,1))
@@ -392,6 +437,12 @@ contains
       lnExp = VarR0D
 
       Evaluate_0D = lnPreExp + lnExp + This%Scalar
+
+      if ( This%DebugFlag ) then
+        write(*,*)
+        write(*,*) 'Log likelihood value : ' // ConvertToString(Value=Evaluate_0D)
+        write(*,*)
+      end if
 
       if ( .not. LogValueLoc ) then
         if ( Evaluate_0D > TVarR0D .and. Evaluate_0D < HVarR0D ) then
@@ -430,6 +481,7 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
+          LHS%DebugFlag = RHS%DebugFlag
           LHS%Scalar = RHS%Scalar
           LHS%MultiplicativeError = RHS%MultiplicativeError
           LHS%Label = RHS%Label
