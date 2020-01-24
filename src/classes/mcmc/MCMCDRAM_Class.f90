@@ -451,7 +451,7 @@ contains
     call GetInput%AddParameter( Name='filter_frequency', Value=ConvertToString(Value=This%FilterFreq ) )
     call GetInput%AddParameter( Name='chain_length', Value=ConvertToString(Value=This%ChainLength ) )
     call GetInput%AddParameter( Name='burn_in_length', Value=ConvertToString(Value=This%BurnIn ) )
-    call GetInput%AddParameter( Name='proposal_type', Value=This%ProposalType )
+    call GetInput%AddParameter( Name='proposal', Value=This%ProposalType )
 
     SectionName = 'dr'
     call GetInput%AddSection( SectionName=SectionName )
@@ -490,7 +490,7 @@ contains
       call GetInput%AddSection( SectionName=SectionName )
 
       call GetInput%AddParameter( Name='nb_accepted', Value=ConvertToString(Value=This%Accepted), SectionName=SectionName )
-      call GetInput%AddParameter( Name='nb_accepted_post_burn_in', Value=ConvertToString(Value=This%Accepted),                    &
+      call GetInput%AddParameter( Name='nb_accepted_post_burn_in', Value=ConvertToString(Value=This%AcceptedPostBurnIn),          &
                                                                                                          SectionName=SectionName )
       call GetInput%AddParameter( Name='nb_accepted_dr', Value=ConvertToString(Values=This%Accepted_DR), SectionName=SectionName )
       call GetInput%AddParameter( Name='nb_steps_dr', Value=ConvertToString(Values=This%Step_DR), SectionName=SectionName )

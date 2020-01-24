@@ -27,6 +27,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
 use ParameterWriter_Class                                         ,only:    ParameterWriter_Type
+use PathWriter_Class                                              ,only:    PathWriter_Type
 use OutputReader_Class                                            ,only:    OutputReader_Type
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
@@ -41,6 +42,7 @@ private
 public                                                                ::    ModelExternal_Type
 
 type, extends(Model_Type)                                             ::    ModelExternal_Type
+  type(PathWriter_Type), allocatable, dimension(:)                    ::    PathWriter
   type(ParameterWriter_Type), allocatable, dimension(:)               ::    ParameterWriter
   type(OutputReader_Type), allocatable, dimension(:)                  ::    OutputReader
   type(String_Type), allocatable, dimension(:)                        ::    SubModelCaseDirectory
@@ -99,6 +101,9 @@ contains
 
     if ( allocated(This%OutputReader) ) deallocate(This%OutputReader, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OutputReader', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%PathWriter) ) deallocate(This%PathWriter, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PathWriter', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%SubModelCaseDirectory) ) deallocate(This%SubModelCaseDirectory, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%SubModelCaseDirectory', ProcName=ProcName, stat=StatLoc )
@@ -223,9 +228,23 @@ contains
     allocate(This%OutputReader(This%NbConcurrentEvaluations), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OutputReader', ProcName=ProcName, stat=StatLoc )
 
+    SectionName = 'path_writer'
+    if ( Input%HasSection( SubSectionname=SectionName ) ) then
+      allocate(This%PathWriter(This%NbConcurrentEvaluations), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%PathWriter', ProcName=ProcName, stat=StatLoc )
+    end if
+
     i = 1
     do i = 1, This%NbConcurrentEvaluations
       WorkDirectoryLoc = This%FullWorkDirectory // '/' // ConvertToString(Value=i) 
+
+      SectionName = 'path_writer'
+      if ( allocated(This%PathWriter) ) then
+        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        call This%PathWriter(i)%Construct( Input=InputSection, Prefix=WorkDirectoryLoc )
+        nullify( InputSection )
+        call This%PathWriter(i)%WritePaths()
+      end if
 
       SectionName = 'parameter_writer'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -293,6 +312,10 @@ contains
                                                                                                          Directory=DirectorySub) )
     call GetInput%AddSection( Section=This%OutputReader(1)%GetInput(MainSectionName='output_reader', Prefix=PrefixLoc,            &
                                                                                                          Directory=DirectorySub) )
+    if ( allocated(This%PathWriter) ) then
+      call GetInput%AddSection( Section=This%PathWriter(1)%GetInput(MainSectionName='path_writer', Prefix=PrefixLoc,              &
+                                                                                                         Directory=DirectorySub) )
+    end if
 
     SectionName = 'submodels'
     call GetInput%AddSection( SectionName=SectionName )

@@ -283,7 +283,6 @@ contains
 
     i = 1
     do i = 1, This%NbMParams
-      if ( VarC0D(1:1) == CommentChar ) cycle
       VarC0D = '{' // This%ParamIdentifier(i)%GetValue() // '}'
 
       ii = 1
@@ -301,7 +300,7 @@ contains
       ii = 1
       do ii = 1, LineLog(i)%GetLength()
         call LineLog(i)%Get( Node=ii, Value=IndexLoc )
-        VarC0D = ReplaceCharacter( String=Template(IndexLoc)%GetValue(),                                                          &
+        VarC0D = ReplaceCharacter( String=ProcessedTemplate(IndexLoc)%GetValue(),                                                 &
                  Old='{' // This%ParamIdentifier(i)%GetValue() // '}' ,                                                           &
                  New=MParamPointer%GetCharValue(Input=Input, Format=This%ParamFormat(i)%GetValue()) )
         call ProcessedTemplate(IndexLoc)%Set_Value( Value=VarC0D )
