@@ -238,8 +238,8 @@ contains
     do i = 1, This%NbConcurrentEvaluations
       WorkDirectoryLoc = This%FullWorkDirectory // '/' // ConvertToString(Value=i) 
 
-      SectionName = 'path_writer'
       if ( allocated(This%PathWriter) ) then
+        SectionName = 'path_writer'
         call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
         call This%PathWriter(i)%Construct( Input=InputSection, Prefix=WorkDirectoryLoc )
         nullify( InputSection )
