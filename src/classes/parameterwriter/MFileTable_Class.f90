@@ -145,7 +145,7 @@ contains
     ParameterName = 'identifier'
     call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
     if ( len_trim(VarC0D) == 0 ) call Error%Raise( 'Specified an empty identifier', ProcName=ProcName )
-    This%Identifier = '{' // VarC0D // '}'
+    This%Identifier = VarC0D
 
     ParameterName = 'abscissa_column'
     call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
@@ -317,7 +317,7 @@ contains
     ii = 0
     do i = 1, NbLines
       VarC0D = trim(adjustl(Template(i)%GetValue()))
-      if ( VarC0D == This%Identifier ) then
+      if ( VarC0D == '{' // This%Identifier // '}' ) then
         if ( TableStart == 0 ) then
           TableStart = i
           cycle
@@ -325,8 +325,7 @@ contains
           TableEnd = i
           cycle
         else
-          call Error%Raise( 'Detected more than one specified table: ' // This%Identifier(2:len_trim(This%Identifier)-1),        &
-                                                                                                               ProcName=ProcName )
+          call Error%Raise( 'Detected more than one specified table : ' // This%Identifier, ProcName=ProcName )
         end if
       end if
       if ( TableStart == 0 ) cycle
@@ -335,10 +334,8 @@ contains
 
 
     if ( TableStart - TableEnd == 1 ) call Error%Raise( 'Specified an empty template table', ProcName=ProcName )
-    if ( TableStart == 0 ) call Error%Raise( 'Did not find start of table: ' // This%Identifier(2:len_trim(This%Identifier)-1),   &
-                                                                                                               ProcName=ProcName )
-    if ( TableEnd == 0 ) call Error%Raise( 'Did not find end of table: ' // This%Identifier(2:len_trim(This%Identifier)-1),       &
-                                                                                                               ProcName=ProcName )
+    if ( TableStart == 0 ) call Error%Raise( 'Did not find start of table: ' // This%Identifier, ProcName=ProcName )
+    if ( TableEnd == 0 ) call Error%Raise( 'Did not find end of table: ' // This%Identifier, ProcName=ProcName )
 
     if ( TableStart > 1 ) ProcessedTemplate(1:TableStart-1) = Template(1:TableStart-1)
     ProcessedTemplate(TableStart:TableEnd-2) = Template(TableStart+1:TableEnd-1)

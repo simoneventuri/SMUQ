@@ -287,7 +287,7 @@ contains
 
       ii = 1
       do ii = 1, NbLines
-        if ( Template(ii)%Is_Substring_Present( SubStr=VarC0D ) ) call LineLog(i)%Append( Value=ii )
+        if ( index(Template(ii)%GetValue(), VarC0D) /= 0 ) call LineLog(i)%Append( Value=ii )
       end do
 
       if ( LineLog(i)%GetLength() < 1 ) call Error%Raise( Line='Could not find indicator in template: ' //                        &
