@@ -1,1 +1,1 @@
- - check log transform of bayesian inference
+ - check log transform of bayesian inference by running a case using the log transform and then a case where log transform is used in the actual parmaeter space definition and then preprocessed in the model before getting model output
