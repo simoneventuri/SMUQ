@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module CovarianceConstructor_Class
+module HierCovFunction_Class
 
 use Input_Library
 use Parameters_Library
@@ -24,30 +24,34 @@ use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use CovFunction_Class                                             ,only:    CovFunction_Type
 
 implicit none
 
 private
 
-public                                                                ::    CovarianceConstructor_Type
+public                                                                ::    HierCovFunction_Type
 
-type, abstract                                                        ::    CovarianceConstructor_Type
+type, abstract                                                        ::    HierCovFunction_Type
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
+  logical                                                             ::    InputRequired=.true.
   character(:), allocatable                                           ::    SectionChain
 contains
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    IsConstructed
+  procedure, public                                                   ::    IsInputRequired
+  procedure, public                                                   ::    GenerateCovFunction
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_CovarianceConstructor), deferred, public       ::    Initialize
-  procedure(Reset_CovarianceConstructor), deferred, public            ::    Reset
-  procedure(SetDefaults_CovarianceConstructor), deferred, public      ::    SetDefaults
-  procedure(ConstructInput_CovarianceConstructor), deferred, private  ::    ConstructInput
-  procedure(GetInput_CovarianceConstructor), deferred, public         ::    GetInput
-  procedure(AssembleCov_CovarianceConstructor), deferred, public      ::    AssembleCov
-  procedure(Copy_CovarianceConstructor), deferred, public             ::    Copy
+  procedure(Initialize_HierCovFunction), deferred, public             ::    Initialize
+  procedure(Reset_HierCovFunction), deferred, public                  ::    Reset
+  procedure(SetDefaults_HierCovFunction), deferred, public            ::    SetDefaults
+  procedure(ConstructInput_HierCovFunction), deferred, private        ::    ConstructInput
+  procedure(GetInput_HierCovFunction), deferred, public               ::    GetInput
+  procedure(GenerateCovFunction_HierCovFunction), deferred, public    ::    GenerateCovFunction
+  procedure(Copy_HierCovFunction), deferred, public                   ::    Copy
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -55,42 +59,42 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_CovarianceConstructor( This )
-    import                                                            ::    CovarianceConstructor_Type
-    class(CovarianceConstructor_Type), intent(inout)                  ::    This
+  subroutine Initialize_HierCovFunction( This )
+    import                                                            ::    HierCovFunction_Type
+    class(HierCovFunction_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_CovarianceConstructor( This )
-    import                                                            ::    CovarianceConstructor_Type
-    class(CovarianceConstructor_Type), intent(inout)                  ::    This
+  subroutine Reset_HierCovFunction( This )
+    import                                                            ::    HierCovFunction_Type
+    class(HierCovFunction_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_CovarianceConstructor( This )
-    import                                                            ::    CovarianceConstructor_Type
-    class(CovarianceConstructor_Type), intent(inout)                  ::    This
+  subroutine SetDefaults_HierCovFunction( This )
+    import                                                            ::    HierCovFunction_Type
+    class(HierCovFunction_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_CovarianceConstructor( This, Input, Prefix )
-    import                                                            ::    CovarianceConstructor_Type
+  subroutine ConstructInput_HierCovFunction( This, Input, Prefix )
+    import                                                            ::    HierCovFunction_Type
     import                                                            ::    InputSection_Type
-    class(CovarianceConstructor_Type), intent(inout)                  ::    This
+    class(HierCovFunction_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_CovarianceConstructor( This, MainSectionName, Prefix, Directory )
-    import                                                            ::    CovarianceConstructor_Type
+  function GetInput_HierCovFunction( This, MainSectionName, Prefix, Directory )
+    import                                                            ::    HierCovFunction_Type
     import                                                            ::    InputSection_Type
-    type(InputSection_Type)                                           ::    GetInput_CovarianceConstructor
-    class(CovarianceConstructor_Type), intent(in)                     ::    This
+    type(InputSection_Type)                                           ::    GetInput_HierCovFunction
+    class(HierCovFunction_Type), intent(in)                           ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -98,24 +102,21 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AssembleCov_CovarianceConstructor( This, Coordinates, CoordinateLabels, Input, Cov)
-    use                                                               ::    Parameters_Library
-    import                                                            ::    CovarianceConstructor_Type
+  subroutine GenerateCovFunction_HierCovFunction( This, Input, CovFunction )
+    import                                                            ::    HierCovFunction_Type
     import                                                            ::    Input_Type
-    import                                                            ::    String_Type
-    class(CovarianceConstructor_Type), intent(in)                     ::    This
-    real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
-    type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
+    import                                                            ::    CovFunction_Type
+    class(HierCovFunction_Type), intent(in)                           ::    This
     type(Input_Type), intent(in)                                      ::    Input
-    real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
+    class(CovFunction_Type), allocatable, intent(out)                 ::    CovFunction
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_CovarianceConstructor( LHS, RHS )
-    import                                                            ::    CovarianceConstructor_Type
-    class(CovarianceConstructor_Type), intent(out)                    ::    LHS
-    class(CovarianceConstructor_Type), intent(in)                     ::    RHS
+  impure elemental subroutine Copy_HierCovFunction( LHS, RHS )
+    import                                                            ::    HierCovFunction_Type
+    class(HierCovFunction_Type), intent(out)                          ::    LHS
+    class(HierCovFunction_Type), intent(in)                           ::    RHS
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -127,7 +128,8 @@ contains
   function GetName( This )
 
     character(:), allocatable                                         ::    GetName
-    class(CovarianceConstructor_Type), intent(inout)                  ::    This
+
+    class(HierCovFunction_Type), intent(in)                           ::    This
     character(*), parameter                                           ::    ProcName='GetName'
 
     GetName = This%Name
@@ -139,10 +141,24 @@ contains
   function IsConstructed( This )
 
     logical                                                           ::    IsConstructed
-    class(CovarianceConstructor_Type), intent(inout)                  ::    This
+
+    class(HierCovFunction_Type), intent(in)                           ::    This
     character(*), parameter                                           ::    ProcName='IsConstructed'
 
     IsConstructed = This%Constructed
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsInputRequired( This )
+
+    logical                                                           ::    IsInputRequired
+
+    class(HierCovFunction_Type), intent(in)                           ::    This
+    character(*), parameter                                           ::    ProcName='IsInputRequired'
+
+    IsInputRequired = This%InputRequired
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -16,22 +16,26 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module LikelihoodFunction_Factory_Class
+module HierCovFunction_Factory_Class
 
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
-use LikelihoodGauss_Class                                         ,only:    LikelihoodGauss_Type
+use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
+use HierCovIID_Class                                              ,only:    HierCovIID_Type
+use HierCovMultiplier_Class                                       ,only:    HierCovMultiplier_Type
+use HierCovLogisticDiag_Class                                     ,only:    HierCovLogisticDiag_Type
+use HierCovGExp1L_Class                                           ,only:    HierCovGExp1L_Type
+use HierCovGExp2L_Class                                           ,only:    HierCovGExp2L_Type
 
 implicit none
 
 private
 
-public                                                                ::    LikelihoodFunction_Factory
+public                                                                ::    HierCovFunction_Factory
 
-type                                                                  ::    LikelihoodFunction_Factory_Type
+type                                                                  ::    HierCovFunction_Factory_Type
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D,          &
                                                                                                           Construct_Input
@@ -41,7 +45,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 end Type
 
-type(LikelihoodFunction_Factory_Type)                                 ::    LikelihoodFunction_Factory
+type(HierCovFunction_Factory_Type)                              ::    HierCovFunction_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -49,17 +53,28 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_C0D( Object, DesiredType )
 
-    class(LikelihoodFunction_Type), allocatable, intent(inout)        ::    Object                                            
-    character(*), intent(in)                                          ::    DesiredType                                               
-
+    class(HierCovFunction_Type), allocatable, intent(inout)     ::    Object                                            
+    character(*), intent(in)                                          ::    DesiredType
     character(*), parameter                                           ::    ProcName='Construct_C0D' 
 
     if ( allocated(Object) ) call Error%Raise( Line='Object already allocated', ProcName=ProcName )
 
     select case ( LowerCase(DesiredType) )
 
-      case('gaussian')
-        allocate( LikelihoodGauss_Type :: Object )
+      case('iid')
+        allocate( HierCovIID_Type :: Object )
+
+      case('multiplier')
+        allocate( HierCovMultiplier_Type :: Object )
+
+      case('logistic_diagonal')
+        allocate( HierCovLogisticDiag_Type :: Object )
+
+      case('gamma_exponential_1l')
+        allocate( HierCovGExp1L_Type :: Object )
+
+      case('gamma_exponential_2l')
+        allocate( HierCovGExp2L_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -76,11 +91,10 @@ contains
     
     use Input_Library
 
-    class(LikelihoodFunction_Factory_Type), intent(in)                ::    This
-    class(LikelihoodFunction_Type), allocatable, intent(inout)        ::    Object
+    class(HierCovFunction_Factory_Type), intent(in)             ::    This
+    class(HierCovFunction_Type), allocatable, intent(inout)     ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-
     character(*), parameter                                           ::    ProcName='Construct_Input'                                   
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
@@ -109,14 +123,25 @@ contains
 
     character(:), allocatable                                         ::    GetOption
 
-    class(LikelihoodFunction_Type), intent(in)                        ::    Object                                                                                            
-
+    class(HierCovFunction_Type), intent(in)                     ::    Object                                             
     character(*), parameter                                           ::    ProcName='GetOption' 
 
     select type (Object)
 
-      type is (LikelihoodGauss_Type)
-        GetOption = 'gaussian'
+      type is (HierCovIID_Type)
+        GetOption = 'iid'
+
+      type is (HierCovMultiplier_Type)
+        GetOption = 'multiplier'
+
+      type is (HierCovLogisticDiag_Type)
+        GetOption = 'logistic_diagonal'
+
+      type is (HierCovGExp1L_Type)
+        GetOption = 'gamma_exponential_1L'
+
+      type is (HierCovGExp2L_Type)
+        GetOption = 'gamma_exponential_2L'
 
       class default
         call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )
@@ -133,8 +158,8 @@ contains
 
     type(InputSection_Type)                                           ::    GetObjectInput
 
-    class(LikelihoodFunction_Factory_Type), intent(in)                ::    This
-    class(LikelihoodFunction_Type), intent(inout)                     ::    Object
+    class(HierCovFunction_Factory_Type), intent(in)             ::    This
+    class(HierCovFunction_Type), intent(in)                     ::    Object
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory

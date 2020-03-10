@@ -37,9 +37,7 @@ public                                                                ::    Kern
 type                                                                  ::    KernelDist_Factory_Type
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D
-  generic, public                                                     ::    ConstructPointer        =>    ConstructPointer_C0D
   procedure, nopass, public                                           ::    Construct_C0D
-  procedure, nopass, public                                           ::    ConstructPointer_C0D
   procedure, nopass, public                                           ::    GetOption
 End Type
 
@@ -57,45 +55,6 @@ contains
     character(*), parameter                                           ::    ProcName='Construct_C0D' 
 
     if ( allocated( Object ) ) call Error%Raise( Line="Object already allocated", ProcName=ProcName )
-
-    select case ( LowerCase(DesiredType) )
-
-      case('uniform')
-        allocate( DistUnif_Type :: Object )
-        select type ( Object ) 
-          type is ( DistUnif_Type )
-            call Object%Construct( A=-One, B=One )
-          class default
-            call Error%Raise( 'Something went wrong', ProcName=ProcName )
-        end select
-      case('normal')
-        allocate( DistNorm_Type :: Object )
-        select type ( Object ) 
-          type is ( DistNorm_Type )
-            call Object%Construct( Mu=Zero, Sigma=One )
-          class default
-            call Error%Raise( 'Something went wrong', ProcName=ProcName )
-        end select
-
-      case default
-        call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
-
-    end select
-
-    call Object%Initialize()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructPointer_C0D( Object, DesiredType )
-
-    class(DistProb_Type), pointer, intent(inout)                      ::    Object                                             
-    character(*), intent(in)                                          ::    DesiredType                                               
-
-    character(*), parameter                                           ::    ProcName='ConstructPointer_C0D' 
-
-    if ( associated( Object ) ) call Error%Raise( Line="Object already associated", ProcName=ProcName )
 
     select case ( LowerCase(DesiredType) )
 

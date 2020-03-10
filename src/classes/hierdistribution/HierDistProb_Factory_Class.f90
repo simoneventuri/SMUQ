@@ -43,12 +43,8 @@ type                                                                  ::    Hier
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D,          &
                                                                                                           Construct_Input
-  generic, public                                                     ::    ConstructPointer        =>    ConstructPointer_C0D,   &
-                                                                                                          ConstructPointer_Input
   procedure, nopass, public                                           ::    Construct_C0D
   procedure, public                                                   ::    Construct_Input
-  procedure, nopass, public                                           ::    ConstructPointer_C0D
-  procedure, public                                                   ::    ConstructPointer_Input
   procedure, nopass, public                                           ::    GetOption
   procedure, public                                                   ::    GetObjectInput
 End Type
@@ -128,85 +124,6 @@ contains
     ParameterName = 'type'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
     call This%Construct( Object=Object, DesiredType=VarC0D )
-
-    SectionName = 'type'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call Object%Construct( Input=InputSection, Prefix=PrefixLoc )
-    nullify( InputSection )
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructPointer_C0D( Object, DesiredType )
-
-    class(HierDistProb_Type), pointer, intent(inout)                  ::    Object                                             
-    character(*), intent(in)                                          ::    DesiredType                                               
-
-    character(*), parameter                                           ::    ProcName='ConstructPointer_C0D' 
-
-    if ( associated( Object ) ) call Error%Raise( Line="Object already associated", ProcName=ProcName )
-
-    select case ( LowerCase(DesiredType) )
-
-      case('uniform')
-        allocate( HierDistUnif_Type :: Object )
-
-      case('loguniform')
-        allocate( HierDistLogUnif_Type :: Object )
-
-      case('log10uniform')
-        allocate( HierDistLog10Unif_Type :: Object )
-
-      case('normal')
-        allocate( HierDistNorm_Type :: Object )
-
-      case('lognormal')
-        allocate( HierDistLogNorm_Type :: Object )
-
-      case('log10normal')
-        allocate( HierDistLog10Norm_Type :: Object )
-
-      case('gamma')
-        allocate( HierDistGamma_Type :: Object )
-
-      case('logistic')
-        allocate( HierDistLogistic_Type :: Object )
-
-      case default
-        call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
-
-    end select
-
-    call Object%Initialize()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructPointer_Input( This, Object, Input, Prefix )
-    
-    use Input_Library
-
-    class(HierDistProb_Factory_Type), intent(in)                      ::    This
-    class(HierDistProb_Type), pointer, intent(inout)                  ::    Object
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-
-    character(*), parameter                                           ::    ProcName='ConstructPointer_Input'                                   
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    StatLoc=0 
-
-    PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
-
-    ParameterName = 'type'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
-    call This%ConstructPointer( Object=Object, DesiredType=VarC0D )
 
     SectionName = 'type'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
