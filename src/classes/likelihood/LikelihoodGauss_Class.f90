@@ -29,9 +29,11 @@ use Input_Class                                                   ,only:    Inpu
 use Response_Class                                                ,only:    Response_Type
 use Output_Class                                                  ,only:    Output_Type
 use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
-use CovarianceConstructor_Class                                   ,only:    CovarianceConstructor_Type
-use CovarianceConstructor_Factory_Class                           ,only:    CovarianceConstructor_Factory
+use CovFunction_Class                                             ,only:    CovFunction_Type
+use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
+use HierCovFunction_Factory_Class                                 ,only:    HierCovFunction_Factory
 use List2DAllocReal_Class                                         ,only:    List2DAllocReal_Type
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
@@ -42,12 +44,14 @@ public                                                                ::    Like
 type, extends(LikelihoodFunction_Type)                                ::    LikelihoodGauss_Type
   logical                                                             ::    MultiplicativeError
   real(rkp)                                                           ::    Scalar=Zero
-  class(CovarianceConstructor_Type), allocatable                      ::    CovarianceConstructor
+  class(HierCovFunction_Type), allocatable                            ::    HierCovFunction
+  real(rkp)                                                           ::    Multiplier
+  character(:), allocatable                                           ::    MultiplierDependency
+  logical                                                             ::    PredefinedCov
   real(rkp), allocatable, dimension(:,:)                              ::    L
   real(rkp), allocatable, dimension(:,:)                              ::    XmMean
   logical                                                             ::    StochCovFlag
   real(rkp)                                                           ::    lnPreExp
-  logical                                                             ::    DebugFlag
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -91,14 +95,16 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%CovarianceConstructor) ) deallocate(This%CovarianceConstructor, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CovarianceConstructor', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%HierCovFunction) ) deallocate(This%HierCovFunction, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%HierCovFunction', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%XmMean) ) deallocate(This%XmMean, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%L) ) deallocate(This%L, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
+
+    This%PredefinedCov = .false.
 
     call This%SetDefaults()
 
@@ -115,7 +121,8 @@ contains
     This%MultiplicativeError = .false.
     This%Scalar = Zero
     This%Label = ''
-    This%DebugFlag = .false.
+    This%Multiplier = One
+    This%MultiplierDependency = ''
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -146,10 +153,6 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    ParameterName = 'debug'
-    call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
-    if ( Found ) This%DebugFlag = VarL0D
-
     ParameterName = 'multiplicative_error'
     call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
     if ( Found ) This%MultiplicativeError = VarL0D
@@ -162,10 +165,47 @@ contains
     call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
     This%Label = VarC0D
 
-    SectionName = 'covariance'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call CovarianceConstructor_Factory%Construct( Object=This%CovarianceConstructor, Input=InputSection, Prefix=PrefixLoc )
-    nullify(InputSection)
+    SectionName = 'multiplier'
+
+    ParameterName = 'value'
+    call Input%GetValue( Value=VarR0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
+    This%Multiplier = VarR0D
+
+    ParameterName = 'dependency'
+    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
+    This%MultiplierDependency = VarC0D
+
+    SectionName = 'predefined_covariance'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., Found=Found )
+    if( Found ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call ImportArray( Input=InputSection, Array=This%L, Prefix=PrefixLoc )
+      nullify( InputSection )
+      This%PredefinedCov = .true.
+      if ( size(This%L,1) /= size(This%L,2) ) call Error%Raise( 'Predefined covariance array not square', ProcName=ProcName )
+      if ( .not. IsDiagonal( Array=This%L ) ) then
+        i = size(This%L,1)
+        call DPOTRF( 'L', i, This%L, i, StatLoc )
+        if ( StatLoc /= 0 ) call Error%Raise( Line='Predefined covariance not invertible', ProcName=ProcName )
+      else
+        This%L = dsqrt(This%L)
+      end if
+      allocate(This%XmMean(i), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
+      This%XmMean = Zero
+    end if
+
+    SectionName = 'covariance_function'
+    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., Found=Found )
+    if( Found ) then
+      if ( allocated(This%PredefinedCov) ) call Error%Raise( "Can't specify both predefined covariance and a "                    &
+                                                                                        "covariance function", ProcName=ProcName )
+      call CovarianceConstructor_Factory%Construct( Object=This%CovarianceConstructor, Input=InputSection, Prefix=PrefixLoc )
+      nullify(InputSection)
+    else
+      if ( .not. allocated(This%PredefinedCov) ) call Error%Raise( 'Must define either a predefined covariance or a '             &
+                                                                                        'covariance function', ProcName=ProcName )
+    end if
 
     This%Constructed = .true.
 
@@ -191,6 +231,9 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    i
+    character(:), allocatable                                         ::    FileName
+    type(SMUQFile_Type)                                               ::    File
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -204,15 +247,46 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    call GetInput%AddParameter( Name='debug', Value=ConvertToString(Value=This%DebugFlag) )
     call GetInput%AddParameter( Name='multiplicative_error', Value=ConvertToString(Value=This%MultiplicativeError) )
     call GetInput%AddParameter( Name='scalar', Value=ConvertToString(Value=This%Scalar) )
     call GetInput%AddParameter( Name='label', Value=This%Label )
+
+    SectionName = 'multiplier'
+    call GetInput%AddSection( SectionName=SectionName )
+    call GetInput%AddParameter( Name='value', Value=This%Multiplier, SectionName=SectionName )
+    call GetInput%AddParameter( Name='dependency', Value=This%MultiplierDependency, SectionName=SectionName )
   
-    SectionName = 'covariance'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/covariance'
-    call GetInput%AddSection( Section=CovarianceConstructor_Factory%GetObjectInput( Object=This%CovarianceConstructor,            &
+    if ( allocated(This%PredefinedCov) ) then
+      i = size(This%L,1)
+      allocate(VarR2D(i,i), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+      VarR2D = Zero
+      call DGEMM( 'N', 'T', i, i, i, One, This%L, i, This%L, i, Zero, VarR2D, i )
+      if ( ExternalFlag ) then
+          SectionName = 'predefined_covariance'
+          call GetInput%AddSection( SectionName=SectionName )
+          call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+          FileName = DirectoryLoc // '/predefined_covariance.dat'
+          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+          call ExportArray( Input=InputSection, Array=This%PredefinedCov, File=File )
+          nullify(InputSection)
+      else
+          SectionName = 'predefined_covariance'
+          call GetInput%AddSection( SectionName=SectionName )
+          call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+          call ExportArray( Input=InputSection, Array=This%PredefinedCov )
+          nullify(InputSection)
+      end if
+      deallocate(VarR2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    end if
+
+    if ( allocated(This%HierCovFunction) ) then
+      SectionName = 'covariance_function'
+      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/covariance_function'
+      call GetInput%AddSection( Section=CovarianceConstructor_Factory%GetObjectInput( Object=This%HierCovFunction,                &
                               MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
+    end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -268,12 +342,6 @@ contains
       Evaluate_1D = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput) )
     end if
 
-    if ( This%DebugFlag ) then
-      write(*,*)
-      write(*,*) 'Likelihood value : ' // ConvertToString(Value=Evaluate_1D)
-      write(*,*)
-    end if
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -308,16 +376,11 @@ contains
     integer                                                           ::    NbNodes
     real(rkp)                                                         ::    ln2pi
     logical                                                           ::    LogValueLoc
-    logical                                                           ::    ZeroExit
+    real(rkp)                                                         ::    MultiplierLoc
+    class(CovFunction_Type), allocatable                              ::    CovFunction
 
     if ( Response%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect response', ProcName=ProcName )
     if ( Output%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect output', ProcName=ProcName )
-
-    if ( This%DebugFlag ) then
-      write(*,*) '*****************************************************************************'
-      write(*,*) 'Debug information for likelihood function of response ' // Response%GetLabel()
-      write(*,*) '*****************************************************************************'
-    end if
 
     LogValueLoc = .false.
     if ( present(LogValue) ) LogValueLoc = LogValue
@@ -343,6 +406,8 @@ contains
 
     if ( allocated(This%L) ) then
       if ( size(This%L,1) /= NbNodes ) then
+        if ( This%PredefinedCov ) call Error%Raise( 'Predefined covariance array dimension mismatch with data',                   &
+                                                                                                               ProcName=ProcName )
         deallocate(This%L, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
         deallocate(This%XmMean, stat=StatLoc)
@@ -364,94 +429,69 @@ contains
     NbDegen = size(OutputPtr,2)
     NbDataSets = size(DataPtr,2)
 
-    call This%CovarianceConstructor%AssembleCov( Input=Input, Coordinates=Response%GetCoordinatesPointer(),                       &
-                                                                     CoordinateLabels=Response%GetCoordinateLabels(), Cov=This%L )
+    MultiplierLoc = This%Multiplier
+    if ( len_trim(This%MultiplierDependency) ) call Input%GetValue( Value=MultiplierLoc, Label=This%MultiplierDependency )
+
+    call This%HierCovFunction%Generate( Input=Input, CovFunction=CovFunction )
+    call CovFunction%Evaluate( Coordinates=Response%GetCoordinatesPointer() , CoordinateLabels=Response%GetCoordinateLabels(),    &
+                                                                                                               Covariance=This%L )
+    deallocate(CovFunction, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='CovFunction', ProcName=ProcName, stat=StatLoc )
 
     IsDiagonalFlag = IsDiagonal( Array=This%L )
 
-    ZeroExit = .false.
     if ( .not. IsDiagonalFlag ) then
       call DPOTRF( 'L', NbNodes, This%L, NbNodes, StatLoc )
-      ZeroExit = .true.
-!      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DPOTRF', ProcName=ProcName )
+      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DPOTRF', ProcName=ProcName )
     else
       This%L = dsqrt(This%L)
     end if
+    This%L = This%L * dsqrt(MultiplierLoc)
 
-    if ( This%DebugFlag ) then
-      write(*,*)
-      write(*,*) 'Is covariance not innvertible? : ' // ConvertToString(Value=ZeroExit)
-      write(*,*)
-    end if
+    VarR0D = Zero
+    ii = 1
+    do ii = 1, NbNodes
+      VarR0D = VarR0D + dlog(This%L(ii,ii))
+    end do
+    lnPreExp = (-real(NbNodes,rkp)/Two*ln2pi - VarR0D)*NbDegen*NbDataSets + lnPreExp
 
-    if ( ZeroExit ) then
-      if ( LogValueLoc ) then
-        Evaluate_0D = -huge(One)
-      else
-        Evaluate_0D = Zero
-      end if
-    else
-      VarR0D = Zero
-      ii = 1
-      do ii = 1, NbNodes
-        VarR0D = VarR0D + dlog(This%L(ii,ii))
-      end do
-      lnPreExp = (-real(NbNodes,rkp)/Two*ln2pi - VarR0D)*NbDegen*NbDataSets + lnPreExp
-
-      VarR0D = Zero
-      ii = 1
-      do ii = 1, NbDataSets
-        if ( This%DebugFlag ) then
-          write(*,*)
-          write(*,*) 'Data set # ' // ConvertToString(Value=ii)
-          write(*,*)
-          write(*,*) DataPtr(:,ii)
-        end if
-        iii = 1
-        do iii = 1, NbDegen
-          if ( This%DebugFlag ) then
-            write(*,*)
-            write(*,*) 'Output set # ' // ConvertToString(Value=ii)
-            write(*,*)
-            write(*,*) OutputPtr(:,iii)
-          end if
-          if ( This%MultiplicativeError ) then
-            This%XmMean(:,1) = DataPtr(:,ii) / OutputPtr(:,iii)
-            This%XmMean(:,1) = dlog(This%XmMean(:,1))
-          else
-            This%XmMean(:,1) = DataPtr(:,ii) - OutputPtr(:,iii)
-          end if
-          call DTRTRS( 'L', 'N', 'N', NbNodes, 1, This%L, NbNodes, This%XmMean(:,:), NbNodes, StatLoc )
-          if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DTRTRS with code: '//ConvertToString(Value=StatLoc),&
-                                                                                                               ProcName=ProcName )
-          VarR0D = VarR0D - 0.5 * dot_product(This%XmMean(:,1), This%XmMean(:,1))
-        end do
-      end do
-      lnExp = VarR0D
-
-      Evaluate_0D = lnPreExp + lnExp + This%Scalar
-
-      if ( This%DebugFlag ) then
-        write(*,*)
-        write(*,*) 'Log likelihood value : ' // ConvertToString(Value=Evaluate_0D)
-        write(*,*)
-      end if
-
-      if ( .not. LogValueLoc ) then
-        if ( Evaluate_0D > TVarR0D .and. Evaluate_0D < HVarR0D ) then
-          Evaluate_0D = dexp(Evaluate_0D)
-        elseif (Evaluate_0D < TVarR0D ) then
-          Evaluate_0D = Zero
+    VarR0D = Zero
+    ii = 1
+    do ii = 1, NbDataSets
+      iii = 1
+      do iii = 1, NbDegen
+        if ( This%MultiplicativeError ) then
+          This%XmMean(:,1) = DataPtr(:,ii) / OutputPtr(:,iii)
+          This%XmMean(:,1) = dlog(This%XmMean(:,1))
         else
-          call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                          &
-               ConvertToString(Value=Evaluate_0D) // '. Consider changing value of the scalar modifier and rerun for response: '//&
-                                                                                                   This%Label, ProcName=ProcName )
+          This%XmMean(:,1) = DataPtr(:,ii) - OutputPtr(:,iii)
         end if
-      end if
+        call DTRTRS( 'L', 'N', 'N', NbNodes, 1, This%L, NbNodes, This%XmMean(:,:), NbNodes, StatLoc )
+        if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DTRTRS with code: '// ConvertToString(Value=StatLoc), &
+                                                                                                             ProcName=ProcName )
+        VarR0D = VarR0D - 0.5 * dot_product(This%XmMean(:,1), This%XmMean(:,1))
+      end do
+    end do
+    lnExp = VarR0D
 
-      nullify(OutputPtr)
-      nullify(DataPtr)
+    Evaluate_0D = lnPreExp + lnExp + This%Scalar
+
+    if ( .not. LogValueLoc ) then
+      if ( Evaluate_0D > TVarR0D .and. Evaluate_0D < HVarR0D ) then
+        Evaluate_0D = dexp(Evaluate_0D)
+      elseif (Evaluate_0D < TVarR0D ) then
+        write(*,'(A)') 'Warning: Likelihood value below machine precision and made 0 where ln(likelihood) is : ' //               &
+             ConvertToString(Value=Evaluate_0D)
+        Evaluate_0D = Zero
+      else
+        call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
+             ConvertToString(Value=Evaluate_0D) // '. Consider changing value of the scalar modifier and rerun for response: ' // &
+                                                                                                 This%Label, ProcName=ProcName )
+      end if
     end if
+
+    nullify(OutputPtr)
+    nullify(DataPtr)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -474,7 +514,6 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          LHS%DebugFlag = RHS%DebugFlag
           LHS%Scalar = RHS%Scalar
           LHS%MultiplicativeError = RHS%MultiplicativeError
           LHS%Label = RHS%Label

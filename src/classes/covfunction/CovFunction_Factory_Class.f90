@@ -23,8 +23,7 @@ use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use CovConstructor_Class                                          ,only:    CovConstructor_Type
-use CovIID_Class                                           ,only:    CovIID_Type
-use CovMultiplier_Class                                           ,only:    CovMultiplier_Type
+use CovIID_Class                                                  ,only:    CovIID_Type
 use CovLogisticDiag_Class                                         ,only:    CovLogisticDiag_Type
 use CovGExp1L_Class                                               ,only:    CovGExp1L_Type
 use CovGExp2L_Class                                               ,only:    CovGExp2L_Type
@@ -63,9 +62,6 @@ contains
 
       case('iid')
         allocate( CovIID_Type :: Object )
-
-      case('multiplier')
-        allocate( CovMultiplier_Type :: Object )
 
       case('logistic_diagonal')
         allocate( CovLogisticDiag_Type :: Object )
@@ -130,9 +126,6 @@ contains
 
       type is (CovIID_Type)
         GetOption = 'iid'
-
-      type is (CovMultiplier_Type)
-        GetOption = 'multiplier'
 
       type is (CovLogisticDiag_Type)
         GetOption = 'logistic_diagonal'

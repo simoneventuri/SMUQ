@@ -24,7 +24,6 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
 use HierCovIID_Class                                              ,only:    HierCovIID_Type
-use HierCovMultiplier_Class                                       ,only:    HierCovMultiplier_Type
 use HierCovLogisticDiag_Class                                     ,only:    HierCovLogisticDiag_Type
 use HierCovGExp1L_Class                                           ,only:    HierCovGExp1L_Type
 use HierCovGExp2L_Class                                           ,only:    HierCovGExp2L_Type
@@ -45,7 +44,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 end Type
 
-type(HierCovFunction_Factory_Type)                              ::    HierCovFunction_Factory
+type(HierCovFunction_Factory_Type)                                    ::    HierCovFunction_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -53,7 +52,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_C0D( Object, DesiredType )
 
-    class(HierCovFunction_Type), allocatable, intent(inout)     ::    Object                                            
+    class(HierCovFunction_Type), allocatable, intent(inout)           ::    Object                                            
     character(*), intent(in)                                          ::    DesiredType
     character(*), parameter                                           ::    ProcName='Construct_C0D' 
 
@@ -63,9 +62,6 @@ contains
 
       case('iid')
         allocate( HierCovIID_Type :: Object )
-
-      case('multiplier')
-        allocate( HierCovMultiplier_Type :: Object )
 
       case('logistic_diagonal')
         allocate( HierCovLogisticDiag_Type :: Object )
@@ -91,8 +87,8 @@ contains
     
     use Input_Library
 
-    class(HierCovFunction_Factory_Type), intent(in)             ::    This
-    class(HierCovFunction_Type), allocatable, intent(inout)     ::    Object
+    class(HierCovFunction_Factory_Type), intent(in)                   ::    This
+    class(HierCovFunction_Type), allocatable, intent(inout)           ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     character(*), parameter                                           ::    ProcName='Construct_Input'                                   
@@ -123,16 +119,13 @@ contains
 
     character(:), allocatable                                         ::    GetOption
 
-    class(HierCovFunction_Type), intent(in)                     ::    Object                                             
+    class(HierCovFunction_Type), intent(in)                           ::    Object                                             
     character(*), parameter                                           ::    ProcName='GetOption' 
 
     select type (Object)
 
       type is (HierCovIID_Type)
         GetOption = 'iid'
-
-      type is (HierCovMultiplier_Type)
-        GetOption = 'multiplier'
 
       type is (HierCovLogisticDiag_Type)
         GetOption = 'logistic_diagonal'
@@ -158,8 +151,8 @@ contains
 
     type(InputSection_Type)                                           ::    GetObjectInput
 
-    class(HierCovFunction_Factory_Type), intent(in)             ::    This
-    class(HierCovFunction_Type), intent(in)                     ::    Object
+    class(HierCovFunction_Factory_Type), intent(in)                   ::    This
+    class(HierCovFunction_Type), intent(in)                           ::    Object
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory

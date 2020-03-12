@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module CovarianceGExp2L_Class
+module HierCovGExp2L_Class
 
 use Input_Library
 use Parameters_Library
@@ -26,16 +26,17 @@ use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
-use CovarianceConstructor_Class                                   ,only:    CovarianceConstructor_Type
+use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
+use CovGExp2L_Class                                               ,only:    CovGExp2L_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
 private
 
-public                                                                ::    CovarianceGExp2L_Type
+public                                                                ::    HierCovGExp2L_Type
 
-type, extends(CovarianceConstructor_Type)                             ::    CovarianceGExp2L_Type
+type, extends(HierCovFunction_Type)                                   ::    HierCovGExp2L_Type
   character(:), allocatable                                           ::    L1_Dependency
   real(rkp)                                                           ::    L1
   character(:), allocatable                                           ::    L2_Dependency
@@ -44,9 +45,8 @@ type, extends(CovarianceConstructor_Type)                             ::    Cova
   real(rkp)                                                           ::    Lr
   character(:), allocatable                                           ::    Zs_Dependency
   real(rkp)                                                           ::    Zs
-  character(:), allocatable                                           ::    M_Dependency
-  real(rkp)                                                           ::    M
-  character(:), allocatable                                           ::    M_Transform
+  character(:), allocatable                                           ::    Sigma_Dependency
+  real(rkp)                                                           ::    Sigma
   real(rkp)                                                           ::    Tolerance
   character(:), allocatable                                           ::    CoordinateLabel
 contains
@@ -55,8 +55,7 @@ contains
   procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    AssembleCov
-  procedure, nopass, private                                          ::    Lz
+  procedure, public                                                   ::    Generate
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -68,12 +67,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
-    class(CovarianceGExp2L_Type), intent(inout)                       ::    This
+    class(HierCovGExp2L_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
     if ( .not. This%Initialized ) then
-      This%Name = 'CovarianceGExp2L'
+      This%Name = 'HierCovGExp2L'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -84,7 +83,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
-    class(CovarianceGExp2L_Type), intent(inout)                       ::    This
+    class(HierCovGExp2L_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc = 0
@@ -100,7 +99,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This )
 
-    class(CovarianceGExp2L_Type), intent(inout)                       ::    This
+    class(HierCovGExp2L_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
@@ -110,13 +109,13 @@ contains
     This%L2_Dependency = ''
     This%Lr = One
     This%Lr_Dependency = ''
-    This%M = One
-    This%M_Dependency = ''
-    This%M_Transform = ''
+    This%Sigma = One
+    This%Sigma_Dependency = ''
     This%Zs = Zero
     This%Zs_Dependency = ''
     This%Tolerance = 1e-10
     This%CoordinateLabel = ''
+    This%InputRequired = .true.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -124,7 +123,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix )
 
-    class(CovarianceGExp2L_Type), intent(inout)                       ::    This
+    class(HierCovGExp2L_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -141,6 +140,7 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     logical                                                           ::    MandatoryLoc
+    logical                                                           ::    InputRequiredTrip
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -148,11 +148,16 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
+    InputRequiredTrip = .false.
+
     MandatoryLoc = .false.
 
     ParameterName = 'l1_dependency'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%L1_Dependency=VarC0D
+    if ( Found ) then
+      This%L1_Dependency=VarC0D
+      InputRequiredTrip = .true.
+    end if
     MandatoryLoc = .not. Found
 
     ParameterName = 'l1'
@@ -161,7 +166,10 @@ contains
 
     ParameterName = 'l2_dependency'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%L2_Dependency=VarC0D
+    if ( Found ) then
+      This%L2_Dependency=VarC0D
+      InputRequiredTrip = .true.
+    end if
     MandatoryLoc = .not. Found
 
     ParameterName = 'l2'
@@ -170,7 +178,10 @@ contains
 
     ParameterName = 'lr_dependency'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Lr_Dependency=VarC0D
+    if ( Found ) then
+      This%Lr_Dependency=VarC0D
+      InputRequiredTrip = .true.
+    end if
     MandatoryLoc = .not. Found
 
     ParameterName = 'lr'
@@ -179,25 +190,27 @@ contains
 
     ParameterName = 'zs_dependency'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Zs_Dependency=VarC0D
+    if ( Found ) then
+      This%Zs_Dependency=VarC0D
+      InputRequiredTrip = .true.
+    end if
     MandatoryLoc = .not. Found
 
     ParameterName = 'zs'
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
     if ( Found ) This%Zs=VarR0D
 
-    ParameterName = 'm_dependency'
+    ParameterName = 'sigma_dependency'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%M_Dependency=VarC0D
+    if ( Found ) 
+      This%Sigma_Dependency=VarC0D
+      InputRequiredTrip = .true.
+    end if
     MandatoryLoc = .not. Found
 
-    ParameterName = 'm'
+    ParameterName = 'sigma'
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%M=VarR0D
-
-    ParameterName = 'm_transform'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%M_Transform = VarC0D
+    if ( Found ) This%Sigma=VarR0D
 
     ParameterName = 'tolerance'
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -206,6 +219,8 @@ contains
     ParameterName = 'coordinate_label'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
     if ( Found ) This%CoordinateLabel=VarC0D
+
+    if ( .not. InputRequiredTrip ) This%InputRequired = .false.
 
     This%Constructed = .true.
 
@@ -217,7 +232,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(CovarianceGExp2L_Type), intent(in)                          ::    This
+    class(HierCovGExp2L_Type), intent(in)                          ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -261,9 +276,8 @@ contains
     call GetInput%AddParameter( Name='zs', Value=ConvertToString(This%Zs) )
     if ( len_trim(This%Zs_Dependency) /= 0 )call GetInput%AddParameter( Name='zs_dependency', Value=This%Zs_Dependency )
 
-    call GetInput%AddParameter( Name='m', Value=ConvertToString(This%M) )
-    if ( len_trim(This%M_Dependency) /= 0 )call GetInput%AddParameter( Name='m_dependency', Value=This%M_Dependency )
-    if ( len_trim(This%M_Transform) > 0 ) call GetInput%AddParameter( Name='m_transform', Value=This%M_Transform )
+    call GetInput%AddParameter( Name='sigma', Value=ConvertToString(This%Sigma) )
+    if ( len_trim(This%Sigma_Dependency) /= 0 )call GetInput%AddParameter( Name='sigma_dependency', Value=This%Sigma_Dependency )
 
     call GetInput%AddParameter( Name='tolerance', Value=ConvertToString(This%Tolerance) )
 
@@ -271,119 +285,55 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AssembleCov( This, Coordinates, CoordinateLabels, Input, Cov )
+  subroutine Generate( This, Input, CovFunction )
 
-    class(CovarianceGExp2L_Type), intent(in)                          ::    This
-    real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
-    type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
+    class(HierCovGExp2L_Type), intent(in)                             ::    This
     type(Input_Type), intent(in)                                      ::    Input
-    real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
+    class(CovFunction_Type), allocatable, intent(out)                 ::    CovFunction
 
     character(*), parameter                                           ::    ProcName='ConstructInput'
     integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    L1Loc
-    real(rkp)                                                         ::    L2Loc
-    real(rkp)                                                         ::    LrLoc
-    real(rkp)                                                         ::    ZsLoc
-    real(rkp)                                                         ::    MLoc
-    integer                                                           ::    i
-    integer                                                           ::    ii
-    real(rkp)                                                         ::    Zi
-    real(rkp)                                                         ::    Zj
-    real(rkp)                                                         ::    LZi
-    real(rkp)                                                         ::    LZj
-    integer                                                           ::    NbNodes
-    integer                                                           ::    iCoordinate
+    real(rkp)                                                         ::    L1
+    real(rkp)                                                         ::    L2
+    real(rkp)                                                         ::    Lr
+    real(rkp)                                                         ::    Zs
+    real(rkp)                                                         ::    Sigma
 
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    L1 = This%L1
+    if ( len_trim(This%L1_Dependency) /= 0 ) call Input%GetValue( Value=L1, Label=This%L1_Dependency )
 
-    NbNodes = size(Coordinates,1)
+    L2 = This%L2
+    if ( len_trim(This%L2_Dependency) /= 0 ) call Input%GetValue( Value=L2, Label=This%L2_Dependency )
 
-    i = 1
-    iCoordinate = 0
-    do i = 1, size(Coordinates,2)
-      if ( CoordinateLabels(i)%GetValue() == This%CoordinateLabel ) then
-        iCoordinate = i
-        exit
-      end if
-    end do
+    Lr = This%Lr
+    if ( len_trim(This%Lr_Dependency) /= 0 ) call Input%GetValue( Value=Lr, Label=This%Lr_Dependency )
 
-    if ( iCoordinate == 0 ) call Error%Raise( 'Did not find matching coordinate label: ' // This%CoordinateLabel,                 &
-                                                                                                               ProcName=ProcName )
+    Zs = This%Zs
+    if ( len_trim(This%Zs_Dependency) /= 0 ) call Input%GetValue( Value=Zs, Label=This%Zs_Dependency )
 
-    if ( allocated(Cov) ) then
-      if ( size(Cov,1) /= size(Cov,2) .or. size(Cov,1) /= NbNodes ) then
-        deallocate(Cov, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
-      end if
-    end if
+    Sigma = This%Sigma
+    if ( len_trim(This%Sigma_Dependency) /= 0 ) call Input%GetValue( Value=Sigma, Label=This%Sigma_Dependency )
 
-    if ( .not. allocated(Cov) ) then
-      allocate(Cov(NbNodes,NbNodes), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
-    end if
-    Cov = Zero
+    allocate( CovGExp2L_Type :: CovFunction )
 
-    L1Loc = This%L1
-    if ( len_trim(This%L1_Dependency) /= 0 ) call Input%GetValue( Value=L1Loc, Label=This%L1_Dependency )
-    L2Loc = This%L2
-    if ( len_trim(This%L2_Dependency) /= 0 ) call Input%GetValue( Value=L2Loc, Label=This%L2_Dependency )
-    LrLoc = This%Lr
-    if ( len_trim(This%Lr_Dependency) /= 0 ) call Input%GetValue( Value=LrLoc, Label=This%Lr_Dependency )
-    ZsLoc = This%Zs
-    if ( len_trim(This%Zs_Dependency) /= 0 ) call Input%GetValue( Value=ZsLoc, Label=This%Zs_Dependency )
-    MLoc = This%M
-    if ( len_trim(This%M_Dependency) /= 0 ) call Input%GetValue( Value=MLoc, Label=This%M_Dependency )
-    if ( len_trim(This%M_Transform) > 0 ) call Transform( Transformation=This%M_Transform, Value=MLoc )
-
-    if ( L1Loc < Zero ) call Error%Raise( Line='Characteristic length 1 scale value below 0', ProcName=ProcName )
-    if ( L2Loc < Zero ) call Error%Raise( Line='Characteristic length 2 scale value below 0', ProcName=ProcName )
-    if ( LrLoc < Zero ) call Error%Raise( Line='Characteristic length r scale value below 0', ProcName=ProcName )
-    if ( MLoc < Zero ) call Error%Raise( Line='M value below 0', ProcName=ProcName )
-
-    i = 1
-    do i = 1, NbNodes
-      Zi = Coordinates(i,iCoordinate)
-      LZi = This%Lz( Z=Zi, Zs=ZsLoc, L1=L1Loc, L2=L2Loc, Lr=LrLoc )
-      ii = 1
-      do ii = i, NbNodes
-        Zj = Coordinates(ii,iCoordinate)
-        LZj = This%Lz( Z=Zj, Zs=ZsLoc, L1=L1Loc, L2=L2Loc, Lr=LrLoc )
-        Cov(i,ii) = MLoc*dsqrt(Two*LZi*LZj/(LZi**2+LZj**2))*dexp( - (dabs(Zi-Zj)/dsqrt(LZi**2+LZj**2))**2 )
-        if ( abs(Cov(i,ii) / MLoc) < This%Tolerance ) Cov(i,ii) = Zero
-      end do
-      Cov(i:NbNodes,i) = Cov(i,NbNodes)
-    end do
+    select type (CovFunction)
+      type is (CovGExp2L_Type)
+        call CovFunction%Construct( Sigma=Sigma, L1=L1, L2=L2, Lr=Lr, Zs=Zs, Coordinate=This%CoordinateLabel,                     &
+                                                                                                        Tolerance=This%Tolerance )
+      class default
+        call Error%Raise( "Something went wrong", ProcName=ProcName )
+    end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Lz( Z, Zs, L1, L2, Lr )
-
-    real(rkp)                                                         ::    Lz
-
-    real(rkp), intent(in)                                             ::    Z
-    real(rkp), intent(in)                                             ::    Zs
-    real(rkp), intent(in)                                             ::    L1
-    real(rkp), intent(in)                                             ::    L2
-    real(rkp), intent(in)                                             ::    Lr
-
-    if ( Z < Zs ) then
-      Lz = L1
-    else
-      Lz = L1 + (L2-L1)*(One-dexp(-dabs(Z-Zs)/Lr))
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(CovarianceGExp2L_Type), intent(out)                         ::    LHS
-    class(CovarianceConstructor_Type), intent(in)                     ::    RHS
+    class(HierCovGExp2L_Type), intent(out)                            ::    LHS
+    class(HierCovFunction_Type), intent(in)                           ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
@@ -391,7 +341,7 @@ contains
 
     select type (RHS)
   
-      type is (CovarianceGExp2L_Type)
+      type is (HierCovGExp2L_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -405,10 +355,9 @@ contains
           LHS%Lr = RHS%Lr
           LHS%Zs_Dependency = RHS%Zs_Dependency
           LHS%Zs = RHS%Zs
-          LHS%M_Dependency = RHS%M_Dependency
-          LHS%M = RHS%M
+          LHS%Sigma_Dependency = RHS%Sigma_Dependency
+          LHS%Sigma = RHS%Sigma
           LHS%CoordinateLabel = RHS%CoordinateLabel
-          LHS%M_Transform = RHS%M_Transform
           LHS%Tolerance = RHS%Tolerance
         end if
       
@@ -423,7 +372,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(CovarianceGExp2L_Type), intent(inout)                        ::    This
+    type(HierCovGExp2L_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0

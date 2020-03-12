@@ -50,7 +50,7 @@ contains
   procedure(SetDefaults_HierCovFunction), deferred, public            ::    SetDefaults
   procedure(ConstructInput_HierCovFunction), deferred, private        ::    ConstructInput
   procedure(GetInput_HierCovFunction), deferred, public               ::    GetInput
-  procedure(GenerateCovFunction_HierCovFunction), deferred, public    ::    GenerateCovFunction
+  procedure(Generate_HierCovFunction), deferred, public               ::    Generate
   procedure(Copy_HierCovFunction), deferred, public                   ::    Copy
 end type
 
@@ -102,7 +102,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateCovFunction_HierCovFunction( This, Input, CovFunction )
+  subroutine Generate_HierCovFunction( This, Input, CovFunction )
     import                                                            ::    HierCovFunction_Type
     import                                                            ::    Input_Type
     import                                                            ::    CovFunction_Type
