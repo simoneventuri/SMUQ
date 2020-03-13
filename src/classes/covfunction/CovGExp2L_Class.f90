@@ -35,7 +35,7 @@ private
 
 public                                                                ::    CovGExp2L_Type
 
-type, extends(CovCov_Type)                                            ::    CovGExp2L_Type
+type, extends(CovFunction_Type)                                       ::    CovGExp2L_Type
   real(rkp)                                                           ::    L1
   real(rkp)                                                           ::    L2
   real(rkp)                                                           ::    Lr
@@ -136,9 +136,6 @@ contains
 
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
-
-    MandatoryLoc = .false.
-
 
     ParameterName = 'l1'
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.true. )
@@ -346,7 +343,7 @@ contains
   impure elemental subroutine Copy( LHS, RHS )
 
     class(CovGExp2L_Type), intent(out)                                ::    LHS
-    class(CovCov_Type), intent(in)                                    ::    RHS
+    class(CovFunction_Type), intent(in)                               ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i

@@ -1,3 +1,5 @@
+add_subdirectory ( covfunction )
+add_subdirectory ( hiercovfunction )
 add_subdirectory ( distribution )
 add_subdirectory ( list )
 add_subdirectory ( orthopoly )

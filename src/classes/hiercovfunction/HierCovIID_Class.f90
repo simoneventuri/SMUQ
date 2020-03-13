@@ -27,6 +27,7 @@ use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use CovFunction_Class                                             ,only:    CovFunction_Type
 use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
 use CovIID_Class                                                  ,only:    CovIID_Type
 
@@ -36,7 +37,7 @@ private
 
 public                                                                ::    HierCovIID_Type
 
-type, extends(CovarianceConstructor_Type)                             ::    HierCovIID_Type
+type, extends(HierCovFunction_Type)                                   ::    HierCovIID_Type
   character(:), allocatable                                           ::    Sigma_Dependency
   real(rkp)                                                           ::    Sigma
 contains
@@ -80,8 +81,6 @@ contains
 
     This%Initialized=.false.
     This%Constructed=.false.
-
-    call This%ConstructorPredefined%Reset()
 
     call This%SetDefaults()
 
@@ -171,8 +170,6 @@ contains
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    FileName
-    type(SMUQFile_Type)                                               ::    File
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
@@ -225,8 +222,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(HierCovIID_Type), intent(out)                     ::    LHS
-    class(CovarianceConstructor_Type), intent(in)                     ::    RHS
+    class(HierCovIID_Type), intent(out)                               ::    LHS
+    class(HierCovFunction_Type), intent(in)                           ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i

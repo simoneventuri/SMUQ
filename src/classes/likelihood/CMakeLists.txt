@@ -4,11 +4,4 @@ add_target_sources ( smuqApp
   LikelihoodFunctionContainer_Class.f90
   LikelihoodGauss_Class.f90
   LikelihoodProduct_Class.f90
-  CovarianceConstructor_Class.f90
-  CovarianceConstructor_Factory_Class.f90
-  CovarianceGExp1L_Class.f90
-  CovarianceGExp2L_Class.f90
-  CovarianceLogisticDiag_Class.f90
-  CovarianceMultiplier_Class.f90
-  CovariancePredefined_Class.f90
   )

@@ -26,6 +26,7 @@ use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use CovFunction_Class                                             ,only:    CovFunction_Type
 use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
 use CovGExp1L_Class                                               ,only:    CovGExp1L_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
@@ -264,8 +265,8 @@ contains
     L = This%L
     if ( len_trim(This%L_Dependency) /= 0 ) call Input%GetValue( Value=L, Label=This%L_Dependency )
 
-    Gamma = This%Gamma
-    if ( len_trim(This%Gamma_Dependency) /= 0 ) call Input%GetValue( Value=Gamma, Label=This%Gamma_Dependency )
+    Gamma = This%Gam
+    if ( len_trim(This%Gam_Dependency) /= 0 ) call Input%GetValue( Value=Gamma, Label=This%Gam_Dependency )
 
     Sigma = This%Sigma
     if ( len_trim(This%Sigma_Dependency) /= 0 ) call Input%GetValue( Value=Sigma, Label=This%Sigma_Dependency )

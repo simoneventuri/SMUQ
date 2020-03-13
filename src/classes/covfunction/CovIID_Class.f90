@@ -213,7 +213,7 @@ contains
 
     NbNodes = size(Coordinates,1)
 
-    if ( size(Covariance,1) /= size(Cov,2) ) call Error%Raise( 'Passed non-square array', ProcName=ProcName )
+    if ( size(Covariance,1) /= size(Covariance,2) ) call Error%Raise( 'Passed non-square array', ProcName=ProcName )
     if ( size(Covariance,1) /= NbNodes ) call Error%Raise( 'Covariance array dimensions and number of coordinates mismatch',      &
                                                                                                                ProcName=ProcName )
 
@@ -228,7 +228,7 @@ contains
   impure elemental subroutine Copy( LHS, RHS )
 
     class(CovIID_Type), intent(out)                                   ::    LHS
-    class(CovConstructor_Type), intent(in)                            ::    RHS
+    class(CovFunction_Type), intent(in)                               ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i

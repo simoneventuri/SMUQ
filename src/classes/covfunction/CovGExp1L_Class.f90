@@ -34,7 +34,7 @@ private
 
 public                                                                ::    CovGExp1L_Type
 
-type, extends(CovConstructor_Type)                                    ::    CovGExp1L_Type
+type, extends(CovFunction_Type)                                       ::    CovGExp1L_Type
   real(rkp)                                                           ::    L
   real(rkp)                                                           ::    Sigma
   real(rkp)                                                           ::    Gam
@@ -293,7 +293,7 @@ contains
   impure elemental subroutine Copy( LHS, RHS )
 
     class(CovGExp1L_Type), intent(out)                                ::    LHS
-    class(CovConstructor_Type), intent(in)                            ::    RHS
+    class(CovFunction_Type), intent(in)                               ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i

@@ -176,8 +176,8 @@ contains
     This%MultiplierDependency = VarC0D
 
     SectionName = 'predefined_covariance'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., Found=Found )
-    if( Found ) then
+
+    if( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call ImportArray( Input=InputSection, Array=This%L, Prefix=PrefixLoc )
       nullify( InputSection )
@@ -190,20 +190,20 @@ contains
       else
         This%L = dsqrt(This%L)
       end if
-      allocate(This%XmMean(i), stat=StatLoc)
+      allocate(This%XmMean(i,1), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
       This%XmMean = Zero
     end if
 
     SectionName = 'covariance_function'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., Found=Found )
-    if( Found ) then
-      if ( allocated(This%PredefinedCov) ) call Error%Raise( "Can't specify both predefined covariance and a "                    &
+    if( Input%HasSection( SubSectionName=SectionName ) ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      if ( This%PredefinedCov ) call Error%Raise( "Can't specify both predefined covariance and a " //                            &
                                                                                         "covariance function", ProcName=ProcName )
-      call CovarianceConstructor_Factory%Construct( Object=This%CovarianceConstructor, Input=InputSection, Prefix=PrefixLoc )
+      call HierCovFunction_Factory%Construct( Object=This%HierCovFunction, Input=InputSection, Prefix=PrefixLoc )
       nullify(InputSection)
     else
-      if ( .not. allocated(This%PredefinedCov) ) call Error%Raise( 'Must define either a predefined covariance or a '             &
+      if ( .not. This%PredefinedCov ) call Error%Raise( 'Must define either a predefined covariance or a ' //                     &
                                                                                         'covariance function', ProcName=ProcName )
     end if
 
@@ -230,6 +230,7 @@ contains
     logical                                                           ::    ExternalFlag=.false.
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    SectionName
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
     integer                                                           ::    i
     character(:), allocatable                                         ::    FileName
     type(SMUQFile_Type)                                               ::    File
@@ -253,10 +254,10 @@ contains
 
     SectionName = 'multiplier'
     call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%AddParameter( Name='value', Value=This%Multiplier, SectionName=SectionName )
+    call GetInput%AddParameter( Name='value', Value=ConvertToString(Value=This%Multiplier), SectionName=SectionName )
     call GetInput%AddParameter( Name='dependency', Value=This%MultiplierDependency, SectionName=SectionName )
   
-    if ( allocated(This%PredefinedCov) ) then
+    if ( This%PredefinedCov ) then
       i = size(This%L,1)
       allocate(VarR2D(i,i), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
@@ -268,13 +269,13 @@ contains
           call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
           FileName = DirectoryLoc // '/predefined_covariance.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Input=InputSection, Array=This%PredefinedCov, File=File )
+          call ExportArray( Input=InputSection, Array=VarR2D, File=File )
           nullify(InputSection)
       else
           SectionName = 'predefined_covariance'
           call GetInput%AddSection( SectionName=SectionName )
           call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-          call ExportArray( Input=InputSection, Array=This%PredefinedCov )
+          call ExportArray( Input=InputSection, Array=VarR2D )
           nullify(InputSection)
       end if
       deallocate(VarR2D, stat=StatLoc)
@@ -284,7 +285,7 @@ contains
     if ( allocated(This%HierCovFunction) ) then
       SectionName = 'covariance_function'
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/covariance_function'
-      call GetInput%AddSection( Section=CovarianceConstructor_Factory%GetObjectInput( Object=This%HierCovFunction,                &
+      call GetInput%AddSection( Section=HierCovFunction_Factory%GetObjectInput( Object=This%HierCovFunction,                      &
                               MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
     end if
 
@@ -430,7 +431,7 @@ contains
     NbDataSets = size(DataPtr,2)
 
     MultiplierLoc = This%Multiplier
-    if ( len_trim(This%MultiplierDependency) ) call Input%GetValue( Value=MultiplierLoc, Label=This%MultiplierDependency )
+    if ( len_trim(This%MultiplierDependency) > 0 ) call Input%GetValue( Value=MultiplierLoc, Label=This%MultiplierDependency )
 
     call This%HierCovFunction%Generate( Input=Input, CovFunction=CovFunction )
     call CovFunction%Evaluate( Coordinates=Response%GetCoordinatesPointer() , CoordinateLabels=Response%GetCoordinateLabels(),    &
@@ -517,7 +518,9 @@ contains
           LHS%Scalar = RHS%Scalar
           LHS%MultiplicativeError = RHS%MultiplicativeError
           LHS%Label = RHS%Label
-          allocate(LHS%CovarianceConstructor, source=RHS%CovarianceConstructor, stat=StatLoc)
+          LHS%Multiplier = RHS%Multiplier
+          LHS%MultiplierDependency = LHS%MultiplierDependency
+          allocate(LHS%HierCovFunction, source=RHS%HierCovFunction, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CovarianceConstructor', ProcName=ProcName, stat=StatLoc )
         end if
       
@@ -536,9 +539,9 @@ contains
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
-  
-    if ( allocated(This%CovarianceConstructor) ) deallocate(This%CovarianceConstructor, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CovarianceConstructor', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%HierCovFunction) ) deallocate(This%HierCovFunction, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%HierCovFunction', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%XmMean) ) deallocate(This%XmMean, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )

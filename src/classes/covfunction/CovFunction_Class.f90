@@ -106,7 +106,7 @@ abstract interface
     class(CovFunction_Type), intent(in)                               ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
     type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
-    real(rkp), dimension(:,:), intent(out)                            ::    Covariance
+    real(rkp), dimension(:,:), intent(inout)                          ::    Covariance
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

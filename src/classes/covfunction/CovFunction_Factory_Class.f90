@@ -16,13 +16,13 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module CovConstructor_Factory_Class
+module CovFunction_Factory_Class
 
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use CovConstructor_Class                                          ,only:    CovConstructor_Type
+use CovFunction_Class                                             ,only:    CovFunction_Type
 use CovIID_Class                                                  ,only:    CovIID_Type
 use CovLogisticDiag_Class                                         ,only:    CovLogisticDiag_Type
 use CovGExp1L_Class                                               ,only:    CovGExp1L_Type
@@ -32,9 +32,9 @@ implicit none
 
 private
 
-public                                                                ::    CovConstructor_Factory
+public                                                                ::    CovFunction_Factory
 
-type                                                                  ::    CovConstructor_Factory_Type
+type                                                                  ::    CovFunction_Factory_Type
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D,          &
                                                                                                           Construct_Input
@@ -44,7 +44,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 end Type
 
-type(CovConstructor_Factory_Type)                                     ::    CovConstructor_Factory
+type(CovFunction_Factory_Type)                                        ::    CovFunction_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -52,7 +52,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_C0D( Object, DesiredType )
 
-    class(CovConstructor_Type), allocatable, intent(inout)            ::    Object                                            
+    class(CovFunction_Type), allocatable, intent(inout)               ::    Object                                            
     character(*), intent(in)                                          ::    DesiredType
     character(*), parameter                                           ::    ProcName='Construct_C0D' 
 
@@ -87,8 +87,8 @@ contains
     
     use Input_Library
 
-    class(CovConstructor_Factory_Type), intent(in)                    ::    This
-    class(CovConstructor_Type), allocatable, intent(inout)            ::    Object
+    class(CovFunction_Factory_Type), intent(in)                       ::    This
+    class(CovFunction_Type), allocatable, intent(inout)               ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
     character(*), parameter                                           ::    ProcName='Construct_Input'                                   
@@ -119,7 +119,7 @@ contains
 
     character(:), allocatable                                         ::    GetOption
 
-    class(CovConstructor_Type), intent(in)                            ::    Object                                             
+    class(CovFunction_Type), intent(in)                               ::    Object                                             
     character(*), parameter                                           ::    ProcName='GetOption' 
 
     select type (Object)
@@ -151,8 +151,8 @@ contains
 
     type(InputSection_Type)                                           ::    GetObjectInput
 
-    class(CovConstructor_Factory_Type), intent(in)                    ::    This
-    class(CovConstructor_Type), intent(in)                            ::    Object
+    class(CovFunction_Factory_Type), intent(in)                       ::    This
+    class(CovFunction_Type), intent(in)                               ::    Object
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory

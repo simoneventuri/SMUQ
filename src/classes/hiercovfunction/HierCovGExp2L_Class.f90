@@ -26,6 +26,7 @@ use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use CovFunction_Class                                             ,only:    CovFunction_Type
 use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
 use CovGExp2L_Class                                               ,only:    CovGExp2L_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
@@ -202,7 +203,7 @@ contains
 
     ParameterName = 'sigma_dependency'
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) 
+    if ( Found ) then
       This%Sigma_Dependency=VarC0D
       InputRequiredTrip = .true.
     end if

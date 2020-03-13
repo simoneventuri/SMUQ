@@ -127,8 +127,6 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    MandatoryLoc = .false.
-
     ParameterName = 'sigma'
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.true. )
     This%Sigma=VarR0D
@@ -199,8 +197,6 @@ contains
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    FileName
-    type(SMUQFile_Type)                                               ::    File
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
@@ -219,7 +215,6 @@ contains
     call GetInput%AddParameter( Name='sigma', Value=ConvertToString(This%Sigma) )
     call GetInput%AddParameter( Name='k', Value=ConvertToString(This%K) )
     call GetInput%AddParameter( Name='x0', Value=ConvertToString(This%X0) )
-
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -253,7 +248,7 @@ contains
     if ( iCoordinate == 0 ) call Error%Raise( 'Did not find matching coordinate label: ' // This%CoordinateLabel,                 &
                                                                                                                ProcName=ProcName )
 
-    if ( size(Covariance,1) /= size(Cov,2) ) call Error%Raise( 'Passed non-square array', ProcName=ProcName )
+    if ( size(Covariance,1) /= size(Covariance,2) ) call Error%Raise( 'Passed non-square array', ProcName=ProcName )
     if ( size(Covariance,1) /= NbNodes ) call Error%Raise( 'Covariance array dimensions and number of coordinates mismatch',      &
                                                                                                                ProcName=ProcName )
 
@@ -270,8 +265,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(CovLogisticDiag_Type), intent(out)                   ::    LHS
-    class(CovConstructor_Type), intent(in)                     ::    RHS
+    class(CovLogisticDiag_Type), intent(out)                          ::    LHS
+    class(CovFunction_Type), intent(in)                               ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
@@ -302,7 +297,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(CovLogisticDiag_Type), intent(inout)                  ::    This
+    type(CovLogisticDiag_Type), intent(inout)                         ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0

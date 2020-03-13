@@ -26,6 +26,7 @@ use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use CovFunction_Class                                             ,only:    CovFunction_Type
 use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
 use CovLogisticDiag_Class                                         ,only:    CovLogisticDiag_Type
 
@@ -207,8 +208,6 @@ contains
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    FileName
-    type(SMUQFile_Type)                                               ::    File
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
@@ -277,7 +276,7 @@ contains
   impure elemental subroutine Copy( LHS, RHS )
 
     class(HierCovLogisticDiag_Type), intent(out)                      ::    LHS
-    class(HierCovConstructor_Type), intent(in)                        ::    RHS
+    class(HierCovFunction_Type), intent(in)                           ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
@@ -291,7 +290,7 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          LHS%Sigma_Dependency = RHS%=Sigma_Dependency
+          LHS%Sigma_Dependency = RHS%Sigma_Dependency
           LHS%Sigma = RHS%Sigma
           LHS%K_Dependency = RHS%K_Dependency
           LHS%K = RHS%K

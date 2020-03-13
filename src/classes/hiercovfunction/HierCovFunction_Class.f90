@@ -42,7 +42,6 @@ contains
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    IsConstructed
   procedure, public                                                   ::    IsInputRequired
-  procedure, public                                                   ::    GenerateCovFunction
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(Initialize_HierCovFunction), deferred, public             ::    Initialize
