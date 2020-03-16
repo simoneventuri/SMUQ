@@ -36,6 +36,7 @@ use OrthoPoly_Factory_Class                                       ,only:    Orth
 use OrthoMultiVar_Class                                           ,only:    OrthoMultiVar_Type
 use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
+use IndexSet_Class                                                ,only:    IndexSet_Type
 use SampleSpace_CLass                                             ,only:    SampleSpace_Type
 use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
@@ -491,7 +492,7 @@ contains
     class(SampleSpace_Type), intent(inout)                            ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
-    class(IndexSetScheme_Type), intent(inout)                         ::    IndexSetScheme
+    type(IndexSetScheme_Type), intent(in)                             ::    IndexSetScheme
     type(LinkedList0D_Type), allocatable, dimension(:), intent(out)   ::    CVErrors
     type(LinkedList1D_Type), allocatable, dimension(:), intent(out)   ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:), intent(out)   ::    Indices
@@ -530,8 +531,6 @@ contains
     integer                                                           ::    iMax
     integer                                                           ::    iMin
     integer                                                           ::    M, N
-    integer                                                           ::    IndexStartOrder
-    integer                                                           ::    MaxIndexOrder
     logical                                                           ::    ConvergedFlag=.false.
     logical                                                           ::    OrderExceededFlag=.false.
     logical                                                           ::    StepExceededFlag=.false.
@@ -548,6 +547,9 @@ contains
     type(ModelInterface_Type)                                         ::    ModelInterface
     integer                                                           ::    ParamRecordLength
     integer                                                           ::    NbInputs
+    class(IndexSet_Type), pointer                                     ::    IndexSetPointer=>null()
+    integer                                                           ::    IndexStartOrder
+    integer                                                           ::    IndexMaxOrder
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
@@ -575,6 +577,8 @@ contains
     end if
 
     IndexStartOrder = IndexSetScheme%GetOrder()
+    IndexMaxOrder = IndexSetScheme%GetMaxOrder()
+    IndexSetPointer => IndexSetScheme%GetIndexSetPointer()
 
     if ( This%ModelRunCounter == 0 ) then
       This%IndexOrder = IndexStartOrder
@@ -627,12 +631,10 @@ contains
 
     SilentLoc = This%Silent
     StepExceededFlag = .false.
-    MaxIndexOrder = IndexSetScheme%GetMaxOrder()
+
 
     ParamRecordLength = 0
     if ( allocated(This%ParamRecord) ) ParamRecordLength = size(This%ParamRecord,2)
-
-    call IndexSetScheme%GenerateIndices( Order=This%IndexOrder, TupleSize=NbDim, Indices=IndicesLoc )
 
     do
 
@@ -657,13 +659,7 @@ contains
 
       ! Checks if all cells reached maximum truncation order
       OrderExceededFlag = .true.
-      i = 1
-      do i = 1, This%NbCells
-        if ( This%IndexOrder <= MaxIndexOrder ) then
-          OrderExceededFlag = .false.
-          exit
-        end if
-      end do
+      if ( This%IndexOrder <= IndexMaxOrder ) OrderExceededFlag = .false.
 
       if ( OrderExceededFlag ) then
         if ( .not. SilentLoc ) then
@@ -674,6 +670,7 @@ contains
         exit
       end if
 
+      call IndexSetPointer%GenerateIndices( Order=This%IndexOrder, TupleSize=NbDim, Indices=IndicesLoc )
       NbIndices = size(IndicesLoc,2)
 
       !***************************************************************************************************************************
@@ -1028,9 +1025,6 @@ contains
         call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
       end if
-
-      call IndexSetScheme%GenerateIndices( Order=This%IndexOrder, TupleSize=NbDim, Indices=IndicesLoc, OrderError=.false.,        &
-                                                                                                 OrderExceeded=OrderExceededFlag )
 
     end do
 

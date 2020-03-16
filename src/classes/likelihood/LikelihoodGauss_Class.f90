@@ -176,7 +176,6 @@ contains
     This%MultiplierDependency = VarC0D
 
     SectionName = 'predefined_covariance'
-
     if( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call ImportArray( Input=InputSection, Array=This%L, Prefix=PrefixLoc )

@@ -16,22 +16,23 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module IndexSetHyperbolic_Class
+module IndexLowOrder_Class
 
 use Input_Library
 use Parameters_Library
+use LinkedList1D_Class                                            ,only:    LinkedList1D_Type
+use IndexSet_Class                                                ,only:    IndexSet_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
 
 implicit none
 
 private
 
-public                                                                ::    IndexSetHyperbolic_Type
+public                                                                ::    IndexLowOrder_Type
 
-type, extends(IndexSetScheme_Type)                                    ::    IndexSetHyperbolic_Type
-  real(rkp)                                                           ::    NormQ=0.4_rkp
+type, extends(IndexSet_Type)                                          ::    IndexLowOrder_Type
+  integer                                                             ::    Norm0=1000
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -42,10 +43,8 @@ contains
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GenerateIndices
   procedure, public                                                   ::    ComputeIndices
-  generic, public                                                     ::    ComputeNormQ            =>    ComputeNormQ_I1D
-  procedure, nopass, private                                          ::    ComputeNormQ_I1D
-  procedure, public                                                   ::    GetNormQ
-  procedure, public                                                   ::    Copy  
+  procedure, public                                                   ::    GetNorm0
+  procedure, public                                                   ::    Copy 
   final                                                               ::    Finalizer     
 end type
 
@@ -56,7 +55,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
-    class(IndexSetHyperbolic_Type), intent(inout)                     ::    This
+    class(IndexLowOrder_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
@@ -72,7 +71,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
-    class(IndexSetHyperbolic_Type), intent(inout)                     ::    This
+    class(IndexLowOrder_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
@@ -88,14 +87,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This )
 
-    class(IndexSetHyperbolic_Type), intent(inout)                     ::    This
+    class(IndexLowOrder_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-    This%Order = 1
-    This%MaxOrder = huge(1)
-    This%MinOrder = 1
-    This%NormQ = 0.4_rkp
+    This%Norm0 = 1000
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -103,7 +99,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix )
 
-    class(IndexSetHyperbolic_Type), intent(inout)                     ::    This
+    class(IndexLowOrder_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -121,28 +117,10 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    ParameterName = "min_order"
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%MinOrder = VarI0D
-
-    ParameterName = "max_order"
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%MaxOrder = VarI0D
-
-    if ( This%MinOrder < 0 ) call Error%Raise( Line='Min order set lower than 0', ProcName=ProcName )
-    if ( This%MaxOrder < This%MinOrder ) call Error%Raise( Line='Max Order set lower than min order', ProcName=ProcName )
-
-    ParameterName = "order"
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Order = VarI0D
-    if ( This%Order > This%MaxOrder .or. This%Order < This%MinOrder ) call Error%Raise(                                           &
-                                                               Line='Specified order that exceeds min or max', ProcName=ProcName )  
-
-    ParameterName = "normq"
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%NorMQ = VarR0D
-    if ( This%NormQ <= Zero ) call Error%Raise( "NormQ specification at or below 0" )
-    if ( This%NormQ > One ) call Error%Raise( "NormQ specification above maximum of 1" )
+    ParameterName = "norm0"
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%Norm0 = VarI0D
+    if ( This%Norm0 < 1 ) call Error%Raise( "Norm0 specification below the minimum of 1" )
 
     This%Constructed = .true.
 
@@ -150,33 +128,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, NormQ, Order, MinOrder, MaxOrder )
+  subroutine ConstructCase1( This, Norm0 )
 
-    class(IndexSetHyperbolic_Type), intent(inout)                     ::    This
-    real(rkp), optional, intent(in)                                   ::    NormQ
-    integer, optional, intent(in)                                     ::    Order
-    integer, optional, intent(in)                                     ::    MinOrder
-    integer, optional, intent(in)                                     ::    MaxOrder    
+    class(IndexLowOrder_Type), intent(inout)                          ::    This
+    integer, intent(in)                                               ::    Norm0   
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
-    if ( present(NormQ) ) This%NormQ= NormQ
-    if ( This%NormQ <= Zero ) call Error%Raise( "NormQ specification at or below 0" )
-    if ( This%NormQ > One ) call Error%Raise( "NormQ specification above maximum of 1" )
-
-    if ( present(MinOrder) ) This%MinOrder = MinOrder
-
-    if ( present(MaxOrder) ) This%MaxOrder = MaxOrder
-
-    if ( This%MinOrder < 0 ) call Error%Raise( Line='Min order set lower than 0', ProcName=ProcName )
-    if ( This%MaxOrder < This%MinOrder ) call Error%Raise( Line='Max Order set lower than min order', ProcName=ProcName )
-
-    if ( present(Order) ) This%Order = Order
-    if ( This%Order > This%MaxOrder .or. This%Order < This%MinOrder ) call Error%Raise(                                           &
-                                                               Line='Specified order that exceeds min or max', ProcName=ProcName ) 
+    if ( Norm0 < 1 ) call Error%Raise( "Norm0 specification below the minimum of 1" )
+    This%Norm0 = Norm0
 
     This%Constructed = .true.
 
@@ -189,7 +152,7 @@ contains
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
-    class(IndexSetHyperbolic_Type), intent(in)                        ::    This
+    class(IndexLowOrder_Type), intent(in)                             ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -211,73 +174,47 @@ contains
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddParameter( Name='order', Value=ConvertToString(Value=This%Order) )
-    call GetInput%AddParameter( Name='min_order', Value=ConvertToString(Value=This%MinOrder) )
-    call GetInput%AddParameter( Name='max_order', Value=ConvertToString(Value=This%MaxOrder) )
-    call GetInput%AddParameter( Name='normq', Value=ConvertToString(Value=This%NormQ) )
+    call GetInput%AddParameter( Name='norm0', Value=ConvertToString(Value=This%Norm0) )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateIndices( This, Order, TupleSize, Indices, OrderError, OrderExceeded )
+  subroutine GenerateIndices( This, Order, TupleSize, Indices )
 
-    class(IndexSetHyperbolic_Type), intent(in)                        ::    This
+    class(IndexLowOrder_Type), intent(in)                             ::    This
     integer, intent(in)                                               ::    Order
     integer, intent(in)                                               ::    TupleSize
     integer, dimension(:,:), allocatable, intent(out)                 ::    Indices
-    logical, optional, intent(in)                                     ::    OrderError
-    logical, optional, intent(out)                                    ::    OrderExceeded
 
     character(*), parameter                                           ::    ProcName='GenerateIndices'
-    logical                                                           ::    OrderExceededLoc=.false.
-    logical                                                           ::    OrderErrorLoc=.true.
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    OrderExceededLoc = .false.
-    OrderErrorLoc = .true.
-    if ( present(OrderError) ) OrderErrorLoc = OrderError
-
-    if ( Order > This%MaxOrder .or. Order < This%MinOrder ) then
-      if ( OrderErrorLoc ) call Error%Raise( Line='Order exceeded', ProcName=ProcName )
-      OrderExceededLoc = .true.
-    else
-      call This%ComputeIndices( TupleSize, Order, This%NormQ, Indices )
-    end if
-
-    if ( present(OrderExceeded) ) OrderExceeded = OrderExceededLoc
+    if ( TupleSize < This%Norm0 ) call Error%Raise("Requested MTuples of length TupleSize which is less than the Norm0")
+    call This%ComputeIndices( TupleSize, Order, This%Norm0, Indices )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeIndices( This, M, Order, NormQ, Indices  )
+  subroutine ComputeIndices( This, M, Order, Norm0, Indices )
 
-    use ArrayRoutines_Module
-    use LinkedList1D_Class                                        ,only:  LinkedList1D_Type
-
-    class(IndexSetHyperbolic_Type), intent(in)                        ::    This
+    class(IndexLowOrder_Type), intent(in)                             ::    This
     integer, dimension(:,:), allocatable, intent(out)                 ::    Indices
     integer, intent(in)                                               ::    M
     integer, intent(in)                                               ::    Order
-    real(rkp), intent(in)                                             ::    NormQ
+    integer, intent(in)                                               ::    Norm0
 
     character(*), parameter                                           ::    ProcName='ComputeIndices'
-    type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
     integer, dimension(:,:), allocatable                              ::    Indices_Loc
     integer, dimension(:), allocatable                                ::    VarI1D
     integer, dimension(:,:), allocatable                              ::    VarI2D
-    integer, dimension(:,:), allocatable                              ::    IdentityM
     real(rkp), dimension(:), allocatable                              ::    VarR1D
+    type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
     integer                                                           ::    i, ii
-    integer                                                           ::    k, j
-    integer                                                           ::    jmax
     integer                                                           ::    NbPermutations, NbIndices
-    logical, dimension(:), allocatable                                ::    LogicMask
     integer                                                           ::    StatLoc=0
-
-    if ( M <= 0 ) call Error%Raise(Line="Specified tuple size at or below 0", ProcName=ProcName)
 
     allocate( IndicesRecord, stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
@@ -286,64 +223,28 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='VarR1D', stat=StatLoc)
     VarR1D = Zero
 
-    allocate( IdentityM(M,M), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='IdentityM', stat=StatLoc)
-    IdentityM = EyeI( M )
-
     allocate( VarI1D(M), stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='VarI1D', stat=StatLoc)
     VarI1D = 0
 
-    call IndicesRecord%Append( VarI1D )
+    call This%AlgorithmH( M, Order, Norm0, Indices_Loc )
 
-    do k = 1, Order
-      jmax = min(M,k)
+    NbPermutations = size(Indices_Loc,2)
 
-      do j = 1, jmax
+    i = 1
+    do i = 1, NbPermutations
+      VarR1D = real(Indices_Loc(:,i),rkp)
+      call dlasrt( 'I', M, VarR1D, StatLoc )
+      if ( StatLoc /= 0 ) call Error%Raise("Something went wrong with lapack routine dlasrt")
+      VarI1D = nint(VarR1D)
+  
+      call This%AlgorithmL( VarI1D, M, VarI2D )
 
-        if ( j == 1 ) then
-
-          ii = 1
-          do ii = 1, M
-            call IndicesRecord%Append( k*IdentityM(:,ii) )
-          end do
-
-          cycle
-        end if 
-        
-        call This%AlgorithmH( M, k, j, Indices_Loc )
-
-        NbPermutations = size(Indices_Loc,2)
-
-        StatLoc = 0
-        if ( allocated(LogicMask) ) deallocate(LogicMask, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='LogicMask', stat=StatLoc)
-        allocate( LogicMask(NbPermutations), stat=StatLoc )
-        if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='LogicMask', stat=StatLoc)
-        LogicMask = .true.
-
-        i = 1
-        do i = 1, NbPermutations
-          if ( This%ComputeNormQ(Indices_Loc(:,i), NormQ) > Order ) LogicMask(i) = .false.
-        end do
-
-        i = 1
-        do i = 1, NbPermutations
-          if ( .not. LogicMask(i) ) cycle
-          VarR1D = real(Indices_Loc(:,i),rkp)
-          call dlasrt( 'I', M, VarR1D, StatLoc )
-          if ( StatLoc /= 0 ) call Error%Raise("Something went wrong with lapack routine dlasrt")
-          VarI1D = nint(VarR1D)
-          call This%AlgorithmL( VarI1D, M, VarI2D )
-
-          NbIndices = size(VarI2D,2)
-          ii = 1
-          do ii = 1, NbIndices
-            call IndicesRecord%Append( VarI2D(:,ii) )
-          end do
-
-        end do
-
+      ii = 1
+      NbIndices = size(VarI2D,2)
+      do ii = 1, NbIndices
+        VarI1D = VarI2D(:,ii)
+        call IndicesRecord%Append( VarI1D )
       end do
 
     end do
@@ -357,13 +258,10 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='VarI2D', stat=StatLoc)
     if (allocated(VarR1D)) deallocate(VarR1D, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='VarR1D', stat=StatLoc)
-    if ( allocated(LogicMask) ) deallocate(LogicMask, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='LogicMask', stat=StatLoc)
 
     NbIndices = IndicesRecord%GetLength()
-    allocate( Indices(M,NbIndices), stat=StatLoc )
+    allocate( Indices(M, NbIndices), stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='Indices', stat=StatLoc)
-
     i = 1
     do i = 1, NbIndices
       call IndicesRecord%Get( i, VarI1D )
@@ -371,37 +269,22 @@ contains
     end do
 
     deallocate(IndicesRecord, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='VarR1D', stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function  ComputeNormQ_I1D( Vector, NormQ )
+  function GetNorm0( This )
 
-    real(rkp)                                                         ::    ComputeNormQ_I1D
-    integer, dimension(:), intent(in)                                 ::    Vector
-    real(rkp), intent(in)                                             ::    NormQ
+    integer                                                           ::    GetNorm0
+    class(IndexLowOrder_Type), intent(in)                             ::    This
 
-    character(*), parameter                                           ::    ProcName='ComputeNormQ_I1D'
-
-    ComputeNormQ_I1D = sum( Vector**NormQ )
-    ComputeNormQ_I1D = ComputeNormQ_I1D**(One/NormQ)
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNormQ( This )
-
-    real(rkp)                                                         ::    GetNormQ
-    class(IndexSetHyperbolic_Type), intent(in)                        ::    This
-
-    character(*), parameter                                           ::    ProcName='GetNormQ'
+    character(*), parameter                                           ::    ProcName='GetNorm0'
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    GetNormQ = This%NormQ
+    GetNorm0 = This%Norm0
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -409,24 +292,21 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(IndexSetHyperbolic_Type), intent(out)                       ::    LHS
-    class(IndexSetScheme_Type), intent(in)                            ::    RHS
+    class(IndexLowOrder_Type), intent(out)                            ::    LHS
+    class(IndexSet_Type), intent(in)                                  ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
 
-      type is (IndexSetHyperbolic_Type)
+      type is (IndexLowOrder_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          LHS%Order = RHS%Order
-          LHS%MinOrder = RHS%MinOrder
-          LHS%MaxOrder = RHS%MaxOrder
-          LHS%NormQ = RHS%NormQ
+          LHS%Norm0 = RHS%Norm0
         end if
       
       class default
@@ -440,7 +320,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(IndexSetHyperbolic_Type), intent(inout)                      ::    This
+    type(IndexLowOrder_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0

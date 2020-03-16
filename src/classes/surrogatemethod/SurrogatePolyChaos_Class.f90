@@ -36,8 +36,6 @@ use OrthoLegendre_Class                                           ,only:    Orth
 use OrthoLaguerre_Class                                           ,only:    OrthoLaguerre_Type
 use OrthoHermite_Class                                            ,only:    OrthoHermite_Type
 use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
-use IndexSetScheme_Factory_Class                                  ,only:    IndexSetScheme_Factory
-use IndexSetHyperbolic_Class                                      ,only:    IndexSetHyperbolic_Type
 use PolyChaosMethod_Factory_Class                                 ,only:    PolyChaosMethod_Factory
 use PolyChaosMethod_Class                                         ,only:    PolyChaosMethod_Type
 use Response_Class                                                ,only:    Response_Type
@@ -71,7 +69,7 @@ private
 public                                                                ::    SurrogatePolyChaos_Type
 
 type, extends(SurrogateMethod_Type)                                   ::    SurrogatePolyChaos_Type
-  class(IndexSetScheme_Type), allocatable                             ::    IndexSetScheme
+  type(IndexSetScheme_Type)                                           ::    IndexSetScheme
   class(PolyChaosMethod_Type), allocatable                            ::    PolyChaosMethod
   logical                                                             ::    Silent=.false.
   character(:), allocatable                                           ::    BasisScheme
@@ -133,8 +131,7 @@ contains
     if ( allocated(This%PolyChaosMethod) ) deallocate(This%PolyChaosMethod, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PolyChaosMethod', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%IndexSetScheme) ) deallocate(This%IndexSetScheme, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%IndexSetScheme', ProcName=ProcName, stat=StatLoc )
+    call This%IndexSetScheme%Reset()
 
     if ( allocated(This%InputSamples) ) deallocate(This%InputSamples, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InputSamples', ProcName=ProcName, stat=StatLoc )
@@ -202,19 +199,13 @@ contains
     call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%BasisScheme = VarC0D
 
-    SectionName = 'index_scheme'
+    SectionName = 'index_set_scheme'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call IndexSetScheme_Factory%Construct( Object=This%IndexSetScheme, Input=InputSection, Prefix=PrefixLoc )
+      call This%IndexSetScheme%Construct( Input=InputSection, Prefix=PrefixLoc )
       nullify( InputSection )
     else
-      allocate( IndexSetHyperbolic_Type :: This%IndexSetScheme, stat=StatLoc )
-      select type ( Object => This%IndexSetScheme )
-        type is ( IndexSetHyperbolic_Type )
-          call Object%Construct( NormQ=real(0.4,rkp), Order=1, MinOrder=1, MaxOrder=100 )
-        class default
-          call Error%Raise( Line='Something went wrong when allocating default index generation scheme', ProcName=ProcName )
-      end select
+      call This%IndexSetScheme%Construct()
     end if
 
     SectionName = 'method'
@@ -321,10 +312,10 @@ contains
 
     call GetInput%AddParameter( Name='basis_scheme', Value=This%BasisScheme )
 
-    SectionName = 'index_scheme'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/index_scheme'
-    call GetInput%AddSection( Section=IndexSetScheme_Factory%GetObjectInput( Object=This%IndexSetScheme,                          &
-                                                         MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ) )
+    SectionName = 'index_set_scheme'
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/index_set_scheme'
+    call GetInput%AddSection( This%IndexSetScheme%GetInput(MainSectionName=SectionName, Prefix=PrefixLoc,                         &
+                                                                                                        Directory=DirectorySub ) )
 
     SectionName = 'method'
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/method'
@@ -1087,10 +1078,9 @@ contains
         if ( RHS%Constructed ) then
           LHS%BasisScheme = RHS%BasisScheme
           LHS%Silent = RHS%Silent
+          LHS%IndexSetScheme = RHS%IndexSetScheme
           allocate(LHS%PolyChaosMethod, source=RHS%PolyChaosMethod, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PolyChaosMethod', ProcName=ProcName, stat=StatLoc )
-          allocate(LHS%IndexSetScheme, source=RHS%IndexSetScheme, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%IndexSetScheme', ProcName=ProcName, stat=StatLoc )
         end if
       
       class default
@@ -1112,8 +1102,7 @@ contains
     if ( allocated(This%PolyChaosMethod) ) deallocate(This%PolyChaosMethod, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PolyChaosMethod', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%IndexSetScheme) ) deallocate(This%IndexSetScheme, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%IndexSetScheme', ProcName=ProcName, stat=StatLoc )
+    call This%IndexSetScheme%Reset()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

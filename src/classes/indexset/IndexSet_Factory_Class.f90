@@ -16,12 +16,12 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module IndexSetScheme_Factory_Class
+module IndexSet_Factory_Class
 
-use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
-use IndexSetStandard_Class                                        ,only:    IndexSetStandard_Type
-use IndexSetHyperbolic_Class                                      ,only:    IndexSetHyperbolic_Type
-use IndexSetLowOrder_Class                                        ,only:    IndexSetLowOrder_Type
+use IndexSet_Class                                                ,only:    IndexSet_Type
+use IndexStandard_Class                                           ,only:    IndexStandard_Type
+use IndexHyperbolic_Class                                         ,only:    IndexHyperbolic_Type
+use IndexLowOrder_Class                                           ,only:    IndexLowOrder_Type
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
@@ -31,9 +31,9 @@ implicit none
 
 private
 
-public                                                                ::    IndexSetScheme_Factory
+public                                                                ::    IndexSet_Factory
 
-type                                                                  ::    IndexSetScheme_Factory_Type
+type                                                                  ::    IndexSet_Factory_Type
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D,          &
                                                                                                           Construct_Input
@@ -43,7 +43,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 End Type
 
-type(IndexSetScheme_Factory_Type)                                     ::    IndexSetScheme_Factory
+type(IndexSet_Factory_Type)                                           ::    IndexSet_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -51,7 +51,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_C0D( Object, DesiredType )
 
-    class(IndexSetScheme_Type), allocatable, intent(inout)            ::    Object                                            
+    class(IndexSet_Type), allocatable, intent(inout)                  ::    Object                                            
     character(*), intent(in)                                          ::    DesiredType
 
     character(*), parameter                                           ::    ProcName='Construct_C0D' 
@@ -61,13 +61,13 @@ contains
     select case ( LowerCase(DesiredType) )
 
       case('standard')
-        allocate( IndexSetStandard_Type ::Object )
+        allocate( IndexStandard_Type ::Object )
 
       case('hyperbolic')
-        allocate( IndexSetHyperbolic_Type :: Object )
+        allocate( IndexHyperbolic_Type :: Object )
 
       case('loworder')
-        allocate( IndexSetLowOrder_Type :: Object )
+        allocate( IndexLowOrder_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -81,11 +81,9 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_Input( This, Object, Input, Prefix )
-    
-    use Input_Library
 
-    class(IndexSetScheme_Factory_Type), intent(in)                    ::    This
-    class(IndexSetScheme_Type), allocatable, intent(inout)            ::    Object
+    class(IndexSet_Factory_Type), intent(in)                          ::    This
+    class(IndexSet_Type), allocatable, intent(inout)                  ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -117,19 +115,19 @@ contains
 
     character(:), allocatable                                         ::    GetOption
 
-    class(IndexSetScheme_Type), intent(in)                            ::    Object                                             
+    class(IndexSet_Type), intent(in)                                  ::    Object                                             
 
     character(*), parameter                                           ::    ProcName='GetOption' 
 
     select type (Object)
 
-      type is (IndexSetStandard_Type)
+      type is (IndexStandard_Type)
         GetOption = 'standard'
 
-      type is (IndexSetHyperbolic_Type)
+      type is (IndexHyperbolic_Type)
         GetOption = 'hyperbolic'
 
-      type is (IndexSetLowOrder_Type)
+      type is (IndexLowOrder_Type)
         GetOption = 'loworder'
 
       class default
@@ -147,8 +145,8 @@ contains
 
     type(InputSection_Type)                                           ::    GetObjectInput
 
-    class(IndexSetScheme_Factory_Type), intent(in)                    ::    This
-    class(IndexSetScheme_Type), intent(in)                            ::    Object
+    class(IndexSet_Factory_Type), intent(in)                          ::    This
+    class(IndexSet_Type), intent(in)                                  ::    Object
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory

@@ -490,7 +490,7 @@ contains
     class(SampleSpace_Type), intent(inout)                            ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
-    class(IndexSetScheme_Type), intent(inout)                         ::    IndexSetScheme
+    type(IndexSetScheme_Type), intent(in)                             ::    IndexSetScheme
     type(LinkedList0D_Type), allocatable, dimension(:), intent(out)   ::    CVErrors
     type(LinkedList1D_Type), allocatable, dimension(:), intent(out)   ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:), intent(out)   ::    Indices
@@ -518,8 +518,6 @@ contains
     real(rkp)                                                         ::    CVError
     real(rkp)                                                         ::    CVErrorTrip
     integer                                                           ::    i, iStart, iEnd
-    integer                                                           ::    IndexStartOrder
-    integer                                                           ::    IndexOrder
     integer                                                           ::    OverfitCounter=0
     integer                                                           ::    ii, iii, iv
     integer                                                           ::    iRun
@@ -531,13 +529,16 @@ contains
     integer                                                           ::    StatLoc=0
     logical                                                           ::    SilentLoc
     character(:), allocatable                                         ::    Line
-    integer                                                           ::    MaxIndexOrder
     integer, allocatable, dimension(:)                                ::    NbCellsOutput
     integer                                                           ::    iMin
     integer                                                           ::    iMax
     type(ModelInterface_Type)                                         ::    ModelInterface
     integer                                                           ::    ParamRecordLength
     integer                                                           ::    NbInputs
+    class(IndexSet_Type), pointer                                     ::    IndexSetPointer=>null()
+    integer                                                           ::    IndexStartOrder
+    integer                                                           ::    IndexMaxOrder
+    integer                                                           ::    IndexOrder
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
@@ -618,7 +619,10 @@ contains
     end if
 
     StepExceededFlag = .false.
-    MaxIndexOrder = IndexSetScheme%GetMaxOrder()
+
+    IndexStartOrder = IndexSetScheme%GetOrder()
+    IndexMaxOrder = IndexSetScheme%GetMaxOrder()
+    IndexSetPointer => IndexSetScheme%GetIndexSetPointer()
 
     ParamRecordLength = 0
     if ( allocated(This%ParamRecord) ) ParamRecordLength = size(This%ParamRecord,2)
@@ -648,7 +652,7 @@ contains
       OrderExceededFlag = .true.
       i = 1
       do i = 1, This%NbCells
-        if ( This%Cells(i)%GetTruncationOrder() <= MaxIndexOrder ) then
+        if ( This%Cells(i)%GetTruncationOrder() <= IndexMaxOrder ) then
           OrderExceededFlag = .false.
           exit
         end if
@@ -831,23 +835,21 @@ contains
 
           if ( This%Cells(i)%GetCVError() <= This%StopError ) cycle
 
-          OrderExceededFlag = .false.
           OverfitCounter = 0
 
           if ( iStart == 0 ) then
-            IndexOrder = IndexSetScheme%GetOrder()
+            IndexOrder = IndexStartOrder
           else
             IndexOrder = This%Cells(i)%GetTruncationOrder()
           end if
+          if ( IndexOrder >= IndexMaxOrder ) cycle
 
           CVErrorTrip = huge(VarR0D)
 
           do
             ! Generating Indices
-            call IndexSetScheme%GenerateIndices( Order=IndexOrder, TupleSize=NbDim, Indices=IndicesLoc, OrderError=.false.,       &
-                                                                                                 OrderExceeded=OrderExceededFlag )
-
-            if ( OrderExceededFlag ) exit
+            if ( IndexOrder > IndexMaxOrder ) exit
+            call IndexSetScheme%GenerateIndices( Order=IndexOrder, TupleSize=NbDim, Indices=IndicesLoc )
 
             NbIndices = size(IndicesLoc,2)
             VarR1D_1 = This%Cells(i)%GetRecord()

@@ -127,7 +127,7 @@ abstract interface
     class(SampleSpace_Type), intent(inout)                            ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
-    class(IndexSetScheme_Type), intent(inout)                         ::    IndexSetScheme
+    type(IndexSetScheme_Type), intent(in)                             ::    IndexSetScheme
     type(LinkedList0D_Type), allocatable, dimension(:), intent(out)   ::    CVErrors
     type(LinkedList1D_Type), allocatable, dimension(:), intent(out)   ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:), intent(out)   ::    Indices
