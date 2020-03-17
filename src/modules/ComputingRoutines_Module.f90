@@ -20,8 +20,9 @@ module ComputingRoutines_Module
 
 use Parameters_Library
 use String_Library
-use Logger_Class                  ,only: Logger
-use Error_Class                   ,only: Error
+use Logger_Class                                                  ,only:    Logger
+use Error_Class                                                   ,only:    Error
+use RandPseudo_Class                                              ,only:    RandPseudo_Type
 
 implicit none
 
@@ -90,6 +91,7 @@ end interface
 
 interface ScrambleArray
   module procedure                                                    ::    ScrambleArray_I1D
+  module procedure                                                    ::    ScrambleArray_R1D
 end interface
 
 interface Transform
@@ -869,9 +871,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Knuth shuffle
   ! https://rosettacode.org/wiki/Knuth_shuffle#Fortran
-  subroutine ScrambleArray_I1D( Array )
+  subroutine ScrambleArray_I1D( Array, RNG )
 
     integer, dimension(:), intent(inout)                              ::    Array
+    type(RandPseudo_Type), optional, intent(inout)                    ::    RNG
 
     character(*), parameter                                           ::    ProcName='ScrambleArray_I1D'
     integer                                                           ::    StatLoc
@@ -884,11 +887,48 @@ contains
     NbEntries = size(Array,1)
 
     do i = NbEntries, 2, -1
-      call random_number(RandNum)
+      if ( present(RNG) ) then
+        RandNum = RNG%Draw( DrawType=2 )
+      else
+        call random_number(RandNum)
+      end if
       RandIndex = int(RandNum*i) + 1
       VarI0D = Array(RandIndex)
       Array(RandIndex) = Array(i)
       Array(i) = VarI0D
+    end do
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  ! Knuth shuffle
+  ! https://rosettacode.org/wiki/Knuth_shuffle#Fortran
+  subroutine ScrambleArray_R1D( Array, RNG )
+
+    real(rkp), dimension(:), intent(inout)                            ::    Array
+    type(RandPseudo_Type), optional, intent(inout)                    ::    RNG
+
+    character(*), parameter                                           ::    ProcName='ScrambleArray_R1D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    integer                                                           ::    NbEntries
+    real(rkp)                                                         ::    RandNum
+    integer                                                           ::    VarR0D
+    integer                                                           ::    RandIndex
+
+    NbEntries = size(Array,1)
+
+    do i = NbEntries, 2, -1
+      if ( present(RNG) ) then
+        RandNum = RNG%Draw( DrawType=2 )
+      else
+        call random_number(RandNum)
+      end if
+      RandIndex = int(RandNum*i) + 1
+      VarR0D = Array(RandIndex)
+      Array(RandIndex) = Array(i)
+      Array(i) = VarR0D
     end do
 
   end subroutine

@@ -22,7 +22,7 @@ use Parameters_Library
 use Input_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use SampleScheme_Class                                            ,only:    SampleScheme_Type
+use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use LowDiscSequence_Class                                         ,only:    LowDiscSequence_Type
 use LowDiscSequence_Factory_Class                                 ,only:    LowDiscSequence_Factory
 
@@ -32,13 +32,8 @@ private
 
 public                                                                ::    SampleQuasiMC_Type
 
-type, extends(SampleScheme_Type)                                      ::    SampleQuasiMC_Type
+type, extends(SampleMethod_Type)                                      ::    SampleQuasiMC_Type
   class(LowDiscSequence_Type), allocatable                            ::    LowDiscSequence
-  integer                                                             ::    EnrichmentScheme=0
-  integer                                                             ::    EnrichmentMultiplier=1
-  integer                                                             ::    EnrichmentIncrement=1
-  integer, allocatable, dimension(:)                                  ::    EnrichmentSequence
-  integer                                                             ::    EnrichmentStage=1
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -47,7 +42,6 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  procedure, private                                                  ::    GetNbEnrichSamples
   procedure, private                                                  ::    Draw_0D
   procedure, private                                                  ::    Draw_1D
   procedure, private                                                  ::    Enrich_0D
@@ -60,7 +54,7 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
@@ -74,9 +68,9 @@ contains
     end if
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
@@ -90,32 +84,22 @@ contains
     if ( allocated(This%LowDiscSequence) ) deallocate(This%LowDiscSequence, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LowDiscSequence', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%EnrichmentSequence) ) deallocate(This%EnrichmentSequence, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%EnrichmentSequence', ProcName=ProcName, stat=StatLoc )
-
     call This%Initialize()
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This )
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-    This%NbSamples = 1
-    This%MaxNbSamples = huge(This%NbSamples)
-    This%EnrichmentScheme = 0
-    This%EnrichmentMultiplier = 1
-    This%EnrichmentIncrement = 1
-    This%EnrichmentStage = 1
-
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, Prefix )
 
     use StringRoutines_Module
@@ -140,48 +124,6 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    ParameterName = 'enrichment_scheme'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
-      SectionName = 'enrichment_scheme'
-      select case (VarC0D)
-        case ('mutiplier')
-          This%EnrichmentScheme = 0
-          ParameterName = 'multiplier'
-          call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName,Mandatory=.true.)
-          This%EnrichmentMultiplier = VarI0D
-          if ( This%EnrichmentMultiplier < 1 ) call Error%Raise( Line='Enrichment multiplier must be above 0', ProcName=ProcName )
-        case('increment')
-          This%EnrichmentScheme = 1
-          ParameterName = 'increment'
-          call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName,Mandatory=.true.)
-          This%EnrichmentIncrement = VarI0D
-        case('sequence')
-          This%EnrichmentScheme = 2
-          ParameterName = 'sequence'
-          call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName,Mandatory=.true.)
-          allocate(This%EnrichmentSequence, source=ConvertToIntegers(String=VarC0D), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='This%EnrichmentSequence', ProcName=ProcName, stat=StatLoc )
-          if ( any(This%EnrichmentSequence < 1) ) call Error%Raise( Line='Detected enrichment sequence value of 0 or below',      &
-                                                                                                               ProcName=ProcName )
-        case default
-          call Error%Raise( Line='Uncrecognized enrichment specification', ProcName=ProcName )
-      end select
-    end if
-
-    ParameterName = 'enrichment_stage'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if ( Found ) This%EnrichmentStage = VarI0D
-
-    ParameterName = 'nb_samples'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%NbSamples = VarI0D
-    This%MaxNbSamples = This%NbSamples
-
-    ParameterName = 'max_nb_samples'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if ( Found ) This%MaxNbSamples = VarI0D
-
     SectionName = 'sequence'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     call LowDiscSequence_Factory%Construct( Object=This%LowDiscSequence, Input=InputSection )
@@ -190,9 +132,9 @@ contains
     This%Constructed=.true.
 
   end subroutine 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1 ( This, LowDiscSequence, NbSamples, MaxNbSamples, EnrichmentScheme, EnrichmentMultiplier,             &
                                                                                   EnrichmentIncrement, EnrichmentSequence )
 
@@ -239,9 +181,9 @@ contains
     This%Constructed = .true.
 
   end subroutine 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput( This, MainSectionName, Prefix, Directory )
 
     use StringRoutines_Module
@@ -302,9 +244,9 @@ contains
                                                            MainSectionName='sequence', Prefix=PrefixLoc, Directory=DirectorySub) )
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetNbEnrichSamples( This, NbSamples )
 
     integer                                                           ::    GetNbEnrichSamples
@@ -333,9 +275,9 @@ contains
     end select
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Draw_0D( This )
 
     real(rkp), allocatable, dimension(:)                              ::    Draw_0D
@@ -353,9 +295,9 @@ contains
     Draw_0D = This%LowDiscSequence%Get( NbPoints=This%NbSamples )
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   function Draw_1D( This, NbDim )
 
     real(rkp), allocatable, dimension(:,:)                            ::    Draw_1D
@@ -375,9 +317,9 @@ contains
     Draw_1D = This%LowDiscSequence%Get( NbPoints=This%NbSamples, NbDim=NbDim )
 
   end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Enrich_0D( This, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, ReqNormalized )
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
@@ -419,9 +361,9 @@ contains
     end if
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Enrich_1D( This, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, ReqNormalized )
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
@@ -471,13 +413,13 @@ contains
     end if
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
     class(SampleQuasiMC_Type), intent(out)                            ::    LHS
-    class(SampleScheme_Type), intent(in)                              ::    RHS
+    class(SampleMethod_Type), intent(in)                              ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
@@ -505,9 +447,9 @@ contains
     end select
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
     type(SampleQuasiMC_Type), intent(inout)                           ::    This
@@ -522,6 +464,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LowDiscSequence', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

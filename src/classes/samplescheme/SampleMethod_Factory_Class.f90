@@ -16,13 +16,13 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module SampleScheme_Factory_Class
+module SampleMethod_Factory_Class
 
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use SampleScheme_Class                                            ,only:    SampleScheme_Type
+use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use SampleMC_Class                                                ,only:    SampleMC_Type
 use SampleQuasiMC_Class                                           ,only:    SampleQuasiMC_Type
 use SampleLHS_Class                                               ,only:    SampleLHS_Type
@@ -31,9 +31,9 @@ implicit none
 
 private
 
-public                                                                ::    SampleScheme_Factory
+public                                                                ::    SampleMethod_Factory
 
-type                                                                  ::    SampleScheme_Factory_Type
+type                                                                  ::    SampleMethod_Factory_Type
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D,          &
                                                                                                           Construct_Input
@@ -43,7 +43,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 end type
 
-type(SampleScheme_Factory_Type)                                       ::    SampleScheme_Factory
+type(SampleMethod_Factory_Type)                                       ::    SampleMethod_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -51,7 +51,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_C0D( Object, DesiredType )
 
-    class(SampleScheme_Type), allocatable, intent(inout)              ::    Object                                             
+    class(SampleMethod_Type), allocatable, intent(inout)              ::    Object                                             
     character(*), intent(in)                                          ::    DesiredType                                               
 
     character(*), parameter                                           ::    ProcName='Construct_C0D' 
@@ -84,8 +84,8 @@ contains
     
     use Input_Library
 
-    class(SampleScheme_Factory_Type), intent(in)                      ::    This
-    class(SampleScheme_Type), allocatable, intent(inout)              ::    Object
+    class(SampleMethod_Factory_Type), intent(in)                      ::    This
+    class(SampleMethod_Type), allocatable, intent(inout)              ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -117,7 +117,7 @@ contains
 
     character(:), allocatable                                         ::    GetOption
 
-    class(SampleScheme_Type), intent(in)                              ::    Object                                                                                            
+    class(SampleMethod_Type), intent(in)                              ::    Object                                                                                            
 
     character(*), parameter                                           ::    ProcName='GetOption' 
 
@@ -147,8 +147,8 @@ contains
 
     type(InputSection_Type)                                           ::    GetObjectInput
 
-    class(SampleScheme_Factory_Type), intent(in)                      ::    This
-    class(SampleScheme_Type), intent(in)                              ::    Object
+    class(SampleMethod_Factory_Type), intent(in)                      ::    This
+    class(SampleMethod_Type), intent(in)                              ::    Object
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
