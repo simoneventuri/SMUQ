@@ -25,6 +25,8 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
+use SampleMethod_Class                                            ,only:    SampleMethod_Type
+use DistNorm_Class                                                ,only:    DistNorm_Type
 
 implicit none
 
@@ -73,6 +75,9 @@ contains
   procedure, public                                                   ::    GetDistPointer_Num
   procedure, public                                                   ::    GetCorrMat
   procedure, public                                                   ::    GetCorrMatPointer
+  procedure, public                                                   ::    Draw
+  procedure, public                                                   ::    Enrich
+  procedure, public                                                   ::    DrawMVarNormal
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure(Copy_SampleSpace), deferred, public                       ::    Copy
 end type
@@ -427,6 +432,247 @@ contains
     integer                                                           ::    StatLoc=0
 
     IsCorrelated = This%Correlated
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Draw( This, Sampler, NbSamples )
+
+    real(rkp), allocatable, dimension(:,:)                            ::    Draw
+
+    class(SampleSpace_Type), intent(in)                               ::    This
+    class(SampleMethod_Type), intent(inout)                           ::    Sampler
+    integer, intent(in)                                               ::    NbSamples
+
+    character(*), parameter                                           ::    ProcName='Draw'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    NbDim
+    integer                                                           ::    i, ii
+    class(DistProb_Type), pointer                                     ::    DistProb=>null()
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    NbDim = This%NbDim
+
+    Draw = This%Sampler%Draw( NbDim=NbDim, NbSamples=NbSamples )
+
+    if ( .not. SampleSpace%IsCorrelated() ) then
+      ii = 1
+      do ii = 1, NbSamples
+        i = 1
+        do i = 1, NbDim
+          DistProb => This%DistProb(i)%GetPointer()
+          Draw(i,ii) = DistProb%InvCDF(P=DrawSpace(i,ii))
+          nullify(DistProb)
+        end do
+      end do
+    else
+      allocate(VarR1D(NbDim), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+      i = 1
+      ii = 0
+      do i = 1, NbDim
+        DistProb => This%DistProb(i)%GetPointer()
+        select type ( DistProb )
+          type is (DistNorm_Type)
+            VarR1D(i) = DistProb%GetMu()
+            ii = ii + 1
+          class default
+            exit
+        end select
+      end do
+  
+      if ( ii < NbDim ) call Error%Raise( Line='Sampling of correlated non normal multivariate spaces is not yet supported',      &
+                                                                                                               ProcName=ProcName )
+
+      i = 1
+      do i  = 1, NbSamples
+        Draw(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=SampleSpace%GetCorrMat(), PVec=DrawSpace(:,i) )
+      end do
+    end if
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Enrich( This, Sampler, NbEnrichmentSamples, Samples, EnrichmentSamples )
+
+    class(SampleSpace_Type), intent(inout)                            ::    This
+    class(SampleMethod_Type), intent(inout)                           ::    Sampler
+    real(rkp), dimension(:,:), target, intent(in)                     ::    Samples
+    integer, intent(in)                                               ::    NbEnrichmentSamples
+    real(rkp), allocatable, dimension(:,:), intent(out)               ::    EnrichmentSamples
+
+    character(*), parameter                                           ::    ProcName='Enrich'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    NbDim
+    integer                                                           ::    i, ii
+    class(DistProb_Type), pointer                                     ::    DistProb=>null()
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    integer                                                           ::    NbSamples
+    integer                                                           ::    NbEnrichSamples
+    logical                                                           ::    ReqNormalized
+    real(rkp), target, allocatable, dimension(:,:)                    ::    NormalizedSamples
+    real(rkp), pointer, dimension(:,:)                                ::    SamplesPointer=>null()
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    NbDim = SampleSpace%GetNbDim()
+
+    call This%Sampler%Enrich( Samples=Samples, NbEnrichmentSamples=NbEnrichmentSamples, EnrichmentSamples=EnrichmentSamples,      &
+                                                                                                     ReqNormalized=ReqNormalized )
+
+    if ( ReqNormalized ) then
+      if ( .not. SampleSpace%IsCorrelated() ) then
+        allocate(NormalizedSamples, source=Samples, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='NormalizedSamples', ProcName=ProcName, stat=StatLoc )
+        NbSamples = size(Samples,2)
+        i = 1
+        do i = 1, NbSamples
+          ii = 1
+          do ii = 1, NbDim
+            DistProb => This%DistProb(ii)%GetPointer()
+            NormalizedSamples(ii,i) = DistProb%CDF(X=Samples(ii,i))
+            nullify(DistProb)
+          end do
+        end do
+        SamplesPointer => NormalizedSamples
+      else
+        call Error%Raise( Line='Enrichment of samples from correlated spaces with methods that require normalized, ' //           &
+                                                                       'independent values not yet supported', ProcName=ProcName )
+      end if
+    else
+      SamplesPointer => Samples
+    end if
+
+    call This%Sampler%Enrich( Samples=SamplesPointer, NbEnrichmentSamples=NbEnrichmentSamples,                                    &
+                                                                                             EnrichmentSamples=EnrichmentSamples )
+
+    NbEnrichSamples = size(EnrichmentSamples,2)
+
+    if ( .not. SampleSpace%IsCorrelated() ) then
+      i = 1
+      do i = 1, NbEnrichSamples
+        ii = 1
+        do ii = 1, NbDim
+          DistProb => This%DistProb(ii)%GetPointer()
+          EnrichmentSamples(ii,i) = DistProb%InvCDF(P=EnrichmentSamples(ii,i))
+          nullify(DistProb)
+        end do
+      end do
+    else
+      allocate(VarR1D(NbDim), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+      i = 1
+      ii = 0
+      do i = 1, NbDim
+        DistProb => This%DistProb(i)%GetPointer()
+        select type ( DistProb )
+          type is (DistNorm_Type)
+            VarR1D(i) = DistProb%GetMu()
+            ii = ii + 1
+          class default
+            exit
+        end select
+      end do
+  
+      if ( ii < NbDim ) call Error%Raise( Line='Sampling of correlated non normal multivariate spaces is not yet supported',  &
+                                                                                                           ProcName=ProcName )
+
+      do i = 1, NbEnrichSamples
+        EnrichmentSamples(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=SampleSpace%GetCorrMat(), PVec=EnrichmentSamples(:,i) )
+      end do
+
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    end if
+
+    nullify(SamplesPointer)
+
+    if ( allocated(NormalizedSamples) ) deallocate(NormalizedSamples, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='NormalizedSamples', ProcName=ProcName, stat=StatLoc )
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  ! Draw a vector of real(rkp) random numbers from a Multivariate Normal distribution N~[Mu,Cov] where Mu is a vector of means and 
+  ! Cov is the covariance matrix
+  function DrawMVarNormal( This, Mu, Cov, PVec )
+
+    real(rkp), dimension(:), allocatable                              ::    DrawMVarNormal
+
+    class(SpaceSampler_Type), intent(inout)                           ::    This
+    real(rkp), dimension(:), intent(in)                               ::    Mu
+    real(rkp), dimension(:,:), intent(in)                             ::    Cov
+    real(rkp), dimension(:), intent(in)                               ::    PVec
+
+    character(*), parameter                                           ::    ProcName='DrawMVarNormal'
+    integer                                                           ::    StatLoc=0
+    real(rkp), dimension(:,:), allocatable                            ::    CovLoc
+    real(rkp), dimension(:), allocatable                              ::    VarR1D
+!    real(rkp)                                                         ::    Rand1, Rand2
+    integer                                                           ::    NbDim
+    integer                                                           ::    i, ii, imax
+    type(DistNorm_Type)                                               ::    DistNormal
+
+    if ( size(Cov,1) /= size(Cov,2) ) call Error%Raise( Line='Covariance matrix is not a square matrix', ProcName=ProcName )
+
+    NbDim = size(Mu,1)
+    if ( size(Cov,1) /= NbDim ) call Error%Raise( Line='Leading dimension of Cov larger than number of means', ProcName=ProcName )
+
+    allocate( CovLoc, source=Cov, stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='CovLoc', ProcName=ProcName, stat=StatLoc )
+
+    call DPOTRF( 'U', NbDim, CovLoc, NbDim, StatLoc )
+
+    if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DPOTRF', ProcName=ProcName )
+
+    allocate( DrawMVarNormal(NbDim), stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='DrawMVarNormal', ProcName=ProcName, stat=StatLoc )
+
+    allocate( VarR1D(NbDim), stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+    call DistNormal%Construct(Mu=Zero, Sigma=One)
+
+    i = 1
+    do i = 1, NbDim
+      VarR1D(i) = DistNormal%InvCDF(P=PVec(i))
+    end do
+
+!    ! Box-Muller for independent standard normal random numbers
+
+!    allocate( RandVal(NbDim), stat=StatLoc )
+!    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandVal', ProcName=ProcName, stat=StatLoc )
+
+!    i = 1
+!    ii = 0
+!    do i = 1, NbDim
+!      Rand1 = This%RNG%Draw()
+!      Rand2 = This%RNG%Draw()
+!      ii = ii + 1
+!      RandVal(ii) = dsqrt(real(-Two*dlog(Rand1),8))*dcos(real(Two*pi*Rand2,8))
+!      if ( ii >= NbDim ) exit
+!      ii = ii + 1
+!      RandVal(ii) = dsqrt(real(-Two*dlog(Rand1),8))*dsin(real(Two*pi*Rand2,8))
+!      if ( ii >= NbDim ) exit
+!    end do
+
+    i = 1
+    do i = 1, NbDim
+      DrawMVarNormal(i) = dot_product(VarR1D(1:i),CovLoc(1:i,i)) + Mu(i)
+    end do
+
+    deallocate( VarR1D, stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+    deallocate( CovLoc, stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='CovLoc', ProcName=ProcName, stat=StatLoc )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

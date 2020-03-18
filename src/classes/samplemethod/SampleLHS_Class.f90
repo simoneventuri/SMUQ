@@ -298,7 +298,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_0D( This, Samples, EnrichmentSamples, NbEnrichmentSamples, ReqNormalized )
+  subroutine Enrich_0D( This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized )
 
     class(SampleLHS_Type), intent(inout)                              ::    This
     real(rkp), dimension(:),intent(in)                                ::    Samples
@@ -356,7 +356,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_1D( This, Samples, EnrichmentSamples, NbEnrichmentSamples, ReqNormalized )
+  subroutine Enrich_1D( This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized )
 
     class(SampleLHS_Type), intent(inout)                              ::    This
     real(rkp), dimension(:,:),intent(in)                              ::    Samples
@@ -523,8 +523,6 @@ contains
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
-
-    call This%RNG%Reset()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

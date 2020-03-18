@@ -124,7 +124,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_0D_SampleMethod( This, Samples, EnrichmentSamples, NbEnrichmentSamples, ReqNormalized )
+  subroutine Enrich_0D_SampleMethod( This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized )
     use Parameters_Library
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(inout)                           ::    This
@@ -136,7 +136,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_1D_SampleMethod( This, Samples, EnrichmentSamples, NbEnrichmentSamples, ReqNormalized )
+  subroutine Enrich_1D_SampleMethod( This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized )
     use Parameters_Library
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(inout)                           ::    This

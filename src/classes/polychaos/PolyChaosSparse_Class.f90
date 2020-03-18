@@ -35,12 +35,15 @@ use LinkedList2D_Class                                            ,only:    Link
 use OrthoPoly_Factory_Class                                       ,only:    OrthoPoly_Factory
 use OrthoMultiVar_Class                                           ,only:    OrthoMultiVar_Type
 use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
+use SampleMethod_Class                                            ,only:    SampleMethod_Type
+use SampleMethod_Factory_Class                                    ,only:    SampleMethod_Factory
+use SampleLHS_Class                                               ,only:    SampleLHS_Type
+use SampleEnrichScheme_Class                                      ,only:    SampleEnrichScheme_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
 use LinSolverSparse_Class                                         ,only:    LinSolverSparse_Type
 use LinSolverSparse_Factory_Class                                 ,only:    LinSolverSparse_Factory
-use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
 use Restart_Class                                                 ,only:    RestartUtility
@@ -109,12 +112,15 @@ type, extends(PolyChaosMethod_Type)                                   ::    Poly
   class(LinSolverSparse_Type), allocatable                            ::    Solver
   real(rkp), allocatable, dimension(:,:)                              ::    ParamRecord
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
-  type(SpaceSampler_Type)                                             ::    Sampler
+  class(SampleMethod_Type), allocatable                               ::    Sampler
+  type(SampleEnrichScheme_Type)                                       ::    SampleEnrichScheme
   integer, allocatable, dimension(:)                                  ::    ParamSampleRan
   logical                                                             ::    SamplesObtained
   logical                                                             ::    SamplesRan
   logical                                                             ::    SamplesAnalyzed
   integer                                                             ::    ParamSampleStep
+  integer                                                             ::    NbSamples
+  integer                                                             ::    iStage
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -168,7 +174,11 @@ contains
     if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
 
-    call This%Sampler%Reset()
+    if ( allocated(This%Sampler) ) deallocate(This%Sampler, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
+
+    call This%SampleEnrichScheme%Reset()
+    This%iStage = 0
 
     This%Initialized=.false.
     This%Constructed=.false.
@@ -195,6 +205,7 @@ contains
     This%SamplesAnalyzed = .false.
     This%ParamSampleStep = 0
     This%ModelRunCounter = 0
+    This%NbSamples = 0
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -237,6 +248,38 @@ contains
     call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%Silent=VarL0D
 
+    ParameterName = 'nb_samples'
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
+    This%NbSamples = VarI0D
+
+    if This%NbSamples <= 0 ) call Error%Raise( 'Must specify number of samples above 0', ProcName=ProcName )
+
+    SectionName = 'sampler'
+    if ( Input%HasSection( SubSectionName=SectionName ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call SampleMethod_Factory%Construct( Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc )
+    else
+      allocate( SampleLHS_Type :: This%Sampler )
+      select type (Object => This%Sampler)
+        type is (SampleLHS_Type)
+          call This%Sampler%Construct()
+        class default
+          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+      end select
+    end if
+
+    SectionName = 'sample_enrichment'
+    if ( Input%HasSection( SubSectionName=SectionName ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call This%SampleEnrichScheme%Construct( Input=InputSection, Prefix=PrefixLoc )
+      nullify( InputSection )
+    else
+      call This%SampleEnrichScheme%Construct( MaxNbSamples=NbSamples )
+    end if
+
+    if ( This%NbSamples > This%SampleEnrichScheme%GetMaxNbSamples() ) call Error%Raise(                                           &
+                                         'Specified number of samples greater than maximum number of samples', ProcName=ProcName )
+
     ParameterName = "max_num_overfit"
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%MaxNumOverfit = VarI0D
@@ -248,13 +291,6 @@ contains
     ParameterName = "stop_error"
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%StopError = VarR0D
-
-    SectionName = 'sampler'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%Sampler%Construct( Input=InputSection, Prefix=PrefixLoc )
-      nullify( InputSection )
-    end if
 
     SectionName = "solver"
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -297,6 +333,10 @@ contains
         call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
         This%ParamSampleStep = VarI0D
       end if
+
+      ParameterName = 'stage'
+      call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+      This%iStage = VarI0D
 
       ParameterName = 'samples_obtained'
       call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
@@ -378,12 +418,16 @@ contains
     call GetInput%AddParameter( Name='stop_error', Value=ConvertToString(Value=This%StopError ) )
     call GetInput%AddParameter( Name='checkpoint_frequency', Value=ConvertToString(Value=This%CheckpointFreq ) )
 
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sample_enrichment'
+    SectionName = 'sample_enrichment'
+    call GetInput%AddSection( Section=This%SampleEnrichScheme%GetInput(MainSectionName=SectionName,                               &
+                                                                                       Prefix=PrefixLoc, Directory=DirectorySub) )
+
+    call GetInput%AddParameter( Name='nb_samples', Value=ConvertToString(Value=This%NbSamples) )
+
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
-    if ( This%Sampler%IsConstructed() ) then
-      SectionName = 'sampler'
-      call GetInput%AddSection( Section=This%Sampler%GetInput( MainSectionName=SectionName,                                       &
-                                                                                        Prefix=PrefixLoc,Directory=DirectorySub) )
-    end if
+    call GetInput%AddSection( Section=SampleMethod_Factory%GetInput( Object=This%Sampler, MainSectionName='sampler',              &
+                                                                                      Prefix=PrefixLoc, Directory=DirectorySub ) )
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sparse_solver'
     SectionName='solver'
@@ -459,6 +503,7 @@ contains
 
       end if
 
+      call GetInput%AddParameter( Name='stage', Value=ConvertToString(Value=This%iStage), SectionName=SectionName )
       call GetInput%AddParameter( Name='model_run_counter', Value=ConvertToString(Value=This%ModelRunCounter ),                   &
                                                                                                          SectionName=SectionName )
       call GetInput%AddParameter( Name='samples_obtained', Value=ConvertToString(Value=This%SamplesObtained ),                    &
@@ -483,7 +528,7 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine BuildModel( This, Basis, SampleSpace, Responses, Model, IndexSetScheme, Coefficients, Indices, CVErrors,              &
-                                                                             OutputDirectory, InputSamples, OutputSamples )
+                                                                                    OutputDirectory, InputSamples, OutputSamples )
 
     class(PolyChaosSparse_Type), intent(inout)                        ::    This
     type(OrthoMultiVar_Type), intent(inout)                           ::    Basis
@@ -611,6 +656,7 @@ contains
         This%SamplesObtained = .true.
         This%SamplesRan = .true.
         This%SamplesAnalyzed = .false.
+        This%iStage = 0
         i = 1
         do i = 1,  This%NbCells
           This%Cells(i)%IndexOrder = IndexSetScheme%GetOrder()
@@ -670,51 +716,45 @@ contains
       !***************************************************************************************************************************
       ! Obtaining samples
       if ( .not. This%SamplesObtained ) then
-
-        if ( .not. SilentLoc ) then
-          if ( This%ModelRunCounter /= 0 ) then
-            Line = 'Performing enrichment'
-          else
+        if ( .not. allocated(This%ParamRecord) ) then
+          if ( .not. SilentLoc ) then
             Line = 'Initial population of the linear system'
+            write(*,'(A)') '' 
+            write(*,'(A)') Line
+            write(*,'(A)') '' 
           end if
-          write(*,'(A)') '' 
-          write(*,'(A)') Line
-          write(*,'(A)') '' 
-        end if
-
-        if ( This%Sampler%IsConstructed() ) then
-          if ( This%ModelRunCounter == 0 ) then
-            This%ParamSample = This%Sampler%Draw(SampleSpace=SampleSpace)
-          else
-            call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,      &
-                                                                                                        Exceeded=StepExceededFlag)
-            if ( StepExceededFlag ) exit
-          end if
-          allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-          This%ParamSampleRan = 1
-          iEnd = size(This%ParamSample,2)
-          This%SamplesObtained = .true.
+          This%ParamSample = SampleSpace%Draw( Sampler=This%Sampler, NbSamples=This%NbSamples )
+          This%iStage = 0
         else
-          if ( This%ModelRunCounter == 0 ) call Error%Raise( 'More samples were required but sampler was never defined',          &
-                                                                                                               ProcName=ProcName )
-          StepExceededFlag = .true.
-          exit
+          if ( .not. SilentLoc ) then
+            Line = 'Performing enrichment'
+            write(*,'(A)') '' 
+            write(*,'(A)') Line
+            write(*,'(A)') '' 
+          end if
+          This%iStage = This%iStage + 1
+          VarI0D = This%SampleEnrichScheme%GetNbEnrichSamples( NbSamples=size(This%ParamRecord,2), Stage=This%iStage )
+          if ( size(This%ParamRecord,2) + VarI0D > This%SampleEnrichScheme%GetMaxNbSamples() ) then
+            StepExceededFlag = .true.
+            exit
+          end if
+          call SampleSpace%Enrich( Sampler=This%Sampler, NbEnrichmentSamples=VarI0D, Samples=This%ParamRecord,                    &
+                                                                                              EnrichmentSamples=This%ParamSample )
         end if
-      else
-        iEnd = size(This%ParamSample,2)
+        This%SamplesRan = .false.
+        This%SamplesObtained = .true.
       end if
 
       !***************************************************************************************************************************
       ! Running samples
       if ( .not. This%SamplesRan ) then
-
         if ( .not. SilentLoc ) then
           Line = 'Running Samples'
           write(*,'(A)') Line
           write(*,*)
         end if
 
+        iEnd = size(This%ParamSample,2)
         i = This%ParamSampleStep
         do
           if ( i >= iEnd ) exit
@@ -779,8 +819,8 @@ contains
           i = i + NbInputs
           This%ParamSampleStep = i
 
-          if ( This%CheckpointFreq > 0 .and. i /= iEnd ) then
-            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
+          if ( i /= iEnd ) then
+            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),     &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
           end if
     
@@ -815,10 +855,8 @@ contains
      
       iEnd = size(This%ParamRecord,2)
 
-      if ( This%CheckpointFreq > 0 ) then
-        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
+      call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),           &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
-      end if
 
       !***************************************************************************************************************************
       ! Updating coefficients
@@ -905,10 +943,8 @@ contains
       This%SamplesRan = .false.
       This%SamplesAnalyzed = .false.
 
-      if ( This%CheckpointFreq > 0 ) then
-        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
+      call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),           &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
-      end if
 
     end do
 
@@ -1112,13 +1148,16 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
+          allocate(LHS%Sampler, source=RHS%Sampler, stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Sampler', ProcName=ProcName, stat=StatLoc )
+          LHS%SampleEnrichScheme = RHS%SampleEnrichScheme
+          LHS%NbSamples = RHS%NbSamples
           LHS%Solver = RHS%Solver
           LHS%Silent = RHS%Silent
           LHS%StopError = RHS%StopError
           LHS%ModelRunCounter = RHS%ModelRunCounter
           LHS%MaxNumOverfit = RHS%MaxNumOverfit
           LHS%CheckpointFreq = RHS%CheckpointFreq
-          if ( RHS%Sampler%IsConstructed() ) LHS%Sampler = RHS%Sampler
         end if
 
       class default
@@ -1148,6 +1187,9 @@ contains
 
     if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%Sampler) ) deallocate(This%Sampler, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

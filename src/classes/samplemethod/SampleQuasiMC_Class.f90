@@ -135,17 +135,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1 ( This, LowDiscSequence, NbSamples, MaxNbSamples, EnrichmentScheme, EnrichmentMultiplier,             &
-                                                                                  EnrichmentIncrement, EnrichmentSequence )
+  subroutine ConstructCase1 ( This, LowDiscSequence )
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
     class(LowDiscSequence_Type), intent(in)                           ::    LowDiscSequence
-    integer, intent(in)                                               ::    NbSamples
-    integer, optional, intent(in)                                     ::    MaxNbSamples
-    integer, optional, intent(in)                                     ::    EnrichmentScheme
-    integer, optional, intent(in)                                     ::    EnrichmentMultiplier
-    integer, optional, intent(in)                                     ::    EnrichmentIncrement
-    integer, optional, dimension(:), intent(in)                       ::    EnrichmentSequence
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
@@ -155,28 +148,6 @@ contains
 
     allocate(This%LowDiscSequence, source=LowDiscSequence, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%LowDiscSequence', ProcName=ProcName, stat=StatLoc )
-
-    This%NbSamples = NbSamples
-
-    if ( present(MaxNbSamples) ) This%MaxNbSamples = MaxNbSamples
-
-    if ( present(EnrichmentScheme) ) then
-      This%EnrichmentScheme = EnrichmentScheme
-      select case (This%EnrichmentScheme)
-        case (0)
-          if ( present(EnrichmentMultiplier) ) This%EnrichmentMultiplier = EnrichmentMultiplier
-          if ( This%EnrichmentMultiplier < 1 ) call Error%Raise( Line='Enrichment multiplier must be above 0', ProcName=ProcName )
-        case (1)
-          if ( present(EnrichmentIncrement) ) This%EnrichmentIncrement = EnrichmentIncrement
-        case (2)
-          if ( present(EnrichmentSequence) ) then
-            allocate(This%EnrichmentSequence, source=EnrichmentSequence, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='This%EnrichmentSequence', ProcName=ProcName, stat=StatLoc )
-          end if
-        case default
-          call Error%Raise( Line='Uncrecognized enrichment specification', ProcName=ProcName )
-      end select
-    end if
 
     This%Constructed = .true.
 
@@ -216,29 +187,6 @@ contains
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    call GetInput%AddParameter( Name='nb_samples', Value=ConvertToString(Value=This%NbSamples) )
-    call GetInput%AddParameter( Name='max_nb_samples', Value=ConvertToString(Value=This%MaxNbSamples) )
-
-    call GetInput%AddParameter( Name='enrichment_scheme', Value=ConvertToString(Value=This%MaxNbSamples) )
-
-    SectionName = 'enrichment_scheme'
-    call GetInput%AddSection( SectionName=SectionName )
-    select case ( This%EnrichmentScheme )
-      case ( 0 )
-        call GetInput%AddParameter( Name='multiplier', Value=ConvertToString(Value=This%EnrichmentMultiplier),                    &
-                                                                                                          SectionName=SectionName)
-      case ( 1 )
-        call GetInput%AddParameter( Name='increment', Value=ConvertToString(Value=This%EnrichmentIncrement),                      &
-                                                                                                         SectionName=SectionName )
-      case ( 2 )
-        call GetInput%AddParameter( Name='sequence', Value=ConvertToString(Values=This%EnrichmentSequence),                       &
-                                                                                                         SectionName=SectionName )
-      case default
-        call Error%Raise( Line='Something went wrong', ProcName=ProcName )
-    end select
-
-    call GetInput%AddParameter( Name='enrichment_stage', Value=ConvertToString(Value=This%EnrichmentStage) )
-
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sequence'
     call GetInput%AddSection( Section=LowDiscSequence_Factory%GetObjectInput( Object=This%LowDiscSequence,                        &
                                                            MainSectionName='sequence', Prefix=PrefixLoc, Directory=DirectorySub) )
@@ -247,130 +195,86 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbEnrichSamples( This, NbSamples )
-
-    integer                                                           ::    GetNbEnrichSamples
-
-    class(SampleQuasiMC_Type), intent(inout)                          ::    This
-    integer, intent(in)                                               ::    NbSamples
-
-    character(*), parameter                                           ::    ProcName='GetNbEnrichSamples'
-    integer                                                           ::    StatLoc=0
-
-    if ( .not. This%Initialized ) call This%Initialize()
-
-    select case ( This%EnrichmentScheme ) 
-      case (0) 
-        GetNbEnrichSamples = This%EnrichmentMultiplier*NbSamples
-      case (1)
-        GetNbEnrichSamples = This%EnrichmentIncrement
-      case (2)
-        if ( This%EnrichmentStage > size(This%EnrichmentSequence,1) ) then
-          GetNbEnrichSamples = This%EnrichmentSequence(size(This%EnrichmentSequence,1))
-        else
-          GetNbEnrichSamples = This%EnrichmentSequence(This%EnrichmentStage)
-        end if
-      case default
-        call Error%Raise( Line='Something went wrong', ProcName=ProcName )
-    end select
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function Draw_0D( This )
+  function Draw_0D( This, NbSamples )
 
     real(rkp), allocatable, dimension(:)                              ::    Draw_0D
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
+    integer, intent(in)                                               ::    NbSamples
 
     character(*), parameter                                           ::    ProcName='Draw_0D'
     integer                                                           ::    StatLoc=0
 
     if ( .not. This%Initialized ) call This%Initialize()
 
-    allocate(Draw_0D(This%NbSamples), stat=StatLoc)
+    allocate(Draw_0D(NbSamples), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Draw_0D', ProcName=ProcName, stat=StatLoc )
     
-    Draw_0D = This%LowDiscSequence%Get( NbPoints=This%NbSamples )
+    Draw_0D = This%LowDiscSequence%Get( NbPoints=NbSamples )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Draw_1D( This, NbDim )
+  function Draw_1D( This, NbDim, NbSamples )
 
     real(rkp), allocatable, dimension(:,:)                            ::    Draw_1D
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
     integer, intent(in)                                               ::    NbDim
+    integer, intent(in)                                               ::    NbSamples
 
     character(*), parameter                                           ::    ProcName='Draw_1D'
     integer                                                           ::    StatLoc=0
 
     if ( NbDim <= 0 ) call Error%Raise( Line='Dimensionality of requested sample at or below 0', ProcName=ProcName )
 
-    allocate( Draw_1D(NbDim, This%NbSamples), stat=StatLoc )
+    allocate( Draw_1D(NbDim, NbSamples), stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Draw_1D', ProcName=ProcName, stat=StatLoc )
     Draw_1D = Zero
 
-    Draw_1D = This%LowDiscSequence%Get( NbPoints=This%NbSamples, NbDim=NbDim )
+    Draw_1D = This%LowDiscSequence%Get( NbPoints=NbSamples, NbDim=NbDim )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_0D( This, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, ReqNormalized )
+  subroutine Enrich_0D( This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized )
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
     real(rkp), dimension(:),intent(in)                                ::    Samples
     real(rkp), dimension(:), allocatable, intent(out)                 ::    EnrichmentSamples
     integer, optional, intent(in)                                     ::    NbEnrichmentSamples
-    logical, intent(out)                                              ::    Exceeded
     logical, optional, intent(out)                                    ::    ReqNormalized
 
     character(*), parameter                                           ::    ProcName='Enrich_0D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    SeqStart
     integer                                                           ::    SeqEnd
-    integer                                                           ::    NbEnrichmentSamplesLoc
 
-    if ( present(NbEnrichmentSamples) ) then
-      NbEnrichmentSamplesLoc = NbEnrichmentSamples
-    else
-      NbEnrichmentSamplesLoc = This%GetNbEnrichSamples( NbSamples=size(Samples,1) )
-    end if 
-
-    if ( NbEnrichmentSamplesLoc < 1 ) call Error%Raise( Line='Inquired less than 1 enrichment sample', ProcName=ProcName )
+    if ( NbEnrichmentSamples < 1 ) call Error%Raise( Line='Inquired less than 1 enrichment sample', ProcName=ProcName )
 
     if ( present(ReqNormalized) ) then
       ReqNormalized = .false.
     else 
-      if ( NbEnrichmentSamplesLoc + size(Samples,1) > This%MaxNbSamples ) then
-        Exceeded = .true.
-      else
-        Exceeded = .false.
-
-        allocate(EnrichmentSamples(NbEnrichmentSamplesLoc), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
-        
-        SeqStart = size(Samples,1)+1
-        SeqEnd = size(Samples,1)+NbEnrichmentSamplesLoc
-        EnrichmentSamples = This%LowDiscSequence%GetPoints( SeqStart=SeqStart, SeqEnd=SeqEnd )
-      end if
+      allocate(EnrichmentSamples(NbEnrichmentSamples), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
+      
+      SeqStart = size(Samples,1)+1
+      SeqEnd = size(Samples,1)+NbEnrichmentSamples
+      EnrichmentSamples = This%LowDiscSequence%GetPoints( SeqStart=SeqStart, SeqEnd=SeqEnd )
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_1D( This, Samples, EnrichmentSamples, NbEnrichmentSamples, Exceeded, ReqNormalized )
+  subroutine Enrich_1D( This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized )
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
     real(rkp), dimension(:,:),intent(in)                              ::    Samples
     real(rkp), dimension(:,:), allocatable, intent(out)               ::    EnrichmentSamples
     integer, optional, intent(in)                                     ::    NbEnrichmentSamples
-    logical, intent(out)                                              ::    Exceeded
     logical, optional, intent(out)                                    ::    ReqNormalized
 
     character(*), parameter                                           ::    ProcName='Enrich_1D'
@@ -380,36 +284,23 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    SeqVal
     integer                                                           ::    SeqStart
     integer                                                           ::    SeqEnd
-    integer                                                           ::    NbEnrichmentSamplesLoc
 
     NbDim = size(Samples,1)
 
     if ( NbDim <= 0 ) call Error%Raise( Line='Dimensionality of requested samples at or below 0', ProcName=ProcName )
 
-    if ( present(NbEnrichmentSamples) ) then
-      NbEnrichmentSamplesLoc = NbEnrichmentSamples
-    else
-      NbEnrichmentSamplesLoc = This%GetNbEnrichSamples( NbSamples=size(Samples,2) )
-    end if 
-
-    if ( NbEnrichmentSamplesLoc < 1 ) call Error%Raise( Line='Inquired less than 1 enrichment sample', ProcName=ProcName )
+    if ( NbEnrichmentSamples < 1 ) call Error%Raise( Line='Inquired less than 1 enrichment sample', ProcName=ProcName )
 
     if ( present(ReqNormalized) ) then
       ReqNormalized = .false.
     else 
-      if ( NbEnrichmentSamplesLoc + size(Samples,2)  > This%MaxNbSamples ) then
-        Exceeded = .true.
-      else
-        Exceeded = .false.
+      allocate( EnrichmentSamples(NbDim, NbEnrichmentSamples), stat=StatLoc )
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
+      EnrichmentSamples = Zero
 
-        allocate( EnrichmentSamples(NbDim, NbEnrichmentSamplesLoc), stat=StatLoc )
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
-        EnrichmentSamples = Zero
-
-        SeqStart = size(Samples,2)+1
-        SeqEnd = size(Samples,2)+NbEnrichmentSamplesLoc
-        EnrichmentSamples = This%LowDiscSequence%GetPoints( SeqStart=SeqStart, SeqEnd=SeqEnd, NbDim=NbDim )
-      end if
+      SeqStart = size(Samples,2)+1
+      SeqEnd = size(Samples,2)+NbEnrichmentSamples
+      EnrichmentSamples = This%LowDiscSequence%GetPoints( SeqStart=SeqStart, SeqEnd=SeqEnd, NbDim=NbDim )
     end if
 
   end subroutine
@@ -431,12 +322,6 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
-          LHS%EnrichmentScheme = RHS%EnrichmentScheme
-          LHS%EnrichmentMultiplier = RHS%EnrichmentMultiplier
-          LHS%EnrichmentIncrement = RHS%EnrichmentIncrement
-          LHS%EnrichmentStage = RHS%EnrichmentStage
-          if ( allocated(RHS%EnrichmentSequence) ) allocate(LHS%EnrichmentSequence, source=RHS%EnrichmentSequence, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%EnrichmentSequence', ProcName=ProcName, stat=StatLoc )
           allocate(LHS%LowDiscSequence, source=RHS%LowDiscSequence, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%LowDiscSequence', ProcName=ProcName, stat=StatLoc )
         end if
@@ -456,9 +341,6 @@ contains
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
-
-    if ( allocated(This%EnrichmentSequence) ) deallocate(This%EnrichmentSequence, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%EnrichmentSequence', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%LowDiscSequence) ) deallocate(This%LowDiscSequence, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%LowDiscSequence', ProcName=ProcName, stat=StatLoc )

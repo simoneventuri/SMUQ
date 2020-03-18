@@ -171,7 +171,6 @@ contains
 
     This%SectionChain = ''
 
-
     This%NbSteps_DR = 3
     This%Factor_DR = 0.5
     This%UpdateFreq_AM = 5
@@ -1122,16 +1121,17 @@ contains
       
       !***************************************************************************************************************************
 
-      if ( mod(This%Step,This%CheckpointFreq) == 0 .and. This%CheckpointFreq > 0 ) then
-        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
-                        Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+      if ( This%CheckpointFreq > 0 ) then
+        if ( mod(This%Step,This%CheckpointFreq) == 0 .and. This%Step /= This%ChainLength ) then
+          call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
+                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+        end if
       end if
 
     end do
 
-    if ( This%CheckpointFreq > 0 )   call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp',               &
-                        Prefix=RestartUtility%GetPrefix(), Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)),&
-                                                                                                  SectionChain=This%SectionChain )
+    call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),             &
+                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
 
     if ( present(OutputDirectory) ) then
       call This%WriteOutput( Directory=OutputDirectory )

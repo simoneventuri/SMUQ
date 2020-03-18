@@ -31,7 +31,9 @@ use Error_Class                                                   ,only:    Erro
 use UQMethod_Class                                                ,only:    UQMethod_Type
 use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
-use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
+use SampleMethod_Class                                            ,only:    SampleMethod_Type
+use SampleMethod_Factory_Class                                    ,only:    SampleMethod_Factory
+use SampleLHS_Class                                               ,only:    SampleLHS_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
@@ -50,7 +52,8 @@ public                                                                ::    UQSa
 type, extends(UQMethod_Type)                                          ::    UQSampling_Type
   integer                                                             ::    CheckpointFreq
   logical                                                             ::    Silent
-  type(SpaceSampler_Type)                                             ::    Sampler
+  class(SampleMethod_Type), allocatable                               ::    Sampler
+  integer                                                             ::    NbSamples
   type(Histogram_Type), allocatable, dimension(:)                     ::    Histograms
   type(List2D_Type), allocatable, dimension(:)                        ::    BinCounts
   type(String_Type), allocatable, dimension(:)                        ::    Labels
@@ -126,7 +129,10 @@ contains
     if ( allocated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
 
-    call This%Sampler%Reset()
+    if ( allocated(This%Sampler) ) deallocate(This%Sampler, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
+
+    This%NbSamples = 0
 
     call This%SetDefaults()
 
@@ -145,6 +151,7 @@ contains
     This%ParamSampleStep = 0
     This%SamplesObtained = .false.
     This%SamplesRan = .false.
+    THis%NbSamples = 0
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -193,10 +200,25 @@ contains
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%CheckpointFreq = VarI0D
 
+    ParameterName = 'nb_samples'
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
+    This%NbSamples = VarI0D
+
+    if This%NbSamples <= 0 ) call Error%Raise( 'Must specify number of samples above 0', ProcName=ProcName )
+
     SectionName = 'sampler'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call This%Sampler%Construct( Input=InputSection, Prefix=PrefixLoc )
-    nullify( InputSection )
+    if ( Input%HasSection( SubSectionName=SectionName ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call SampleMethod_Factory%Construct( Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc )
+    else
+      allocate( SampleLHS_Type :: This%Sampler )
+      select type (Object => This%Sampler)
+        type is (SampleLHS_Type)
+          call This%Sampler%Construct()
+        class default
+          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+      end select
+    end if
 
     SectionName = 'histograms'
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
@@ -344,10 +366,11 @@ contains
     call GetInput%AddParameter( Name='silent', Value=ConvertToString(Value=This%Silent ) )
     call GetInput%AddParameter( Name='checkpoint_frequency', Value=ConvertToString(Value=This%CheckpointFreq ) )
 
+    call GetInput%AddParameter( Name='nb_samples', Value=ConvertToString(Value=This%NbSamples) )
+
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
-    SectionName = 'sampler'
-    call GetInput%AddSection( Section=This%Sampler%GetInput( MainSectionName=SectionName,                                         &
-                                                                                        Prefix=PrefixLoc,Directory=DirectorySub) )
+    call GetInput%AddSection( Section=SampleMethod_Factory%GetInput( Object=This%Sampler, MainSectionName='sampler',              &
+                                                                                      Prefix=PrefixLoc, Directory=DirectorySub ) )
 
     SectionName = 'histograms'
     call GetInput%AddSection( SectionName=SectionName )
@@ -453,7 +476,6 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     real(rkp), dimension(:,:), pointer                                ::    VarR2DPtr=>null()
     integer                                                           ::    NbDim
-    logical                                                           ::    StepExceededFlag=.false.
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii
@@ -508,180 +530,154 @@ contains
     ParamRecordLength = 0
     if ( allocated(This%ParamRecord) ) ParamRecordLength = size(This%ParamRecord,2)
 
-    StepExceededFlag = .false.
+    !***************************************************************************************************************************
+    ! Obtaining samples
+    if ( .not. This%SamplesObtained ) then
 
-    do
-
-      !***************************************************************************************************************************
-      ! Obtaining samples
-      if ( .not. This%SamplesObtained ) then
-
-        if ( .not. SilentLoc ) then
-          if ( This%ModelRunCounter /= 0 ) then
-            Line = 'Performing enrichment'
-          else
-            Line = 'Initial population of the linear system'
-          end if
-          write(*,'(A)') '' 
-          write(*,'(A)') Line
-          write(*,'(A)') '' 
-        end if
-
-        if ( This%ModelRunCounter == 0 ) then
-          This%ParamSample = This%Sampler%Draw(SampleSpace=SampleSpace)
-        else
-          call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,        &
-                                                                                                        Exceeded=StepExceededFlag)
-          if ( StepExceededFlag ) exit
-        end if
-        allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-        This%ParamSampleRan = 1
-        iEnd = size(This%ParamSample,2)
-        This%SamplesObtained = .true.
-      else
-        iEnd = size(This%ParamSample,2)
+      if ( .not. SilentLoc ) then
+        Line = 'Initial population of samples'
+        write(*,'(A)') '' 
+        write(*,'(A)') Line
+        write(*,'(A)') '' 
       end if
- 
-      !***************************************************************************************************************************
-      ! Running samples
-      if ( .not. This%SamplesRan ) then
+
+      This%ParamSample = SampleSpace%Draw( Sampler=This%Sampler, NbSamples=This%NbSamples )
+
+      allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+      This%ParamSampleRan = 1
+      iEnd = size(This%ParamSample,2)
+      This%SamplesObtained = .true.
+
+    end if
+
+    !***************************************************************************************************************************
+    ! Running samples
+    if ( .not. This%SamplesRan ) then
+
+      if ( .not. SilentLoc ) then
+        Line = 'Running Samples'
+        write(*,'(A)') Line
+        write(*,*)
+      end if
+
+      iEnd = size(This%ParamSample,2)
+      i = This%ParamSampleStep
+
+      do
+
+        if ( i >= iEnd ) exit
+
+        NbInputs = iEnd - i
+        if ( This%CheckPointFreq > 0 ) NbInputs = min(This%CheckPointFreq, iEnd-i)
+
+        allocate(Input(NbInputs), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='Input', ProcName=ProcName, stat=StatLoc )
+
+        allocate(Outputs(NbOutputs,NbInputs), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
+        ii = 1
+        do ii = 1, NbInputs
+          call Input(ii)%Construct( Input=This%ParamSample(:,i+ii), Labels=SampleSpace%GetLabel() )
+        end do
 
         if ( .not. SilentLoc ) then
-          Line = 'Running Samples'
+          Line = '  Model run # ' // ConvertToString(Value=This%ModelRunCounter+1) 
+          if( NbInputs > 1 ) Line = Line // '-' // ConvertToString(Value=This%ModelRunCounter+NbInputs)
           write(*,'(A)') Line
-          write(*,*)
         end if
+        
+        call ModelInterface%Run( Input=Input, Output=Outputs, Stat=This%ParamSampleRan(i+1:i+NbInputs) )
 
-        i = This%ParamSampleStep
-        do
-
-          if ( i >= iEnd ) exit
-
-          NbInputs = iEnd - i
-          if ( This%CheckPointFreq > 0 ) NbInputs = min(This%CheckPointFreq, iEnd-i)
-
-          allocate(Input(NbInputs), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='Input', ProcName=ProcName, stat=StatLoc )
-
-          allocate(Outputs(NbOutputs,NbInputs), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+        iRun = 1
+        do iRun = 1, NbInputs
+          if ( This%ParamSampleRan(i+iRun) /= 0 ) then
+            ii = 1
+            do ii = 1, NbOutputs
+              call Outputs(ii,iRun)%Reset()
+            end do
+            cycle
+          end if
 
           ii = 1
-          do ii = 1, NbInputs
-            call Input(ii)%Construct( Input=This%ParamSample(:,i+ii), Labels=SampleSpace%GetLabel() )
-          end do
+          do ii = 1, This%NbHistograms
+            VarC0D = This%Labels(ii)%GetValue()
 
-          if ( .not. SilentLoc ) then
-            Line = '  Model run # ' // ConvertToString(Value=This%ModelRunCounter+1) 
-            if( NbInputs > 1 ) Line = Line // '-' // ConvertToString(Value=This%ModelRunCounter+NbInputs)
-            write(*,'(A)') Line
-          end if
-          
-          call ModelInterface%Run( Input=Input, Output=Outputs, Stat=This%ParamSampleRan(i+1:i+NbInputs) )
-
-          iRun = 1
-          do iRun = 1, NbInputs
-            if ( This%ParamSampleRan(i+iRun) /= 0 ) then
-              ii = 1
-              do ii = 1, NbOutputs
-                call Outputs(ii,iRun)%Reset()
-              end do
-              cycle
-            end if
-
-            ii = 1
-            do ii = 1, This%NbHistograms
-              VarC0D = This%Labels(ii)%GetValue()
-
-              iii = 1
-              iOutput = 0
-              do iii = 1, NbOutputs
-                if ( Outputs(iii,iRun)%GetLabel() /= VarC0D ) cycle
-                iOutput = iii
-                exit
-              end do
-              if ( iOutput == 0 ) call Error%Raise( 'Did not find required output : ' // VarC0D, ProcName=ProcName )  
-
-              call This%BinCounts(ii)%GetPointer(Values=VarI2DPtr)
-              VarR2DPtr => Outputs(iOutput,iRun)%GetValuesPointer()
-              allocate(VarR1D(Outputs(iOutput,iRun)%GetNbDegen()), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-              VarR1D = Zero
-
-              iii = 1
-              do iii = 1, Outputs(iOutput,iRun)%GetNbNodes()
-                VarR1D = VarR2DPtr(iii,:)
-                call BinValues( Values=VarR1D, BinEdges=This%Histograms(ii)%GetBinEdgesPointer(), BinCounts=VarI2DPtr(:,iii) )
-              end do  
-
-              deallocate(VarR1D, stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-
-              nullify(VarR2DPtr)
-              nullify(VarI2DPtr)
-              call Outputs(iOutput,iRun)%Reset()
+            iii = 1
+            iOutput = 0
+            do iii = 1, NbOutputs
+              if ( Outputs(iii,iRun)%GetLabel() /= VarC0D ) cycle
+              iOutput = iii
+              exit
             end do
+            if ( iOutput == 0 ) call Error%Raise( 'Did not find required output : ' // VarC0D, ProcName=ProcName )  
+
+            call This%BinCounts(ii)%GetPointer(Values=VarI2DPtr)
+            VarR2DPtr => Outputs(iOutput,iRun)%GetValuesPointer()
+            allocate(VarR1D(Outputs(iOutput,iRun)%GetNbDegen()), stat=StatLoc)
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+            VarR1D = Zero
+
+            iii = 1
+            do iii = 1, Outputs(iOutput,iRun)%GetNbNodes()
+              VarR1D = VarR2DPtr(iii,:)
+              call BinValues( Values=VarR1D, BinEdges=This%Histograms(ii)%GetBinEdgesPointer(), BinCounts=VarI2DPtr(:,iii) )
+            end do  
+
+            deallocate(VarR1D, stat=StatLoc)
+            if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+            nullify(VarR2DPtr)
+            nullify(VarI2DPtr)
+            call Outputs(iOutput,iRun)%Reset()
           end do
-
-          deallocate(Outputs, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
-
-          deallocate(Input, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='Input', ProcName=ProcName, stat=StatLoc )
-
-          This%ModelRunCounter = This%ModelRunCounter + NbInputs
-          i = i + NbInputs
-          This%ParamSampleStep = i
-
-          if ( This%CheckpointFreq > 0 .and. i /= iEnd ) then
-            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
-          end if
-    
         end do
 
-        This%SamplesRan = .true.
+        deallocate(Outputs, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
 
-        iStart = ParamRecordLength
-        allocate(VarR2D(NbDim,count(This%ParamSampleRan==0)+ParamRecordLength), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-        if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = This%ParamRecord
+        deallocate(Input, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Input', ProcName=ProcName, stat=StatLoc )
 
-        i = iStart+1
-        ii = 0
-        do i = iStart+1, size(VarR2D,2)
-          ii = ii + 1
-          if ( This%ParamSampleRan(ii) == 0 ) VarR2D(:,i) = This%ParamSample(:,ii)
-        end do
-        call move_alloc(VarR2D, This%ParamRecord)
-        ParamRecordLength = size(This%ParamRecord,2)
+        This%ModelRunCounter = This%ModelRunCounter + NbInputs
+        i = i + NbInputs
+        This%ParamSampleStep = i
 
-        deallocate(This%ParamSample, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
-        deallocate(This%ParamSampleRan, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+        if ( i /= iEnd ) then
+          call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
+                        Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+        end if
+  
+      end do
 
-        This%ParamSampleStep = 0
+      This%SamplesRan = .true.
 
-      end if
+      iStart = ParamRecordLength
+      allocate(VarR2D(NbDim,count(This%ParamSampleRan==0)+ParamRecordLength), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+      if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = This%ParamRecord
 
-      This%SamplesObtained = .false.
-      This%SamplesRan = .false.
+      i = iStart+1
+      ii = 0
+      do i = iStart+1, size(VarR2D,2)
+        ii = ii + 1
+        if ( This%ParamSampleRan(ii) == 0 ) VarR2D(:,i) = This%ParamSample(:,ii)
+      end do
+      call move_alloc(VarR2D, This%ParamRecord)
+      ParamRecordLength = size(This%ParamRecord,2)
 
-      if ( This%CheckpointFreq > 0 ) then
-        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
-      end if
+      deallocate(This%ParamSample, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
+      deallocate(This%ParamSampleRan, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
 
-    end do
+      This%ParamSampleStep = 0
 
-    if ( StepExceededFlag ) then
-      Line = 'Maximum sampling step exceeded'
-      if ( This%ModelRunCounter == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',  &
-                                                                                                               ProcName=ProcName )
-      write(*,'(A)') Line
     end if
+
+    call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
+                      Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
 
     if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, Responses=Responses )
 
@@ -793,6 +789,7 @@ contains
           LHS%Silent = RHS%Silent
           LHS%NbHistograms = RHS%NbHistograms
           LHS%Sampler = RHS%Sampler
+          LHS%NbSamples = RHS%NbSamples
           allocate(LHS%Histograms, source=RHS%Histograms, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Histograms', ProcName=ProcName, stat=StatLoc )
           allocate(LHS%Labels, source=RHS%Labels, stat=StatLoc)
@@ -832,6 +829,9 @@ contains
 
     if ( allocated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%Sampler) ) deallocate(This%Sampler, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

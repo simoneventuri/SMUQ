@@ -326,7 +326,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SampleSPace, Responses, Model, SurrogateModel, OutputDirectory )
+  subroutine Run( This, SampleSpace, Responses, Model, SurrogateModel, OutputDirectory )
 
     class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace

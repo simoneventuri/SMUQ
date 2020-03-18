@@ -34,10 +34,12 @@ use LinkedList2D_Class                                            ,only:    Link
 use PolyChaosModel_Class                                          ,only:    PolyChaosModel_Type
 use OrthoPoly_Factory_Class                                       ,only:    OrthoPoly_Factory
 use OrthoMultiVar_Class                                           ,only:    OrthoMultiVar_Type
-use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
 use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
 use IndexSet_Class                                                ,only:    IndexSet_Type
 use SampleSpace_CLass                                             ,only:    SampleSpace_Type
+use SampleMethod_Class                                            ,only:    SampleMethod_Type
+use SampleMethod_Factory_Class                                    ,only:    SampleMethod_Factory
+use SampleLHS_Class                                               ,only:    SampleLHS_Type
 use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
@@ -106,13 +108,13 @@ type, extends(PolyChaosMethod_Type)                                   ::    Poly
   type(LinSolverOLS_Type)                                             ::    Solver
   real(rkp), allocatable, dimension(:,:)                              ::    ParamRecord
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
-  type(SpaceSampler_Type)                                             ::    Sampler
   integer                                                             ::    IndexOrder=0
   integer, allocatable, dimension(:)                                  ::    ParamSampleRan
   logical                                                             ::    SamplesObtained
   logical                                                             ::    SamplesRan
   logical                                                             ::    SamplesAnalyzed
   integer                                                             ::    ParamSampleStep
+  class(SampleMethod_Type), allocatable                               ::    Sampler
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -237,11 +239,9 @@ contains
     if ( Found ) This%Silent=VarL0D
 
     ParameterName = "design_ratio"
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
-      This%DesignRatio = VarR0D
-      if ( This%DesignRatio < One ) call Error%Raise( Line='Design ratio below minimum of 1', ProcName=ProcName )
-    end if
+    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    This%DesignRatio = VarR0D
+    if ( This%DesignRatio < One ) call Error%Raise( Line='Design ratio below minimum of 1', ProcName=ProcName )
 
     ParameterName = "stop_error"
     call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
@@ -252,10 +252,17 @@ contains
     if ( Found ) This%CheckpointFreq = VarI0D
 
     SectionName = 'sampler'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
+    if ( Input%HasSection( SubSectionName=SectionName ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%Sampler%Construct( Input=InputSection, Prefix=PrefixLoc )
-      nullify( InputSection )
+      call SampleMethod_Factory%Construct( Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc )
+    else
+      allocate( SampleLHS_Type :: This%Sampler )
+      select type (Object => This%Sampler)
+        type is (SampleLHS_Type)
+          call This%Sampler%Construct()
+        class default
+          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+      end select
     end if
 
     SectionName = 'solver'
@@ -382,11 +389,9 @@ contains
     call GetInput%AddParameter( Name='checkpoint_frequency', Value=ConvertToString(Value=This%CheckpointFreq ) )
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
-    if ( This%Sampler%IsConstructed() ) then
-      SectionName = 'sampler'
-      call GetInput%AddSection( Section=This%Sampler%GetInput( MainSectionName=SectionName,                                       &
-                                                                                        Prefix=PrefixLoc,Directory=DirectorySub) )
-    end if
+    SectionName = 'sampler'
+    call GetInput%AddSection( Section=This%SampleMethod_Factory%GetInput(Object=This%Sampler, MainSectionName=SectionName,        &
+                                                                                       Prefix=PrefixLoc, Directory=DirectorySub) )
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/ols_solver'
     SectionName = 'solver'
@@ -484,8 +489,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine BuildModel( This, Basis, SampleSpace, Responses, Model, IndexSetScheme, Coefficients, Indices, CVErrors,              &
-                                                                             OutputDirectory, InputSamples, OutputSamples )
+  subroutine BuildModel( This, Basis, SampleSpace, Responses, Model, IndexSetScheme, Coefficients, Indices, CVErrors,             &
+                                                                                    OutputDirectory, InputSamples, OutputSamples )
 
     class(PolyChaosOLS_Type), intent(inout)                           ::    This
     type(OrthoMultiVar_Type), intent(inout)                           ::    Basis
@@ -550,11 +555,13 @@ contains
     class(IndexSet_Type), pointer                                     ::    IndexSetPointer=>null()
     integer                                                           ::    IndexStartOrder
     integer                                                           ::    IndexMaxOrder
+    integer                                                           ::    ReqNbSamples
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
     NbOutputs = size(Responses,1)
     NbDim = SampleSpace%GetNbDim()
+    ReqNbSamples = 0
 
     allocate(NbCellsOutput(NbOutputs), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc )
@@ -623,15 +630,11 @@ contains
           nullify(VarR2DPointer)
         end do
         This%ModelRunCounter = size(This%ParamRecord,2)
-        This%SamplesObtained = .true.
-        This%SamplesRan = .true.
-        This%SamplesAnalyzed = .false.
       end if
     end if
 
     SilentLoc = This%Silent
     StepExceededFlag = .false.
-
 
     ParamRecordLength = 0
     if ( allocated(This%ParamRecord) ) ParamRecordLength = size(This%ParamRecord,2)
@@ -672,116 +675,32 @@ contains
 
       call IndexSetPointer%GenerateIndices( Order=This%IndexOrder, TupleSize=NbDim, Indices=IndicesLoc )
       NbIndices = size(IndicesLoc,2)
+      ReqNbSamples = = ceiling(real(NbIndices,rkp)*This%DesignRatio)
 
       !***************************************************************************************************************************
       ! Obtaining samples
       if ( .not. This%SamplesObtained ) then
-
-        if ( This%Sampler%IsConstructed() ) then
-          if ( This%ModelRunCounter == 0 ) then
+        if ( .not. allocated(This%ParamRecord) ) then
+          if ( .not. SilentLoc ) then
+            Line = 'Initial population of the linear system'
+            write(*,'(A)') '' 
+            write(*,'(A)') Line
+            write(*,'(A)') '' 
+          end if
+          This%ParamSample = SampleSpace%Draw( Sampler=This%Sampler, NbSamples=ReqNbSamples )
+          This%SamplesRan = .false.
+        else
+          if ( size(This%ParamRecord) < ReqNbSamples ) then
             if ( .not. SilentLoc ) then
-              Line = 'Initial population of the linear system'
+              Line = 'Performing enrichment'
               write(*,'(A)') '' 
               write(*,'(A)') Line
               write(*,'(A)') '' 
             end if
-            This%ParamSample = This%Sampler%Draw(SampleSpace=SampleSpace)
-            if ( This%DesignRatio > Zero ) then
-              do
-                VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio - real(size(This%ParamSample,2),rkp))
-                if ( VarI0D <= 0 ) exit
-                VarR2D = This%ParamSample
-                call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=VarR2D, EnrichmentSamples=ParamSampleTemp,             &
-                                                                                                        Exceeded=StepExceededFlag)
-                if ( StepExceededFlag ) then
-                  deallocate(VarR2D, stat=StatLoc)
-                  if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-                  exit
-                end if
-                deallocate(This%ParamSample, stat=StatLoc)
-                if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
-                allocate(This%ParamSample(NbDim,size(VarR2D,2)+size(ParamSampleTemp,2)), stat=StatLoc)
-                if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
-                This%ParamSample(:,1:size(VarR2D,2)) = VarR2D
-                THis%ParamSample(:,size(VarR2D,2)+1:) = ParamSampleTemp
-                deallocate(VarR2D, stat=StatLoc)
-                if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc ) 
-                deallocate(ParamSampleTemp, stat=StatLoc)
-                if ( StatLoc /= 0 ) call Error%Deallocate( Name='ParamSampleTemp', ProcName=ProcName, stat=StatLoc )
-              end do
-
-              if ( StepExceededFlag ) exit
-
-            end if
-          else
-            if ( This%DesignRatio > Zero ) then
-              VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio-real(size(This%ParamRecord,2),rkp))
-              if ( VarI0D > 0 ) then
-                call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord,                                      &
-                                                                    EnrichmentSamples=This%ParamSample, Exceeded=StepExceededFlag)
-                if ( StepExceededFlag ) exit
-                if ( .not. SilentLoc ) then
-                  Line = 'Performing enrichment'
-                  write(*,'(A)') '' 
-                  write(*,'(A)') Line
-                  write(*,'(A)') '' 
-                end if
-                do
-                  VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio -                                                &
-                                                            (real(size(This%ParamRecord,2)+real(size(This%ParamSample,2),rkp))))
-                  if ( VarI0D <= 0 ) exit
-                  allocate(VarR2D(NbDim,size(This%ParamSample,2)+size(This%ParamRecord,2)), stat=StatLoc)
-                  if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-                  VarR2D(:,1:size(This%ParamRecord,2)) = This%ParamRecord
-                  VarR2D(:,size(This%ParamRecord,2)+1:) = This%ParamSample
-                  deallocate(This%ParamSample, stat=StatLoc)
-                  if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
-                  call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=VarR2D, EnrichmentSamples=ParamSampleTemp,           &
-                                                                                                        Exceeded=StepExceededFlag)
-                  if ( StepExceededFlag ) then
-                    deallocate(VarR2D, stat=StatLoc)
-                    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-                    exit
-                  end if
-                  VarI0D = size(VarR2D,2)-size(This%ParamRecord,2)
-                  allocate(This%ParamSample(NbDim,VarI0D+size(ParamSampleTemp,2)), stat=StatLoc)
-                  if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
-                  This%ParamSample(:,1:VarI0D) = VarR2D(:,size(This%ParamRecord,2)+1:)
-                  This%ParamSample(:,VarI0D+1:) = ParamSampleTemp
-                  deallocate(ParamSampleTemp, stat=StatLoc)
-                  if ( StatLoc /= 0 ) call Error%Deallocate( Name='ParamSampleTemp', ProcName=ProcName, stat=StatLoc )
-                  deallocate(VarR2D, stat=StatLoc)
-                  if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-                end do
-              else
-                if ( .not. SilentLoc ) then
-                  Line = 'Reusing samples with increased truncation order'
-                  write(*,'(A)') '' 
-                  write(*,'(A)') Line
-                  write(*,'(A)') '' 
-                end if
-                This%SamplesRan = .true.
-              end if
-            else
-              call This%Sampler%Enrich( SampleSpace=SampleSpace, Samples=This%ParamRecord, EnrichmentSamples=This%ParamSample,    &
-                                                                                                        Exceeded=StepExceededFlag)
-            end if
-            if ( StepExceededFlag ) exit
-          end if
-          if ( allocated(This%ParamSample) ) then
-            allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-            This%ParamSampleRan = 1
-            iEnd = size(This%ParamSample,2)
-          end if
-          This%SamplesObtained = .true.
-        else
-          VarI0D = ceiling(real(size(IndicesLoc,2),rkp)*This%DesignRatio-real(size(This%ParamRecord,2),rkp))
-          if ( VarI0D > 0 ) then
-            if ( This%ModelRunCounter == 0 ) call Error%Raise( 'More samples were required but sampler was never defined',        &
-                                                                                                             ProcName=ProcName )
-            StepExceededFlag = .true.
-            exit
+            VarI0D = ReqNbSamples - real(size(This%ParamSample,2),rkp))
+            call SampleSpace%Enrich( Sampler=This%Sampler, NbEnrichmentSamples=VarI0D, Samples=This%ParamRecord,                  &
+                                                                                              EnrichmentSamples=This%ParamSample )
+            This%SamplesRan = .false.
           else
             if ( This%ModelRunCounter /= 0 ) then               
               if ( .not. SilentLoc ) then
@@ -798,19 +717,17 @@ contains
                 write(*,'(A)') '' 
               end if
             end if
-            This%SamplesObtained = .true.
             This%SamplesRan = .true.
-            This%SamplesAnalyzed = .false.
           end if
         end if
-      else
-        iEnd = size(This%ParamSample,2)
+        This%SamplesObtained = .true.
       end if
 
       !***************************************************************************************************************************
       ! Running samples
       if ( .not. This%SamplesRan ) then
 
+        iEnd = size(This%ParamSample,2)
         if ( .not. SilentLoc ) then
           Line = 'Running Samples'
           write(*,'(A)') Line
@@ -819,7 +736,7 @@ contains
 
         i = This%ParamSampleStep
         do
-          if ( i>= iEnd ) exit
+          if ( i >= iEnd ) exit
 
           NbInputs = iEnd - i
           if ( This%CheckPointFreq > 0 ) NbInputs = min(This%CheckPointFreq, iEnd-i)
@@ -881,7 +798,7 @@ contains
           i = i + NbInputs
           This%ParamSampleStep = i
 
-          if ( This%CheckpointFreq > 0 .and. i /= iEnd ) then
+          if ( i /= iEnd ) then
             call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),       &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
           end if
@@ -917,10 +834,8 @@ contains
      
       iEnd = size(This%ParamRecord,2)
 
-      if ( This%CheckpointFreq > 0 ) then
-        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
+      call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),           &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
-      end if
 
       !***************************************************************************************************************************
       ! Updating coefficients
@@ -1021,10 +936,8 @@ contains
       This%SamplesRan = .false.
       This%SamplesAnalyzed = .false.
 
-      if ( This%CheckpointFreq > 0 ) then
-        call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
+      call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),           &
                           Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
-      end if
 
     end do
 
@@ -1224,12 +1137,12 @@ contains
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
+          LHS%Sampler = RHS%Sampler
           LHS%DesignRatio = RHS%DesignRatio
           LHS%Silent = RHS%Silent
           LHS%StopError = RHS%StopError
           LHS%ModelRunCounter = RHS%ModelRunCounter
           LHS%CheckpointFreq = RHS%CheckpointFreq
-          if ( RHS%Sampler%IsConstructed() ) LHS%Sampler = RHS%Sampler
         end if
       
       class default

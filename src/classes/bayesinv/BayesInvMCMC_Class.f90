@@ -35,7 +35,9 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use MCMCMethod_Class
 use MCMCMethod_Factory_Class                                      ,only:    MCMCMethod_Factory
 use LikelihoodFunction_Class                                      ,only:    LikelihoodFunction_Type
-use SpaceSampler_Class                                            ,only:    SpaceSampler_Type
+use SampleMethod_Class                                            ,only:    SampleMethod_Type
+use SampleMethod_Factory_Class                                    ,only:    SampleMethod_Factory
+use SampleLHS_Class                                               ,only:    SampleLHS_Type
 use DistProb_Class                                                ,only:    DistProb_Type 
 use BayesInvMethod_Class                                          ,only:    BayesInvMethod_Type
 use Input_Class                                                   ,only:    Input_Type
@@ -58,7 +60,8 @@ type, extends(BayesInvMethod_Type)                                    ::    Baye
   logical                                                             ::    Silent=.false.
   class(MCMCMethod_Type), allocatable                                 ::    MCMC
   type(HierParamSpace_Type)                                           ::    HierarchicalSpace
-  type(SpaceSampler_Type)                                             ::    HierarchicalSampler
+  class(SampleMethod_Type), allocatable                               ::    HierarchicalSampler
+  integer                                                             ::    HierarchicalNbSamples
   logical                                                             ::    Hierarchical
   logical                                                             ::    TransformBounded
   logical                                                             ::    DebugStop
@@ -108,8 +111,10 @@ contains
     if ( allocated(This%MCMC) ) deallocate(This%MCMC, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MCMC', ProcName=ProcName, stat=StatLoc )
 
+    if ( allocated(HierarchicalSampler) ) deallocate(HierarchicalSampler, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierarchicalSampler', ProcName=ProcName, stat=StatLoc )
+
     call This%HierarchicalSpace%Reset()
-    call This%HierarchicalSampler%Reset()
 
     call This%SetDefaults()
 
@@ -126,6 +131,7 @@ contains
     This%Hierarchical = .false.
     This%TransformBounded = .false.
     This%DebugStop = .false.
+    This%HierarchicalNbSamples = 0
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -176,10 +182,27 @@ contains
 
     SectionName = 'hierarchical'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
+
+      ParameterName = 'nb_samples'
+      call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
+      This%HierarchicalNbSamples = VarI0D
+
+      if This%HierarchicalNbSamples <= 0 ) call Error%Raise( 'Must specify number of hierarchical samples above 0',               &
+                                                                                                               ProcName=ProcName )
+
       SubSectionName = SectionName // '>sampler'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call This%HierarchicalSampler%Construct( Input=InputSection, Prefix=PrefixLoc )
-      nullify( InputSection )
+      if ( Input%HasSection( SubSectionName=SectionName ) then
+        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call SampleMethod_Factory%Construct( Object=This%HierarchicalSampler, Input=InputSection, Prefix=PrefixLoc )
+      else
+        allocate( SampleLHS_Type :: This%HierarchicalSampler )
+        select type (Object => This%HierarchicalSampler)
+          type is (SampleLHS_Type)
+            call This%HierarchicalSampler%Construct()
+          class default
+            call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+        end select
+      end if
 
       SubSectionName = SectionName // '>parameter_space'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
@@ -240,16 +263,16 @@ contains
     if ( This%Hierarchical ) then
       call GetInput%AddSection( SectionName='hierarchical' )
 
-      SubSectionName = 'sampler'
+      call GetInput%AddParameter( Name='nb_samples', Value=ConvertToString(Value=This%NbSamples), SectionName=SectionName )
+
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
-      call GetInput%AddSection( Section=This%HierarchicalSampler%GetInput( MainSectionName=SubSectionName, Prefix=PrefixLoc,      &
-                                                                             Directory=DirectorySub ), To_SubSection=SectionName )
+      call GetInput%AddSection( Section=SampleMethod_Factory%GetInput( Object=This%HierarchicalSampler, MainSectionName='sampler',&
+                                                           Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
 
       SubSectionName = 'parameter_space'
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/parameter_space'
       call GetInput%AddSection( Section=This%HierarchicalSpace%GetInput( MainSectionName=SubSectionName, Prefix=PrefixLoc,        &
                                                                              Directory=DirectorySub ), To_SubSection=SectionName )
-
     end if
 
   end function
@@ -479,8 +502,8 @@ contains
         if ( Prior > Zero ) then
 
           call This%HierarchicalSpace%Generate( Input=InputLoc, ParamSpace=ParamSpaceRealization )
-          HierSamples = This%HierarchicalSampler%Draw( SampleSpace=ParamSpaceRealization )
-          NbHierSamples = size(HierSamples,2)
+          HierSamples = ParamSpaceRealization%Draw( Sampler=This%HierarchicalSampler, NbSamples=This%HierarchicalNbSamples )
+          NbHierSamples = This%HierarchicalNbSamples
 
           if ( allocated(HierOutput) ) then
             if ( size(HierOutput,2) /= NbHierSamples .or. size(HierOutput,1) /= ModelInterface%GetNbResponses() ) then
