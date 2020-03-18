@@ -25,6 +25,7 @@ use Error_Class                                                   ,only:    Erro
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use LowDiscSequence_Class                                         ,only:    LowDiscSequence_Type
 use LowDiscSequence_Factory_Class                                 ,only:    LowDiscSequence_Factory
+use LowDiscSobol_Class                                            ,only:    LowDiscSobol_Type
 
 implicit none
 
@@ -125,9 +126,19 @@ contains
     if ( present(Prefix) ) PrefixLoc = Prefix
 
     SectionName = 'sequence'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call LowDiscSequence_Factory%Construct( Object=This%LowDiscSequence, Input=InputSection )
-    nullify(InputSection)
+    if ( Input%HasSection(SubSectionName=SectionName) ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call LowDiscSequence_Factory%Construct( Object=This%LowDiscSequence, Input=InputSection )
+      nullify(InputSection)
+    else
+      allocate( LowDiscSobol_Type :: This%LowDiscSequence )
+      select type ( Object => This%LowDiscSequence )
+        type is ( LowDiscSobol_Type )
+          call Object%Construct()
+        class default
+          call Error%Raise( 'Something went wrong', ProcName=ProcName )
+      end select
+    end if
 
     This%Constructed=.true.
 
@@ -138,7 +149,7 @@ contains
   subroutine ConstructCase1 ( This, LowDiscSequence )
 
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
-    class(LowDiscSequence_Type), intent(in)                           ::    LowDiscSequence
+    class(LowDiscSequence_Type), optional, intent(in)                 ::    LowDiscSequence
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
@@ -146,8 +157,18 @@ contains
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
-    allocate(This%LowDiscSequence, source=LowDiscSequence, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%LowDiscSequence', ProcName=ProcName, stat=StatLoc )
+    if ( present(LowDiscSequence) ) then
+      allocate(This%LowDiscSequence, source=LowDiscSequence, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%LowDiscSequence', ProcName=ProcName, stat=StatLoc )
+    else
+      allocate( LowDiscSobol_Type :: This%LowDiscSequence )
+      select type ( Object => This%LowDiscSequence )
+        type is ( LowDiscSobol_Type )
+          call Object%Construct()
+        class default
+          call Error%Raise( 'Something went wrong', ProcName=ProcName )
+      end select
+    end if
 
     This%Constructed = .true.
 
@@ -244,7 +265,7 @@ contains
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
     real(rkp), dimension(:),intent(in)                                ::    Samples
     real(rkp), dimension(:), allocatable, intent(out)                 ::    EnrichmentSamples
-    integer, optional, intent(in)                                     ::    NbEnrichmentSamples
+    integer, intent(in)                                               ::    NbEnrichmentSamples
     logical, optional, intent(out)                                    ::    ReqNormalized
 
     character(*), parameter                                           ::    ProcName='Enrich_0D'
@@ -274,7 +295,7 @@ contains
     class(SampleQuasiMC_Type), intent(inout)                          ::    This
     real(rkp), dimension(:,:),intent(in)                              ::    Samples
     real(rkp), dimension(:,:), allocatable, intent(out)               ::    EnrichmentSamples
-    integer, optional, intent(in)                                     ::    NbEnrichmentSamples
+    integer, intent(in)                                               ::    NbEnrichmentSamples
     logical, optional, intent(out)                                    ::    ReqNormalized
 
     character(*), parameter                                           ::    ProcName='Enrich_1D'

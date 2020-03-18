@@ -293,6 +293,8 @@ contains
 
     logical                                                           ::    IsConstructed
 
+    class(IndexSet_Type), intent(in)                                  ::    This
+
     character(*), parameter                                           ::    ProcName='IsConstructed'
     integer                                                           ::    StatLoc=0
 

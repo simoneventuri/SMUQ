@@ -143,9 +143,14 @@ select case ( LowerCase(SMUQTask) )
                                                                           Directory='/main'), Prefix=ProgramDefs%GetRestartDir() )
     call Root%Run()   
   case('test')
+    write(*,'(A)') 'Running test module analysis'
+    write(*,*)
     call Test( Input=Input, Prefix=ProgramDefs%GetCaseDir() )
   case default
     call Error%Raise( Line='Specified task (name of main input section) not recognized' )
 end select
+
+write(*,'(A)') 'Analysis done'
+write(*,*)
 
 end program

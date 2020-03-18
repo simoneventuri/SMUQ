@@ -252,14 +252,14 @@ contains
     if ( Found ) This%CheckpointFreq = VarI0D
 
     SectionName = 'sampler'
-    if ( Input%HasSection( SubSectionName=SectionName ) then
+    if ( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call SampleMethod_Factory%Construct( Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc )
     else
       allocate( SampleLHS_Type :: This%Sampler )
       select type (Object => This%Sampler)
         type is (SampleLHS_Type)
-          call This%Sampler%Construct()
+          call Object%Construct()
         class default
           call Error%Raise( Line='Something went wrong', ProcName=ProcName )
       end select
@@ -390,7 +390,7 @@ contains
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
     SectionName = 'sampler'
-    call GetInput%AddSection( Section=This%SampleMethod_Factory%GetInput(Object=This%Sampler, MainSectionName=SectionName,        &
+    call GetInput%AddSection( Section=SampleMethod_Factory%GetObjectInput(Object=This%Sampler, MainSectionName=SectionName,       &
                                                                                        Prefix=PrefixLoc, Directory=DirectorySub) )
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/ols_solver'
@@ -675,7 +675,7 @@ contains
 
       call IndexSetPointer%GenerateIndices( Order=This%IndexOrder, TupleSize=NbDim, Indices=IndicesLoc )
       NbIndices = size(IndicesLoc,2)
-      ReqNbSamples = = ceiling(real(NbIndices,rkp)*This%DesignRatio)
+      ReqNbSamples = nint(real(NbIndices,rkp)*This%DesignRatio)
 
       !***************************************************************************************************************************
       ! Obtaining samples
@@ -697,7 +697,7 @@ contains
               write(*,'(A)') Line
               write(*,'(A)') '' 
             end if
-            VarI0D = ReqNbSamples - real(size(This%ParamSample,2),rkp))
+            VarI0D = ReqNbSamples - real(size(This%ParamSample,2),rkp)
             call SampleSpace%Enrich( Sampler=This%Sampler, NbEnrichmentSamples=VarI0D, Samples=This%ParamRecord,                  &
                                                                                               EnrichmentSamples=This%ParamSample )
             This%SamplesRan = .false.

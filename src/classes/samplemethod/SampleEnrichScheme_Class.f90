@@ -31,7 +31,7 @@ private
 
 public                                                                ::    SampleEnrichScheme_Type
 
-type, extends(SampleMethod_Type)                                      ::    SampleEnrichScheme_Type
+type                                                                  ::    SampleEnrichScheme_Type
   character(:), allocatable                                           ::    Name
   integer                                                             ::    MaxNbSamples=huge(1)
   integer                                                             ::    EnrichmentScheme=0
@@ -44,11 +44,13 @@ contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
-  generic, public                                                     ::    Construct               =>    ConstructInput
+  generic, public                                                     ::    Construct               =>    ConstructInput,         &
+                                                                                                          ConstructCase1
   procedure, public                                                   ::    ConstructInput
+  procedure, public                                                   ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  procedure, private                                                  ::    GetNbEnrichSamples
-  procedure, private                                                  ::    GetMaxNbSamples
+  procedure, public                                                   ::    GetNbEnrichSamples
+  procedure, public                                                   ::    GetMaxNbSamples
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -100,7 +102,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-    This%MaxNbSamples = huge(This%NbSamples)
+    This%MaxNbSamples = huge(1)
     This%EnrichmentScheme = 0
     This%EnrichmentMultiplier = Two
     This%EnrichmentIncrement = 1
@@ -126,6 +128,7 @@ contains
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    VarI0D
+    real(rkp)                                                         ::    VarR0D
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
@@ -296,7 +299,7 @@ contains
 
     select case ( This%EnrichmentScheme ) 
       case (0) 
-        GetNbEnrichSamples = nint((This%EnrichmentMultiplier-One)(real(NbSamples,rkp))
+        GetNbEnrichSamples = nint((This%EnrichmentMultiplier-One)*(real(NbSamples,rkp)))
       case (1)
         GetNbEnrichSamples = This%EnrichmentIncrement
       case (2)
@@ -313,12 +316,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMaxNbSamples( This, NbSamples )
+  function GetMaxNbSamples( This )
 
     integer                                                           ::    GetMaxNbSamples
 
     class(SampleEnrichScheme_Type), intent(in)                        ::    This
-    integer, intent(in)                                               ::    NbSamples
 
     character(*), parameter                                           ::    ProcName='GetNbEnrichSamples'
     integer                                                           ::    StatLoc=0

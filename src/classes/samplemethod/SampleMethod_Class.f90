@@ -31,13 +31,10 @@ public                                                                ::    Samp
 
 type, abstract                                                        ::    SampleMethod_Type
   character(:), allocatable                                           ::    Name
-  integer                                                             ::    NbSamples=0
-  integer                                                             ::    MaxNbSamples=huge(1)
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
 contains
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure, public                                                   ::    GetNbSamples
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Draw                    =>    Draw_0D,                &
                                                                                                           Draw_1D

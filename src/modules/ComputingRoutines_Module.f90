@@ -914,7 +914,7 @@ contains
     integer                                                           ::    i
     integer                                                           ::    NbEntries
     real(rkp)                                                         ::    RandNum
-    integer                                                           ::    VarR0D
+    real(rkp)                                                         ::    VarR0D
     integer                                                           ::    RandIndex
 
     NbEntries = size(Array,1)

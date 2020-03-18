@@ -167,7 +167,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateIndices( This, Order, TupleSize, Indices, OrderError, OrderExceeded )
+  subroutine GenerateIndices( This, Order, TupleSize, Indices )
 
     class(IndexStandard_Type), intent(in)                             ::    This
     integer, intent(in)                                               ::    Order

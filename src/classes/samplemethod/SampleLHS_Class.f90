@@ -20,7 +20,8 @@ module SampleLHS_Class
 
 use Parameters_Library
 use Input_Library
-use ArrayRoutinesModule
+use ArrayRoutines_Module
+use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
@@ -312,21 +313,25 @@ contains
     logical, allocatable, dimension(:)                                ::    Representation
     integer                                                           ::    NbBins
     real(rkp)                                                         ::    dx
+    integer                                                           ::    NbEnrichmentSamplesLoc
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    if ( NbEnrichmentSamples < 1 ) call Error%Raise( Line='Inquired less than 1 enrichment sample', ProcName=ProcName )
+    NbEnrichmentSamplesLoc = NbEnrichmentSamples
+
+    if ( NbEnrichmentSamplesLoc < 1 ) call Error%Raise( Line='Inquired less than 1 enrichment sample', ProcName=ProcName )
 
     if ( present(ReqNormalized) ) then
       ReqNormalized = .true.
     else 
-      NbBins = NbEnrichmentSamples + size(Samples,1)
+      NbBins = NbEnrichmentSamplesLoc + size(Samples,1)
       dx = One / real(NbBins,rkp)
 
       Representation = This%CheckRepresentation( NbBins=NbBins, Array=Samples )
-      NbEnrichmentSamples = count(Representation .eqv. .false.)
 
-      allocate(EnrichmentSamples(NbEnrichmentSamples), stat=StatLoc)
+      NbEnrichmentSamplesLoc = count(Representation .eqv. .false.)
+
+      allocate(EnrichmentSamples(NbEnrichmentSamplesLoc), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
 
       i = 1
@@ -374,28 +379,31 @@ contains
     type(LinkedList0D_Type)                                           ::    RepRecord
     integer, allocatable, dimension(:)                                ::    PermutationArray
     real(rkp)                                                         ::    dx
+    integer                                                           ::    NbEnrichmentSamplesLoc
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     NbDim = size(Samples,1)
     if ( NbDim <= 0 ) call Error%Raise( Line='Dimensionality of requested samples at or below 0', ProcName=ProcName )
 
-    if ( NbEnrichmentSamples < 1 ) call Error%Raise( Line='Inquired less than 1 enrichment sample', ProcName=ProcName )
+    NbEnrichmentSamplesLoc = NbEnrichmentSamples
+
+    if ( NbEnrichmentSamplesLoc < 1 ) call Error%Raise( Line='Inquired less than 1 enrichment sample', ProcName=ProcName )
 
     if ( present(ReqNormalized) ) then
       ReqNormalized = .true.
     else 
-      NbBins = NbEnrichmentSamples + size(Samples,2)
+      NbBins = NbEnrichmentSamplesLoc + size(Samples,2)
       dx = One / real(NbBins,rkp)
     
       i = 1
       do i = 1, size(Samples,1)
         Representation = This%CheckRepresentation( NbBins=NbBins, Array=Samples(i,:) )
         ii = count(Representation .eqv. .false.)
-        if ( ii > NbEnrichmentSamples ) NbEnrichmentSamples = ii
+        if ( ii > NbEnrichmentSamplesLoc ) NbEnrichmentSamplesLoc = ii
       end do
 
-      allocate(EnrichmentSamples(NbDim, NbEnrichmentSamples), stat=StatLoc)
+      allocate(EnrichmentSamples(NbDim, NbEnrichmentSamplesLoc), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
 
       do iii = 1, NbDim
@@ -419,7 +427,7 @@ contains
               end if
             end if
           end do
-          NbDegenerateBins = NbEnrichmentSamples - ii
+          NbDegenerateBins = NbEnrichmentSamplesLoc - ii
           if ( NbDegenerateBins < RepRecord%GetLength() ) exit
         end do
 

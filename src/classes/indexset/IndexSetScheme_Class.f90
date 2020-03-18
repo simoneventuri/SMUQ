@@ -22,6 +22,7 @@ use Input_Library
 use Parameters_Library
 use String_Library
 use ComputingRoutines_Module
+use StringRoutines_Module
 use IndexSet_Class                                                ,only:    IndexSet_Type
 use IndexHyperbolic_Class                                         ,only:    IndexHyperbolic_Type
 use IndexSet_Factory_Class                                        ,only:    IndexSet_Factory
@@ -53,7 +54,7 @@ contains
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetIndexSet
   procedure, public                                                   ::    GetIndexSetPointer
-  procedure, public                                                   ::    GetStartOrder
+  procedure, public                                                   ::    GetOrder
   procedure, public                                                   ::    GetMaxOrder
   procedure, public                                                   ::    GetMinOrder
   generic, public                                                     ::    assignment(=)           =>    Copy
@@ -159,12 +160,12 @@ contains
     SectionName = 'index_set'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call IndexSet_Factory%%Construct( Object=This%IndexSet, Input=InputSection, Prefix=PrefixLoc )
+      call IndexSet_Factory%Construct( Object=This%IndexSet, Input=InputSection, Prefix=PrefixLoc )
     else
       allocate( IndexHyperbolic_Type :: This%IndexSet )
       select type ( Object => This%IndexSet )
         type is (IndexHyperbolic_Type)
-          call Object%Construct( QNorm=0.4 )
+          call Object%Construct( NormQ=0.4_rkp )
         class default
           call Error%Raise( 'Something went wrong', ProcName=ProcName )
       end select
@@ -181,7 +182,7 @@ contains
     integer, optional, intent(in)                                     ::    Order
     integer, optional, intent(in)                                     ::    MinOrder
     integer, optional, intent(in)                                     ::    MaxOrder
-    class(IndexSet), optional, intent(in)                             ::    IndexSet
+    class(IndexSet_Type), optional, intent(in)                        ::    IndexSet
 
     class(IndexSetScheme_Type), intent(inout)                         ::    This
 
@@ -190,9 +191,6 @@ contains
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
-
-    PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
 
     This%Order = 1
     if ( present(Order) ) This%Order = Order
@@ -216,7 +214,7 @@ contains
       allocate( IndexHyperbolic_Type :: This%IndexSet )
       select type ( Object => This%IndexSet )
         type is (IndexHyperbolic_Type)
-          call Object%Construct( QNorm=0.4 )
+          call Object%Construct( NormQ=0.4_rkp )
         class default
           call Error%Raise( 'Something went wrong', ProcName=ProcName )
       end select
@@ -277,6 +275,7 @@ contains
     class(IndexSetScheme_Type), intent(in)                            ::    This
 
     character(*), parameter                                           ::    ProcName='GetIndexSet'
+    integer                                                           ::    StatLoc=0
 
     allocate(GetIndexSet, source=This%IndexSet, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='GetIndexSet', ProcName=ProcName, stat=StatLoc )

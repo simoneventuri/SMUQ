@@ -204,17 +204,17 @@ contains
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
     This%NbSamples = VarI0D
 
-    if This%NbSamples <= 0 ) call Error%Raise( 'Must specify number of samples above 0', ProcName=ProcName )
+    if ( This%NbSamples <= 0 ) call Error%Raise( 'Must specify number of samples above 0', ProcName=ProcName )
 
     SectionName = 'sampler'
-    if ( Input%HasSection( SubSectionName=SectionName ) then
+    if ( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call SampleMethod_Factory%Construct( Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc )
     else
       allocate( SampleLHS_Type :: This%Sampler )
       select type (Object => This%Sampler)
         type is (SampleLHS_Type)
-          call This%Sampler%Construct()
+          call Object%Construct()
         class default
           call Error%Raise( Line='Something went wrong', ProcName=ProcName )
       end select
@@ -369,7 +369,7 @@ contains
     call GetInput%AddParameter( Name='nb_samples', Value=ConvertToString(Value=This%NbSamples) )
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
-    call GetInput%AddSection( Section=SampleMethod_Factory%GetInput( Object=This%Sampler, MainSectionName='sampler',              &
+    call GetInput%AddSection( Section=SampleMethod_Factory%GetObjectInput( Object=This%Sampler, MainSectionName='sampler',        &
                                                                                       Prefix=PrefixLoc, Directory=DirectorySub ) )
 
     SectionName = 'histograms'

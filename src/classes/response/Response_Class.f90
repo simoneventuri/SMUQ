@@ -29,9 +29,6 @@ use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
-use CovarianceConstructor_Class                                   ,only:    CovarianceConstructor_Type
-use CovarianceConstructor_Factory_Class                           ,only:    CovarianceConstructor_Factory
-use CovariancePredefined_Class                                    ,only:    CovariancePredefined_Type
 use Input_Class                                                   ,only:    Input_Type
 
 implicit none

@@ -21,6 +21,7 @@ public                                                                ::    Expo
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 interface WriteArray
+  module procedure                                                    ::    WriteArray_L1D
   module procedure                                                    ::    WriteArray_R42D
   module procedure                                                    ::    WriteArray_R82D
 end interface
@@ -96,6 +97,32 @@ interface ExportArray
 end interface
 
 contains
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteArray_L1D( Array, RowMajor )
+
+    logical, dimension(:), intent(in)                                 ::    Array
+    logical, optional, intent(in)                                     ::    RowMajor
+
+    character(*), parameter                                           ::    ProcName='WriteArray_L1D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    logical                                                           ::    RowMajorLoc
+
+    RowMajorLoc = .true.
+    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+
+    if ( RowMajorLoc ) then
+      i = 1
+      do i = 1, size(Array,1)
+        write(*,*) Array(i)
+      end do
+    else  
+      write(*,*) Array
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine WriteArray_R42D( Array, RowMajor )

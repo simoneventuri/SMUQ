@@ -147,8 +147,8 @@ contains
   subroutine ConstructCase1( This, A, B )
     
     class(DistUnif_Type), intent(inout)                               ::    This
-    real(rkp), optional, intent(in)                                   ::    A
-    real(rkp), optional, intent(in)                                   ::    B 
+    real(rkp), intent(in)                                             ::    A
+    real(rkp), intent(in)                                             ::    B 
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
 

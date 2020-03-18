@@ -77,7 +77,7 @@ contains
   procedure, public                                                   ::    GetCorrMatPointer
   procedure, public                                                   ::    Draw
   procedure, public                                                   ::    Enrich
-  procedure, public                                                   ::    DrawMVarNormal
+  procedure, nopass, public                                           ::    DrawMVarNormal
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure(Copy_SampleSpace), deferred, public                       ::    Copy
 end type
@@ -456,15 +456,15 @@ contains
 
     NbDim = This%NbDim
 
-    Draw = This%Sampler%Draw( NbDim=NbDim, NbSamples=NbSamples )
+    Draw = Sampler%Draw( NbDim=NbDim, NbSamples=NbSamples )
 
-    if ( .not. SampleSpace%IsCorrelated() ) then
+    if ( .not. This%Correlated ) then
       ii = 1
       do ii = 1, NbSamples
         i = 1
         do i = 1, NbDim
           DistProb => This%DistProb(i)%GetPointer()
-          Draw(i,ii) = DistProb%InvCDF(P=DrawSpace(i,ii))
+          Draw(i,ii) = DistProb%InvCDF(P=Draw(i,ii))
           nullify(DistProb)
         end do
       end do
@@ -490,7 +490,7 @@ contains
 
       i = 1
       do i  = 1, NbSamples
-        Draw(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=SampleSpace%GetCorrMat(), PVec=DrawSpace(:,i) )
+        Draw(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=This%CorrMat, PVec=Draw(:,i) )
       end do
     end if
 
@@ -500,7 +500,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Enrich( This, Sampler, NbEnrichmentSamples, Samples, EnrichmentSamples )
 
-    class(SampleSpace_Type), intent(inout)                            ::    This
+    class(SampleSpace_Type), intent(in)                               ::    This
     class(SampleMethod_Type), intent(inout)                           ::    Sampler
     real(rkp), dimension(:,:), target, intent(in)                     ::    Samples
     integer, intent(in)                                               ::    NbEnrichmentSamples
@@ -520,13 +520,13 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
-    NbDim = SampleSpace%GetNbDim()
+    NbDim = This%NbDim
 
-    call This%Sampler%Enrich( Samples=Samples, NbEnrichmentSamples=NbEnrichmentSamples, EnrichmentSamples=EnrichmentSamples,      &
+    call Sampler%Enrich( Samples=Samples, NbEnrichmentSamples=NbEnrichmentSamples, EnrichmentSamples=EnrichmentSamples,           &
                                                                                                      ReqNormalized=ReqNormalized )
 
     if ( ReqNormalized ) then
-      if ( .not. SampleSpace%IsCorrelated() ) then
+      if ( .not. This%Correlated ) then
         allocate(NormalizedSamples, source=Samples, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Allocate( Name='NormalizedSamples', ProcName=ProcName, stat=StatLoc )
         NbSamples = size(Samples,2)
@@ -548,12 +548,11 @@ contains
       SamplesPointer => Samples
     end if
 
-    call This%Sampler%Enrich( Samples=SamplesPointer, NbEnrichmentSamples=NbEnrichmentSamples,                                    &
-                                                                                             EnrichmentSamples=EnrichmentSamples )
+    call Sampler%Enrich( Samples=SamplesPointer, NbEnrichmentSamples=NbEnrichmentSamples, EnrichmentSamples=EnrichmentSamples )
 
     NbEnrichSamples = size(EnrichmentSamples,2)
 
-    if ( .not. SampleSpace%IsCorrelated() ) then
+    if ( .not. This%Correlated ) then
       i = 1
       do i = 1, NbEnrichSamples
         ii = 1
@@ -584,7 +583,7 @@ contains
                                                                                                            ProcName=ProcName )
 
       do i = 1, NbEnrichSamples
-        EnrichmentSamples(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=SampleSpace%GetCorrMat(), PVec=EnrichmentSamples(:,i) )
+        EnrichmentSamples(:,i) = This%DrawMVarNormal( Mu=VarR1D, Cov=This%CorrMat, PVec=EnrichmentSamples(:,i) )
       end do
 
       deallocate(VarR1D, stat=StatLoc)
@@ -602,11 +601,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Draw a vector of real(rkp) random numbers from a Multivariate Normal distribution N~[Mu,Cov] where Mu is a vector of means and 
   ! Cov is the covariance matrix
-  function DrawMVarNormal( This, Mu, Cov, PVec )
+  function DrawMVarNormal( Mu, Cov, PVec )
 
     real(rkp), dimension(:), allocatable                              ::    DrawMVarNormal
 
-    class(SpaceSampler_Type), intent(inout)                           ::    This
     real(rkp), dimension(:), intent(in)                               ::    Mu
     real(rkp), dimension(:,:), intent(in)                             ::    Cov
     real(rkp), dimension(:), intent(in)                               ::    PVec

@@ -111,8 +111,8 @@ contains
     if ( allocated(This%MCMC) ) deallocate(This%MCMC, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MCMC', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(HierarchicalSampler) ) deallocate(HierarchicalSampler, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierarchicalSampler', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%HierarchicalSampler) ) deallocate(This%HierarchicalSampler, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%HierarchicalSampler', ProcName=ProcName, stat=StatLoc )
 
     call This%HierarchicalSpace%Reset()
 
@@ -187,18 +187,18 @@ contains
       call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
       This%HierarchicalNbSamples = VarI0D
 
-      if This%HierarchicalNbSamples <= 0 ) call Error%Raise( 'Must specify number of hierarchical samples above 0',               &
+      if ( This%HierarchicalNbSamples <= 0 ) call Error%Raise( 'Must specify number of hierarchical samples above 0',             &
                                                                                                                ProcName=ProcName )
 
       SubSectionName = SectionName // '>sampler'
-      if ( Input%HasSection( SubSectionName=SectionName ) then
+      if ( Input%HasSection( SubSectionName=SectionName ) ) then
         call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
         call SampleMethod_Factory%Construct( Object=This%HierarchicalSampler, Input=InputSection, Prefix=PrefixLoc )
       else
         allocate( SampleLHS_Type :: This%HierarchicalSampler )
         select type (Object => This%HierarchicalSampler)
           type is (SampleLHS_Type)
-            call This%HierarchicalSampler%Construct()
+            call Object%Construct()
           class default
             call Error%Raise( Line='Something went wrong', ProcName=ProcName )
         end select
@@ -263,11 +263,12 @@ contains
     if ( This%Hierarchical ) then
       call GetInput%AddSection( SectionName='hierarchical' )
 
-      call GetInput%AddParameter( Name='nb_samples', Value=ConvertToString(Value=This%NbSamples), SectionName=SectionName )
+      call GetInput%AddParameter( Name='nb_samples', Value=ConvertToString(Value=This%HierarchicalNbSamples),                     &
+                                                                                                         SectionName=SectionName )
 
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
-      call GetInput%AddSection( Section=SampleMethod_Factory%GetInput( Object=This%HierarchicalSampler, MainSectionName='sampler',&
-                                                           Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
+      call GetInput%AddSection( Section=SampleMethod_Factory%GetObjectInput( Object=This%HierarchicalSampler,                     &
+                                MainSectionName='sampler', Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
 
       SubSectionName = 'parameter_space'
       if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/parameter_space'

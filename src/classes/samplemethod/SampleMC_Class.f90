@@ -262,19 +262,12 @@ contains
     if ( present(ReqNormalized) ) then
       ReqNormalized = .false.
     else 
-      if ( NbEnrichmentSamples + size(Samples,1)  > This%MaxNbSamples ) then
-        Exceeded = .true.
-      else
-        Exceeded = .false.
-        allocate(EnrichmentSamples(NbEnrichmentSamples), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
-
-        i = 1
-        do i = 1, NbEnrichmentSamples
-          EnrichmentSamples(i) = This%RNG%Draw()
-        end do
-        This%EnrichmentStage = This%EnrichmentStage + 1
-      end if
+      allocate(EnrichmentSamples(NbEnrichmentSamples), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
+      i = 1
+      do i = 1, NbEnrichmentSamples
+        EnrichmentSamples(i) = This%RNG%Draw()
+      end do
     end if
 
   end subroutine
@@ -303,15 +296,9 @@ contains
     if ( present(ReqNormalized) ) then
       ReqNormalized = .false.
     else 
-      if ( NbEnrichmentSamples + size(Samples,2)  > This%MaxNbSamples ) then
-        Exceeded = .true.
-      else
-        Exceeded = .false.
-        allocate(EnrichmentSamples(NbDim, NbEnrichmentSamples), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
-        EnrichmentSamples = This%RNG%DrawMat(Size1=NbDim, Size2=NbEnrichmentSamples, DrawType=1)
-        This%EnrichmentStage = This%EnrichmentStage + 1
-      end if
+      allocate(EnrichmentSamples(NbDim, NbEnrichmentSamples), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
+      EnrichmentSamples = This%RNG%DrawMat(Size1=NbDim, Size2=NbEnrichmentSamples, DrawType=1)
     end if
 
   end subroutine
