@@ -744,6 +744,9 @@ contains
         end if
         This%SamplesRan = .false.
         This%SamplesObtained = .true.
+        allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+        This%ParamSampleRan = 1
       end if
 
       !***************************************************************************************************************************
@@ -752,7 +755,6 @@ contains
         if ( .not. SilentLoc ) then
           Line = 'Running Samples'
           write(*,'(A)') Line
-          write(*,*)
         end if
 
         iEnd = size(This%ParamSample,2)
@@ -866,7 +868,6 @@ contains
         if ( .not. SilentLoc ) then
           Line = 'Computing PCE coefficients for each node'
           write(*,'(A)') Line
-          write(*,*)
         end if
 
         i = 1

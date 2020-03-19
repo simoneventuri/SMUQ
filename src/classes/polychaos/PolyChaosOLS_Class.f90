@@ -685,36 +685,38 @@ contains
             Line = 'Initial population of the linear system'
             write(*,'(A)') '' 
             write(*,'(A)') Line
-            write(*,'(A)') '' 
           end if
           This%ParamSample = SampleSpace%Draw( Sampler=This%Sampler, NbSamples=ReqNbSamples )
           This%SamplesRan = .false.
+          allocate(THis%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
+          if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+          This%ParamSampleRan = 1
         else
-          if ( size(This%ParamRecord) < ReqNbSamples ) then
+          if ( size(This%ParamRecord,2) < ReqNbSamples ) then
             if ( .not. SilentLoc ) then
               Line = 'Performing enrichment'
               write(*,'(A)') '' 
               write(*,'(A)') Line
-              write(*,'(A)') '' 
             end if
-            VarI0D = ReqNbSamples - real(size(This%ParamSample,2),rkp)
+            VarI0D = ReqNbSamples - size(This%ParamSample,2)
             call SampleSpace%Enrich( Sampler=This%Sampler, NbEnrichmentSamples=VarI0D, Samples=This%ParamRecord,                  &
                                                                                               EnrichmentSamples=This%ParamSample )
             This%SamplesRan = .false.
+            allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
+            if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
+            This%ParamSampleRan = 1
           else
             if ( This%ModelRunCounter /= 0 ) then               
               if ( .not. SilentLoc ) then
                 Line = 'Reusing samples with increased truncation order'
                 write(*,'(A)') '' 
                 write(*,'(A)') Line
-                write(*,'(A)') '' 
               end if
             else
               if ( .not. SilentLoc ) then
                 Line = 'Processing precomputed samples'
                 write(*,'(A)') '' 
                 write(*,'(A)') Line
-                write(*,'(A)') '' 
               end if
             end if
             This%SamplesRan = .true.
@@ -730,8 +732,8 @@ contains
         iEnd = size(This%ParamSample,2)
         if ( .not. SilentLoc ) then
           Line = 'Running Samples'
-          write(*,'(A)') Line
           write(*,*)
+          write(*,'(A)') Line
         end if
 
         i = This%ParamSampleStep
@@ -844,10 +846,9 @@ contains
         if ( .not. SilentLoc ) then
           Line = 'Computing PCE coefficients for each node'
           write(*,'(A)') Line
-          write(*,*)
         end if
 
-        if ( iEnd < NbIndices ) call Error%Raise( 'Initial number of samples must be greater than the number of indices',         &
+        if ( iEnd < NbIndices ) call Error%Raise( 'Number of samples must be greater than the number of indices',                 &
                                                                                                                ProcName=ProcName )
 
         ! Constructing design space

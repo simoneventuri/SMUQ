@@ -107,7 +107,6 @@ end if
 
 write(*,*)
 write(*,'(A)') 'Run environment set-up complete'
-write(*,*)
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 !! Initializing logger with log file
@@ -118,8 +117,9 @@ call Logger%Initialize( FileName=ProgramDefs%GetLogFilePath(), Status='REPLACE',
 !!--------------------------------------------------------------------------------------------------------------------------------
 !! Reading in input
 !!--------------------------------------------------------------------------------------------------------------------------------
-write(*,'(A)') 'Reading in input'
 write(*,*)
+write(*,'(A)') 'Reading in input'
+
 FileName = ProgramDefs%GetInputFilePath()
 call Input%Read( FileName=FileName )
 
@@ -133,24 +133,25 @@ SMUQTask = Input%GetName()
 
 select case ( LowerCase(SMUQTask) )
   case('main')
-    write(*,'(A)') 'Constructing objects from input and creating necessary temporary work directories'
     write(*,*)
+    write(*,'(A)') 'Constructing objects from input and creating necessary temporary work directories'
     SectionChain = 'main'
     call Root%Construct( Input=Input, SectionChain=SectionChain, Prefix=ProgramDefs%GetCaseDir() )
+    write(*,*)
     write(*,'(A)') 'Running main analysis'
 
     call RestartUtility%Construct( Input=Root%GetInput(MainSectionName='main', Prefix=ProgramDefs%GetRestartDir(),                &
                                                                           Directory='/main'), Prefix=ProgramDefs%GetRestartDir() )
     call Root%Run()   
   case('test')
-    write(*,'(A)') 'Running test module analysis'
     write(*,*)
+    write(*,'(A)') 'Running test module analysis'
     call Test( Input=Input, Prefix=ProgramDefs%GetCaseDir() )
   case default
     call Error%Raise( Line='Specified task (name of main input section) not recognized' )
 end select
 
-write(*,'(A)') 'Analysis done'
 write(*,*)
+write(*,'(A)') 'Analysis complete'
 
 end program

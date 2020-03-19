@@ -639,6 +639,7 @@ contains
         if ( .not. Converged ) cycle
         StLoc = This%Cells(i)%GetStSnapShot()
         Delta = dabs(Delta - StLoc)
+
         ii = 1
         do ii = 1, NbDim
           if ( Delta(ii) < max(This%AbsTolerance, This%RelTolerance*dabs(StLoc(ii))) ) cycle
@@ -664,7 +665,6 @@ contains
             Line = 'Initial population of samples'
             write(*,'(A)') '' 
             write(*,'(A)') Line
-            write(*,'(A)') '' 
           end if
           This%iStage = 0
           This%ParamSample = ExtendedSampleSpace%Draw( Sampler=This%Sampler, NbSamples=This%NbSamples )
@@ -674,7 +674,6 @@ contains
             Line = 'Performing enrichment'
             write(*,'(A)') '' 
             write(*,'(A)') Line
-            write(*,'(A)') '' 
           end if
           This%iStage = This%iStage + 1
           VarI0D = This%SampleEnrichScheme%GetNbEnrichSamples( NbSamples=size(This%ParamRecord,2), Stage=This%iStage )
@@ -698,8 +697,8 @@ contains
       if ( .not. This%SamplesRan ) then
         if ( .not. SilentLoc ) then
           Line = 'Running Samples'
+          write(*,*)
           write(*,'(A)') Line
-          write(*,*) 
         end if
 
         iEnd = size(This%ParamSample,2)
@@ -862,8 +861,9 @@ contains
     end do
 
     if ( StepExceededFlag ) then
-      write(*,'(A)') Line
       Line = 'Maximum sampling step exceeded'
+      write(*,*)
+      write(*,'(A)') Line
       if ( This%ModelRunCounter == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',  &
                                                                                                                ProcName=ProcName )
     end if

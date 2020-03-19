@@ -538,7 +538,6 @@ contains
         Line = 'Initial population of samples'
         write(*,'(A)') '' 
         write(*,'(A)') Line
-        write(*,'(A)') '' 
       end if
 
       This%ParamSample = SampleSpace%Draw( Sampler=This%Sampler, NbSamples=This%NbSamples )
@@ -557,8 +556,8 @@ contains
 
       if ( .not. SilentLoc ) then
         Line = 'Running Samples'
-        write(*,'(A)') Line
         write(*,*)
+        write(*,'(A)') Line
       end if
 
       iEnd = size(This%ParamSample,2)

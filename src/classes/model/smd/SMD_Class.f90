@@ -37,13 +37,13 @@ implicit none
 private
 
 public                                                                ::    SMD_Type
+public                                                                ::    SMD
 
 type, extends(ModelInternal_Type)                                     ::    SMD_Type
   character(:), allocatable                                           ::    OutputLabel
-  real(rkp), dimension(2)                                             ::    IC=Zero
+  real(rkp)                                                           ::    X0
+  real(rkp)                                                           ::    Xdot0
   real(rkp), allocatable, dimension(:)                                ::    Abscissa
-  real(rkp)                                                           ::    RTOL=1.0d-6
-  real(rkp)                                                           ::    ATOL=1.0d-10
   real(rkp)                                                           ::    M
   real(rkp)                                                           ::    K
   real(rkp)                                                           ::    C
@@ -58,6 +58,7 @@ contains
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run_0D
   procedure, public                                                   ::    Copy
+  final                                                               ::    Finalizer
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -108,9 +109,8 @@ contains
 
     This%Label = 'smd'
     This%OutputLabel = 'smd'
-    This%IC = Zero
-    This%RTOL = 1.0d-6
-    This%ATOL = 1.0d-10
+    This%X0 = Zero
+    This%Xdot0 = Zero
     This%M = 1.0
     This%K = 1.1
     This%C = 1.2
@@ -165,14 +165,14 @@ contains
 
     SectionName = 'initial_conditions'
     if ( .not. Input%HasSection( SubSectionName=SectionName ) ) then
-      call Error%Raise( Line='Mandatory section missing', ProcName=ProcName )
+      call Error%Raise( Line='Mandatory initial conditions section missing', ProcName=ProcName )
     else
       ParameterName = 'position'
       call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-      This%IC(1) = VarR0D
+      This%X0 = VarR0D
       ParameterName = 'velocity'
       call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-      This%IC(2) = VarR0D
+      This%Xdot0 = VarR0D
     end if
 
     SectionName = 'abscissa'
@@ -222,16 +222,6 @@ contains
     ParameterName = 'c'
     call Input%GetValue( VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found )
     if ( Found ) This%C = VarR0D
-
-    SectionName = 'solver'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      ParameterName = 'relative_tolerance'
-      call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-      if ( Found ) This%RTOL = VarR0D
-      ParameterName = 'absolute_tolerance'
-      call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-      if ( Found ) This%ATOL = VarR0D
-    end if
 
     SectionName = 'input_preprocessor'
     if ( Input%HasSection(SubSectionName=SectionName) ) then
@@ -294,8 +284,8 @@ contains
 
     SectionName = 'initial_conditions'
     call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%AddParameter( Name='position', Value=Convert_To_String(This%IC(1)), SectionName=SectionName )
-    call GetInput%AddParameter( Name='velocity', Value=Convert_To_String(This%IC(2)), SectionName=SectionName )
+    call GetInput%AddParameter( Name='position', Value=Convert_To_String(This%X0), SectionName=SectionName )
+    call GetInput%AddParameter( Name='velocity', Value=Convert_To_String(This%Xdot0), SectionName=SectionName )
 
     SectionName = 'abscissa'
     call GetInput%AddSection( SectionName=SectionName )
@@ -304,11 +294,6 @@ contains
     call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
     SubSectionName = SectionName // '>' // SubSectionName
     call GetInput%AddParameter( Name='value', Value=ConvertToString(Values=This%Abscissa), SectionName=SubSectionName )
-
-    SectionName = 'solver'
-    call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%AddParameter( Name='relative_tolerance', Value=Convert_To_String(This%RTOL), SectionName=SectionName )
-    call GetInput%AddParameter( Name='absolute_tolerance', Value=Convert_To_String(This%ATOL), SectionName=SectionName )
 
     if ( This%InputProcessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputProcessor%GetInput(                    &
                                                  MainSectionName='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub) )
@@ -330,62 +315,17 @@ contains
     real(rkp)                                                         ::    M
     real(rkp)                                                         ::    K
     real(rkp)                                                         ::    C
-    real(rkp)                                                         ::    T
-    real(rkp), dimension(2)                                           ::    Y
-    integer                                                           ::    NEQ
-    integer                                                           ::    IOPT
-    integer                                                           ::    ITASK
-    integer                                                           ::    MF
-    integer                                                           ::    LIW
-    integer                                                           ::    LRW
-    integer                                                           ::    ITOL
-    integer, allocatable, dimension(:)                                ::    IWORK                                             
-    real(rkp), allocatable, dimension(:)                              ::    RWORK
-    integer                                                           ::    NbRuns
-    integer                                                           ::    ii_max
-    integer                                                           ::    i
-    integer                                                           ::    ii
-    integer                                                           ::    iii
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    IState
     logical                                                           ::    Found
-    integer                                                           ::    RunStatLoc
-    real(8)                                                           ::    TOUT
-    real(8)                                                           ::    RTOL
-    real(8)                                                           ::    ATOL
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( 'Passed down an output array of incorrect length',                  &
                                                                                                                ProcName=ProcName )
 
-    MF = 22
-    IOPT = 0
-    ITASK = 1
-    NEQ = 2
-    ITOL = 1
-
-    LRW = 22 +  9*NEQ + NEQ**2 
-    LIW = 20 + NEQ
-    
-    ATOL = This%ATOL
-    RTOL = THIS%RTOL
-
-    allocate(IWORK(LIW), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='IWORK', ProcName=ProcName, stat=StatLoc )
-    IWORK=0
-
-    allocate(RWORK(LRW), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='RWORK', ProcName=ProcName, stat=StatLoc )
-    RWORK=0.d0
-
-    ii_max = size(This%Abscissa,1)
-
-    RunStatLoc = 0
-
-    allocate( Ordinate(ii_max, 1), stat=StatLoc )
+    allocate( Ordinate(size(This%Abscissa,1), 1), stat=StatLoc )
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
     Ordinate = Zero
+
     if ( len_trim(This%M_Dependency) /= 0 ) then
       call Input%GetValue( Value=M, Label=This%M_Dependency )
     else
@@ -402,49 +342,11 @@ contains
       K = This%K
     end if
 
-    T = This%Abscissa(1)
-    Y = This%IC
-    ISTATE = 1
-
-    ii_max = size(This%Abscissa)
-    do ii = 1, ii_max
-      TOUT = This%Abscissa(ii)
-      call DLSODE(ODE, 2, Y, T, TOUT, ITOL, RTOL, ATOL, ITASK, ISTATE, IOPT, RWORK, LRW, IWORK, LIW,   &
-                  Dummy, MF)
-      T = TOUT
-      if (ISTATE .gt. 0) then  
-        Ordinate(ii,1)=Y(1)
-      else 
-        RunStatLoc = -1
-      end if
-      if ( RunStatLoc /= 0 ) exit
-    end do
+    call SMD( M=M, C=C, K=K, X0=This%X0, Xdot0=This%Xdot0, Abscissa=This%Abscissa, Response=Ordinate(:,1) )
 
     call Output(1)%Construct( Values=Ordinate, Label=This%OutputLabel )
 
-    deallocate(IWORK, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='IWORK', ProcName=ProcName, stat=StatLoc )
-
-    deallocate(RWORK, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='RWORK', ProcName=ProcName, stat=StatLoc )
-
-    deallocate(Ordinate, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-
-    if ( present(Stat) ) Stat = RunStatLoc
-
-    contains
-
-      subroutine ODE(NEQ, TT, YY, YDOT)
-        implicit none
-        integer                   NEQ
-        double precision          TT, YY(2), YDOT(2)
-        YDOT(1) = + ((0.d0)* YY(1)) + ((1.d0)* YY(2))
-        YDOT(2) = - ((K/M) * YY(1)) - ((C/M) * YY(2))
-      end subroutine
-
-      subroutine Dummy()
-      end subroutine
+    if ( present(Stat) ) Stat = 0
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -473,9 +375,8 @@ contains
           LHS%M_Dependency = RHS%M_Dependency
           LHS%K_Dependency = RHS%K_Dependency
           LHS%C_Dependency = RHS%C_Dependency
-          LHS%IC = RHS%IC
-          LHS%RTOL = RHS%RTOL
-          LHS%ATOL = RHS%ATOL
+          LHS%X0 = RHS%X0
+          LHS%Xdot0 = RHS%Xdot0
           allocate(LHS%Abscissa, source=RHS%Abscissa, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Abscissa', ProcName=ProcName, stat=StatLoc )
           LHS%NbOutputs = RHS%NbOutputs
@@ -487,6 +388,69 @@ contains
         call Error%Raise( Line='Incompatible types', ProcName=ProcName )
 
     end select
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  impure elemental subroutine Finalizer( This )
+
+    type(SMD_Type), intent(inout)                                     ::    This
+
+    character(*), parameter                                           ::    ProcName='Finalizer'
+    integer                                                           ::    StatLoc=0
+
+    if ( allocated(This%Abscissa) ) deallocate(This%Abscissa, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Abscissa', ProcName=ProcName, stat=StatLoc )
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine SMD( M, C, K, X0, Xdot0, Abscissa, Response )
+
+    real(rkp), intent(in)                                             ::    M
+    real(rkp), intent(in)                                             ::    C
+    real(rkp), intent(in)                                             ::    K
+    real(rkp), intent(in)                                             ::    X0
+    real(rkp), intent(in)                                             ::    Xdot0
+    real(rkp), dimension(:), intent(in)                               ::    Abscissa
+    real(rkp), dimension(:), intent(inout)                            ::    Response
+
+    character(*), parameter                                           ::    ProcName='Run_0D'
+    integer                                                           ::    StatLoc=0
+    real(rkp)                                                         ::    QuadraticEQ
+    real(rkp)                                                         ::    C1
+    real(rkp)                                                         ::    C2
+    real(rkp)                                                         ::    R1
+    real(rkp)                                                         ::    R2
+    real(rkp)                                                         ::    Mu
+    real(rkp)                                                         ::    Lambda
+
+    if ( size(Response,1) /= size(Abscissa,1) ) call Error%Raise( 'Mismatch in length of abscissa and response arrays',           &
+                                                                                                               ProcName=ProcName )    
+
+    QuadraticEQ = C**2 - Four*M*K
+
+    if ( QuadraticEQ > Zero ) then
+      R1 = (- C + dsqrt(QuadraticEQ)) / (Two*M)
+      R2 = (- C - dsqrt(QuadraticEQ)) / (Two*M)
+      C2 = ( Xdot0 - X0*R1) / (R2-R1)
+      C1 = X0 - C2
+      Response = C1*dexp(R1*Abscissa) + C2*dexp(R2*Abscissa)
+    elseif ( QuadraticEQ < Zero ) then
+      Lambda = -C/(Two*M)
+      Mu = dsqrt(-QuadraticEQ) / (Two*M)
+      C1 = X0
+      C2 = (Xdot0-Lambda*C1) / Mu
+      Response = dexp(Lambda*Abscissa) * (C1*dcos(Mu*Abscissa)+C2*dsin(Mu*Abscissa))
+    else
+      R1 = -C/(Two*M)
+      R2 = R1
+      C1 = X0
+      C2 = Xdot0 - R1*C1
+      Response = C1*dexp(R1*Abscissa) + C2*Abscissa*dexp(R1*Abscissa)
+    end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
