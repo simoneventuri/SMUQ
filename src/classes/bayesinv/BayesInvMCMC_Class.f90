@@ -49,6 +49,7 @@ use TransfSampleSpace_Class                                       ,only:    Tran
 use TransfSampleSpaceUnbound_Class                                ,only:    TransfSampleSpaceUnbound_Type
 use TransfSampleSpaceNone_Class                                   ,only:    TransfSampleSpaceNone_Type
 use MultiVarDist_Class                                            ,only:    MultiVarDist_Type
+use HierDistProb_Class                                            ,only:    HierDistProb_Type
 
 implicit none
 
@@ -157,6 +158,7 @@ contains
     integer                                                           ::    i
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
+    class(HierDistProb_Type), pointer                                 ::    HierDistProbPointer=>null()
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -191,7 +193,7 @@ contains
                                                                                                                ProcName=ProcName )
 
       SubSectionName = SectionName // '>sampler'
-      if ( Input%HasSection( SubSectionName=SectionName ) ) then
+      if ( Input%HasSection( SubSectionName=SubSectionName ) ) then
         call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
         call SampleMethod_Factory%Construct( Object=This%HierarchicalSampler, Input=InputSection, Prefix=PrefixLoc )
       else
@@ -209,7 +211,15 @@ contains
       call This%HierarchicalSpace%Construct( Input=InputSection, Prefix=PrefixLoc )
       nullify( InputSection )
       if ( This%HierarchicalSpace%IsCorrelated() ) call Error%Raise( Line='Correlated spaces not supported', ProcName=ProcName )
-  
+
+      i = 1
+      do i = 1, This%HierarchicalSpace%GetNbDim()
+        HierDistProbPointer => This%HierarchicalSpace%GetDistributionPointer( Num=i )
+        if ( .not. (HierDistProbPointer%IsTruncatedLeft() .and. HierDistProbPointer%IsTruncatedRight()) ) then
+          call Error%Raise( 'Can only treat hierarchical spaces with truncated marginal distributions', ProcName=ProcName )
+        end if
+        nullify(HierDistProbPointer)
+      end do
       This%Hierarchical = .true.
     end if
 

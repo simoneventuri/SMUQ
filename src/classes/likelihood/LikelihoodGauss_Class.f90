@@ -168,12 +168,12 @@ contains
     SectionName = 'multiplier'
 
     ParameterName = 'value'
-    call Input%GetValue( Value=VarR0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-    This%Multiplier = VarR0D
+    call Input%GetValue( Value=VarR0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found )
+    if ( Found ) This%Multiplier = VarR0D
 
     ParameterName = 'dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-    This%MultiplierDependency = VarC0D
+    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found )
+    if ( Found ) This%MultiplierDependency = VarC0D
 
     SectionName = 'predefined_covariance'
     if( Input%HasSection( SubSectionName=SectionName ) ) then

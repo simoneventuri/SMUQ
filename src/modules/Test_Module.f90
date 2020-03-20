@@ -89,6 +89,14 @@ contains
 
     call WriteArray(Array=Response)
 
+    call SMD( M=Two, C=Four, K=Two, X0=Four, Xdot0=-Two, Abscissa=Response(:,1), Response=Response(:,2) )
+
+    call WriteArray(Array=Response)
+
+    call SMD( M=Two, C=Five, K=Two, X0=Four, Xdot0=-Two, Abscissa=Response(:,1), Response=Response(:,2) )
+
+    call WriteArray(Array=Response)
+
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

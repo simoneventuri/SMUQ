@@ -114,6 +114,8 @@ contains
     This%DistTRight = .false.
     This%DistA = Zero
     This%DistB = Zero
+    This%TruncatedRight = .false.
+    This%TruncatedLeft = .false.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

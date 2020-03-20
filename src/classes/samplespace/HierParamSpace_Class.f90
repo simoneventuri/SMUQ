@@ -68,6 +68,10 @@ contains
   procedure, private                                                  ::    GetName1D
   procedure, private                                                  ::    GetLabel0D
   procedure, private                                                  ::    GetLabel1D
+  generic, public                                                     ::    GetDistributionPointer  =>    GetDistPointer_Label,   &
+                                                                                                          GetDistPointer_Num
+  procedure, public                                                   ::    GetDistPointer_Label
+  procedure, public                                                   ::    GetDistPointer_Num
   procedure, public                                                   ::    IsCorrelated
   procedure, public                                                   ::    GetNbDim
   procedure, public                                                   ::    Copy
@@ -414,6 +418,57 @@ contains
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetNbDim = This%NbDim
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+ !!------------------------------------------------------------------------------------------------------------------------------
+  function GetDistPointer_Label( This, Label )
+
+    class(HierDistProb_Type), pointer                                 ::    GetDistPointer_Label
+
+    class(HierParamSpace_Type), intent(in)                            ::    This
+    character(*), intent(in)                                          ::    Label
+
+    character(*), parameter                                           ::    ProcName='GetDistPointer_Label'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    ii
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    i = 1
+    ii = 0
+    do i = 1, This%NbDim
+      if ( This%Label(i)%GetValue() /= Label ) cycle
+      ii = i
+      exit
+    end do
+
+    if ( ii == 0 ) call Error%Raise( 'Did not find required parameter with label : ' // Label, ProcName=ProcName )
+
+    GetDistPointer_Label => This%HierDistProb(ii)%GetPointer()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetDistPointer_Num( This, Num )
+
+    class(HierDistProb_Type), pointer                                 ::    GetDistPointer_Num
+
+    class(HierParamSpace_Type), intent(in)                            ::    This
+    integer, intent(in)                                               ::    Num
+
+    character(*), parameter                                           ::    ProcName='GetDistPointer_Num'
+    integer                                                           ::    StatLoc=0
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( Num > This%NbDim ) call Error%Raise( Line='Num specifier above maximum number of distributions', ProcName=ProcName )
+    if ( Num < 1 ) call Error%Raise( Line='Num specifier below minimum of 1', ProcName=ProcName )
+
+    GetDistPointer_Num => This%HierDistProb(Num)%GetPointer()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

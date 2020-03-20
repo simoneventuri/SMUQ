@@ -44,6 +44,8 @@ type, abstract                                                        ::    Hier
 contains
   private
   procedure, public                                                   ::    GetName
+  procedure, public                                                   ::    IsTruncatedLeft
+  procedure, public                                                   ::    IsTruncatedRight
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(Initialize_HierDistProb), deferred, public                ::    Initialize
@@ -134,6 +136,38 @@ contains
     character(*), parameter                                           ::    ProcName='GetName'
 
     GetName = This%Name
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsTruncatedLeft( This )
+
+    logical                                                           ::    IsTruncatedLeft
+
+    class(HierDistProb_Type), intent(in)                              ::    This
+
+    character(*), parameter                                           ::    ProcName='IsTruncatedLeft'
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    IsTruncatedLeft = This%TruncatedLeft
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsTruncatedRight( This )
+
+    logical                                                           ::    IsTruncatedRight
+
+    class(HierDistProb_Type), intent(in)                              ::    This
+
+    character(*), parameter                                           ::    ProcName='IsTruncatedRight'
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    IsTruncatedRight = This%TruncatedRight
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
