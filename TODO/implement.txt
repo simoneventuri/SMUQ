@@ -1,5 +1,5 @@
  - implement nataf transform so that the space sampler is able to sample correlated spaces other than multivariate normal
  - change file readrecord to use non-predetermined length buffer
  - figure out a way to do lars without scaling and centering
- - make array import/export routines for real(4), real(8), etc instead of rkp
  - add the ability to specify a column for vector import and array export
+ - in sa morris and sa sobol figure out a way to restart based on number of model evaluations instead of number of trajectories / main samples respectively

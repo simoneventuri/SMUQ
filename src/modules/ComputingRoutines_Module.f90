@@ -44,6 +44,7 @@ public                                                                ::    Scra
 public                                                                ::    Transform
 public                                                                ::    BernoulliNumbers
 public                                                                ::    Pochhammer
+public                                                                ::    RandomInteger
 
 logical, parameter                                                    ::    DebugGlobal = .false.
 
@@ -104,6 +105,21 @@ interface Pochhammer
   module procedure                                                    ::    Pochhammer_R0D_4
   module procedure                                                    ::    Pochhammer_I0D_8
   module procedure                                                    ::    Pochhammer_I0D_4
+end interface
+
+interface RandomInteger
+  module procedure                                                    ::    RandomInteger_I0D_4_RNG
+  module procedure                                                    ::    RandomInteger_I0D_4_Instrinsic
+  module procedure                                                    ::    RandomInteger_I0D_8_RNG
+  module procedure                                                    ::    RandomInteger_I0D_8_Instrinsic
+  module procedure                                                    ::    RandomInteger_I1D_4_RNG
+  module procedure                                                    ::    RandomInteger_I1D_4_Instrinsic
+  module procedure                                                    ::    RandomInteger_I1D_8_RNG
+  module procedure                                                    ::    RandomInteger_I1D_8_Instrinsic
+  module procedure                                                    ::    RandomInteger_I2D_4_RNG
+  module procedure                                                    ::    RandomInteger_I2D_4_Instrinsic
+  module procedure                                                    ::    RandomInteger_I2D_8_RNG
+  module procedure                                                    ::    RandomInteger_I2D_8_Instrinsic
 end interface
 
 contains
@@ -1116,6 +1132,296 @@ contains
 
     Pochhammer_I0D_4 = real(Factorial(A+N-1),rkp) / real(Factorial(A-1),rkp)
 
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I0D_4_RNG( Min, Max, RNG )
+
+    integer(4)                                                        ::    RandomInteger_I0D_4_RNG
+    
+    integer(4), intent(in)                                            ::    Min
+    integer(4), intent(in)                                            ::    Max
+    type(RandPseudo_Type), intent(in)                                 ::    RNG
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I0D_4_RNG'
+    integer                                                           ::    StatLoc=0
+    real(rkp)                                                         ::    VarR0D
+
+    VarR0D = RNG%Draw( DrawType=2 )
+
+    RandomInteger_I0D_4_RNG = Min + floor(VarR0D * real(Max-Min+1,rkp) )
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I0D_4_Intrinsic( Min, Max )
+
+    integer(4)                                                        ::    RandomInteger_I0D_4
+    
+    integer(4), intent(in)                                            ::    Min
+    integer(4), intent(in)                                            ::    Max
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I0D_4'
+    integer                                                           ::    StatLoc=0
+    real(rkp)                                                         ::    VarR0D
+
+    call random_number( VarR0D )
+
+    RandomInteger_I0D_4 = Min + floor(VarR0D * real(Max-Min+1,rkp) )
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I0D_8_RNG( Min, Max, RNG )
+
+    integer(8)                                                        ::    RandomInteger_I0D_8_RNG
+    
+    integer(8), intent(in)                                            ::    Min
+    integer(8), intent(in)                                            ::    Max
+    type(RandPseudo_Type), intent(in)                                 ::    RNG
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I0D_8_RNG'
+    integer                                                           ::    StatLoc=0
+    real(rkp)                                                         ::    VarR0D
+
+    VarR0D = RNG%Draw( DrawType=2 )
+
+    RandomInteger_I0D_8_RNG = Min + floor(VarR0D * real(Max-Min+1,rkp) )
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I0D_8_Intrinsic( Min, Max )
+
+    integer(8)                                                        ::    RandomInteger_I0D_8_Intrinsic
+    
+    integer(8), intent(in)                                            ::    Min
+    integer(8), intent(in)                                            ::    Max
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I0D_8_Intrinsic'
+    integer                                                           ::    StatLoc=0
+    real(rkp)                                                         ::    VarR0D
+
+    call random_number( VarR0D )
+
+    RandomInteger_I0D_8_Intrinsic = Min + floor(VarR0D * real(Max-Min+1,rkp) )
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I1D_4_RNG( Min, Max, M, RNG )
+
+    integer(4), allocatable, dimension(:)                             ::    RandomInteger_I1D_4_RNG
+    
+    integer(4), intent(in)                                            ::    Min
+    integer(4), intent(in)                                            ::    Max
+    integer(4), intent(in)                                            ::    M
+    type(RandPseudo_Type), intent(in)                                 ::    RNG
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I1D_4_RNG'
+    integer                                                           ::    StatLoc=0
+    integer(4)                                                        ::    i
+
+    allocate(RandomInteger_I1D_4_RNG(M), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I1D_4', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, M
+      RandomInteger_I1D_4_RNG(i) = RandomInteger( Min=Min, Max=Max, RNG=RNG )
+    end do
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I1D_4_Intrinsic( Min, Max, M)
+
+    integer(4), allocatable, dimension(:)                             ::    RandomInteger_I1D_4_Intrinsic
+    
+    integer(4), intent(in)                                            ::    Min
+    integer(4), intent(in)                                            ::    Max
+    integer(4), intent(in)                                            ::    M
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I1D_4_Intrinsic'
+    integer                                                           ::    StatLoc=0
+    integer(4)                                                        ::    i
+
+    allocate(RandomInteger_I1D_4_Intrinsic(M), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I1D_4_Intrinsic', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, M
+      RandomInteger_I1D_4_Intrinsic(i) = RandomInteger( Min=Min, Max=Max )
+    end do
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I1D_8_RNG( Min, Max, M, RNG )
+
+    integer(8), allocatable, dimension(:)                             ::    RandomInteger_I1D_8_RNG
+    
+    integer(8), intent(in)                                            ::    Min
+    integer(8), intent(in)                                            ::    Max
+    integer(8), intent(in)                                            ::    M
+    type(RandPseudo_Type), intent(in)                                 ::    RNG
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I1D_8_RNG'
+    integer                                                           ::    StatLoc=0
+    integer(8)                                                        ::    i
+
+    allocate(RandomInteger_I1D_8_RNG(M), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I1D_8_RNG', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, M
+      RandomInteger_I1D_8_RNG(i) = RandomInteger( Min=Min, Max=Max, RNG=RNG )
+    end do
+  
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I1D_8_Intrinsic( Min, Max, M )
+
+    integer(8), allocatable, dimension(:)                             ::    RandomInteger_I1D_8_Intrinsic
+    
+    integer(8), intent(in)                                            ::    Min
+    integer(8), intent(in)                                            ::    Max
+    integer(8), intent(in)                                            ::    M
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I1D_8_Intrinsic'
+    integer                                                           ::    StatLoc=0
+    integer(8)                                                        ::    i
+
+    allocate(RandomInteger_I1D_8_Intrinsic(M), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I1D_8_Intrinsic', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, M
+      RandomInteger_I1D_8_Intrinsic(i) = RandomInteger( Min=Min, Max=Max )
+    end do
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I2D_4_RNG( Min, Max, M, N, RNG )
+
+    integer(4), allocatable, dimension(:,:)                           ::    RandomInteger_I2D_4_RNG
+    
+    integer(4), intent(in)                                            ::    Min
+    integer(4), intent(in)                                            ::    Max
+    integer(4), intent(in)                                            ::    M
+    integer(4), intent(in)                                            ::    N
+    type(RandPseudo_Type), intent(in)                                 ::    RNG
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I2D_4_RNG'
+    integer                                                           ::    StatLoc=0
+    integer(4)                                                        ::    i
+    integer(4)                                                        ::    j
+
+    allocate(RandomInteger_I2D_4_RNG(M,N), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I2D_4_RNG', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    j = 1
+    do i = 1, M
+      do j = 1, N
+        RandomInteger_I2D_4_RNG(i,j) = RandomInteger( Min=Min, Max=Max, RNG=RNG )
+      end do
+    end do
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I2D_4_Intrinsic( Min, Max, M, N )
+
+    integer(4), allocatable, dimension(:,:)                           ::    RandomInteger_I2D_4_Intrinsic
+    
+    integer(4), intent(in)                                            ::    Min
+    integer(4), intent(in)                                            ::    Max
+    integer(4), intent(in)                                            ::    M
+    integer(4), intent(in)                                            ::    N
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I2D_4_Intrinsic'
+    integer                                                           ::    StatLoc=0
+    integer(4)                                                        ::    i
+    integer(4)                                                        ::    j
+
+    allocate(RandomInteger_I2D_4_Intrinsic(M,N), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I2D_4_Intrinsic', ProcName=ProcName, stat=StatLoc )
+
+    do i = 1, M
+      do j = 1, N
+        RandomInteger_I2D_4_Intrinsic(i,j) = RandomInteger( Min=Min, Max=Max )
+      end do
+    end do
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I2D_8_RNG( Min, Max, M, N, RNG )
+
+    integer(8), allocatable, dimension(:,:)                           ::    RandomInteger_I2D_8_RNG
+    
+    integer(8), intent(in)                                            ::    Min
+    integer(8), intent(in)                                            ::    Max
+    integer(8), intent(in)                                            ::    M
+    integer(8), intent(in)                                            ::    N
+    type(RandPseudo_Type), intent(in)                                 ::    RNG
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I2D_8_RNG'
+    integer                                                           ::    StatLoc=0
+    integer(8)                                                        ::    i
+    integer(8)                                                        ::    j
+
+    allocate(RandomInteger_I2D_8_RNG(M,N), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I2D_8_RNG', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    j = 1
+    do i = 1, M
+      do j = 1, N
+        RandomInteger_I2D_8_RNG(i,j) = RandomInteger( Min=Min, Max=Max, RNG=RNG )
+      end do
+    end do
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function RandomInteger_I2D_8_Intrinsic( Min, Max, M, N )
+
+    integer(8), allocatable, dimension(:,:)                           ::    RandomInteger_I2D_8_Intrinsic
+    
+    integer(8), intent(in)                                            ::    Min
+    integer(8), intent(in)                                            ::    Max
+    integer(8), intent(in)                                            ::    M
+    integer(8), intent(in)                                            ::    N
+
+    character(*), parameter                                           ::    ProcName='RandomInteger_I2D_8_Intrinsic'
+    integer                                                           ::    StatLoc=0
+    integer(8)                                                        ::    i
+    integer(8)                                                        ::    j
+
+    allocate(RandomInteger_I2D_8_Intrinsic(M,N), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I2D_8_Intrinsic', ProcName=ProcName, stat=StatLoc )
+
+    do i = 1, M
+      do j = 1, N
+        RandomInteger_I2D_8_Intrinsic(i,j) = RandomInteger( Min=Min, Max=Max )
+      end do
+    end do
+    
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 

@@ -31,6 +31,7 @@ contains
   procedure, public                                                   ::    GetNbNodes
   procedure, public                                                   ::    GetNbDegen
   procedure, public                                                   ::    GetLabel
+  procedure, public                                                   ::    IsConstructed
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -238,6 +239,20 @@ contains
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
     GetLabel = This%Label
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsConstructed( This )
+
+    logical, allocatable                                              ::    IsConstructed
+
+    class(Output_Type), intent(in)                                    ::    This 
+
+    character(*), parameter                                           ::    ProcName='IsConstructed'
+
+    IsConstructed = This%Constructed
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

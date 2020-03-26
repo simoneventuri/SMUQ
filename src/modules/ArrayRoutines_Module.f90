@@ -15,6 +15,9 @@ private
 public                                                                ::    Eye
 public                                                                ::    EyeI
 public                                                                ::    EyeR
+public                                                                ::    StrictTriangular
+public                                                                ::    StrictTriangularI
+public                                                                ::    StrictTriangularR
 public                                                                ::    IsDiagonal
 public                                                                ::    LinSpaceVec
 
@@ -30,97 +33,40 @@ interface LinSpaceVec
 end interface
 
 interface Eye
-  module procedure                                                    ::    Eye_R2D
-  module procedure                                                    ::    Eye_I2D
+  module procedure                                                    ::    Eye_R42D
+  module procedure                                                    ::    Eye_R82D
+  module procedure                                                    ::    Eye_I42D
+  module procedure                                                    ::    Eye_I82D
+end interface
+
+interface EyeI
+  module procedure                                                    ::    EyeI_I42D
+  module procedure                                                    ::    EyeI_I82D
+end interface
+
+interface EyeR
+  module procedure                                                    ::    EyeR_R42D
+  module procedure                                                    ::    EyeR_R82D
+end interface
+
+interface StrictTriangular
+  module procedure                                                    ::    StrictTriangular_I42D
+  module procedure                                                    ::    StrictTriangular_I82D
+  module procedure                                                    ::    StrictTriangular_R42D
+  module procedure                                                    ::    StrictTriangular_R82D
+end interface
+
+interface StrictTriangularI
+  module procedure                                                    ::    StrictTriangularI_I42D
+  module procedure                                                    ::    StrictTriangularI_I82D
+end interface
+
+interface StrictTriangularR
+  module procedure                                                    ::    StrictTriangularR_R42D
+  module procedure                                                    ::    StrictTriangularR_R82D
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function EyeI( N )
-
-    integer, dimension(:,:), allocatable                              ::    EyeI
-    integer, intent(in)                                               ::    N
-
-    character(*), parameter                                           ::    ProcName='EyeI'
-    integer                                                           ::    i
-    integer                                                           ::    IOLoc
-
-    allocate( EyeI(N,N), stat=IOLoc )
-    if ( IOLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='EyeI', stat=IOLoc)
-
-    EyeI = 0
-    do i = 1,N 
-      EyeI(i,i) = 1
-    end do
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function EyeR( N )
-
-    real(rkp), dimension(:,:), allocatable                            ::    EyeR
-    integer, intent(in)                                               ::    N
-
-    character(*), parameter                                           ::    ProcName='EyeR'
-    integer                                                           ::    i
-    integer                                                           ::    IOLoc
-
-    allocate( EyeR(N,N), stat=IOLoc )
-    if ( IOLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='EyeR', stat=IOLoc)
-
-    EyeR = Zero
-    do i = 1,N 
-      EyeR(i,i) = One
-    end do
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Eye_R2D( Array )
-
-    real(rkp), dimension(:,:)                                         ::    Array
-
-    character(*), parameter                                           ::    ProcName='Eye_R2D'
-    integer                                                           ::    StatLoc
-    integer                                                           ::    i
-    integer                                                           ::    N
-
-    N = size(Array,1)
-
-    if ( size(Array,2) /= N ) call Error%Raise( Line='Not a square array', ProcName=ProcName )
-
-    Array = Zero
-    do i = 1, N 
-      Array(i,i) = One
-    end do
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Eye_I2D( Array )
-
-    integer, dimension(:,:)                                           ::    Array
-
-    character(*), parameter                                           ::    ProcName='Eye_I2D'
-    integer                                                           ::    StatLoc
-    integer                                                           ::    i
-    integer                                                           ::    N
-
-    N = size(Array,1)
-
-    if ( size(Array,2) /= N ) call Error%Raise( Line='Not a square array', ProcName=ProcName )
-
-    Array = 0
-    do i = 1, N 
-      Array(i,i) = 1
-    end do
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function IsDiagonal_Real8( Array )
@@ -293,5 +239,509 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
   
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function StrictTriangularI_I42D( M, N, UL )
+
+    integer(4), dimension(:,:), allocatable                           ::    StrictTriangularI_I42D
+
+    integer(4), intent(in)                                            ::    M
+    integer(4), optional, intent(in)                                  ::    N
+    character(*), intent(in)                                          ::    UL
+
+    character(*), parameter                                           ::    ProcName='StrictTriangularI_I42D'
+    integer(4)                                                        ::    i
+    integer(4)                                                        ::    NLoc
+
+    NLoc = M
+    if ( present(N) ) NLoc = N
+
+    allocate(StrictTriangularI_I42D(M,NLoc), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='StrictTriangularI_I42D', ProcName=ProcName, stat=StatLoc )
+
+    StrictTriangularI_I42D = 0
+
+    if ( UL == 'U' ) then
+      i = 2
+      do i = 2, NLoc
+        if ( i > M ) then
+          StrictTriangularI_I42D(:,i:) = 1
+          exit
+        end if
+        StrictTriangularI_I42D(1:i-1,i) = 1
+      end do
+    elseif ( UL == 'L' ) then
+      i = 1
+      do i = 1, NLoc-1
+        if ( i >= M ) exit
+        StrictTriangularI_I42D(i+1:,i) = 1
+      end do
+    else
+      call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
+    end if
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function StrictTriangularI_I82D( M, N, UL )
+
+    integer(8), dimension(:,:), allocatable                           ::    StrictTriangularI_I82D
+
+    integer(8), intent(in)                                            ::    M
+    integer(8), optional, intent(in)                                  ::    N
+    character(*), intent(in)                                          ::    UL
+
+    character(*), parameter                                           ::    ProcName='StrictTriangularI_I82D'
+    integer(8)                                                        ::    i
+    integer(8)                                                        ::    NLoc
+
+    NLoc = M
+    if ( present(N) ) NLoc = N
+
+    allocate(StrictTriangularI_I82D(M,NLoc), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='StrictTriangularI_I82D', ProcName=ProcName, stat=StatLoc )
+
+    StrictTriangularI_I82D = 0
+
+    if ( UL == 'U' ) then
+      i = 2
+      do i = 2, NLoc
+        if ( i > M ) then
+          StrictTriangularI_I82D(:,i:) = 1
+          exit
+        end if
+        StrictTriangularI_I82D(1:i-1,i) = 1
+        if ( i >= M ) exit
+      end do
+    elseif ( UL == 'L' ) then
+      i = 1
+      do i = 1, NLoc-1
+        if ( i >= M ) exit
+        StrictTriangularI_I82D(i+1:,i) = 1
+      end do
+    else
+      call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
+    end if
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function StrictTriangularR_R42D( M, N, UL )
+
+   real(4), dimension(:,:), allocatable                               ::    StrictTriangularR_R42D
+
+    integer(4), intent(in)                                            ::    M
+    integer(4), optional, intent(in)                                  ::    N
+    character(*), intent(in)                                          ::    UL
+
+    character(*), parameter                                           ::    ProcName='StrictTriangularR_R42D'
+    integer(4)                                                        ::    i
+    integer(4)                                                        ::    NLoc
+
+    NLoc = M
+    if ( present(N) ) NLoc = N
+
+    allocate(StrictTriangularR_I42D(M,NLoc), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='StrictTriangularR_R42D', ProcName=ProcName, stat=StatLoc )
+
+    StrictTriangularR_R42D = 0.0_r4
+
+    if ( UL == 'U' ) then
+      i = 2
+      do i = 2, NLoc
+        if ( i > M ) then
+          StrictTriangularR_R42D(:,i:) = 1.0_r4
+          exit
+        end if
+        StrictTriangularR_R42D(1:i-1,i) = 1.0_r4
+        if ( i >= M ) exit
+      end do
+    elseif ( UL == 'L' ) then
+      i = 1
+      do i = 1, NLoc-1
+        if ( i >= M ) exit
+        StrictTriangularR_R42D(i+1:,i) = 1.0_r4
+      end do
+    else
+      call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
+    end if
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function StrictTriangularR_R82D( M, N, UL )
+
+    real(8), dimension(:,:), allocatable                              ::    StrictTriangularR_R82D
+
+    integer(8), intent(in)                                            ::    M
+    integer(8), optional, intent(in)                                  ::    N
+    character(*), intent(in)                                          ::    UL
+
+    character(*), parameter                                           ::    ProcName='StrictTriangularR_R82D'
+    integer(8)                                                        ::    i
+    integer(8)                                                        ::    NLoc
+
+    NLoc = M
+    if ( present(N) ) NLoc = N
+
+    allocate(StrictTriangularR_R82D(M,NLoc), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='StrictTriangularR_R82D', ProcName=ProcName, stat=StatLoc )
+
+    StrictTriangularR_R82D = 0.0_r8
+
+    if ( UL == 'U' ) then
+      i = 2
+      do i = 2, NLoc
+        if ( i > M ) then
+          StrictTriangularR_R82D(:,i:) = 1.0_r8
+          exit
+        end if
+        StrictTriangularR_R82D(1:i-1,i) = 1.0_r8
+        if ( i >= M ) exit
+      end do
+    elseif ( UL == 'L' ) then
+      i = 1
+      do i = 1, NLoc-1
+        if ( i >= M ) exit
+        StrictTriangularR_R82D(i+1:,i) = 1.0_r8
+      end do
+    else
+      call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
+    end if
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine StrictTriangular_I42D( Array, UL )
+
+    integer(4), dimension(:,:), intent(inout)                         ::    Array
+    character(*), intent(in)                                          ::    UL
+
+    character(*), parameter                                           ::    ProcName='StrictTriangular_I42D'
+    integer                                                           ::    i
+    integer                                                           ::    M
+    integer                                                           ::    N
+
+    M = size(Array,1)
+    N = size(Array,2)
+
+    Array = 0
+
+    if ( UL == 'U' ) then
+      i = 2
+      do i = 2, N
+        if ( i > M ) then
+          StrictTriangularI_I42D(:,i:) = 1
+          exit
+        end if
+        StrictTriangularI_I42D(1:i-1,i) = 1
+        if ( i >= M ) exit
+      end do
+    elseif ( UL == 'L' ) then
+      i = 1
+      do i = 1, N-1
+        if ( i >= M ) exit
+        StrictTriangularI_I42D(i+1:,i) = 1
+      end do
+    else
+      call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine StrictTriangular_I82D( Array, UL )
+
+    integer(8), dimension(:,:), intent(inout)                         ::    Array
+    character(*), intent(in)                                          ::    UL
+
+    character(*), parameter                                           ::    ProcName='StrictTriangular_I82D'
+    integer                                                           ::    i
+    integer                                                           ::    M
+    integer                                                           ::    N
+
+    M = size(Array,1)
+    N = size(Array,2)
+
+    Array = 0
+
+    if ( UL == 'U' ) then
+      i = 2
+      do i = 2, N
+        if ( i > M ) then
+          StrictTriangularI_I82D(:,i:) = 1
+          exit
+        end if
+        StrictTriangularI_I82D(1:i-1,i) = 1
+        if ( i >= M ) exit
+      end do
+    elseif ( UL == 'L' ) then
+      i = 1
+      do i = 1, N-1
+        if ( i >= M ) exit
+        StrictTriangularI_I82D(i+1:,i) = 1
+      end do
+    else
+      call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine StrictTriangular_R42D( Array, UL )
+
+    real(4), dimension(:,:), intent(inout)                            ::    Array
+    character(*), intent(in)                                          ::    UL
+
+    character(*), parameter                                           ::    ProcName='StrictTriangular_R42D'
+    integer                                                           ::    i
+    integer                                                           ::    M
+    integer                                                           ::    N
+
+    M = size(Array,1)
+    N = size(Array,2)
+
+    Array = 0.0_r4
+
+    if ( UL == 'U' ) then
+      i = 2
+      do i = 2, N
+        if ( i > M ) then
+          StrictTriangularR_R42D(:,i:) = 1.0_r4
+          exit
+        end if
+        StrictTriangularR_R42D(1:i-1,i) = 1.0_r4
+        if ( i >= M ) exit
+      end do
+    elseif ( UL == 'L' ) then
+      i = 1
+      do i = 1, N-1
+        if ( i >= M ) exit
+        StrictTriangularR_R42D(i+1:,i) = 1.0_r4
+      end do
+    else
+      call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine StrictTriangular_R82D( Array, UL )
+
+    real(8), dimension(:,:), intent(inout)                            ::    Array
+    character(*), intent(in)                                          ::    UL
+
+    character(*), parameter                                           ::    ProcName='StrictTriangular_R82D'
+    integer                                                           ::    i
+    integer                                                           ::    M
+    integer                                                           ::    N
+
+    M = size(Array,1)
+    N = size(Array,2)
+
+    Array = 0.0_r8
+
+    if ( UL == 'U' ) then
+      i = 2
+      do i = 2, N
+        if ( i > M ) then
+          StrictTriangularR_R82D(:,i:) = 1.0_r8
+          exit
+        end if
+        StrictTriangularR_R82D(1:i-1,i) = 1.0_r8
+        if ( i >= M ) exit
+      end do
+    elseif ( UL == 'L' ) then
+      i = 1
+      do i = 1, N-1
+        if ( i >= M ) exit
+        StrictTriangularR_R82D(i+1:,i) = 1.0_r8
+      end do
+    else
+      call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function EyeI_I42D( N )
+
+    integer(4), dimension(:,:), allocatable                           ::    EyeI_I42D
+    integer(4), intent(in)                                            ::    N
+
+    character(*), parameter                                           ::    ProcName='EyeI_I42D'
+    integer(4)                                                        ::    i
+    integer                                                           ::    StatLoc
+
+    allocate( EyeI_I42D(N,N), stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='EyeI_I42D', stat=StatLoc)
+
+    EyeI_I42D = 0
+    do i = 1,N 
+      EyeI_I42D(i,i) = 1
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function EyeI_I82D( N )
+
+    integer(8), dimension(:,:), allocatable                           ::    EyeI_I82D
+    integer(8), intent(in)                                            ::    N
+
+    character(*), parameter                                           ::    ProcName='EyeI_I82D'
+    integer(8)                                                        ::    i
+    integer                                                           ::    StatLoc
+
+    allocate( EyeI_I82D(N,N), stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='EyeI_I82D', stat=StatLoc)
+
+    EyeI_I82D = 0
+    do i = 1,N 
+      EyeI_I82D(i,i) = 1
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function EyeR_R42D( N )
+
+    real(4), dimension(:,:), allocatable                              ::    EyeR_R42D
+    integer(4), intent(in)                                            ::    N
+
+    character(*), parameter                                           ::    ProcName='EyeR_R42D'
+    integer(4)                                                        ::    i
+    integer                                                           ::    StatLoc
+
+    allocate( EyeR_R42D(N,N), stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='EyeR_R42D', stat=StatLoc)
+
+    EyeR_R42D = Zero
+    do i = 1,N 
+      EyeR_R42D(i,i) = One
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function EyeR_R82D( N )
+
+    real(8), dimension(:,:), allocatable                              ::    EyeR_R82D
+    integer(8), intent(in)                                            ::    N
+
+    character(*), parameter                                           ::    ProcName='EyeR_R82D'
+    integer(8)                                                        ::    i
+    integer                                                           ::    StatLoc
+
+    allocate( EyeR_R82D(N,N), stat=StatLoc )
+    if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='EyeR_R82D', stat=StatLoc)
+
+    EyeR_R82D = Zero
+    do i = 1,N 
+      EyeR_R82D(i,i) = One
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Eye_R42D( Array )
+
+    real(4), dimension(:,:)                                           ::    Array
+
+    character(*), parameter                                           ::    ProcName='Eye_R42D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    integer                                                           ::    N
+
+    N = size(Array,1)
+
+    if ( size(Array,2) /= N ) call Error%Raise( Line='Not a square array', ProcName=ProcName )
+
+    Array = Zero
+    do i = 1, N 
+      Array(i,i) = One
+    end do
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Eye_R82D( Array )
+
+    real(8), dimension(:,:)                                           ::    Array
+
+    character(*), parameter                                           ::    ProcName='Eye_R82D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    integer                                                           ::    N
+
+    N = size(Array,1)
+
+    if ( size(Array,2) /= N ) call Error%Raise( Line='Not a square array', ProcName=ProcName )
+
+    Array = Zero
+    do i = 1, N 
+      Array(i,i) = One
+    end do
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Eye_I42D( Array )
+
+    integer(4), dimension(:,:)                                        ::    Array
+
+    character(*), parameter                                           ::    ProcName='Eye_I42D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    integer                                                           ::    N
+
+    N = size(Array,1)
+
+    if ( size(Array,2) /= N ) call Error%Raise( Line='Not a square array', ProcName=ProcName )
+
+    Array = 0
+    do i = 1, N 
+      Array(i,i) = 1
+    end do
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Eye_I82D( Array )
+
+    integer(8), dimension(:,:)                                        ::    Array
+
+    character(*), parameter                                           ::    ProcName='Eye_I82D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    integer                                                           ::    N
+
+    N = size(Array,1)
+
+    if ( size(Array,2) /= N ) call Error%Raise( Line='Not a square array', ProcName=ProcName )
+
+    Array = 0
+    do i = 1, N 
+      Array(i,i) = 1
+    end do
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+
 
 end module

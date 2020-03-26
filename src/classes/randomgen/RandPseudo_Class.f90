@@ -258,7 +258,7 @@ contains
     character(*), parameter                                           ::    ProcName='Draw'
     integer                                                           ::    DrawTypeLoc
 
-    if ( .not. This%Initialized ) call This%Initialize()
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     if ( present(DrawType) ) then 
       DrawTypeLoc = DrawType
@@ -294,6 +294,8 @@ contains
     integer                                                           ::    i
     integer                                                           ::    DrawTypeLoc
 
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
     if ( Size1 <= 0 ) call Error%Raise( Line='Size 1 of requested sample at or below 0', ProcName=ProcName )
 
     allocate( DrawVec(Size1), stat=StatLoc )
@@ -327,6 +329,8 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    DrawTypeLoc
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
     if ( Size1 <= 0 ) call Error%Raise( Line='Size 1 of requested sample at or below 0', ProcName=ProcName )
 

@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module SASobol_Class
+module SAMorris_Class
 
 use Input_Library
 use Parameters_Library
@@ -31,12 +31,11 @@ use Error_Class                                                   ,only:    Erro
 use SAMethod_Class                                                ,only:    SAMethod_Type
 use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
+use RandPseudo_Class                                              ,only:    RandPseudo_Type
+use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use SampleMethod_Factory_Class                                    ,only:    SampleMethod_Factory
 use SampleLHS_Class                                               ,only:    SampleLHS_Type
-use SampleEnrichScheme_Class                                      ,only:    SampleEnrichScheme_Type
-use SampleSpace_Class                                             ,only:    SampleSpace_Type
-use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
 use Restart_Class                                                 ,only:    RestartUtility
@@ -45,23 +44,24 @@ use Model_Class                                                   ,only:    Mode
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use LinkedList1D_Class                                            ,only:    LinkedList1D_Type
 use OnlineVarEstimator_Class                                      ,only:    OnlineVarEstimator_Type
+use OnlineMeanEstimator_Class                                     ,only:    OnlineMeanEstimator_Type
+use DistProb_Class                                                ,only:    DistProb_Type
 
 implicit none
 
 private
 
-public                                                                ::    SASobol_Type
+public                                                                ::    SAMorris_Type
 
 type                                                                  ::    Cell_Type
   logical                                                             ::    Initialized
   logical                                                             ::    Constructed
-  type(OnlineVarEstimator_Type)                                       ::    MomentEstimator
-  real(rkp), allocatable, dimension(:)                                ::    StEstimator
-  real(rkp), allocatable, dimension(:)                                ::    StSnapShot
-  integer, allocatable, dimension(:)                                  ::    StEstimatorNbSamples
-  type(LinkedList1D_Type)                                             ::    StHistory
-  type(LinkedList0D_Type)                                             ::    MeanHistory
-  type(LinkedList0D_Type)                                             ::    VarianceHistory
+  type(OnlineMeanEstimator_Type), allocatable, dimension(:)           ::    MuEstimator
+  type(OnlineMeanEstimator_Type), allocatable, dimension(:)           ::    MuStarEstimator
+  type(OnlineVarEstimator_Type), allocatable, dimension(:)            ::    VarEstimator
+  type(LinkedList1D_Type)                                             ::    MuStarHistory
+  type(LinkedList1D_Type)                                             ::    MuHistory
+  type(LinkedList1D_Type)                                             ::    SigmaHistory
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize_Cell
   procedure, public                                                   ::    Reset                   =>    Reset_Cell
@@ -73,39 +73,36 @@ contains
   procedure, public                                                   ::    GetInput                =>    GetInput_Cell
   procedure, public                                                   ::    UpdateEstimators        =>    UpdateEstimators_Cell
   procedure, public                                                   ::    UpdateHistory           =>    UpdateHistory_Cell
-  procedure, public                                                   ::    TakeStSnapshot          =>    TakeStSnapShot_Cell
-  procedure, public                                                   ::    GetStSnapShot           =>    GetStSnapShot_Cell
-  procedure, public                                                   ::    GetSt                   =>    GetSt_Cell
-  procedure, public                                                   ::    GetMean                 =>    GetMean_Cell
-  procedure, public                                                   ::    GetVariance             =>    GetVariance_Cell
-  procedure, public                                                   ::    GetStHistory            =>    GetStHistory_Cell
-  procedure, public                                                   ::    GetMeanHistory          =>    GetMeanHistory_Cell
-  procedure, public                                                   ::    GetVarianceHistory      =>    GetVarianceHistory_Cell
+  procedure, public                                                   ::    GetMu                   =>    GetMean_Cell
+  procedure, public                                                   ::    GetMuStar               =>    GetMean_Cell
+  procedure, public                                                   ::    GetSigma                =>    GetVariance_Cell
+  procedure, public                                                   ::    GetMuStarHistory        =>    GetMuStarHistory_Cell
+  procedure, public                                                   ::    GetMuHistory            =>    GetMuHistory_Cell
+  procedure, public                                                   ::    GetSigmaHistory         =>    GetSigmaHistory_Cell
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy                    =>    Copy_Cell
   final                                                               ::    Finalizer_Cell 
 end type
 
-type, extends(SAMethod_Type)                                          ::    SASobol_Type
+type, extends(SAMethod_Type)                                          ::    SAMorris_Type
   type(Cell_Type), allocatable, dimension(:)                          ::    Cells
   integer                                                             ::    NbCells
   integer                                                             ::    CheckpointFreq
   logical                                                             ::    Silent
   class(SampleMethod_Type), allocatable                               ::    Sampler
-  type(SampleEnrichScheme_Type)                                       ::    SampleEnrichScheme
-  integer                                                             ::    NbSamples
+  integer                                                             ::    NbTrajectories
+  integer                                                             ::    NbGridLevels
+  integer                                                             ::    StepSize
   logical                                                             ::    SamplesObtained
   logical                                                             ::    SamplesRan
-  integer                                                             ::    ModelRunCounter
-  real(rkp), allocatable, dimension(:,:)                              ::    ParamRecord
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
-  integer, allocatable, dimension(:)                                  ::    ParamSampleRan
   integer                                                             ::    ParamSampleStep
-  real(rkp)                                                           ::    AbsTolerance
-  real(rkp)                                                           ::    RelTolerance
   integer                                                             ::    HistoryFreq
   type(LinkedList0D_Type)                                             ::    HistoryStep
-  integer                                                             ::    iStage
+  integer, allocatable, dimension(:,:)                                ::    Signs
+  integer, allocatable, dimension(:,:)                                ::    PermutationIndices
+  type(RandPseudo_Type)                                               ::    RNG
+
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -125,12 +122,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
-    class(SASobol_Type), intent(inout)                                ::    This
+    class(SAMorris_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
     if ( .not. This%Initialized ) then
-      This%Name = 'SASobol'
+      This%Name = 'SAMorris'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -141,16 +138,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
-    class(SASobol_Type), intent(inout)                                ::    This
+    class(SAMorris_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc = 0
 
     This%Initialized=.false.
     This%Constructed=.false.
-
-    if ( allocated(This%ParamRecord) ) deallocate(This%ParamRecord, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
 
     if ( allocated(This%ParamSample) ) deallocate(This%ParamSample, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
@@ -159,17 +153,12 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
     This%NbCells = 0
 
-    deallocate(This%ParamSampleRan, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-
     call This%HistoryStep%Purge()
 
     if ( allocated(This%Sampler) ) deallocate(This%Sampler, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
 
-    call This%SampleEnrichScheme%Reset()
-
-    This%iStage = 0
+    call This%RNG%Reset()
 
     call This%SetDefaults()
 
@@ -179,7 +168,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This )
 
-    class(SASobol_Type), intent(inout)                                ::    This
+    class(SAMorris_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
@@ -189,10 +178,9 @@ contains
     This%SamplesObtained = .false.
     This%SamplesRan = .false.
     This%ParamSampleStep = 0
-    This%RelTolerance = 1.d-3
-    This%AbsTolerance = 1.d-4
-    This%ModelRunCounter = 0
-    This%NbSamples = 0
+    This%NbTrajectories = 0
+    This%NbGridLevels = 0
+    This%StepSize = 3
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -200,7 +188,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, SectionChain, Prefix )
 
-    class(SASobol_Type), intent(inout)                                ::    This
+    class(SAMorris_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
@@ -244,19 +232,22 @@ contains
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%HistoryFreq = VarI0D
 
-    ParameterName = "absolute_tolerance"
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%AbsTolerance = VarR0D
-
-    ParameterName = "relative_tolerance"
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%RelTolerance = VarR0D
-
-    ParameterName = 'nb_samples'
+    ParameterName = 'nb_trajectories'
     call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%NbSamples = VarI0D
+    This%NbTrajectories = VarI0D
+    if ( This%NbTrajectories <= 0 ) call Error%Raise( 'Must specify at least 1 for number of trajectories', ProcName=ProcName )
 
-    if ( This%NbSamples <= 0 ) call Error%Raise( 'Must specify number of samples above 0', ProcName=ProcName )
+    ParameterName = 'nb_grid_levels'
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if ( Found ) then
+      This%NbGridLevels = VarI0D
+      if ( This%NbGridLevels <= 1 ) call Error%Raise( 'Must specify at least 2 grid levels', ProcName=ProcName )
+    end if
+
+    ParameterName = 'step_size'
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if ( Found ) This%StepSize = VarI0D
+    if ( This%StepSize <= 0 ) call Error%Raise( 'Trahectory step size must be above 0', ProcName=ProcName )
 
     SectionName = 'sampler'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
@@ -272,25 +263,16 @@ contains
       end select
     end if
 
-    SectionName = 'sample_enrichment'
+    SectionName = 'rng'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%SampleEnrichScheme%Construct( Input=InputSection, Prefix=PrefixLoc )
-      nullify( InputSection )
+      call This%RNG%Construct( Input=InputSection, Prefix=PrefixLoc )
     else
-      call This%SampleEnrichScheme%Construct( MaxNbSamples=This%NbSamples )
+      call This%RNG%Construct()
     end if
 
     SectionName = 'restart'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
-
-      ParameterName = 'stage'
-      call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-      This%iStage = VarI0D
-
-      ParameterName = 'model_run_counter'
-      call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
-      This%ModelRunCounter = VarI0D
 
       ParameterName = 'param_sample_step'
       call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
@@ -304,31 +286,20 @@ contains
       call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
       This%SamplesRan = VarL0D
 
-      SubSectionName = SectionName // '>param_record'
-      if ( Input%HasSection( SubSectionName=SubSectionName ) ) then
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
-        nullify( InputSection )
-        This%ParamRecord = VarR2D
-        deallocate(VarR2D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-      end if
+      SubSectionName = SectionName // '>permutation_indices'
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+      call ImportArray( Input=InputSection, Array=This%PermutationIndices, Prefix=PrefixLoc )
+      nullify( InputSection )
+
+      SubSectionName = SectionName // '>signs'
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+      call ImportArray( Input=InputSection, Array=This%Signs, Prefix=PrefixLoc )
+      nullify( InputSection )
 
       SubSectionName = SectionName // '>param_sample'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
+      call ImportArray( Input=InputSection, Array=This%ParamSample, Prefix=PrefixLoc )
       nullify( InputSection )
-      This%ParamSample = VarR2D
-      deallocate(VarR2D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-
-      SubSectionName = SectionName // '>param_sample_ran'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=VarI1D, Prefix=PrefixLoc )
-      nullify( InputSection )
-      This%ParamSampleRan = VarI1D
-      deallocate(VarI1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
 
       This%NbCells = 0
       SubSectionName = SectionName // '>cells'
@@ -366,7 +337,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(SASobol_Type), intent(inout)                                ::    This
+    class(SAMorris_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -403,35 +374,23 @@ contains
     call GetInput%AddParameter( Name='silent', Value=ConvertToString(Value=This%Silent ) )
     call GetInput%AddParameter( Name='checkpoint_frequency', Value=ConvertToString(Value=This%CheckpointFreq ) )
     call GetInput%AddParameter( Name='history_frequency', Value=ConvertToString(Value=This%HistoryFreq ) )
-    call GetInput%AddParameter( Name='absolute_tolerance', Value=ConvertToString(Value=This%AbsTolerance ) )
-    call GetInput%AddParameter( Name='relative_tolerance', Value=ConvertToString(Value=This%RelTolerance ) )
-
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sample_enrichment'
-    SectionName = 'sample_enrichment'
-    call GetInput%AddSection( Section=This%SampleEnrichScheme%GetInput(MainSectionName=SectionName,                               &
-                                                                                       Prefix=PrefixLoc, Directory=DirectorySub) )
-
-    call GetInput%AddParameter( Name='nb_samples', Value=ConvertToString(Value=This%NbSamples) )
+    call GetInput%AddParameter( Name='nb_trajectories', Value=ConvertToString(Value=This%NbSamples) )
+    if ( This%NbGridLevels > 0 ) call GetInput%AddParameter( Name='nb_grid_levels',                                               &
+                                                                                  Value=ConvertToString(Value=This%NbGridLevels) )
+    call GetInput%AddParameter( Name='step_size', Value=ConvertToString(Value=This%StepSize) )
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
     call GetInput%AddSection( Section=SampleMethod_Factory%GetObjectInput( Object=This%Sampler, MainSectionName='sampler',        &
                                                                                       Prefix=PrefixLoc, Directory=DirectorySub ) )
 
-    if ( This%ModelRunCounter > 0 ) then
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/rng'
+    call GetInput%AddSection( Section=This%RNG%GetInput( MainSectionName='rng', Prefix=PrefixLoc, Directory=DirectorySub ) )
+
+    if ( This%ParamSampleStep > 0 ) then
       SectionName = 'restart'
       call GetInput%AddSection( SectionName=SectionName )
 
       if ( ExternalFlag ) then
-        if ( allocated(This%ParamRecord) ) then
-          SubSectionName = 'param_record'
-          call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-          call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
-                                                                                                                Mandatory=.true. )
-          FileName = DirectoryLoc // '/param_record.dat'
-          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Input=InputSection, Array=This%ParamRecord, File=File )
-          nullify(InputSection)
-        end if
         
         if ( allocated(This%ParamSample) ) then
           SubSectionName = 'param_sample'
@@ -443,14 +402,24 @@ contains
           call ExportArray( Input=InputSection, Array=This%ParamSample, File=File )
           nullify(InputSection)
 
-          SubSectionName = 'param_sample_ran'
+          SubSectionName = 'signs'
           call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
           call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
                                                                                                                 Mandatory=.true. )
-          FileName = DirectoryLoc // '/param_sample_ran.dat'
+          FileName = DirectoryLoc // '/signs.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Input=InputSection, Array=This%ParamSample, File=File )
+          call ExportArray( Input=InputSection, Array=This%Signs, File=File )
           nullify(InputSection)
+
+          SubSectionName = 'permutation_indices'
+          call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+          call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
+                                                                                                                Mandatory=.true. )
+          FileName = DirectoryLoc // '/permutation_indices.dat'
+          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+          call ExportArray( Input=InputSection, Array=This%PermutationIndices, File=File )
+          nullify(InputSection)
+
         end if
 
         if ( This%HistoryFreq > 0 ) then
@@ -476,12 +445,20 @@ contains
           call ExportArray( Input=InputSection, Array=This%ParamSample )
           nullify(InputSection)
 
-          SubSectionName = 'param_sample_ran'
+          SubSectionName = 'permutation_indices'
           call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
           call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
                                                                                                                 Mandatory=.true. )
-          call ExportArray( Input=InputSection, Array=This%ParamSampleRan )
+          call ExportArray( Input=InputSection, Array=This%PermutationIndices )
           nullify(InputSection)
+
+          SubSectionName = 'signs'
+          call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+          call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
+                                                                                                                Mandatory=.true. )
+          call ExportArray( Input=InputSection, Array=This%Signs )
+          nullify(InputSection)
+
         end if
 
         if ( This%HistoryFreq > 0 ) then
@@ -498,12 +475,9 @@ contains
 
       end if
 
-      call GetInput%AddParameter( Name='stage', Value=ConvertToString(Value=This%iStage), SectionName=SectionName )
       call GetInput%AddParameter( Name='samples_obtained', Value=ConvertToString(Value=This%SamplesObtained ),                    &
                                                                                                          SectionName=SectionName )
       call GetInput%AddParameter( Name='samples_ran', Value=ConvertToString(Value=This%SamplesRan ), SectionName=SectionName )
-      call GetInput%AddParameter( Name='model_run_counter', Value=ConvertToString(Value=This%ModelRunCounter ),                   &
-                                                                                                         SectionName=SectionName )
       call GetInput%AddParameter( Name='param_sample_step', Value=ConvertToString(Value=This%ParamSampleStep),                    &
                                                                                                          SectionName=SectionName )
 
@@ -524,7 +498,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory )
 
-    class(SASobol_Type), intent(inout)                                ::    This
+    class(SAMorris_Type), intent(inout)                               ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
@@ -533,53 +507,63 @@ contains
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
     type(ModelInterface_Type)                                         ::    ModelInterface
-    logical                                                           ::    StepExceededFlag=.false.
     logical                                                           ::    SilentLoc
     integer                                                           ::    NbDim
-    real(rkp), allocatable, dimension(:)                              ::    StLoc
+    real(rkp)                                                         ::    VarR0D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    integer, allocatable, dimension(:,:)                              ::    VarI2D
     real(rkp), pointer, dimension(:,:)                                ::    VarR2DPtr=>null()
-    type(ParamSpace_Type)                                             ::    ExtendedSampleSpace
+    integer, pointer, dimension(:,:)                                  ::    VarI2DPtr=>null()
+    real(rkp), pointer, dimension(:,:)                                ::    TrajectoryPtr=>null()
     type(Input_Type), allocatable, dimension(:)                       ::    Input
-    integer                                                           ::    iCellMin
-    integer                                                           ::    iCellMax
-    integer                                                           ::    iRunMin
-    integer                                                           ::    iRunMax
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii
     integer                                                           ::    iv
     integer                                                           ::    v
+    integer                                                           ::    vi
+    integer                                                           ::    vii
+    integer                                                           ::    iCellMin
+    integer                                                           ::    iCellMax
+    integer                                                           ::    iRunMin
+    integer                                                           ::    iRunMax
     integer                                                           ::    NbInputs
-    real(rkp), allocatable, dimension(:)                              ::    ParamSubSample
     type(Output_Type), allocatable, dimension(:,:)                    ::    Outputs
-    logical, allocatable, dimension(:)                                ::    SampleRan
     integer                                                           ::    NbResponses
     integer, allocatable, dimension(:)                                ::    NbCellsOutput
     integer                                                           ::    iStart
     integer                                                           ::    iEnd
-    integer                                                           ::    ParamRecordLength
-    real(rkp), allocatable, dimension(:)                              ::    Delta
     character(:), allocatable                                         ::    Line
-    logical                                                           ::    Converged
     integer, allocatable, dimension(:)                                ::    RunStatLoc
     integer                                                           ::    VarI0D
-    real(rkp), allocatable, dimension(:)                              ::    SampleOutput
+    real(rkp)                                                         ::    GridSize
+    real(rkp)                                                         ::    PerturbationSize
+    real(rkp), allocatable, dimension(:,:)                            ::    XStar
+    real(rkp), allocatable, dimension(:,:)                            ::    J1
+    real(rkp), allocatable, dimension(:,:)                            ::    B
+    real(rkp), allocatable, dimension(:,:)                            ::    P
+    integer                                                           ::    NbGridLevelsLoc
+    class(DistProb_Type), pointer                                     ::    DistProbPtr=>null()
+    integer                                                           ::    NbTrajectories
+    logical, allocatable, dimension(:)                                ::    SampleRan
+    real(rkp), allocatable, dimension(:)                              ::    TrajectoryOutput
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
-
-    call ExtendedSampleSpace%Construct( SampleSpace1=SampleSpace, SampleSpace2=SampleSpace )
 
     NbResponses = size(Responses,1)
     NbDim = SampleSpace%GetNbDim()
     SilentLoc = This%Silent
 
-    allocate(SampleOutput(NbDim+1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='SampleOutput', ProcName=ProcName, stat=StatLoc )
+    NbGridLevelsLoc = NbDim
+    if ( This%NbGridLevels > 0 ) NbGridLevelsLoc = This%NbGridLevels
 
-    allocate(Delta(NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Delta', ProcName=ProcName, stat=StatLoc )
-    Delta = Zero
+    allocate(TrajectoryOutput(NbDim+1), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='TrajectoryOutput', ProcName=ProcName, stat=StatLoc )
+    TrajectoryOutput = Zero
+
+    allocate(SampleRan(NbDim+1), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='SampleRan', ProcName=ProcName, stat=StatLoc )
+    SampleRan = .false.
 
     allocate(NbCellsOutput(NbResponses), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc )
@@ -602,28 +586,10 @@ contains
 
     SilentLoc = This%Silent
 
-    allocate(ParamSubSample(NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='ParamSubSampleStep', ProcName=ProcName, stat=StatLoc )
-    ParamSubSample = Zero
+    GridSize = One / real(NbGridLevelsLoc-1,rkp)
+    PerturbationSize = GridSize*real(This%StepSize,rkp)
 
-    allocate(SubSampleOutput(NbDim+1,This%NbCells), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='SubSampleOutputA', ProcName=ProcName, stat=StatLoc )
-    SubSampleOutput = Zero
-
-    allocate(StLoc(NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='StLoc', ProcName=ProcName, stat=StatLoc )
-    StLoc = Zero
-
-    allocate(SampleRan(NbDim+1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='SubSampleStatLoc', ProcName=ProcName, stat=StatLoc )
-    SampleRan = .false.
-
-    StepExceededFlag = .false.
-
-    ParamRecordLength = 0
-    if ( allocated(This%ParamRecord) ) ParamRecordLength = size(This%ParamRecord,2)
-
-    if ( This%HistoryFreq > 0 .and. This%ModelRunCounter == 0 ) then
+    if ( This%HistoryFreq > 0 .and. This%ParamSampleStep == 0 ) then
       call This%HistoryStep%Append( Value=0 )
       ii = 1
       do ii = 1, This%NbCells
@@ -631,264 +597,269 @@ contains
       end do
     end if
 
-    do
+    !***************************************************************************************************************************
+    ! Obtaining samples
+    if ( .not. This%SamplesObtained ) then
+      if ( .not. SilentLoc ) then
+        Line = 'Initial population of trajectory samples'
+        write(*,'(A)') '' 
+        write(*,'(A)') Line
+      end if
 
-      Converged = .true.
-      if ( ParamRecordLength < 2 ) Converged = .false.
+      allocate(This%ParamSample(NbDim,This%NbTrajectories*(NbDim+1)), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSamples', ProcName=ProcName, stat=StatLoc )
+      This%ParamSample = Zero
+
+      allocate(This%Signs(NbDim,This%NbTrajectories), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Signs', ProcName=ProcName, stat=StatLoc )
+      This%Signs = 1
+      
+      allocate(This%PermutationIndices(NbDim,This%NbTrajectories), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%PermutationIndices', ProcName=ProcName, stat=StatLoc )
+      This%PermutationIndices = 0
+
+      allocate(J(NbDim+1,1), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='J', ProcName=ProcName, stat=StatLoc )
+      J = One
+
+      allocate(P(NbDim,NbDim), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='P', ProcName=ProcName, stat=StatLoc )
+      P = Zero
+
+      allocate(B(NbDim+1,NbDim), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='B', ProcName=ProcName, stat=StatLoc )
+      call StrictlyTriangular( Array=B, UL='L' )
+
+      allocate(VarR2D(NbDim+1,NbDim), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+
+      VarI2D = floor(This%Sampler%Draw( NbSamples=This%NbTrajectories, NbDim=NbDim ) * (NbGridLevelsLoc-This%StepSize))
+      if ( any(VarI2D == NbGridLevelsLoc-This%StepSize) ) then
+        VarI0D = NbGridLevelsLoc-This%StepSize
+        i = 1
+        do i = 1, NbDim
+          ii = 1
+          do ii = 1
+            if ( VarI2D(i,ii) == VarI0D ) VarI2D(i,ii) = VarI2D(i,ii) - 1
+          end do
+        end do
+      end if
+
+      XStar = real(VarI2D,rkp) * GridSize
+
+      deallocate(VarI2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
+
       i = 1
-      do i = 1, This%NbCells
-        Delta = This%Cells(i)%GetStSnapShot()
-        call This%Cells(i)%TakeStSnapShot()
-        if ( .not. Converged ) cycle
-        StLoc = This%Cells(i)%GetStSnapShot()
-        Delta = dabs(Delta - StLoc)
+      do i = 1, This%NbTrajectories
+        This%PermutationIndices(:,i) = LinSequence( SeqStart=1, SeqEnd=NbDim )
+        call ScrambleArray( Array=This%PermutationIndices(:,i), RNG=This%RNG )
+        P = Zero
 
         ii = 1
         do ii = 1, NbDim
-          if ( Delta(ii) < max(This%AbsTolerance, This%RelTolerance*dabs(StLoc(ii))) ) cycle
-          Converged = .false.
-          exit
+          VarR0D = This%RNG%Draw()
+          if ( VarR0D < 0.5_rkp ) Signs(ii,i) = - 1
+          P(This%PermutationIndices(ii,i),ii) = One
         end do
+
+        TrajectoryPointer => This%ParamSample(:,(i-1)*(NbDim+1)+1:i*(NbDim+1))
+
+        VarR2D = B*Two - One
+
+        ! performing loop to carry out multiplication of triangular matrix by a diagonal one because it is faster
+        ii = 1
+        do ii = 1, NbDim
+          VarR2D = VarR2D(:,ii)*Signs(ii,i) + One
+        end do
+        VarR2D = VarR2D * PerturbationSize / Two
+        
+        call DGEMM( 'N', 'T', NbDim+1, NbDim, 1, One, J, NbDim, XStar(:,i:i), NbDim, One, VarR2D, NbDim+1 )
+
+        call DGEMM( 'T', 'T', NbDim, NbDim+1, NbDim, One, P, NbDim, VarR2D, NbDim+1, Zero, TrajectoryPointer, NbDim )
+
+        nullify(TrajectoryPointer)
       end do
 
-      if ( Converged ) then
-        if ( .not. SilentLoc ) then
-          Line = 'All cells converged'
-          write(*,'(A)') '' 
-          write(*,'(A)') Line
-        end if
-        exit
-      end if
+      deallocate(P, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='P', ProcName=ProcName, stat=StatLoc )
 
-      !***************************************************************************************************************************
-      ! Obtaining samples
-      if ( .not. This%SamplesObtained ) then
-        if ( .not. allocated(This%ParamRecord) ) then
-          if ( .not. SilentLoc ) then
-            Line = 'Initial population of samples'
-            write(*,'(A)') '' 
-            write(*,'(A)') Line
-          end if
-          This%iStage = 0
-          This%ParamSample = ExtendedSampleSpace%Draw( Sampler=This%Sampler, NbSamples=This%NbSamples )
-          This%SamplesRan = .false.
-        else
-          if ( .not. SilentLoc ) then
-            Line = 'Performing enrichment'
-            write(*,'(A)') '' 
-            write(*,'(A)') Line
-          end if
-          This%iStage = This%iStage + 1
-          VarI0D = This%SampleEnrichScheme%GetNbEnrichSamples( NbSamples=size(This%ParamRecord,2), Stage=This%iStage )
-          if ( size(This%ParamRecord,2) + VarI0D > This%SampleEnrichScheme%GetMaxNbSamples() ) then
-            StepExceededFlag = .true.
-            exit
-          end if
-          call ExtendedSampleSpace%Enrich( Sampler=This%Sampler, NbEnrichmentSamples=VarI0D, Samples=This%ParamRecord,            &
-                                                                                              EnrichmentSamples=This%ParamSample )
-        end if
-        This%SamplesRan = .false.
-        This%SamplesObtained = .true.
+      deallocate(B, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='B', ProcName=ProcName, stat=StatLoc )
 
-        allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-        This%ParamSampleRan = 1
-      end if
+      deallocate(J, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='J', ProcName=ProcName, stat=StatLoc )
 
-      !***************************************************************************************************************************
-      ! Running samples
-      if ( .not. This%SamplesRan ) then
-        if ( .not. SilentLoc ) then
-          Line = 'Running Samples'
-          write(*,*)
-          write(*,'(A)') Line
-        end if
+      deallocate(VarR2D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
 
-        iEnd = size(This%ParamSample,2)
-        i = This%ParamSampleStep
-        do
+      deallocate(XsStar, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='XsStar', ProcName=ProcName, stat=StatLoc )
 
-          if ( i >= iEnd ) exit
-
-          NbInputs = iEnd - i
-          if ( This%CheckPointFreq > 0 ) NbInputs = min(This%CheckPointFreq, iEnd-i)
-
-          allocate(Input((NbDim+1)*NbInputs), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='Input', ProcName=ProcName, stat=StatLoc )
-
-          allocate(Outputs(NbResponses,(NbDim+1)*NbInputs), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
-
-          allocate(RunStatLoc((NbDim+1)*NbInputs), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='RunStatLoc', ProcName=ProcName, stat=StatLoc )
-          RunStatLoc = 1
-
-          iii = 0
-          ii = 1
-          do ii = 1, NbInputs
-            iii = iii + 1
-            call Input(iii)%Construct( Input=This%ParamSample(1:NbDim,i+ii), Labels=SampleSpace%GetLabel() )
-            iv = 1
-            do iv = 1, NbDim
-              iii = iii + 1
-              ParamSubSample = This%ParamSample(1:NbDim,i+ii)
-              ParamSubSample(iv) = This%ParamSample(NbDim+iv,i+ii)
-              call Input(iii)%Construct( Input=ParamSubSample, Labels=SampleSpace%GetLabel() )
-            end do
-          end do
-
-          if ( .not. SilentLoc ) then
-            Line = '  Running SubSamples of Sample #' // ConvertToString(Value=ParamRecordLength+i+1) 
-            if( NbInputs > 1 ) Line = Line // '-' // ConvertToString(Value=ParamRecordLength+i+NbInputs)
-            write(*,'(A)') Line
-          end if
-          
-          call ModelInterface%Run( Input=Input, Output=Outputs, Stat=RunStatLoc )
-
-          ! checking if any responses are stochastic
-          ii = 1
-          do ii = 1, NbInputs*(NbDim+1)
-            iii = 1
-            do iii = 1, NbResponses
-              if ( RunStatLoc(ii) ) then
-                if ( Outputs(iii,ii)%GetNbDegen() > 1 ) call Error%Raise( 'Morris method does not support stochastic output',     &
-                                                                                                               ProcName=ProcName )
-              end if
-            end do
-          end do
-
-          ! processing samples
-          ii = 1
-          do ii = 1, NbInputs
-            iRunMin = (ii-1)*(NbDim+1)+1
-            iRunMax = iRunMin + NbDim
-            SampleRan = .false.
-
-            iii = iRunMin
-            do iii = iRunMin, iRunMax
-              if ( RunStatLoc(iii) == 0 ) SampleRan(iii-iRunMin+1) = .true.
-            end do
-
-            iii = 1
-            do iii = 1, NbResponses
-              iCellMin = 1
-              if ( iii > 1 ) iCellMin = sum(NbCellsOutput(1:iii-1))
-              iCellMax = iCellMine + NbCellsOutput(iii)
-
-              iv = iCellMin
-              do iv = iCellMin, iCellMax
-                SampleOutput = Zero
-                v = iRunMin
-                do v = iRunMin, iRunMax
-                  if ( .not. SampleRan(v-iRunMin+1) ) cycle
-                  VarR2DPtr => Outputs(iii,v)%GetValuesPointer()
-                  SampleOutput(v-iRunMin+1) = VarR2DPtr(iv-iCellMin+1,1)
-                  nullify(VarR2DPtr)
-                end do
-                call This%Cells(iv)%UpdateEstimators( SampleOutput=SampleOutput, SampleRan=SampleRan )
-              end do
-            end do
-
-            if ( This%HistoryFreq > 0 .and. (mod(ParamRecordLength+i+ii, abs(This%HistoryFreq)) == 0 .and. i + ii /= iEnd)  ) then
-              call This%HistoryStep%Append( Value=ParamRecordLength+i+ii )
-              iii = 1
-              do iii = 1, This%NbCells
-                call This%Cells(iii)%UpdateHistory()
-              end do
-            end if
-
-          end do
-
-          deallocate(RunStatLoc, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='RunStatLoc', ProcName=ProcName, stat=StatLoc )
-
-          deallocate(Outputs, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
-
-          deallocate(Input, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='Input', ProcName=ProcName, stat=StatLoc )
-
-          This%ModelRunCounter = This%ModelRunCounter + (NbDim+1)*NbInputs
-          i = i + NbInputs
-          This%ParamSampleStep = i
-    
-          if ( i /= iEnd  ) then
-            call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),     &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
-          end if
-
-        end do
-
-        This%SamplesRan = .true.
-
-        iStart = ParamRecordLength
-        allocate(VarR2D(2*NbDim,count(This%ParamSampleRan==0)+ParamRecordLength), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-        if ( iStart > 0 ) VarR2D(:,1:ParamRecordLength) = This%ParamRecord
-
-        i = iStart+1
-        ii = 0
-        do i = iStart+1, size(VarR2D,2)
-          ii = ii + 1
-          if ( This%ParamSampleRan(ii) == 0 ) VarR2D(:,i) = This%ParamSample(:,ii)
-        end do
-
-        call move_alloc(VarR2D, This%ParamRecord)
-
-        ParamRecordLength = size(This%ParamRecord,2)
-
-        deallocate(This%ParamSampleRan, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-
-        deallocate(This%ParamSample, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
-
-        This%ParamSampleStep = 0
-
-      end if
-
-      This%SamplesObtained = .false.
-      This%SamplesRan = .false.
-
-      if ( This%HistoryFreq > 0 ) then
-        call This%HistoryStep%Append( Value=ParamRecordLength )
+      i = 1
+      do i = 1, NbDim
+        DistProbPtr => SampleSpace%GetDistributionPointer( Num=i )
         ii = 1
-        do ii = 1, This%NbCells
-          call This%Cells(ii)%UpdateHistory()
+        do ii = 1, size(This%ParamSample,1)
+          This%ParamSample(i,ii) = DistProbPtr%InvCDF( P=This%ParamSample(i,ii) )
         end do
-      end if
-
-      call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
-                        Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
-
-    end do
-
-    if ( StepExceededFlag ) then
-      Line = 'Maximum sampling step exceeded'
-      write(*,*)
-      write(*,'(A)') Line
-      if ( This%ModelRunCounter == 0 ) call Error%Raise( Line='Maximum sampling step exceeded prior to any samples being taken',  &
-                                                                                                               ProcName=ProcName )
+      end do
+        
+      This%SamplesRan = .false.
+      This%SamplesObtained = .true.
     end if
 
+    !***************************************************************************************************************************
+    ! Running samples
+    if ( .not. This%SamplesRan ) then
+      if ( .not. SilentLoc ) then
+        Line = 'Running Samples'
+        write(*,*)
+        write(*,'(A)') Line
+      end if
+
+      iEnd = This%NbTrajectories
+      i = This%ParamSampleStep/(NbDim+1)
+      do
+        if ( i >= iEnd ) exit
+
+        NbTrajectories = iEnd - i
+        if ( This%CheckPointFreq > 0 ) NbTrajectories = min(This%CheckPointFreq, iEnd-i)
+
+        NbInputs = NbTrajectories*(NbDim+1)
+
+        allocate(Input(NbInputs), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='Input', ProcName=ProcName, stat=StatLoc )
+
+        allocate(Outputs(NbResponses,NbInputs), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
+        allocate(RunStatLoc(NbInputs), stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Allocate( Name='RunStatLoc', ProcName=ProcName, stat=StatLoc )
+        RunStatLoc = 1
+
+        iii = This%ParamSampleStep
+        ii = 1
+        do ii = 1, NbInputs
+          iii = iii + 1
+          call Input(iii)%Construct( Input=This%ParamSample(:,iii), Labels=SampleSpace%GetLabel() )
+        end do
+
+        if ( .not. SilentLoc ) then
+          Line = '  Running Trajectories #' // ConvertToString(Value=i+1) 
+          if( NbTrajectories > 1 ) Line = Line // '-' // ConvertToString(Value=i+1+NbTrajectories)
+          write(*,'(A)') Line
+        end if
+        
+        call ModelInterface%Run( Input=Input, Output=Outputs, Stat=RunStatLoc )
+
+        ! checking if any responses are stochastic
+        ii = 1
+        do ii = 1, NbInputs
+          iii = 1
+          do iii = 1, NbResponses
+            if ( RunStatLoc(ii) ) then
+              if ( Outputs(iii,ii)%GetNbDegen() > 1 ) call Error%Raise( 'Morris method does not support stochastic output',       &
+                                                                                                               ProcName=ProcName )
+            end if
+          end do
+        end do
+
+        ! processing samples
+        ii = 1
+        do ii = 1, NbTrajectories
+          iRunMin = (ii-1)*(NbDim+1)+1
+          iRunMax = iRunMin + NbDim
+          SampleRan = .false.
+
+          iii = iRunMin
+          do iii = iRunMin, iRunMax
+            if ( RunStatLoc(iii) == 0 ) SampleRan(iii-iRunMin+1) = .true.
+          end do
+
+          iii = 1
+          do iii = 1, NbResponses
+            iCellMin = 1
+            if ( iii > 1 ) iCellMin = sum(NbCellsOutput(1:iii-1))
+            iCellMax = iCellMine + NbCellsOutput(iii)
+
+            iv = iCellMin
+            do iv = iCellMin, iCellMax
+              v = iRunMin
+              do v = iRunMin, iRunMax
+                if ( .not. SampleRan(v-iRunMin+1) ) cycle
+                VarR2DPtr => Outputs(iii,v)%GetValuesPointer()
+                TrajectoryOutput(v-iRunMin+1) = VarR2DPtr(iv-iCellMin+1,1)
+                nullify(VarR2DPtr)
+              end do
+              call This%Cells(iv)%UpdateEstimators( TrajectoryOutput=TrajectoryOutput, SampleRan=SampleRan,                       &
+                     PerturbationSize=PerturbationSize, Signs=This%Signs(:,ii), PermutationIndices=This%PermutationIndices(:,ii) )
+            end do
+          end do
+
+          if ( This%HistoryFreq > 0 .and. (mod(i+ii, abs(This%HistoryFreq)) == 0 .and. i + ii /= iEnd)  ) then
+            call This%HistoryStep%Append( Value=i )
+            iii = 1
+            do iii = 1, This%NbCells
+              call This%Cells(iii)%UpdateHistory()
+            end do
+          end if
+
+        end do
+
+        deallocate(RunStatLoc, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='RunStatLoc', ProcName=ProcName, stat=StatLoc )
+
+        deallocate(Outputs, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Outputs', ProcName=ProcName, stat=StatLoc )
+
+        deallocate(Input, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Input', ProcName=ProcName, stat=StatLoc )
+
+        i = i + NbTrajectories
+        This%ParamSampleStep = This%ParamSampleStep + NbInputs
+
+        if ( i /= iEnd  ) then
+          call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),     &
+                        Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+        end if
+
+      end do
+
+      This%SamplesRan = .true.
+
+    end if
+
+    if ( This%HistoryFreq > 0 ) then
+      call This%HistoryStep%Append( Value=i )
+      ii = 1
+      do ii = 1, This%NbCells
+        call This%Cells(ii)%UpdateHistory()
+      end do
+    end if
+
+    call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
+                      Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
+
     if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, Responses=Responses )
+
+    deallocate(This%ParamSample, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(This%Signs, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Signs', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(This%PermutationIndices, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PermutationIndices', ProcName=ProcName, stat=StatLoc )
 
     deallocate(This%Cells, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
 
-    deallocate(This%ParamRecord, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
-
-    This%ModelRunCounter = 0
-
-    deallocate(ParamSubSample, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='ParamSubSample', ProcName=ProcName, stat=StatLoc )
-
-    deallocate(SampleOutput, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='SampleOutput', ProcName=ProcName, stat=StatLoc )
-
     deallocate(SampleRan, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SampleRan', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(TrajectoryOutput, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TrajectoryOutput', ProcName=ProcName, stat=StatLoc )
 
     deallocate(NbCellsOutput, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc )
@@ -899,7 +870,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine WriteOutput( This, Directory, Responses )
 
-    class(SASobol_Type), intent(inout)                                ::    This
+    class(SAMorris_Type), intent(inout)                                ::    This
     character(*), intent(in)                                          ::    Directory
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
 
@@ -927,7 +898,7 @@ contains
       SilentLoc = This%Silent
 
       if ( .not. SilentLoc ) then
-        Line = 'Writing procedure data to the output folder'
+        Line = 'Writing solver data to the output folder'
         write(*,'(A)') ''
         write(*,'(A)') Line
       end if
@@ -936,9 +907,9 @@ contains
 
       NbResponses = size(Responses)
 
-      FileName = '/sampled_parameters.dat'
+      FileName = '/trajectories.dat'
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Array=This%ParamRecord, File=File )
+      call ExportArray( Array=This%ParamSample, File=File )
 
       i = 1
       ii = 1
@@ -960,17 +931,17 @@ contains
 
           call MakeDirectory( Path=Directory // '/' // ResponseLabel // '/cell' // ConvertToString(Value=v), Options='-p' )
 
-          FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mean.dat'
+          FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mu.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call File%Export(String=ConvertToString(Value=This%Cells(iv)%GetMean()))
+          call File%Export(String=ConvertToString(Values=This%Cells(iv)%GetMu()))
 
-          FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/variance.dat'
+          FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mu_star.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call File%Export(String=ConvertToString(Value=This%Cells(iv)%GetVariance()))
+          call File%Export(String=ConvertToString(Values=This%Cells(iv)%GetMuStar()))
 
-          FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sobol_total.dat'
+          FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sigma.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Array=This%Cells(iv)%GetSt(), File=File )
+          call File%Export(String=ConvertToString(Values=This%Cells(iv)%GetSigma()))
 
           if ( This%HistoryFreq > 0 ) then
             call This%HistoryStep%Get( Values=VarI1D )
@@ -979,18 +950,17 @@ contains
             call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
             call ExportArray( Array=VarI1D, File=File, RowMajor=.true. )
 
-            FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mean_history.dat'
+            FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mu_history.dat'
             call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' ) 
-            call ExportArray( Array=This%Cells(iv)%GetMeanHistory(), File=File, RowMajor=.true. )
+            call ExportArray( Array=This%Cells(iv)%GetMuHistory(), File=File, RowMajor=.false. )
 
-            FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/variance_history.dat'
+            FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mu_star_history.dat'
+            call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' ) 
+            call ExportArray( Array=This%Cells(iv)%GetMuStarHistory(), File=File, RowMajor=.false. )
+
+            FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sigma_history.dat'
             call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-            call ExportArray( Array=This%Cells(iv)%GetVarianceHistory(), File=File, RowMajor=.true. )
-
-            FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sobol_total_history.dat'
-            call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-            call ExportArray( Array=This%Cells(iv)%GetStHistory(), File=File, RowMajor=.false. )
-
+            call ExportArray( Array=This%Cells(iv)%GetSigmaHistory(), File=File, RowMajor=.false. )
           end if
 
           ii = iii + 1
@@ -1007,7 +977,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(SASobol_Type), intent(out)                                  ::    LHS
+    class(SAMorris_Type), intent(out)                                 ::    LHS
     class(SAMethod_Type), intent(in)                                  ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
@@ -1016,7 +986,7 @@ contains
 
     select type (RHS)
 
-      type is (SASobol_Type)
+      type is (SAMorris_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -1025,12 +995,12 @@ contains
           LHS%Silent = RHS%Silent
           allocate(LHS%Sampler, source=RHS%Sampler, stat=StatLoc)
           if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Sampler', ProcName=ProcName, stat=StatLoc )
-          LHS%SampleEnrichScheme = RHS%SampleEnrichScheme
-          LHS%NbSamples = RHS%NbSamples
+          LHS%RNG = RHS%RNG
+          LHS%NbTrajectories = RHS%NbTrajectories
+          LHS%NbGridLevels = RHS%NbGridLevels
+          LHS%StepSize = RHS%StepSize
           LHS%CheckPointFreq = RHS%CheckPointFreq
           LHS%HistoryFreq = RHS%HistoryFreq
-          LHS%RelTolerance = RHS%RelTolerance
-          LHS%AbsTolerance = RHS%AbsTolerance
         end if
       
       class default
@@ -1044,25 +1014,25 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(SASobol_Type), intent(inout)                                 ::    This
+    type(SAMorris_Type), intent(inout)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
     if ( allocated(This%Cells) ) deallocate(This%Cells, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%ParamRecord) ) deallocate(This%ParamRecord, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc )
     
     if ( allocated(This%ParamSample) ) deallocate(This%ParamSample, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
-
     if ( allocated(This%Sampler) ) deallocate(This%Sampler, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%Signs) ) deallocate(This%Signs, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Signs', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%PermutationIndices) ) deallocate(This%PermutationIndices, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PermutationIndices', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1097,20 +1067,13 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%StEstimator) ) deallocate(This%StEstimator, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StEstimator', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%StEstimatorNbSamples) ) deallocate(This%StEstimatorNbSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%StSnapShot) ) deallocate(This%StSnapShot, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StSnapShot', ProcName=ProcName, stat=StatLoc )
-
     call This%StHistory%Purge()
     call This%MeanHistory%Purge()
-    call This%VarianceHistory%Purge
+    call This%SigmaHistory%Purge
     
-    call This%MomentEstimator%Reset()
+    call This%MuEstimator%Reset()
+    call This%MuStarEstimator%Reset()
+    call This%VarEstimator%Reset()
 
     call This%SetDefaults()
 
@@ -1145,6 +1108,7 @@ contains
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
+    integer                                                           ::    NbDim
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
@@ -1152,38 +1116,42 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    SectionName = 'moment_estimator'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call This%MomentEstimator%Construct( Input=InputSection, Prefix=PrefixLoc )
-    nullify( InputSection )
+    ParameterName = 'nb_dim'
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
+    NbDim = VarI0D
 
-    SectionName = 'sobol_total_estimator'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call ImportArray( Input=InputSection, Array=This%StEstimator, Prefix=PrefixLoc )
-    nullify( InputSection )
+    allocate(This%MuEstimator(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MuEstimator', ProcName=ProcName, stat=StatLoc )
 
-    SectionName = 'sobol_total_snapshot'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call ImportArray( Input=InputSection, Array=This%StSnapShot, Prefix=PrefixLoc )
-    nullify( InputSection )
+    allocate(This%MuStarEstimator(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MuStarEstimator', ProcName=ProcName, stat=StatLoc )
 
-    SectionName = 'sobol_estimator_nb_samples'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call ImportArray( Input=InputSection, Array=This%StEstimatorNbSamples, Prefix=PrefixLoc )
-    nullify( InputSection )
+    allocate(This%VarEstimator(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%VarEstimator', ProcName=ProcName, stat=StatLoc )
 
-    SectionName = 'sobol_total_history'
-    if ( Input%HasSection( SubSectionName = SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
+    SectionName = 'dimensions'
+    i = 1
+    do i = 1, NbDim
+      SubSectionName = '>dimension' // ConvertToString(Value=i)
+
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName // '>mu_estimator',                 &
+                                                                                                                Mandatory=.true. )
+      call This%MuEstimator(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
       nullify( InputSection )
-      call This%StHistory%Append( Values=VarR2D )
-      deallocate(VarR2D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-    end if
 
-    SectionName = 'mean_history'
-    if ( Input%HasSection( SubSectionName = SectionName ) ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName // '>mu_star_estimator',            &
+                                                                                                                Mandatory=.true. )
+      call This%MuStarEstimator(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
+      nullify( InputSection )
+
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName // '>variance_estimator',           &
+                                                                                                                Mandatory=.true. )
+      call This%VarEstimator(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
+      nullify( InputSection )
+    end do
+
+    SectionName = 'mu_history'
+    if ( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
       nullify( InputSection )
@@ -1192,12 +1160,22 @@ contains
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
     end if
 
-    SectionName = 'variance_history'
-    if ( Input%HasSection( SubSectionName = SectionName ) ) then
+    SectionName = 'mu_star_history'
+    if ( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
       nullify( InputSection )
-      call This%VarianceHistory%Append( Values=VarR1D )
+      call This%MuStarHistory%Append( Values=VarR1D )
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    end if
+
+    SectionName = 'sigma_history'
+    if ( Input%HasSection( SubSectionName=SectionName ) ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
+      nullify( InputSection )
+      call This%SigmaHistory%Append( Values=VarR1D )
       deallocate(VarR1D, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
     end if
@@ -1215,23 +1193,26 @@ contains
 
     character(*), parameter                                           ::    ProcName='ConstructCase1_Cell'
     integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
-    allocate(This%StEstimator(Dimensionality), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%StEstimator', ProcName=ProcName, stat=StatLoc )
-    This%StEstimator = Zero
+    allocate(This%MuEstimator(Dimensionality), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MuEstimator', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%StEstimatorNbSamples(Dimensionality), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
-    This%StEstimatorNbSamples = Zero
+    allocate(This%MuStarEstimator(Dimensionality), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MuStarEstimator', ProcName=ProcName, stat=StatLoc )
 
-    call This%MomentEstimator%Construct( SampleVariance=.true. )
+    allocate(This%VarEstimator(Dimensionality), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%VarEstimator', ProcName=ProcName, stat=StatLoc )
 
-    allocate(This%StSnapShot(Dimensionality), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%StSnapShot', ProcName=ProcName, stat=StatLoc )
-    This%StSnapShot = Zero
+    i = 1
+    do i = 1, Dimensionality
+      call This%MuEstimator(i)%Construct()
+      call This%MuStarEstimator(i)%Construct()
+      call This%VarEstimator(i)%Construct( Sample=.true. )
+    end do
 
     This%Constructed = .true.
 
@@ -1240,6 +1221,8 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput_Cell( This, MainSectionName, Prefix, Directory )
+
+    use SMUQFile_Class                                            ,only:    SMUQFile_Type
 
     type(InputSection_Type)                                           ::    GetInput_Cell
 
@@ -1262,6 +1245,7 @@ contains
     integer, allocatable, dimension(:)                                ::    VarI1D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     type(SMUQFile_Type)                                               ::    File
+    integer                                                           ::    NbDim
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -1277,167 +1261,132 @@ contains
 
     call GetInput_Cell%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/moment_estimator'
-    SectionName = 'moment_estimator'
-    call GetInput_Cell%AddSection( Section=This%MomentEstimator%GetInput( MainSectionName=SectionName,                            &
-                                                                                       Prefix=PrefixLoc, Directory=DirectorySub) )
+    NbDim = size(This%MuEstimator,1)
+
+    SectionName = 'dimensions'
+    call GetInput_Cell%AddSection( SectionName=SectionName )
+
+    i = 1
+    do i = 1, NbDim
+      SubSectionName = 'dimension' // ConvertToString(Value=i)
+      call GetInput_Cell%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+
+      call GetInput_Cell%AddSection( Section=This%MuEstimator%GetInput(MainSectionName='mu_estimator', Prefix=PrefixLoc,          &
+                                                     Directory=DirectorySub), To_SubSection=SectionName // '>' // SubSectionName )
+
+      call GetInput_Cell%AddSection( Section=This%MuStarEstimator%GetInput(MainSectionName='mu_star_estimator', Prefix=PrefixLoc, &
+                                                     Directory=DirectorySub), To_SubSection=SectionName // '>' // SubSectionName )
+
+      call GetInput_Cell%AddSection( Section=This%VarEstimator%GetInput(MainSectionName='variance_estimator', Prefix=PrefixLoc,   &
+                                                     Directory=DirectorySub), To_SubSection=SectionName // '>' // SubSectionName )
+
+    end do
 
     if ( ExternalFlag ) then
-      SectionName = 'sobol_total_estimator'
-      call GetInput_Cell%AddSection( SectionName=SectionName )
-      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      FileName = DirectoryLoc // '/sobol_total_estimator.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%StEstimator, File=File )
-      nullify(InputSection)
 
-      SectionName = 'sobol_total_snapshot'
-      call GetInput_Cell%AddSection( SectionName=SectionName )
-      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      FileName = DirectoryLoc // '/sobol_total_snapshot.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%StSnapShot, File=File )
-      nullify(InputSection)
-
-      SectionName = 'sobol_estimator_nb_samples'
-      call GetInput_Cell%AddSection( SectionName=SectionName )
-      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      FileName = DirectoryLoc // '/sobol_estimator_nb_samples.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%StEstimatorNbSamples, File=File )
-      nullify(InputSection)
-
-      if ( This%StHistory%GetLength() > 0 ) then
-        SectionName = 'sobol_total_history'
+      if ( This%MuHistory%GetLength() > 0 ) then
+        SectionName = 'mu_history'
         call GetInput_Cell%AddSection( SectionName=SectionName )
         call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-        FileName = DirectoryLoc // '/sobol_total_history.dat'
+        FileName = DirectoryLoc // '/mu_history.dat'
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call This%StHistory%Get( Values=VarR2D )
+        call This%MuHistory%Get( Values=VarR2D )
         call ExportArray( Input=InputSection, Array=VarR2D, File=File )
         deallocate(VarR2D, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         nullify(InputSection)
       end if
 
-      if ( This%MeanHistory%GetLength() > 0 ) then
-        SectionName = 'mean_history'
+      if ( This%MuStarHistory%GetLength() > 0 ) then
+        SectionName = 'mu_star_history'
         call GetInput_Cell%AddSection( SectionName=SectionName )
         call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-        FileName = DirectoryLoc // '/mean_history.dat'
+        FileName = DirectoryLoc // '/mu_star_history.dat'
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call This%MeanHistory%Get( Values=VarR1D )
-        call ExportArray( Input=InputSection, Array=VarR1D, File=File )
-        deallocate(VarR1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+        call This%MuStarHistory%Get( Values=VarR2D )
+        call ExportArray( Input=InputSection, Array=VarR2D, File=File )
+        deallocate(VarR2D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         nullify(InputSection)
       end if
 
-      if ( This%VarianceHistory%GetLength() > 0 ) then
-        SectionName = 'variance_history'
+      if ( This%SigmaHistory%GetLength() > 0 ) then
+        SectionName = 'sigma_history'
         call GetInput_Cell%AddSection( SectionName=SectionName )
         call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-        FileName = DirectoryLoc // '/variance_history.dat'
+        FileName = DirectoryLoc // '/sigma_history.dat'
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call This%VarianceHistory%Get( Values=VarR1D )
-        call ExportArray( Input=InputSection, Array=VarR1D, File=File )
-        deallocate(VarR1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+        call This%SigmaHistory%Get( Values=VarR2D )
+        call ExportArray( Input=InputSection, Array=VarR2D, File=File )
+        deallocate(VarR2D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         nullify(InputSection)
       end if
+
     else
-      SectionName = 'sobol_total_snapshot'
-      call GetInput_Cell%AddSection( SectionName=SectionName )
-      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      allocate(VarR1D, source=This%StSnapShot, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-      call ExportArray( Input=InputSection, Array=VarR1D )
-      deallocate(VarR1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-      nullify(InputSection)
 
-      SectionName = 'sobol_total_estimator'
-      call GetInput_Cell%AddSection( SectionName=SectionName )
-      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      allocate(VarR1D, source=This%StEstimator, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-      call ExportArray( Input=InputSection, Array=VarR1D )
-      deallocate(VarR1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-      nullify(InputSection)
-
-      SectionName = 'sobol_estimator_nb_samples'
-      call GetInput_Cell%AddSection( SectionName=SectionName )
-      call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      allocate(VarI1D, source=This%StEstimatorNbSamples, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
-      call ExportArray( Input=InputSection, Array=VarI1D )
-      deallocate(VarI1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
-      nullify(InputSection)
-
-      if ( This%StHistory%GetLength() > 0 ) then
-        SectionName = 'sobol_total_history'
+      if ( This%MuHistory%GetLength() > 0 ) then
+        SectionName = 'mu_history'
         call GetInput_Cell%AddSection( SectionName=SectionName )
         call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-        call This%StHistory%Get( Values=VarR2D )
+        call This%MuHistory%Get( Values=VarR2D )
         call ExportArray( Input=InputSection, Array=VarR2D )
         deallocate(VarR2D, stat=StatLoc)
         if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         nullify(InputSection)
       end if
 
-      if ( This%MeanHistory%GetLength() > 0 ) then
-        SectionName = 'mean_history'
+      if ( This%MuStarHistory%GetLength() > 0 ) then
+        SectionName = 'mu_star_history'
         call GetInput_Cell%AddSection( SectionName=SectionName )
         call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-        call This%MeanHistory%Get( Values=VarR1D )
-        call ExportArray( Input=InputSection, Array=VarR1D )
-        deallocate(VarR1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+        call This%MuStarHistory%Get( Values=VarR2D )
+        call ExportArray( Input=InputSection, Array=VarR2D )
+        deallocate(VarR2D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         nullify(InputSection)
       end if
 
-      if ( This%VarianceHistory%GetLength() > 0 ) then
-        SectionName = 'variance_history'
+      if ( This%SigmaHistory%GetLength() > 0 ) then
+        SectionName = 'sigma_history'
         call GetInput_Cell%AddSection( SectionName=SectionName )
         call GetInput_Cell%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-        call This%VarianceHistory%Get( Values=VarR1D )
-        call ExportArray( Input=InputSection, Array=VarR1D )
-        deallocate(VarR1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+        call This%SigmaHistory%Get( Values=VarR2D )
+        call ExportArray( Input=InputSection, Array=VarR2D )
+        deallocate(VarR2D, stat=StatLoc)
+        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
         nullify(InputSection)
       end if
+
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine UpdateEstimators_Cell( This, SampleOutput, SampleRan )
+  subroutine UpdateEstimators_Cell( This, TrajectoryOutput, SampleRan, PertubationSize, Signs, PermutationIndices )
 
     class(Cell_Type), intent(inout)                                   ::    This
-    real(rkp), dimension(:), intent(in)                               ::    SampleOutput
+    real(rkp), dimension(:), intent(in)                               ::    TrajectoryOutput
     logical, dimension(:), intent(in)                                 ::    SampleRan
+    real(rkp), intent(in)                                             ::    PerturbationSize
+    integer, dimension(:), intent(in)                                 ::    Signs
+    integer, dimension(:), intent(in)                                 ::    PermutationIndices
 
     character(*), parameter                                           ::    ProcName='UpdateEstimators_Cell'
     integer                                                           ::    StatLoc=0
+    real(rkp)                                                         ::    EE
     integer                                                           ::    NbDim
-    real(rkp)                                                         ::    Variance
-    integer                                                           ::    i
 
-    if ( .not. SampleRan(1) ) return 
-
-    NbDim = size(This%StEstimator,1)
-
-    call This%MomentEstimator%Update( Value=SampleOutput(1) )
-    Variance = This%MomentEstimator%GetVariance()
+    NbDim = size(This%MuEstimator,1)
 
     i = 1
     do i = 1, NbDim
-      if ( SampleRan(i+1) ) then
-        This%StEstimator(i) = This%StEstimator(i) + (SampleOutput(1) - SampleOutput(i+1))**2
-        This%StEstimatorNbSamples(i) = This%StEstimatorNbSamples(i) + 1
+      if ( SampleRan(i) ) then
+        EE = Signs(PermutationIndices(i))*( TrajectoryOutput(i+1)-TrajectoryOutput(i) ) / PerturbationSize
+        call This%MuEstimator(i)%Update( Value=EE )
+        call This%MuStarEstimator(i)%Update( Value=dabs(EE) )
+        call This%VarEstimator(i)%Update( Value=EE )
       end if
     end do
 
@@ -1452,155 +1401,149 @@ contains
     character(*), parameter                                           ::    ProcName='UpdateHistory_Cell'
     integer                                                           ::    StatLoc=0
 
-    call This%MeanHistory%Append( Value=This%MomentEstimator%GetMean() )
-    call This%VarianceHistory%Append( Value=This%MomentEstimator%GetVariance() )
-    call This%StHistory%Append( Values=This%GetSt() )
+    call This%MuHistory%Append( Value=This%GetMu() )
+    call This%MuStarHistory%Append( Value=This%GetMuStar() )
+    call This%SigmaHistory%Append( Values=This%GetSigma() )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine TakeStSnapShot_Cell( This )
+  function GetMu_Cell( This )
 
-    class(Cell_Type), intent(inout)                                   ::    This
-
-    character(*), parameter                                           ::    ProcName='TakeStSnapShot_Cell'
-    integer                                                           ::    StatLoc=0
-
-    This%StSnapShot = This%GetSt()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetStSnapShot_Cell( This )
-
-    real(rkp), allocatable, dimension(:)                              ::    GetStSnapShot_Cell
+    real(rkp), allocatable, dimension(:)                              ::    GetMu_Cell
 
     class(Cell_Type), intent(in)                                      ::    This
 
-    character(*), parameter                                           ::    ProcName='GetStSnapShot_Cell'
+    character(*), parameter                                           ::    ProcName='GetMu_Cell'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
+    integer                                                           ::    NbDim
 
-    allocate(GetStSnapShot_Cell, source=This%StSnapShot, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetStSnapShot_Cell', ProcName=ProcName, stat=StatLoc )
+    NbDim = size(This%MuEstimator,1)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSt_Cell( This )
-
-    real(rkp), allocatable, dimension(:)                              ::    GetSt_Cell
-
-    class(Cell_Type), intent(in)                                      ::    This
-
-    character(*), parameter                                           ::    ProcName='GetSt_Cell'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-
-    allocate(GetSt_Cell(size(This%StEstimator,1)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='(GetSt_Cell', ProcName=ProcName, stat=StatLoc )
-    GetSt_Cell = Zero
+    allocate(GetMu_Cell(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetMu_Cell', ProcName=ProcName, stat=StatLoc )
+    GetMu_Cell = Zero
 
     i = 1
-    do i = 1, size(GetSt_Cell,1)
-      if ( This%StEstimatorNbSamples(i) < 2 ) cycle
-      GetSt_Cell(i) = This%StEstimator(i) / ( Two*real(This%StEstimatorNbSamples(i),rkp) * This%MomentEstimator%GetVariance() )
+    do i = 1, NbDim
+      GetMu_Cell(i) = This%MuEstimator(i)%GetMean()
     end do
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMean_Cell( This )
+  function GetMuStar_Cell( This )
 
-    real(rkp)                                                         ::    GetMean_Cell
+    real(rkp), allocatable, dimension(:)                              ::    GetMuStar_Cell
 
     class(Cell_Type), intent(in)                                      ::    This
 
-    character(*), parameter                                           ::    ProcName='GetMean_Cell'
+    character(*), parameter                                           ::    ProcName='GetMuStar_Cell'
     integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    NbDim
 
-    GetMean_Cell = This%MomentEstimator%GetMean()
+    NbDim = size(This%MuEstimator,1)
+
+    allocate(GetMuStar_Cell(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetMuStar_Cell', ProcName=ProcName, stat=StatLoc )
+    GetMuStar_Cell = Zero
+
+    i = 1
+    do i = 1, NbDim
+      GetMuStar_Cell(i) = This%MuStarEstimator(i)%GetMean()
+    end do
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVariance_Cell( This )
+  function GetSigma_Cell( This )
 
-    real(rkp)                                                         ::    GetVariance_Cell
+    real(rkp), allocatable, dimension(:)                              ::    GetSigma_Cell
 
     class(Cell_Type), intent(in)                                      ::    This
 
-    character(*), parameter                                           ::    ProcName='GetVariance_Cell'
+    character(*), parameter                                           ::    ProcName='GetSigma_Cell'
     integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    NbDim
 
-    GetVariance_Cell = This%MomentEstimator%GetVariance()
+    NbDim = size(This%MuEstimator,1)
+
+    allocate(GetSigma_Cell(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetSigma_Cell', ProcName=ProcName, stat=StatLoc )
+    GetSigma_Cell = Zero
+
+    i = 1
+    do i = 1, NbDim
+      GetSigma_Cell(i) = dsqrt(This%VarEstimator(i)%GetVariance())
+    end do
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMeanHistory_Cell( This )
+  function GetMuHistory_Cell( This )
 
-    real(rkp), allocatable, dimension(:)                              ::    GetMeanHistory_Cell
+    real(rkp), allocatable, dimension(:,:)                            ::    GetMuHistory_Cell
 
     class(Cell_Type), intent(inout)                                   ::    This
 
-    character(*), parameter                                           ::    ProcName='GetMean_Cell'
+    character(*), parameter                                           ::    ProcName='GetMuHistory_Cell'
     integer                                                           ::    StatLoc=0
 
-    if ( This%MeanHistory%GetLength() > 0 ) then
-      call This%MeanHistory%Get( Values=GetMeanHistory_Cell )
+    if ( This%MuHistory%GetLength() > 0 ) then
+      call This%MuHistory%Get( Values=GetMuHistory_Cell )
     else
-      allocate(GetMeanHistory_Cell(1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='GetMeanHistory_Cell', ProcName=ProcName, stat=StatLoc )
-      GetMeanHistory_Cell = This%MomentEstimator%GetMean()
+      allocate(GetMuHistory_Cell(size(This%MuEstimator,1),1), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='GetMuHistory_Cell', ProcName=ProcName, stat=StatLoc )
+      GetMuHistory_Cell(:,1) = This%GetMu()
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVarianceHistory_Cell( This )
+  function GetMuStarHistory_Cell( This )
 
-    real(rkp), allocatable, dimension(:)                              ::    GetVarianceHistory_Cell
+    real(rkp), allocatable, dimension(:,:)                            ::    GetMuStarHistory_Cell
 
     class(Cell_Type), intent(inout)                                   ::    This
 
-    character(*), parameter                                           ::    ProcName='GetVariance_Cell'
+    character(*), parameter                                           ::    ProcName='GetMuStarHistory_Cell'
     integer                                                           ::    StatLoc=0
 
-    if ( This%VarianceHistory%GetLength() > 0 ) then
-      call This%VarianceHistory%Get( Values=GetVarianceHistory_Cell )
+    if ( This%MuStarHistory%GetLength() > 0 ) then
+      call This%MuStarHistory%Get( Values=GetMuStarHistory_Cell )
     else
-      allocate(GetVarianceHistory_Cell(1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='GetVarianceHistory_Cell', ProcName=ProcName, stat=StatLoc )
-      GetVarianceHistory_Cell = This%MomentEstimator%GetVariance()
+      allocate(GetMuStarHistory_Cell(size(This%MuEstimator,1),1), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='GetMuStarHistory_Cell', ProcName=ProcName, stat=StatLoc )
+      GetMuStarHistory_Cell(:,1) = This%GetMuStar()
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetStHistory_Cell( This )
+  function GetSigmaHistory_Cell( This )
 
-    real(rkp), allocatable, dimension(:,:)                            ::    GetStHistory_Cell
+    real(rkp), allocatable, dimension(:,:)                            ::    GetSigmaHistory_Cell
 
     class(Cell_Type), intent(inout)                                   ::    This
 
-    character(*), parameter                                           ::    ProcName='GetStHistory_Cell'
+    character(*), parameter                                           ::    ProcName='GetSigmaHistory_Cell'
     integer                                                           ::    StatLoc=0
 
-    if ( This%StHistory%GetLength() > 0 ) then
-      call This%StHistory%Get( Values=GetStHistory_Cell )
+    if ( This%SigmaHistory%GetLength() > 0 ) then
+      call This%SigmaHistory%Get( Values=GetSigmaHistory_Cell )
     else
-      allocate(GetStHistory_Cell(size(This%StEstimator,1),1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='GetStHistory_Cell', ProcName=ProcName, stat=StatLoc )
-      GetStHistory_Cell(:,1) = This%GetSt()
+      allocate(GetSigmaHistory_Cell(size(This%MuEstimator,1),1), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='GetSigmaHistory_Cell', ProcName=ProcName, stat=StatLoc )
+      GetSigmaHistory_Cell(:,1) = This%GetSigma()
     end if
 
   end function
@@ -1621,16 +1564,16 @@ contains
     LHS%Constructed = RHS%Constructed
 
     if ( RHS%Constructed ) then
-      LHS%MomentEstimator = RHS%MomentEstimator
-      allocate(LHS%StEstimator, source=RHS%StEstimator, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%StEstimator', ProcName=ProcName, stat=StatLoc )
-      allocate(LHS%StEstimatorNbSamples, source=RHS%StEstimatorNbSamples, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
-      LHS%StHistory = RHS%StHistory
-      LHS%MeanHistory = RHS%MeanHistory
-      LHS%VarianceHistory = RHS%VarianceHistory
-      allocate(LHS%StSnapShot, source=RHS%StSnapShot, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%StSnapShot', ProcName=ProcName, stat=StatLoc )
+      allocate(LHS%MuEstimator, source=RHS%MuEstimator, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MuEstimator', ProcName=ProcName, stat=StatLoc )
+      allocate(LHS%MuStarEstimator, source=RHS%MuStarEstimator, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MuStarEstimator', ProcName=ProcName, stat=StatLoc )
+      allocate(LHS%VarEstimator, source=RHS%VarEstimator, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%varEstimator', ProcName=ProcName, stat=StatLoc )
+
+      LHS%MuHistory = RHS%MuHistory
+      LHS%MuStarHistory = RHS%MuStarHistory
+      LHS%SigmaHistory = RHS%SigmaHistory
     end if
 
   end subroutine
@@ -1644,18 +1587,18 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer_Cell'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%StEstimator) ) deallocate(This%StEstimator, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StEstimator', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%MuEstimator) ) deallocate(This%MuEstimator, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MuEstimator', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%StEstimatorNbSamples) ) deallocate(This%StEstimatorNbSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StEstimatorNbSamples', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%MuStarEstimator) ) deallocate(This%MuStarEstimator, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MuStarEstimator', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%StSnapShot) ) deallocate(This%StSnapShot, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StSnapShot', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%VarEstimator) ) deallocate(This%VarEstimator, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%VarEstimator', ProcName=ProcName, stat=StatLoc )
 
-    call This%StHistory%Purge()
-    call This%MeanHistory%Purge()
-    call This%VarianceHistory%Purge()
+    call This%MuHistory%Purge()
+    call This%MuStarHistory%Purge()
+    call This%SigmaHistory%Purge()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
