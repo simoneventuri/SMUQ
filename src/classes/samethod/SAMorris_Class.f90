@@ -511,7 +511,7 @@ contains
     integer                                                           ::    NbDim
     real(rkp)                                                         ::    VarR0D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
-    real(8), allocatable, dimension(:,:)                            ::    VarR2D
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     integer, allocatable, dimension(:,:)                              ::    VarI2D
     real(rkp), pointer, dimension(:,:)                                ::    VarR2DPtr=>null()
     integer, pointer, dimension(:,:)                                  ::    VarI2DPtr=>null()
@@ -539,7 +539,6 @@ contains
     real(rkp)                                                         ::    GridSize
     real(rkp)                                                         ::    PerturbationSize
     real(rkp), allocatable, dimension(:,:)                            ::    XStar
-    real(8), allocatable, dimension(:,:)                            ::    J
     real(rkp), allocatable, dimension(:,:)                            ::    B
     real(rkp), allocatable, dimension(:,:)                            ::    P
     integer                                                           ::    NbGridLevelsLoc
@@ -549,13 +548,14 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    TrajectoryOutput
     integer                                                           ::    M
     integer                                                           ::    N
-    real(8), allocatable, dimension(:,:)                            ::    VarR2D_2
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
     NbResponses = size(Responses,1)
     NbDim = SampleSpace%GetNbDim()
     SilentLoc = This%Silent
+
+    NbTrajectories = 0
 
     NbGridLevelsLoc = NbDim
     if ( This%NbGridLevels > 0 ) NbGridLevelsLoc = This%NbGridLevels
@@ -624,10 +624,6 @@ contains
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%PermutationIndices', ProcName=ProcName, stat=StatLoc )
       This%PermutationIndices = 0
 
-      allocate(J(NbDim+1,1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='J', ProcName=ProcName, stat=StatLoc )
-      J = One
-
       allocate(P(NbDim,NbDim), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='P', ProcName=ProcName, stat=StatLoc )
       P = Zero
@@ -691,20 +687,16 @@ contains
 
         VarR2D = B*Two - One
 
-        ! performing loop to carry out multiplication of triangular matrix by a diagonal one because it is faster
+        ! performing loop to carry out multiplication of triangular matrix by a diagonal one and addition to the multiplication 
+        ! of J by x' because it is faster
+        VarR0D = PerturbationSize / Two
         ii = 1
         do ii = 1, NbDim
-          VarR2D(:,ii) = VarR2D(:,ii)*This%Signs(ii,i) + One
+          VarR2D(:,ii) = (VarR2D(:,ii)*This%Signs(ii,i) + One)*VarR0D + XStar(ii,i)
         end do
-        VarR2D = VarR2D * PerturbationSize / Two
-
-        VarR2D_2 = XStar(:,i:i)
-
-        call DGEMM( 'N', 'T', N, NbDim, 1, One, J, NbDim, VarR2D_2, NbDim, One, VarR2D, N )
 
         call DGEMM( 'T', 'T', NbDim, N, NbDim, One, P, NbDim, VarR2D, N, Zero,                                        &
                                                                         This%ParamSample(:,(i-1)*(NbDim+1)+1:i*(NbDim+1)), NbDim )
-
       end do
 
       deallocate(P, stat=StatLoc)
@@ -712,9 +704,6 @@ contains
 
       deallocate(B, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='B', ProcName=ProcName, stat=StatLoc )
-
-      deallocate(J, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='J', ProcName=ProcName, stat=StatLoc )
 
       deallocate(VarR2D, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
@@ -726,7 +715,7 @@ contains
       do i = 1, NbDim
         DistProbPtr => SampleSpace%GetDistributionPointer( Num=i )
         ii = 1
-        do ii = 1, size(This%ParamSample,1)
+        do ii = 1, size(This%ParamSample,2)
           This%ParamSample(i,ii) = DistProbPtr%InvCDF( P=This%ParamSample(i,ii) )
         end do
       end do
@@ -773,7 +762,7 @@ contains
 
         if ( .not. SilentLoc ) then
           Line = '  Running Trajectories #' // ConvertToString(Value=i+1) 
-          if( NbTrajectories > 1 ) Line = Line // '-' // ConvertToString(Value=i+1+NbTrajectories)
+          if( NbTrajectories > 1 ) Line = Line // '-' // ConvertToString(Value=i+NbTrajectories)
           write(*,'(A)') Line
         end if
         
@@ -824,7 +813,7 @@ contains
           end do
 
           if ( This%HistoryFreq > 0 .and. (mod(i+ii, abs(This%HistoryFreq)) == 0 .and. i + ii /= iEnd)  ) then
-            call This%HistoryStep%Append( Value=i )
+            call This%HistoryStep%Append( Value=i+ii )
             iii = 1
             do iii = 1, This%NbCells
               call This%Cells(iii)%UpdateHistory()
@@ -972,7 +961,6 @@ contains
           if ( This%HistoryFreq > 0 ) then
             call This%HistoryStep%Get( Values=VarI1D )
             FileName = '/' // ResponseLabel // '/history_step.dat'
-            call This%HistoryStep%Get( Values=VarI1D )
             call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
             call ExportArray( Array=VarI1D, File=File, RowMajor=.true. )
 
@@ -1413,16 +1401,19 @@ contains
     real(rkp)                                                         ::    EE
     integer                                                           ::    NbDim
     integer                                                           ::    i
+    integer                                                           ::    DimIndex
 
     NbDim = size(This%MuEstimator,1)
+    DimIndex = 0
 
     i = 1
     do i = 1, NbDim
-      if ( SampleRan(i) ) then
-        EE = Signs(PermutationIndices(i))*( TrajectoryOutput(i+1)-TrajectoryOutput(i) ) / PerturbationSize
-        call This%MuEstimator(i)%Update( Value=EE )
-        call This%MuStarEstimator(i)%Update( Value=dabs(EE) )
-        call This%VarEstimator(i)%Update( Value=EE )
+      if ( SampleRan(i) .and. SampleRan(i+1) ) then
+        DimIndex = PermutationIndices(i)
+        EE = Signs(i)*( TrajectoryOutput(i+1)-TrajectoryOutput(i) ) / PerturbationSize
+        call This%MuEstimator(DimIndex)%Update( Value=EE )
+        call This%MuStarEstimator(DimIndex)%Update( Value=dabs(EE) )
+        call This%VarEstimator(DimIndex)%Update( Value=EE )
       end if
     end do
 

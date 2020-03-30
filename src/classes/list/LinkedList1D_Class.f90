@@ -135,7 +135,7 @@ contains
     integer                                                           ::    Length
     integer                                                           ::    StatLoc=0
 
-    Length = int(size(Values,2),8)
+    Length = size(Values,2)
 
     i = 1
     do i = 1, Length

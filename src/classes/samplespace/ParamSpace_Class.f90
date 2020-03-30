@@ -418,8 +418,8 @@ contains
     allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
     This%CorrMat = Zero
-    This%CorrMat(1:NbDim1,1:NbDim1) = SampleSpace1%GetCorrMatPointer()
-    This%CorrMat(NbDim1+1:This%NbDim,NbDim1+1:This%NbDim) = SampleSpace2%GetCorrMatPointer()
+    This%CorrMat(1:NbDim1,1:NbDim1) = SampleSpace1%GetCorrMat()
+    This%CorrMat(NbDim1+1:This%NbDim,NbDim1+1:This%NbDim) = SampleSpace2%GetCorrMat()
 
     allocate(This%DistProb(This%NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
@@ -601,8 +601,8 @@ contains
     allocate(CorrMat(NbDim,NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='CorrMat', ProcName=ProcName, stat=StatLoc )
     CorrMat = Zero
-    CorrMat(1:NbDim1,1:NbDim1) = ParameterSpace1%GetCorrMatPointer()
-    CorrMat(NbDim1+1:NbDim,NbDim1+1:NbDim) = ParameterSpace2%GetCorrMatPointer()
+    CorrMat(1:NbDim1,1:NbDim1) = ParameterSpace1%GetCorrMat()
+    CorrMat(NbDim1+1:NbDim,NbDim1+1:NbDim) = ParameterSpace2%GetCorrMat()
 
     allocate(Distributions(NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='Distributions', ProcName=ProcName, stat=StatLoc )

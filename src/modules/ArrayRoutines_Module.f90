@@ -18,6 +18,7 @@ public                                                                ::    EyeR
 public                                                                ::    StrictTriangular
 public                                                                ::    StrictTriangularI
 public                                                                ::    StrictTriangularR
+public                                                                ::    Diagonal
 public                                                                ::    IsDiagonal
 public                                                                ::    LinSpaceVec
 
@@ -64,6 +65,13 @@ end interface
 interface StrictTriangularR
   module procedure                                                    ::    StrictTriangularR_R42D
   module procedure                                                    ::    StrictTriangularR_R82D
+end interface
+
+interface Diagonal
+  module procedure                                                    ::    Diagonal_I42D
+  module procedure                                                    ::    Diagonal_I82D
+  module procedure                                                    ::    Diagonal_R42D
+  module procedure                                                    ::    Diagonal_R82D
 end interface
 
 contains
@@ -300,7 +308,7 @@ contains
     character(*), parameter                                           ::    ProcName='StrictTriangularI_I82D'
     integer                                                           ::    StatLoc=0
     integer(8)                                                        ::    i
-    integer(4)                                                        ::    imax
+    integer(8)                                                        ::    imax
     integer(8)                                                        ::    NLoc
 
     NLoc = M
@@ -398,7 +406,7 @@ contains
     character(*), parameter                                           ::    ProcName='StrictTriangularR_R82D'
     integer                                                           ::    StatLoc=0
     integer(8)                                                        ::    i
-    integer(4)                                                        ::    imax
+    integer(8)                                                        ::    imax
     integer(8)                                                        ::    NLoc
 
     NLoc = M
@@ -605,6 +613,106 @@ contains
     end if
 
   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Diagonal_I42D( Diagonal )
+
+    integer(4), dimension(:,:), allocatable                           ::    Diagonal_I42D
+    integer(4), dimension(:), intent(in)                              ::    Diagonal
+
+    character(*), parameter                                           ::    ProcName='Diagonal_I42D'
+    integer                                                           ::    i
+    integer                                                           ::    N
+    integer                                                           ::    StatLoc
+
+    N = size(Diagonal,1)
+
+    allocate(Diagonal_I42D(N,N), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Diagonal_I42D', ProcName=ProcName, stat=StatLoc )
+    Diagonal_I42D = 0
+
+    i = 1
+    do i = 1, N
+      Diagonal_I42D(i,i) = Diagonal(i)
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Diagonal_I82D( Diagonal )
+
+    integer(8), dimension(:,:), allocatable                           ::    Diagonal_I82D
+    integer(8), dimension(:), intent(in)                              ::    Diagonal
+
+    character(*), parameter                                           ::    ProcName='Diagonal_I82D'
+    integer                                                           ::    i
+    integer                                                           ::    N
+    integer                                                           ::    StatLoc
+
+    N = size(Diagonal,1)
+
+    allocate(Diagonal_I82D(N,N), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Diagonal_I82D', ProcName=ProcName, stat=StatLoc )
+    Diagonal_I82D = 0
+
+    i = 1
+    do i = 1, N
+      Diagonal_I82D(i,i) = Diagonal(i)
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Diagonal_R42D( Diagonal )
+
+    real(4), dimension(:,:), allocatable                              ::    Diagonal_R42D
+    real(4), dimension(:), intent(in)                                 ::    Diagonal
+
+    character(*), parameter                                           ::    ProcName='Diagonal_R42D'
+    integer                                                           ::    i
+    integer                                                           ::    N
+    integer                                                           ::    StatLoc
+
+    N = size(Diagonal,1)
+
+    allocate(Diagonal_R42D(N,N), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Diagonal_R42D', ProcName=ProcName, stat=StatLoc )
+    Diagonal_R42D = 0.0
+
+    i = 1
+    do i = 1, N
+      Diagonal_R42D(i,i) = Diagonal(i)
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Diagonal_R82D( Diagonal )
+
+    real(8), dimension(:,:), allocatable                              ::    Diagonal_R82D
+    real(8), dimension(:), intent(in)                                 ::    Diagonal
+
+    character(*), parameter                                           ::    ProcName='Diagonal_R82D'
+    integer                                                           ::    i
+    integer                                                           ::    N
+    integer                                                           ::    StatLoc
+
+    N = size(Diagonal,1)
+
+    allocate(Diagonal_R82D(N,N), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Diagonal_R82D', ProcName=ProcName, stat=StatLoc )
+    Diagonal_R82D = 0
+
+    i = 1
+    do i = 1, N
+      Diagonal_R82D(i,i) = Diagonal(i)
+    end do
+
+  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
