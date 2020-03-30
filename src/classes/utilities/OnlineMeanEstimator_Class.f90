@@ -145,7 +145,6 @@ contains
   subroutine ConstructCase1( This )
 
     class(OnlineMeanEstimator_Type), intent(inout)                    ::    This
-    logical, optional, intent(in)                                     ::    SampleVariance
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     type(InputSection_Type), pointer                                  ::    InputSection=>null()

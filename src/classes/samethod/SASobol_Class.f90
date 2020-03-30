@@ -159,7 +159,7 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
     This%NbCells = 0
 
-    deallocate(This%ParamSampleRan, stat=StatLoc)
+    if ( allocated(This%ParamSampleRan) ) deallocate(This%ParamSampleRan, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc )
 
     call This%HistoryStep%Purge()
@@ -606,10 +606,6 @@ contains
     if ( StatLoc /= 0 ) call Error%Allocate( Name='ParamSubSampleStep', ProcName=ProcName, stat=StatLoc )
     ParamSubSample = Zero
 
-    allocate(SubSampleOutput(NbDim+1,This%NbCells), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='SubSampleOutputA', ProcName=ProcName, stat=StatLoc )
-    SubSampleOutput = Zero
-
     allocate(StLoc(NbDim), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='StLoc', ProcName=ProcName, stat=StatLoc )
     StLoc = Zero
@@ -750,7 +746,7 @@ contains
           do ii = 1, NbInputs*(NbDim+1)
             iii = 1
             do iii = 1, NbResponses
-              if ( RunStatLoc(ii) ) then
+              if ( RunStatLoc(ii) == 0 ) then
                 if ( Outputs(iii,ii)%GetNbDegen() > 1 ) call Error%Raise( 'Morris method does not support stochastic output',     &
                                                                                                                ProcName=ProcName )
               end if
@@ -763,6 +759,7 @@ contains
             iRunMin = (ii-1)*(NbDim+1)+1
             iRunMax = iRunMin + NbDim
             SampleRan = .false.
+            This%ParamSampleRan(i+ii) = RunStatLoc(iRunMin)
 
             iii = iRunMin
             do iii = iRunMin, iRunMax
@@ -772,8 +769,8 @@ contains
             iii = 1
             do iii = 1, NbResponses
               iCellMin = 1
-              if ( iii > 1 ) iCellMin = sum(NbCellsOutput(1:iii-1))
-              iCellMax = iCellMine + NbCellsOutput(iii)
+              if ( iii > 1 ) iCellMin = sum(NbCellsOutput(1:iii-1)) + 1
+              iCellMax = iCellMin + NbCellsOutput(iii) - 1
 
               iv = iCellMin
               do iv = iCellMin, iCellMax
@@ -785,6 +782,7 @@ contains
                   SampleOutput(v-iRunMin+1) = VarR2DPtr(iv-iCellMin+1,1)
                   nullify(VarR2DPtr)
                 end do
+
                 call This%Cells(iv)%UpdateEstimators( SampleOutput=SampleOutput, SampleRan=SampleRan )
               end do
             end do

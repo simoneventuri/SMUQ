@@ -109,17 +109,17 @@ end interface
 
 interface RandomInteger
   module procedure                                                    ::    RandomInteger_I0D_4_RNG
-  module procedure                                                    ::    RandomInteger_I0D_4_Instrinsic
+  module procedure                                                    ::    RandomInteger_I0D_4_Intrinsic
   module procedure                                                    ::    RandomInteger_I0D_8_RNG
-  module procedure                                                    ::    RandomInteger_I0D_8_Instrinsic
+  module procedure                                                    ::    RandomInteger_I0D_8_Intrinsic
   module procedure                                                    ::    RandomInteger_I1D_4_RNG
-  module procedure                                                    ::    RandomInteger_I1D_4_Instrinsic
+  module procedure                                                    ::    RandomInteger_I1D_4_Intrinsic
   module procedure                                                    ::    RandomInteger_I1D_8_RNG
-  module procedure                                                    ::    RandomInteger_I1D_8_Instrinsic
+  module procedure                                                    ::    RandomInteger_I1D_8_Intrinsic
   module procedure                                                    ::    RandomInteger_I2D_4_RNG
-  module procedure                                                    ::    RandomInteger_I2D_4_Instrinsic
+  module procedure                                                    ::    RandomInteger_I2D_4_Intrinsic
   module procedure                                                    ::    RandomInteger_I2D_8_RNG
-  module procedure                                                    ::    RandomInteger_I2D_8_Instrinsic
+  module procedure                                                    ::    RandomInteger_I2D_8_Intrinsic
 end interface
 
 contains
@@ -1142,7 +1142,7 @@ contains
     
     integer(4), intent(in)                                            ::    Min
     integer(4), intent(in)                                            ::    Max
-    type(RandPseudo_Type), intent(in)                                 ::    RNG
+    type(RandPseudo_Type), intent(inout)                              ::    RNG
 
     character(*), parameter                                           ::    ProcName='RandomInteger_I0D_4_RNG'
     integer                                                           ::    StatLoc=0
@@ -1158,7 +1158,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function RandomInteger_I0D_4_Intrinsic( Min, Max )
 
-    integer(4)                                                        ::    RandomInteger_I0D_4
+    integer(4)                                                        ::    RandomInteger_I0D_4_Intrinsic
     
     integer(4), intent(in)                                            ::    Min
     integer(4), intent(in)                                            ::    Max
@@ -1169,7 +1169,7 @@ contains
 
     call random_number( VarR0D )
 
-    RandomInteger_I0D_4 = Min + floor(VarR0D * real(Max-Min+1,rkp) )
+    RandomInteger_I0D_4_Intrinsic = Min + floor(VarR0D * real(Max-Min+1,rkp) )
     
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1181,7 +1181,7 @@ contains
     
     integer(8), intent(in)                                            ::    Min
     integer(8), intent(in)                                            ::    Max
-    type(RandPseudo_Type), intent(in)                                 ::    RNG
+    type(RandPseudo_Type), intent(inout)                              ::    RNG
 
     character(*), parameter                                           ::    ProcName='RandomInteger_I0D_8_RNG'
     integer                                                           ::    StatLoc=0
@@ -1221,7 +1221,7 @@ contains
     integer(4), intent(in)                                            ::    Min
     integer(4), intent(in)                                            ::    Max
     integer(4), intent(in)                                            ::    M
-    type(RandPseudo_Type), intent(in)                                 ::    RNG
+    type(RandPseudo_Type), intent(inout)                              ::    RNG
 
     character(*), parameter                                           ::    ProcName='RandomInteger_I1D_4_RNG'
     integer                                                           ::    StatLoc=0
@@ -1270,7 +1270,7 @@ contains
     integer(8), intent(in)                                            ::    Min
     integer(8), intent(in)                                            ::    Max
     integer(8), intent(in)                                            ::    M
-    type(RandPseudo_Type), intent(in)                                 ::    RNG
+    type(RandPseudo_Type), intent(inout)                              ::    RNG
 
     character(*), parameter                                           ::    ProcName='RandomInteger_I1D_8_RNG'
     integer                                                           ::    StatLoc=0
@@ -1320,7 +1320,7 @@ contains
     integer(4), intent(in)                                            ::    Max
     integer(4), intent(in)                                            ::    M
     integer(4), intent(in)                                            ::    N
-    type(RandPseudo_Type), intent(in)                                 ::    RNG
+    type(RandPseudo_Type), intent(inout)                              ::    RNG
 
     character(*), parameter                                           ::    ProcName='RandomInteger_I2D_4_RNG'
     integer                                                           ::    StatLoc=0
@@ -1377,7 +1377,7 @@ contains
     integer(8), intent(in)                                            ::    Max
     integer(8), intent(in)                                            ::    M
     integer(8), intent(in)                                            ::    N
-    type(RandPseudo_Type), intent(in)                                 ::    RNG
+    type(RandPseudo_Type), intent(inout)                              ::    RNG
 
     character(*), parameter                                           ::    ProcName='RandomInteger_I2D_8_RNG'
     integer                                                           ::    StatLoc=0

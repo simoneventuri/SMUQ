@@ -22,6 +22,8 @@ logical, parameter                                                    ::    Debu
 
 interface WriteArray
   module procedure                                                    ::    WriteArray_L1D
+  module procedure                                                    ::    WriteArray_I42D
+  module procedure                                                    ::    WriteArray_I82D
   module procedure                                                    ::    WriteArray_R42D
   module procedure                                                    ::    WriteArray_R82D
 end interface
@@ -119,6 +121,64 @@ contains
       end do
     else  
       write(*,*) Array
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteArray_I42D( Array, RowMajor )
+
+    integer(4), dimension(:,:), intent(in)                            ::    Array
+    logical, optional, intent(in)                                     ::    RowMajor
+
+    character(*), parameter                                           ::    ProcName='WriteArray_I42D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    logical                                                           ::    RowMajorLoc
+
+    RowMajorLoc = .true.
+    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+
+    if ( RowMajorLoc ) then
+      i = 1
+      do i = 1, size(Array,1)
+        write(*,*) Array(i,:)
+      end do
+    else  
+      i = 1
+      do i = 1, size(Array,2)
+        write(*,*) Array(:,i)
+      end do
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteArray_I82D( Array, RowMajor )
+
+    integer(8), dimension(:,:), intent(in)                            ::    Array
+    logical, optional, intent(in)                                     ::    RowMajor
+
+    character(*), parameter                                           ::    ProcName='WriteArray_I82D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    logical                                                           ::    RowMajorLoc
+
+    RowMajorLoc = .true.
+    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+
+    if ( RowMajorLoc ) then
+      i = 1
+      do i = 1, size(Array,1)
+        write(*,*) Array(i,:)
+      end do
+    else  
+      i = 1
+      do i = 1, size(Array,2)
+        write(*,*) Array(:,i)
+      end do
     end if
 
   end subroutine

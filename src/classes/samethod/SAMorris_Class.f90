@@ -32,7 +32,7 @@ use SAMethod_Class                                                ,only:    SAMe
 use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
 use RandPseudo_Class                                              ,only:    RandPseudo_Type
-use ParamSpace_Class                                              ,only:    ParamSpace_Type
+use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use SampleMethod_Factory_Class                                    ,only:    SampleMethod_Factory
 use SampleLHS_Class                                               ,only:    SampleLHS_Type
@@ -73,9 +73,9 @@ contains
   procedure, public                                                   ::    GetInput                =>    GetInput_Cell
   procedure, public                                                   ::    UpdateEstimators        =>    UpdateEstimators_Cell
   procedure, public                                                   ::    UpdateHistory           =>    UpdateHistory_Cell
-  procedure, public                                                   ::    GetMu                   =>    GetMean_Cell
-  procedure, public                                                   ::    GetMuStar               =>    GetMean_Cell
-  procedure, public                                                   ::    GetSigma                =>    GetVariance_Cell
+  procedure, public                                                   ::    GetMu                   =>    GetMu_Cell
+  procedure, public                                                   ::    GetMuStar               =>    GetMuStar_Cell
+  procedure, public                                                   ::    GetSigma                =>    GetSigma_Cell
   procedure, public                                                   ::    GetMuStarHistory        =>    GetMuStarHistory_Cell
   procedure, public                                                   ::    GetMuHistory            =>    GetMuHistory_Cell
   procedure, public                                                   ::    GetSigmaHistory         =>    GetSigmaHistory_Cell
@@ -374,7 +374,7 @@ contains
     call GetInput%AddParameter( Name='silent', Value=ConvertToString(Value=This%Silent ) )
     call GetInput%AddParameter( Name='checkpoint_frequency', Value=ConvertToString(Value=This%CheckpointFreq ) )
     call GetInput%AddParameter( Name='history_frequency', Value=ConvertToString(Value=This%HistoryFreq ) )
-    call GetInput%AddParameter( Name='nb_trajectories', Value=ConvertToString(Value=This%NbSamples) )
+    call GetInput%AddParameter( Name='nb_trajectories', Value=ConvertToString(Value=This%NbTrajectories) )
     if ( This%NbGridLevels > 0 ) call GetInput%AddParameter( Name='nb_grid_levels',                                               &
                                                                                   Value=ConvertToString(Value=This%NbGridLevels) )
     call GetInput%AddParameter( Name='step_size', Value=ConvertToString(Value=This%StepSize) )
@@ -510,11 +510,11 @@ contains
     logical                                                           ::    SilentLoc
     integer                                                           ::    NbDim
     real(rkp)                                                         ::    VarR0D
-    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    real(8), allocatable, dimension(:,:)                            ::    VarR2D
     integer, allocatable, dimension(:,:)                              ::    VarI2D
     real(rkp), pointer, dimension(:,:)                                ::    VarR2DPtr=>null()
     integer, pointer, dimension(:,:)                                  ::    VarI2DPtr=>null()
-    real(rkp), pointer, dimension(:,:)                                ::    TrajectoryPtr=>null()
     type(Input_Type), allocatable, dimension(:)                       ::    Input
     integer                                                           ::    i
     integer                                                           ::    ii
@@ -539,7 +539,7 @@ contains
     real(rkp)                                                         ::    GridSize
     real(rkp)                                                         ::    PerturbationSize
     real(rkp), allocatable, dimension(:,:)                            ::    XStar
-    real(rkp), allocatable, dimension(:,:)                            ::    J1
+    real(8), allocatable, dimension(:,:)                            ::    J
     real(rkp), allocatable, dimension(:,:)                            ::    B
     real(rkp), allocatable, dimension(:,:)                            ::    P
     integer                                                           ::    NbGridLevelsLoc
@@ -547,6 +547,9 @@ contains
     integer                                                           ::    NbTrajectories
     logical, allocatable, dimension(:)                                ::    SampleRan
     real(rkp), allocatable, dimension(:)                              ::    TrajectoryOutput
+    integer                                                           ::    M
+    integer                                                           ::    N
+    real(8), allocatable, dimension(:,:)                            ::    VarR2D_2
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
@@ -556,6 +559,9 @@ contains
 
     NbGridLevelsLoc = NbDim
     if ( This%NbGridLevels > 0 ) NbGridLevelsLoc = This%NbGridLevels
+
+    if ( NbGridLevelsLoc - This%StepSize <= 0 ) call Error%Raise( 'Perturbation step size too large given the number ' //         &
+                                                                                             'of grid levels', ProcName=ProcName )
 
     allocate(TrajectoryOutput(NbDim+1), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='TrajectoryOutput', ProcName=ProcName, stat=StatLoc )
@@ -628,27 +634,47 @@ contains
 
       allocate(B(NbDim+1,NbDim), stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='B', ProcName=ProcName, stat=StatLoc )
-      call StrictlyTriangular( Array=B, UL='L' )
+      call StrictTriangular( Array=B, UL='L' )
 
-      allocate(VarR2D(NbDim+1,NbDim), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+      VarI0D = NbGridLevelsLoc-This%StepSize
 
-      VarI2D = floor(This%Sampler%Draw( NbSamples=This%NbTrajectories, NbDim=NbDim ) * (NbGridLevelsLoc-This%StepSize))
-      if ( any(VarI2D == NbGridLevelsLoc-This%StepSize) ) then
-        VarI0D = NbGridLevelsLoc-This%StepSize
-        i = 1
-        do i = 1, NbDim
-          ii = 1
-          do ii = 1
-            if ( VarI2D(i,ii) == VarI0D ) VarI2D(i,ii) = VarI2D(i,ii) - 1
+      VarR1D = LinSequence( SeqStart=0, SeqEnd=VarI0D )
+      VarR1D = VarR1D / real(VarI0D,rkp)
+
+      VarR2D = This%Sampler%Draw( NbSamples=This%NbTrajectories, NbDim=NbDim )
+
+      allocate(VarI2D(NbDim, This%NbTrajectories) , stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
+      VarI2D = 0
+
+      i = 1
+      do i = 1, This%NbTrajectories
+        ii = 1
+        do ii = 1, NbDim
+          iv = 0
+          iii = 1
+          do iii = 1, VarI0D
+            if ( iii < VarI0D ) then
+              if ( VarR2D(ii,i) >= VarR1D(iii) .and. VarR2D(ii,i) < VarR1D(iii+1) ) iv = iii
+            else
+              if ( VarR2D(ii,i) >= VarR1D(iii) ) iv = iii
+            end if
           end do
+          if ( iv == 0 ) call Error%Raise( 'Something went wrong', ProcName=ProcName )
+          VarI2D(ii,i) = iv - 1
         end do
-      end if
+      end do 
+
+      deallocate(VarR1D, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
 
       XStar = real(VarI2D,rkp) * GridSize
 
       deallocate(VarI2D, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
+
+      M = NbDim
+      N = NbDim+1
 
       i = 1
       do i = 1, This%NbTrajectories
@@ -659,26 +685,26 @@ contains
         ii = 1
         do ii = 1, NbDim
           VarR0D = This%RNG%Draw()
-          if ( VarR0D < 0.5_rkp ) Signs(ii,i) = - 1
+          if ( VarR0D < 0.5 ) This%Signs(ii,i) = - 1
           P(This%PermutationIndices(ii,i),ii) = One
         end do
-
-        TrajectoryPointer => This%ParamSample(:,(i-1)*(NbDim+1)+1:i*(NbDim+1))
 
         VarR2D = B*Two - One
 
         ! performing loop to carry out multiplication of triangular matrix by a diagonal one because it is faster
         ii = 1
         do ii = 1, NbDim
-          VarR2D = VarR2D(:,ii)*Signs(ii,i) + One
+          VarR2D(:,ii) = VarR2D(:,ii)*This%Signs(ii,i) + One
         end do
         VarR2D = VarR2D * PerturbationSize / Two
-        
-        call DGEMM( 'N', 'T', NbDim+1, NbDim, 1, One, J, NbDim, XStar(:,i:i), NbDim, One, VarR2D, NbDim+1 )
 
-        call DGEMM( 'T', 'T', NbDim, NbDim+1, NbDim, One, P, NbDim, VarR2D, NbDim+1, Zero, TrajectoryPointer, NbDim )
+        VarR2D_2 = XStar(:,i:i)
 
-        nullify(TrajectoryPointer)
+        call DGEMM( 'N', 'T', N, NbDim, 1, One, J, NbDim, VarR2D_2, NbDim, One, VarR2D, N )
+
+        call DGEMM( 'T', 'T', NbDim, N, NbDim, One, P, NbDim, VarR2D, N, Zero,                                        &
+                                                                        This%ParamSample(:,(i-1)*(NbDim+1)+1:i*(NbDim+1)), NbDim )
+
       end do
 
       deallocate(P, stat=StatLoc)
@@ -693,8 +719,8 @@ contains
       deallocate(VarR2D, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
 
-      deallocate(XsStar, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='XsStar', ProcName=ProcName, stat=StatLoc )
+      deallocate(XStar, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='XStar', ProcName=ProcName, stat=StatLoc )
 
       i = 1
       do i = 1, NbDim
@@ -758,7 +784,7 @@ contains
         do ii = 1, NbInputs
           iii = 1
           do iii = 1, NbResponses
-            if ( RunStatLoc(ii) ) then
+            if ( RunStatLoc(ii) == 0 ) then
               if ( Outputs(iii,ii)%GetNbDegen() > 1 ) call Error%Raise( 'Morris method does not support stochastic output',       &
                                                                                                                ProcName=ProcName )
             end if
@@ -779,9 +805,9 @@ contains
 
           iii = 1
           do iii = 1, NbResponses
-            iCellMin = 1
-            if ( iii > 1 ) iCellMin = sum(NbCellsOutput(1:iii-1))
-            iCellMax = iCellMine + NbCellsOutput(iii)
+              iCellMin = 1
+              if ( iii > 1 ) iCellMin = sum(NbCellsOutput(1:iii-1)) + 1
+              iCellMax = iCellMin + NbCellsOutput(iii) - 1
 
             iv = iCellMin
             do iv = iCellMin, iCellMax
@@ -1067,13 +1093,18 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    call This%StHistory%Purge()
-    call This%MeanHistory%Purge()
+    call This%MuHistory%Purge()
+    call This%MuStarHistory%Purge()
     call This%SigmaHistory%Purge
     
-    call This%MuEstimator%Reset()
-    call This%MuStarEstimator%Reset()
-    call This%VarEstimator%Reset()
+    if ( allocated(This%MuEstimator) ) deallocate(This%MuEstimator, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MuEstimator', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%MuStarEstimator) ) deallocate(This%MuStarEstimator, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MuStarEstimator', ProcName=ProcName, stat=StatLoc )
+
+    if ( allocated(This%VarEstimator) ) deallocate(This%VarEstimator, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%VarEstimator', ProcName=ProcName, stat=StatLoc )
 
     call This%SetDefaults()
 
@@ -1102,8 +1133,10 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     integer, allocatable, dimension(:)                                ::    VarI1D
+    integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
+    character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
@@ -1155,7 +1188,7 @@ contains
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
       nullify( InputSection )
-      call This%MeanHistory%Append( Values=VarR1D )
+      call This%MuHistory%Append( Values=VarR1D )
       deallocate(VarR1D, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
     end if
@@ -1211,7 +1244,7 @@ contains
     do i = 1, Dimensionality
       call This%MuEstimator(i)%Construct()
       call This%MuStarEstimator(i)%Construct()
-      call This%VarEstimator(i)%Construct( Sample=.true. )
+      call This%VarEstimator(i)%Construct( SampleVariance=.true. )
     end do
 
     This%Constructed = .true.
@@ -1239,6 +1272,7 @@ contains
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
+    character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    FileName
     integer                                                           ::    StatLoc=0
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
@@ -1246,6 +1280,7 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     type(SMUQFile_Type)                                               ::    File
     integer                                                           ::    NbDim
+    integer                                                           ::    i
 
     if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
 
@@ -1271,13 +1306,13 @@ contains
       SubSectionName = 'dimension' // ConvertToString(Value=i)
       call GetInput_Cell%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
 
-      call GetInput_Cell%AddSection( Section=This%MuEstimator%GetInput(MainSectionName='mu_estimator', Prefix=PrefixLoc,          &
+      call GetInput_Cell%AddSection( Section=This%MuEstimator(i)%GetInput(MainSectionName='mu_estimator', Prefix=PrefixLoc,       &
                                                      Directory=DirectorySub), To_SubSection=SectionName // '>' // SubSectionName )
 
-      call GetInput_Cell%AddSection( Section=This%MuStarEstimator%GetInput(MainSectionName='mu_star_estimator', Prefix=PrefixLoc, &
-                                                     Directory=DirectorySub), To_SubSection=SectionName // '>' // SubSectionName )
+      call GetInput_Cell%AddSection( Section=This%MuStarEstimator(i)%GetInput(MainSectionName='mu_star_estimator',                &
+                                   Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SectionName // '>' // SubSectionName )
 
-      call GetInput_Cell%AddSection( Section=This%VarEstimator%GetInput(MainSectionName='variance_estimator', Prefix=PrefixLoc,   &
+      call GetInput_Cell%AddSection( Section=This%VarEstimator(i)%GetInput(MainSectionName='variance_estimator', Prefix=PrefixLoc,&
                                                      Directory=DirectorySub), To_SubSection=SectionName // '>' // SubSectionName )
 
     end do
@@ -1364,7 +1399,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine UpdateEstimators_Cell( This, TrajectoryOutput, SampleRan, PertubationSize, Signs, PermutationIndices )
+  subroutine UpdateEstimators_Cell( This, TrajectoryOutput, SampleRan, PerturbationSize, Signs, PermutationIndices )
 
     class(Cell_Type), intent(inout)                                   ::    This
     real(rkp), dimension(:), intent(in)                               ::    TrajectoryOutput
@@ -1377,6 +1412,7 @@ contains
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    EE
     integer                                                           ::    NbDim
+    integer                                                           ::    i
 
     NbDim = size(This%MuEstimator,1)
 
@@ -1401,8 +1437,8 @@ contains
     character(*), parameter                                           ::    ProcName='UpdateHistory_Cell'
     integer                                                           ::    StatLoc=0
 
-    call This%MuHistory%Append( Value=This%GetMu() )
-    call This%MuStarHistory%Append( Value=This%GetMuStar() )
+    call This%MuHistory%Append( Values=This%GetMu() )
+    call This%MuStarHistory%Append( Values=This%GetMuStar() )
     call This%SigmaHistory%Append( Values=This%GetSigma() )
 
   end subroutine

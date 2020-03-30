@@ -249,7 +249,9 @@ contains
     character(*), intent(in)                                          ::    UL
 
     character(*), parameter                                           ::    ProcName='StrictTriangularI_I42D'
+    integer                                                           ::    StatLoc=0
     integer(4)                                                        ::    i
+    integer(4)                                                        ::    imax
     integer(4)                                                        ::    NLoc
 
     NLoc = M
@@ -270,9 +272,13 @@ contains
         StrictTriangularI_I42D(1:i-1,i) = 1
       end do
     elseif ( UL == 'L' ) then
+      if ( M >= NLoc ) then
+        imax = NLoc
+      else
+        imax = NLoc - 1
+      end if
       i = 1
-      do i = 1, NLoc-1
-        if ( i >= M ) exit
+      do i = 1, imax
         StrictTriangularI_I42D(i+1:,i) = 1
       end do
     else
@@ -292,7 +298,9 @@ contains
     character(*), intent(in)                                          ::    UL
 
     character(*), parameter                                           ::    ProcName='StrictTriangularI_I82D'
+    integer                                                           ::    StatLoc=0
     integer(8)                                                        ::    i
+    integer(4)                                                        ::    imax
     integer(8)                                                        ::    NLoc
 
     NLoc = M
@@ -311,12 +319,15 @@ contains
           exit
         end if
         StrictTriangularI_I82D(1:i-1,i) = 1
-        if ( i >= M ) exit
       end do
     elseif ( UL == 'L' ) then
+      if ( M >= NLoc ) then
+        imax = NLoc
+      else
+        imax = NLoc - 1
+      end if
       i = 1
-      do i = 1, NLoc-1
-        if ( i >= M ) exit
+      do i = 1, imax
         StrictTriangularI_I82D(i+1:,i) = 1
       end do
     else
@@ -336,32 +347,37 @@ contains
     character(*), intent(in)                                          ::    UL
 
     character(*), parameter                                           ::    ProcName='StrictTriangularR_R42D'
+    integer                                                           ::    StatLoc=0
     integer(4)                                                        ::    i
+    integer(4)                                                        ::    imax
     integer(4)                                                        ::    NLoc
 
     NLoc = M
     if ( present(N) ) NLoc = N
 
-    allocate(StrictTriangularR_I42D(M,NLoc), stat=StatLoc)
+    allocate(StrictTriangularR_R42D(M,NLoc), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='StrictTriangularR_R42D', ProcName=ProcName, stat=StatLoc )
 
-    StrictTriangularR_R42D = 0.0_r4
+    StrictTriangularR_R42D = 0.0
 
     if ( UL == 'U' ) then
       i = 2
       do i = 2, NLoc
         if ( i > M ) then
-          StrictTriangularR_R42D(:,i:) = 1.0_r4
+          StrictTriangularR_R42D(:,i:) = 1.0
           exit
         end if
-        StrictTriangularR_R42D(1:i-1,i) = 1.0_r4
-        if ( i >= M ) exit
+        StrictTriangularR_R42D(1:i-1,i) = 1.0
       end do
     elseif ( UL == 'L' ) then
+      if ( M >= NLoc ) then
+        imax = NLoc
+      else
+        imax = NLoc - 1
+      end if
       i = 1
-      do i = 1, NLoc-1
-        if ( i >= M ) exit
-        StrictTriangularR_R42D(i+1:,i) = 1.0_r4
+      do i = 1, imax
+        StrictTriangularR_R42D(i+1:,i) = 1.0
       end do
     else
       call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
@@ -380,7 +396,9 @@ contains
     character(*), intent(in)                                          ::    UL
 
     character(*), parameter                                           ::    ProcName='StrictTriangularR_R82D'
+    integer                                                           ::    StatLoc=0
     integer(8)                                                        ::    i
+    integer(4)                                                        ::    imax
     integer(8)                                                        ::    NLoc
 
     NLoc = M
@@ -389,23 +407,26 @@ contains
     allocate(StrictTriangularR_R82D(M,NLoc), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='StrictTriangularR_R82D', ProcName=ProcName, stat=StatLoc )
 
-    StrictTriangularR_R82D = 0.0_r8
+    StrictTriangularR_R82D = 0.0
 
     if ( UL == 'U' ) then
       i = 2
       do i = 2, NLoc
         if ( i > M ) then
-          StrictTriangularR_R82D(:,i:) = 1.0_r8
+          StrictTriangularR_R82D(:,i:) = 1.0
           exit
         end if
-        StrictTriangularR_R82D(1:i-1,i) = 1.0_r8
-        if ( i >= M ) exit
+        StrictTriangularR_R82D(1:i-1,i) = 1.0
       end do
     elseif ( UL == 'L' ) then
+      if ( M >= NLoc ) then
+        imax = NLoc
+      else
+        imax = NLoc - 1
+      end if
       i = 1
-      do i = 1, NLoc-1
-        if ( i >= M ) exit
-        StrictTriangularR_R82D(i+1:,i) = 1.0_r8
+      do i = 1, imax
+        StrictTriangularR_R82D(i+1:,i) = 1.0
       end do
     else
       call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
@@ -424,6 +445,7 @@ contains
     integer                                                           ::    i
     integer                                                           ::    M
     integer                                                           ::    N
+    integer(4)                                                        ::    imax
 
     M = size(Array,1)
     N = size(Array,2)
@@ -434,17 +456,20 @@ contains
       i = 2
       do i = 2, N
         if ( i > M ) then
-          StrictTriangularI_I42D(:,i:) = 1
+          Array(:,i:) = 1
           exit
         end if
-        StrictTriangularI_I42D(1:i-1,i) = 1
-        if ( i >= M ) exit
+        Array(1:i-1,i) = 1
       end do
     elseif ( UL == 'L' ) then
+      if ( M >= N ) then
+        imax = N 
+      else
+        imax = N - 1
+      end if
       i = 1
-      do i = 1, N-1
-        if ( i >= M ) exit
-        StrictTriangularI_I42D(i+1:,i) = 1
+      do i = 1, imax
+        Array(i+1:,i) = 1
       end do
     else
       call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
@@ -463,6 +488,7 @@ contains
     integer                                                           ::    i
     integer                                                           ::    M
     integer                                                           ::    N
+    integer(4)                                                        ::    imax
 
     M = size(Array,1)
     N = size(Array,2)
@@ -473,17 +499,20 @@ contains
       i = 2
       do i = 2, N
         if ( i > M ) then
-          StrictTriangularI_I82D(:,i:) = 1
+          Array(:,i:) = 1
           exit
         end if
-        StrictTriangularI_I82D(1:i-1,i) = 1
-        if ( i >= M ) exit
+        Array(1:i-1,i) = 1
       end do
     elseif ( UL == 'L' ) then
+      if ( M >= N ) then
+        imax = N 
+      else
+        imax = N - 1
+      end if
       i = 1
-      do i = 1, N-1
-        if ( i >= M ) exit
-        StrictTriangularI_I82D(i+1:,i) = 1
+      do i = 1, imax
+        Array(i+1:,i) = 1
       end do
     else
       call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
@@ -502,27 +531,31 @@ contains
     integer                                                           ::    i
     integer                                                           ::    M
     integer                                                           ::    N
+    integer(4)                                                        ::    imax
 
     M = size(Array,1)
     N = size(Array,2)
 
-    Array = 0.0_r4
+    Array = 0.0
 
     if ( UL == 'U' ) then
       i = 2
       do i = 2, N
         if ( i > M ) then
-          StrictTriangularR_R42D(:,i:) = 1.0_r4
+          Array(:,i:) = 1.0
           exit
         end if
-        StrictTriangularR_R42D(1:i-1,i) = 1.0_r4
-        if ( i >= M ) exit
+        Array(1:i-1,i) = 1.0
       end do
     elseif ( UL == 'L' ) then
+      if ( M >= N ) then
+        imax = N 
+      else
+        imax = N - 1
+      end if
       i = 1
-      do i = 1, N-1
-        if ( i >= M ) exit
-        StrictTriangularR_R42D(i+1:,i) = 1.0_r4
+      do i = 1, imax
+        Array(i+1:,i) = 1.0
       end do
     else
       call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )
@@ -541,27 +574,31 @@ contains
     integer                                                           ::    i
     integer                                                           ::    M
     integer                                                           ::    N
+    integer(4)                                                        ::    imax
 
     M = size(Array,1)
     N = size(Array,2)
 
-    Array = 0.0_r8
+    Array = 0.0
 
     if ( UL == 'U' ) then
       i = 2
       do i = 2, N
         if ( i > M ) then
-          StrictTriangularR_R82D(:,i:) = 1.0_r8
+          Array(:,i:) = 1.0
           exit
         end if
-        StrictTriangularR_R82D(1:i-1,i) = 1.0_r8
-        if ( i >= M ) exit
+        Array(1:i-1,i) = 1.0
       end do
     elseif ( UL == 'L' ) then
+      if ( M >= N ) then
+        imax = N 
+      else
+        imax = N - 1
+      end if
       i = 1
-      do i = 1, N-1
-        if ( i >= M ) exit
-        StrictTriangularR_R82D(i+1:,i) = 1.0_r8
+      do i = 1, imax
+        Array(i+1:,i) = 1.0
       end do
     else
       call Error%Raise( 'Upper or Lower option not recognized', ProcName=ProcName )

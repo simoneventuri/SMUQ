@@ -24,6 +24,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use SAMethod_Class                                                ,only:    SAMethod_Type
 use SASobol_Class                                                 ,only:    SASobol_Type
+use SAMorris_Class                                                ,only:    SAMorris_Type
 
 implicit none
 
@@ -60,6 +61,9 @@ contains
 
       case('sobol')
         allocate( SASobol_Type :: Object )
+
+      case('morris')
+        allocate( SAMorris_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -118,6 +122,9 @@ contains
 
       type is (SASobol_Type)
         GetOption = 'sobol'
+
+      type is (SAMorris_Type)
+        GetOption = 'morris'
 
       class default
         call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )
