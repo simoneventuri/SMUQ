@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module SAMorris_Class
+module SAMorrisTrajectory_Class
 
 use Input_Library
 use Parameters_Library
@@ -46,12 +46,12 @@ use LinkedList1D_Class                                            ,only:    Link
 use OnlineVarEstimator_Class                                      ,only:    OnlineVarEstimator_Type
 use OnlineMeanEstimator_Class                                     ,only:    OnlineMeanEstimator_Type
 use DistProb_Class                                                ,only:    DistProb_Type
-
+use TrajectoryDesign_Class                                        ,only:    TrajectoryDesign_Type
 implicit none
 
 private
 
-public                                                                ::    SAMorris_Type
+public                                                                ::    SAMorrisTrajectory_Type
 
 type                                                                  ::    Cell_Type
   logical                                                             ::    Initialized
@@ -84,25 +84,21 @@ contains
   final                                                               ::    Finalizer_Cell 
 end type
 
-type, extends(SAMethod_Type)                                          ::    SAMorris_Type
+type, extends(SAMethod_Type)                                          ::    SAMorrisTrajectory_Type
   type(Cell_Type), allocatable, dimension(:)                          ::    Cells
   integer                                                             ::    NbCells
   integer                                                             ::    CheckpointFreq
   logical                                                             ::    Silent
-  class(SampleMethod_Type), allocatable                               ::    Sampler
   integer                                                             ::    NbTrajectories
-  integer                                                             ::    NbGridLevels
-  integer                                                             ::    StepSize
   logical                                                             ::    SamplesObtained
   logical                                                             ::    SamplesRan
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
   integer                                                             ::    ParamSampleStep
   integer                                                             ::    HistoryFreq
   type(LinkedList0D_Type)                                             ::    HistoryStep
-  integer, allocatable, dimension(:,:)                                ::    Signs
-  integer, allocatable, dimension(:,:)                                ::    PermutationIndices
-  type(RandPseudo_Type)                                               ::    RNG
-
+  real(rkp), allocatable, dimension(:,:)                              ::    StepSize
+  integer, allocatable, dimension(:,:)                                ::    Indices
+  type(TrajectoryDesign_Type)                                         ::    ScreeningDesign
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -122,12 +118,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
-    class(SAMorris_Type), intent(inout)                               ::    This
+    class(SAMorrisTrajectory_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
     if ( .not. This%Initialized ) then
-      This%Name = 'SAMorris'
+      This%Name = 'SAMorrisTrajectory'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -138,13 +134,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
-    class(SAMorris_Type), intent(inout)                               ::    This
+    class(SAMorrisTrajectory_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc = 0
 
     This%Initialized=.false.
     This%Constructed=.false.
+
+    call This%ScreeningDesign%Reset()
 
     if ( allocated(This%ParamSample) ) deallocate(This%ParamSample, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
@@ -155,10 +153,11 @@ contains
 
     call This%HistoryStep%Purge()
 
-    if ( allocated(This%Sampler) ) deallocate(This%Sampler, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%StepSize) ) deallocate(This%StepSize, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StepSize', ProcName=ProcName, stat=StatLoc )
 
-    call This%RNG%Reset()
+    if ( allocated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
     call This%SetDefaults()
 
@@ -168,7 +167,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults( This )
 
-    class(SAMorris_Type), intent(inout)                                ::    This
+    class(SAMorrisTrajectory_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
@@ -179,8 +178,6 @@ contains
     This%SamplesRan = .false.
     This%ParamSampleStep = 0
     This%NbTrajectories = 0
-    This%NbGridLevels = 0
-    This%StepSize = 3
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -188,7 +185,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput( This, Input, SectionChain, Prefix )
 
-    class(SAMorris_Type), intent(inout)                               ::    This
+    class(SAMorrisTrajectory_Type), intent(inout)                     ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
@@ -220,6 +217,14 @@ contains
 
     This%SectionChain = SectionChain
 
+    SectionName = 'trajectory_scheme'
+    if ( Input%HasSection(SubSectionName=SectionName) ) then
+      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+      call This%ScreeningDesign%Construct( Input=InputSection, Prefix=PrefixLoc )
+    else
+      call This%ScreeningDesign%Construct()
+    end if
+
     ParameterName= 'silent'
     call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
     if ( Found ) This%Silent=VarL0D
@@ -237,40 +242,6 @@ contains
     This%NbTrajectories = VarI0D
     if ( This%NbTrajectories <= 0 ) call Error%Raise( 'Must specify at least 1 for number of trajectories', ProcName=ProcName )
 
-    ParameterName = 'nb_grid_levels'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if ( Found ) then
-      This%NbGridLevels = VarI0D
-      if ( This%NbGridLevels <= 1 ) call Error%Raise( 'Must specify at least 2 grid levels', ProcName=ProcName )
-    end if
-
-    ParameterName = 'step_size'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if ( Found ) This%StepSize = VarI0D
-    if ( This%StepSize <= 0 ) call Error%Raise( 'Trahectory step size must be above 0', ProcName=ProcName )
-
-    SectionName = 'sampler'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call SampleMethod_Factory%Construct( Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc )
-    else
-      allocate( SampleLHS_Type :: This%Sampler )
-      select type (Object => This%Sampler)
-        type is (SampleLHS_Type)
-          call Object%Construct()
-        class default
-          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
-      end select
-    end if
-
-    SectionName = 'rng'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%RNG%Construct( Input=InputSection, Prefix=PrefixLoc )
-    else
-      call This%RNG%Construct()
-    end if
-
     SectionName = 'restart'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
 
@@ -286,14 +257,14 @@ contains
       call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
       This%SamplesRan = VarL0D
 
-      SubSectionName = SectionName // '>permutation_indices'
+      SubSectionName = SectionName // '>indices'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=This%PermutationIndices, Prefix=PrefixLoc )
+      call ImportArray( Input=InputSection, Array=This%Indices, Prefix=PrefixLoc )
       nullify( InputSection )
 
-      SubSectionName = SectionName // '>signs'
+      SubSectionName = SectionName // '>step_size'
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=This%Signs, Prefix=PrefixLoc )
+      call ImportArray( Input=InputSection, Array=This%StepSize, Prefix=PrefixLoc )
       nullify( InputSection )
 
       SubSectionName = SectionName // '>param_sample'
@@ -337,7 +308,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(SAMorris_Type), intent(inout)                               ::    This
+    class(SAMorrisTrajectory_Type), intent(inout)                     ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -375,16 +346,11 @@ contains
     call GetInput%AddParameter( Name='checkpoint_frequency', Value=ConvertToString(Value=This%CheckpointFreq ) )
     call GetInput%AddParameter( Name='history_frequency', Value=ConvertToString(Value=This%HistoryFreq ) )
     call GetInput%AddParameter( Name='nb_trajectories', Value=ConvertToString(Value=This%NbTrajectories) )
-    if ( This%NbGridLevels > 0 ) call GetInput%AddParameter( Name='nb_grid_levels',                                               &
-                                                                                  Value=ConvertToString(Value=This%NbGridLevels) )
-    call GetInput%AddParameter( Name='step_size', Value=ConvertToString(Value=This%StepSize) )
 
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
-    call GetInput%AddSection( Section=SampleMethod_Factory%GetObjectInput( Object=This%Sampler, MainSectionName='sampler',        &
-                                                                                      Prefix=PrefixLoc, Directory=DirectorySub ) )
-
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/rng'
-    call GetInput%AddSection( Section=This%RNG%GetInput( MainSectionName='rng', Prefix=PrefixLoc, Directory=DirectorySub ) )
+    SectionName = 'trajectory_scheme'
+    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/trajectory_scheme'
+    call GetInput%AddSection( Section=This%ScreeningDesign%GetInput( MainSectionName=SectionName, Prefix=PrefixLoc,                &
+                                                                                                        Directory=DirectorySub ) )
 
     if ( This%ParamSampleStep > 0 ) then
       SectionName = 'restart'
@@ -402,22 +368,22 @@ contains
           call ExportArray( Input=InputSection, Array=This%ParamSample, File=File )
           nullify(InputSection)
 
-          SubSectionName = 'signs'
+          SubSectionName = 'step_size'
           call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
           call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
                                                                                                                 Mandatory=.true. )
-          FileName = DirectoryLoc // '/signs.dat'
+          FileName = DirectoryLoc // '/step_size.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Input=InputSection, Array=This%Signs, File=File )
+          call ExportArray( Input=InputSection, Array=This%StepSize, File=File )
           nullify(InputSection)
 
-          SubSectionName = 'permutation_indices'
+          SubSectionName = 'indices'
           call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
           call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
                                                                                                                 Mandatory=.true. )
-          FileName = DirectoryLoc // '/permutation_indices.dat'
+          FileName = DirectoryLoc // '/indices.dat'
           call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Input=InputSection, Array=This%PermutationIndices, File=File )
+          call ExportArray( Input=InputSection, Array=This%Indices, File=File )
           nullify(InputSection)
 
         end if
@@ -445,18 +411,18 @@ contains
           call ExportArray( Input=InputSection, Array=This%ParamSample )
           nullify(InputSection)
 
-          SubSectionName = 'permutation_indices'
+          SubSectionName = 'indices'
           call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
           call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
                                                                                                                 Mandatory=.true. )
-          call ExportArray( Input=InputSection, Array=This%PermutationIndices )
+          call ExportArray( Input=InputSection, Array=This%Indices )
           nullify(InputSection)
 
-          SubSectionName = 'signs'
+          SubSectionName = 'step_size'
           call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
           call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
                                                                                                                 Mandatory=.true. )
-          call ExportArray( Input=InputSection, Array=This%Signs )
+          call ExportArray( Input=InputSection, Array=This%StepSize )
           nullify(InputSection)
 
         end if
@@ -498,7 +464,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory )
 
-    class(SAMorris_Type), intent(inout)                               ::    This
+    class(SAMorrisTrajectory_Type), intent(inout)                     ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
@@ -531,23 +497,24 @@ contains
     type(Output_Type), allocatable, dimension(:,:)                    ::    Outputs
     integer                                                           ::    NbResponses
     integer, allocatable, dimension(:)                                ::    NbCellsOutput
-    integer                                                           ::    iStart
-    integer                                                           ::    iEnd
     character(:), allocatable                                         ::    Line
     integer, allocatable, dimension(:)                                ::    RunStatLoc
     integer                                                           ::    VarI0D
-    real(rkp)                                                         ::    GridSize
-    real(rkp)                                                         ::    PerturbationSize
-    real(rkp), allocatable, dimension(:,:)                            ::    XStar
-    real(rkp), allocatable, dimension(:,:)                            ::    B
-    real(rkp), allocatable, dimension(:,:)                            ::    P
-    integer                                                           ::    NbGridLevelsLoc
     class(DistProb_Type), pointer                                     ::    DistProbPtr=>null()
     integer                                                           ::    NbTrajectories
     logical, allocatable, dimension(:)                                ::    SampleRan
     real(rkp), allocatable, dimension(:)                              ::    TrajectoryOutput
-    integer                                                           ::    M
-    integer                                                           ::    N
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+
+    i = 1
+    do i = 1, NbDim
+      DistProbPtr => SampleSpace%GetDistributionPointer( Num=i )
+      if ( .not. (DistProbPtr%IsTruncatedLeft() .and. DistProbPtr%IsTruncatedRight()) ) call Error%Raise( 'Morris method ' //     &
+                'implementation will yield values beyond numerical accuracy when working with distributions with infinite ' //    &
+                'or semi-infinite support', ProcName=ProcName )
+      nullify(DistProbPtr)
+    end do
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
 
@@ -555,13 +522,8 @@ contains
     NbDim = SampleSpace%GetNbDim()
     SilentLoc = This%Silent
 
+    NbInputs = 0
     NbTrajectories = 0
-
-    NbGridLevelsLoc = NbDim
-    if ( This%NbGridLevels > 0 ) NbGridLevelsLoc = This%NbGridLevels
-
-    if ( NbGridLevelsLoc - This%StepSize <= 0 ) call Error%Raise( 'Perturbation step size too large given the number ' //         &
-                                                                                             'of grid levels', ProcName=ProcName )
 
     allocate(TrajectoryOutput(NbDim+1), stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='TrajectoryOutput', ProcName=ProcName, stat=StatLoc )
@@ -592,9 +554,6 @@ contains
 
     SilentLoc = This%Silent
 
-    GridSize = One / real(NbGridLevelsLoc-1,rkp)
-    PerturbationSize = GridSize*real(This%StepSize,rkp)
-
     if ( This%HistoryFreq > 0 .and. This%ParamSampleStep == 0 ) then
       call This%HistoryStep%Append( Value=0 )
       ii = 1
@@ -613,103 +572,16 @@ contains
       end if
 
       allocate(This%ParamSample(NbDim,This%NbTrajectories*(NbDim+1)), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSamples', ProcName=ProcName, stat=StatLoc )
-      This%ParamSample = Zero
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
 
-      allocate(This%Signs(NbDim,This%NbTrajectories), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Signs', ProcName=ProcName, stat=StatLoc )
-      This%Signs = 1
-      
-      allocate(This%PermutationIndices(NbDim,This%NbTrajectories), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%PermutationIndices', ProcName=ProcName, stat=StatLoc )
-      This%PermutationIndices = 0
+      allocate(This%Indices(NbDim,This%NbTrajectories), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
-      allocate(P(NbDim,NbDim), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='P', ProcName=ProcName, stat=StatLoc )
-      P = Zero
+      allocate(This%StepSize(NbDim,This%NbTrajectories), stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%StepSize', ProcName=ProcName, stat=StatLoc )
 
-      allocate(B(NbDim+1,NbDim), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='B', ProcName=ProcName, stat=StatLoc )
-      call StrictTriangular( Array=B, UL='L' )
-
-      VarI0D = NbGridLevelsLoc-This%StepSize
-
-      VarR1D = LinSequence( SeqStart=0, SeqEnd=VarI0D )
-      VarR1D = VarR1D / real(VarI0D,rkp)
-
-      VarR2D = This%Sampler%Draw( NbSamples=This%NbTrajectories, NbDim=NbDim )
-
-      allocate(VarI2D(NbDim, This%NbTrajectories) , stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
-      VarI2D = 0
-
-      i = 1
-      do i = 1, This%NbTrajectories
-        ii = 1
-        do ii = 1, NbDim
-          iv = 0
-          iii = 1
-          do iii = 1, VarI0D
-            if ( iii < VarI0D ) then
-              if ( VarR2D(ii,i) >= VarR1D(iii) .and. VarR2D(ii,i) < VarR1D(iii+1) ) iv = iii
-            else
-              if ( VarR2D(ii,i) >= VarR1D(iii) ) iv = iii
-            end if
-          end do
-          if ( iv == 0 ) call Error%Raise( 'Something went wrong', ProcName=ProcName )
-          VarI2D(ii,i) = iv - 1
-        end do
-      end do 
-
-      deallocate(VarR1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-
-      XStar = real(VarI2D,rkp) * GridSize
-
-      deallocate(VarI2D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
-
-      M = NbDim
-      N = NbDim+1
-
-      i = 1
-      do i = 1, This%NbTrajectories
-        This%PermutationIndices(:,i) = LinSequence( SeqStart=1, SeqEnd=NbDim )
-        call ScrambleArray( Array=This%PermutationIndices(:,i), RNG=This%RNG )
-        P = Zero
-
-        ii = 1
-        do ii = 1, NbDim
-          VarR0D = This%RNG%Draw()
-          if ( VarR0D < 0.5 ) This%Signs(ii,i) = - 1
-          P(This%PermutationIndices(ii,i),ii) = One
-        end do
-
-        VarR2D = B*Two - One
-
-        ! performing loop to carry out multiplication of triangular matrix by a diagonal one and addition to the multiplication 
-        ! of J by x' because it is faster
-        VarR0D = PerturbationSize / Two
-        ii = 1
-        do ii = 1, NbDim
-          VarR2D(:,ii) = (VarR2D(:,ii)*This%Signs(ii,i) + One)*VarR0D + XStar(ii,i)
-        end do
-
-        call DGEMM( 'T', 'T', NbDim, N, NbDim, One, P, NbDim, VarR2D, N, Zero,                                        &
-                                                                        This%ParamSample(:,(i-1)*(NbDim+1)+1:i*(NbDim+1)), NbDim )
-      end do
-
-      deallocate(P, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='P', ProcName=ProcName, stat=StatLoc )
-
-      deallocate(B, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='B', ProcName=ProcName, stat=StatLoc )
-
-      deallocate(VarR2D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
-
-      deallocate(XStar, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='XStar', ProcName=ProcName, stat=StatLoc )
+      call This%ScreeningDesign%Draw( NbDim=NbDim, NbTrajectories=This%NbTrajectories, Trajectories=This%ParamSample,              &
+                                                                                StepSize=This%StepSize, Indices=This%Indices )
 
       i = 1
       do i = 1, NbDim
@@ -718,6 +590,7 @@ contains
         do ii = 1, size(This%ParamSample,2)
           This%ParamSample(i,ii) = DistProbPtr%InvCDF( P=This%ParamSample(i,ii) )
         end do
+        nullify(DistProbPtr)
       end do
         
       This%SamplesRan = .false.
@@ -733,13 +606,12 @@ contains
         write(*,'(A)') Line
       end if
 
-      iEnd = This%NbTrajectories
       i = This%ParamSampleStep/(NbDim+1)
       do
-        if ( i >= iEnd ) exit
+        if ( i >= This%NbTrajectories ) exit
 
-        NbTrajectories = iEnd - i
-        if ( This%CheckPointFreq > 0 ) NbTrajectories = min(This%CheckPointFreq, iEnd-i)
+        NbTrajectories = This%NbTrajectories - i
+        if ( This%CheckPointFreq > 0 ) NbTrajectories = min(This%CheckPointFreq, This%NbTrajectories-i)
 
         NbInputs = NbTrajectories*(NbDim+1)
 
@@ -807,12 +679,13 @@ contains
                 TrajectoryOutput(v-iRunMin+1) = VarR2DPtr(iv-iCellMin+1,1)
                 nullify(VarR2DPtr)
               end do
+
               call This%Cells(iv)%UpdateEstimators( TrajectoryOutput=TrajectoryOutput, SampleRan=SampleRan,                       &
-                     PerturbationSize=PerturbationSize, Signs=This%Signs(:,ii), PermutationIndices=This%PermutationIndices(:,ii) )
+                                                                        StepSize=This%StepSize(:,ii), Indices=This%Indices(:,ii) )
             end do
           end do
 
-          if ( This%HistoryFreq > 0 .and. (mod(i+ii, abs(This%HistoryFreq)) == 0 .and. i + ii /= iEnd)  ) then
+          if ( This%HistoryFreq > 0 .and. (mod(i+ii, abs(This%HistoryFreq)) == 0 .and. i + ii /= This%NbTrajectories)  ) then
             call This%HistoryStep%Append( Value=i+ii )
             iii = 1
             do iii = 1, This%NbCells
@@ -834,7 +707,7 @@ contains
         i = i + NbTrajectories
         This%ParamSampleStep = This%ParamSampleStep + NbInputs
 
-        if ( i /= iEnd  ) then
+        if ( i /= This%NbTrajectories  ) then
           call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),     &
                         Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
         end if
@@ -861,11 +734,11 @@ contains
     deallocate(This%ParamSample, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
 
-    deallocate(This%Signs, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Signs', ProcName=ProcName, stat=StatLoc )
+    deallocate(This%StepSize, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StepSize', ProcName=ProcName, stat=StatLoc )
 
-    deallocate(This%PermutationIndices, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PermutationIndices', ProcName=ProcName, stat=StatLoc )
+    deallocate(This%Indices, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
     deallocate(This%Cells, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cells', ProcName=ProcName, stat=StatLoc )
@@ -885,7 +758,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine WriteOutput( This, Directory, Responses )
 
-    class(SAMorris_Type), intent(inout)                                ::    This
+    class(SAMorrisTrajectory_Type), intent(inout)                     ::    This
     character(*), intent(in)                                          ::    Directory
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
 
@@ -922,7 +795,7 @@ contains
 
       NbResponses = size(Responses)
 
-      FileName = '/trajectories.dat'
+      FileName = '/sampled_parameters.dat'
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
       call ExportArray( Array=This%ParamSample, File=File )
 
@@ -991,7 +864,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(SAMorris_Type), intent(out)                                 ::    LHS
+    class(SAMorrisTrajectory_Type), intent(out)                       ::    LHS
     class(SAMethod_Type), intent(in)                                  ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
@@ -1000,19 +873,14 @@ contains
 
     select type (RHS)
 
-      type is (SAMorris_Type)
+      type is (SAMorrisTrajectory_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
         if ( RHS%Constructed ) then
           LHS%Silent = RHS%Silent
-          allocate(LHS%Sampler, source=RHS%Sampler, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Sampler', ProcName=ProcName, stat=StatLoc )
-          LHS%RNG = RHS%RNG
           LHS%NbTrajectories = RHS%NbTrajectories
-          LHS%NbGridLevels = RHS%NbGridLevels
-          LHS%StepSize = RHS%StepSize
           LHS%CheckPointFreq = RHS%CheckPointFreq
           LHS%HistoryFreq = RHS%HistoryFreq
         end if
@@ -1028,7 +896,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(SAMorris_Type), intent(inout)                                 ::    This
+    type(SAMorrisTrajectory_Type), intent(inout)                      ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
@@ -1039,14 +907,11 @@ contains
     if ( allocated(This%ParamSample) ) deallocate(This%ParamSample, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamSample', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%Sampler) ) deallocate(This%Sampler, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%StepSize) ) deallocate(This%StepSize, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%StepSize', ProcName=ProcName, stat=StatLoc )
 
-    if ( allocated(This%Signs) ) deallocate(This%Signs, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Signs', ProcName=ProcName, stat=StatLoc )
-
-    if ( allocated(This%PermutationIndices) ) deallocate(This%PermutationIndices, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PermutationIndices', ProcName=ProcName, stat=StatLoc )
+    if ( allocated(This%Indices) ) deallocate(This%Indices, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Indices', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1387,14 +1252,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine UpdateEstimators_Cell( This, TrajectoryOutput, SampleRan, PerturbationSize, Signs, PermutationIndices )
+  subroutine UpdateEstimators_Cell( This, TrajectoryOutput, SampleRan, StepSize, Indices )
 
     class(Cell_Type), intent(inout)                                   ::    This
     real(rkp), dimension(:), intent(in)                               ::    TrajectoryOutput
     logical, dimension(:), intent(in)                                 ::    SampleRan
-    real(rkp), intent(in)                                             ::    PerturbationSize
-    integer, dimension(:), intent(in)                                 ::    Signs
-    integer, dimension(:), intent(in)                                 ::    PermutationIndices
+    real(rkp), dimension(:), intent(in)                               ::    StepSize
+    integer, dimension(:), intent(in)                                 ::    Indices
 
     character(*), parameter                                           ::    ProcName='UpdateEstimators_Cell'
     integer                                                           ::    StatLoc=0
@@ -1409,8 +1273,8 @@ contains
     i = 1
     do i = 1, NbDim
       if ( SampleRan(i) .and. SampleRan(i+1) ) then
-        DimIndex = PermutationIndices(i)
-        EE = Signs(i)*( TrajectoryOutput(i+1)-TrajectoryOutput(i) ) / PerturbationSize
+        DimIndex = Indices(i)
+        EE = ( TrajectoryOutput(i+1)-TrajectoryOutput(i) ) / StepSize(i)
         call This%MuEstimator(DimIndex)%Update( Value=EE )
         call This%MuStarEstimator(DimIndex)%Update( Value=dabs(EE) )
         call This%VarEstimator(DimIndex)%Update( Value=EE )

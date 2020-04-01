@@ -387,7 +387,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='ComputeBorehole'
 
-    ComputeBorehole = ( Two*pi*tu*(hu-hl) ) / ( dlog(r/rw) * (One+(Two*l*tu)/(dlog(r/rw)*rw**2*kw) + tu/tl ) )
+    ComputeBorehole = ( Two*pi*tu*(hu-hl) ) / ( dlog(r/rw) * (One+(Two*l*tu)/(dlog(r/rw)*(rw**2)*kw) + tu/tl) )
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
