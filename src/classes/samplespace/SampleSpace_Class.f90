@@ -21,12 +21,15 @@ module SampleSpace_Class
 use Parameters_Library
 use Input_Library
 use String_Library
+use CommandRoutines_Module
+use ArrayIORoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use DistNorm_Class                                                ,only:    DistNorm_Type
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
@@ -78,6 +81,7 @@ contains
   procedure, public                                                   ::    Draw
   procedure, public                                                   ::    Enrich
   procedure, nopass, public                                           ::    DrawMVarNormal
+  procedure, public                                                   ::    WriteInfo
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure(Copy_SampleSpace), deferred, public                       ::    Copy
 end type
@@ -673,6 +677,57 @@ contains
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='CovLoc', ProcName=ProcName, stat=StatLoc )
 
   end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteInfo( This, Directory )
+
+    class(SampleSpace_Type), intent(in)                               ::    This
+    character(*), intent(in)                                          ::    Directory
+
+    character(*), parameter                                           ::    ProcName='WriteInfo'
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    PrefixLoc
+    integer                                                           ::    i
+    type(SMUQFile_Type)                                               ::    File
+    class(DistProb_Type), pointer                                     ::    DistProb=>null()
+    character(:), allocatable                                         ::    FileName
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( len_trim(Directory) /= 0 ) then
+
+      call MakeDirectory( Path=Directory, Options='-p' )
+
+      PrefixLoc = Directory
+
+      FileName = '/names.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Array=This%ParamName, File=File )
+
+      FileName = '/labels.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Array=This%Label, File=File )
+
+      FileName = '/covariance.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Array=This%CorrMat, File=File )
+
+      PrefixLoc = Directory // '/distributions'
+      call MakeDirectory( Path=PrefixLoc, Options='-p' )
+
+      i = 1
+      do i = 1, This%NbDim
+        DistProb => This%DistProb(i)%GetPointer()
+        FileName = '/' // This%Label(i) // '.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call DistProb%WriteInfo( File=File )
+        nullify(DistProb)
+      end do
+
+    end if
+
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

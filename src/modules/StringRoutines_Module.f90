@@ -53,6 +53,8 @@ end interface
 interface ConvertToStrings
   module procedure                                                    ::    Convert_C0D_To_String1D
   module procedure                                                    ::    Convert_C1D_To_String1D
+  module procedure                                                    ::    Convert_R41D_To_String1D
+  module procedure                                                    ::    Convert_R81D_To_String1D
 end interface
 
 interface ConvertToInteger                                            
@@ -409,7 +411,7 @@ contains
 
     call Parse( Input=String, Separator=SeparatorLoc, Output=Strings )
 
-    Convert_C0D_To_R41D = ConvertToReal8s( Strings=Strings )
+    Convert_C0D_To_R41D = ConvertToReal4s( Strings=Strings )
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1141,6 +1143,52 @@ contains
     i = 1
     do i = 1, size(Values,1)
       Convert_C1D_To_String1D(i) = trim(adjustl(Values(i)(:)))
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_R41D_To_String1D( Values )
+
+    type(String_Type), dimension(:), allocatable                      ::    Convert_R41D_To_String1D
+
+    real(4), dimension(:), intent(in)                                 ::    Values
+
+
+    character(*), parameter                                           ::    ProcName='Convert_R41D_To_String1D'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+
+    allocate(Convert_R41D_To_String1D(size(Values,1)), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Convert_R41D_To_String1D', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, size(Values,1)
+      Convert_R41D_To_String1D(i) = ConvertToString( Value=Values(i) )
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function Convert_R81D_To_String1D( Values )
+
+    type(String_Type), dimension(:), allocatable                      ::    Convert_R81D_To_String1D
+
+    real(8), dimension(:), intent(in)                                 ::    Values
+
+
+    character(*), parameter                                           ::    ProcName='Convert_R81D_To_String1D'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+
+    allocate(Convert_R81D_To_String1D(size(Values,1)), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Convert_R81D_To_String1D', ProcName=ProcName, stat=StatLoc )
+
+    i = 1
+    do i = 1, size(Values,1)
+      Convert_R81D_To_String1D(i) = ConvertToString( Value=Values(i) )
     end do
 
   end function

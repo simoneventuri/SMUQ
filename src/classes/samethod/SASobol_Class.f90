@@ -716,7 +716,8 @@ contains
     call RestartUtility%Update( InputSection=This%GetInput(MainSectionName='temp', Prefix=RestartUtility%GetPrefix(),         &
                       Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain )
 
-    if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, Responses=Responses )
+    if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, SampleSpace=SampleSpace,                    &
+                                                                                                             Responses=Responses )
 
     deallocate(SnapShot, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SnapShot', ProcName=ProcName, stat=StatLoc )
@@ -743,10 +744,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, Directory, Responses )
+  subroutine WriteOutput( This, Directory, SampleSpace, Responses )
 
     class(SASobol_Type), intent(inout)                                ::    This
     character(*), intent(in)                                          ::    Directory
+    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
 
     character(*), parameter                                           ::    ProcName='WriteOutput'
@@ -781,6 +783,9 @@ contains
       PrefixLoc = Directory
 
       NbResponses = size(Responses)
+
+      DirectoryLoc = PrefixLoc // '/sample_space'
+      call SampleSpace%WriteInfo( Directory=DirectoryLoc )
 
       FileName = '/sampled_parameters.dat'
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )

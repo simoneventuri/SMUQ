@@ -21,9 +21,12 @@ module DistLog10Unif_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use DistUnif_Class                    ,only:  DistUnif_Type
-use Logger_Class                      ,only:  Logger
-use Error_Class                       ,only:  Error
+use StringRoutines_Module
+use String_Library
+use DistUnif_Class                                                ,only:    DistUnif_Type
+use Logger_Class                                                  ,only:    Logger
+use Error_Class                                                   ,only:    Error
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
@@ -39,7 +42,8 @@ contains
   procedure, private                                                  ::    PDF_R0D
   procedure, public                                                   ::    CDF_R0D
   procedure, public                                                   ::    InvCDF_R0D
-  procedure, public                                                   ::    GetMoment 
+  procedure, public                                                   ::    GetMoment
+  procedure, public                                                   ::    WriteInfo
 end type
 
 real(rkp), parameter                                                  ::    dlogof10=dlog(Ten)     
@@ -193,6 +197,27 @@ contains
     end if
 
   end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteInfo( This, File )
+
+    class(DistLog10Unif_Type), intent(in)                             ::    This
+    type(SMUQFile_Type), intent(inout)                                ::    File
+
+    character(*), parameter                                           ::    ProcName='WriteInfo'
+    integer                                                           ::    i
+    type(String_Type), dimension(3)                                   ::    Strings
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    Strings(1) = 'log10uniform'
+    Strings(2) = ConvertToString(Value=This%A)
+    Strings(3) = ConvertToString(Value=This%B)
+
+    call File%Append( Strings=Strings )
+
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

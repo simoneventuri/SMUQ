@@ -21,10 +21,13 @@ module DistLogNorm_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
+use StringRoutines_Module
+use String_Library
 use DistProb_Class                                                ,only:    DistProb_Type
-use DistNorm_Class                                                ,only:  DistNorm_Type
-use Logger_Class                                                  ,only:  Logger
-use Error_Class                                                   ,only:  Error
+use DistNorm_Class                                                ,only:    DistNorm_Type
+use Logger_Class                                                  ,only:    Logger
+use Error_Class                                                   ,only:    Error
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
@@ -44,6 +47,7 @@ contains
   procedure, public                                                   ::    CDF_R0D
   procedure, public                                                   ::    InvCDF_R0D
   procedure, public                                                   ::    GetMoment
+  procedure, public                                                   ::    WriteInfo
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -365,6 +369,31 @@ contains
     end if
 
   end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteInfo( This, File )
+
+    class(DistLogNorm_Type), intent(in)                               ::    This
+    type(SMUQFile_Type), intent(inout)                                ::    File
+
+    character(*), parameter                                           ::    ProcName='WriteInfo'
+    integer                                                           ::    i
+    type(String_Type), dimension(5)                                   ::    Strings
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    Strings(1) = 'lognormal'
+    Strings(2) = ConvertToString(Value=This%Mu)
+    Strings(3) = ConvertToString(Value=This%Sigma)
+    Strings(4) = '-Inf'
+    if ( This%DoubleTruncatedLeft ) Strings(4) = ConvertToString(Value=This%A)
+    Strings(5) = 'Inf'
+    if ( This%TruncatedRight ) Strings(5) = ConvertToString(Value=This%B)
+
+    call File%Append( Strings=Strings )
+
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

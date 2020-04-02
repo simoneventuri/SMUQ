@@ -24,6 +24,7 @@ use Parameters_Library
 use Brent_Library
 use ComputingRoutines_Module
 use StringRoutines_Module
+use String_Library
 use StatisticsRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module
@@ -71,6 +72,7 @@ contains
   procedure, private                                                  ::    InvTransform_1D
   generic, private                                                    ::    fInvTransform           =>    fInvTransform_0D
   procedure, private                                                  ::    fInvTransform_0D
+  procedure, public                                                   ::    WriteInfo
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer     
 end type
@@ -770,6 +772,48 @@ contains
     elseif ( This%TruncatedRight ) then
       Value = Value * dabs(One / (This%B-X))
     end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteInfo( This, File )
+
+    class(DistKernel_Type), intent(in)                                ::    This
+    type(SMUQFile_Type), intent(inout)                                ::    File
+
+    character(*), parameter                                           ::    ProcName='WriteInfo'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    type(String_Type), allocatable, dimension(:)                      ::    Strings
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    allocate(VarR1D, source=This%TransformedSamples, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    call This%InvTransform( Values=VarR1D )
+
+    allocate(Strings(4+size(VarR1D,1)), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
+
+    Strings(1) = 'kernel'
+    Strings(2) = ConvertToString(Value=size(VarR1D,1))
+    Strings(3) = '-Inf'
+    if ( This%TruncatedLeft ) Strings(3) = ConvertToString(Value=This%A)
+    Strings(4) = 'Inf'
+    if ( This%TruncatedRight ) Strings(4) = ConvertToString(Value=This%B)
+    Strings(5:4+size(VarR1D,1)) = ConvertToStrings(Values=VarR1D)
+
+    deallocate(VarR1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+
+    deallocate(Strings, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
+
+    call File%Append( Strings=Strings )
+
+    call This%Kernel%WriteInfo( File=File )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

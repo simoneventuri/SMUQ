@@ -22,10 +22,13 @@ use Prob_Library
 use Input_Library
 use Parameters_Library
 use CommandRoutines_Module
+use StringRoutines_Module
+use String_Library
 use DistProb_Class                                                ,only:    DistProb_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use BaseDistProb_Factory_Class                                    ,only:    BaseDistProb_Factory
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
@@ -60,6 +63,7 @@ contains
   procedure, private                                                  ::    InvTransform_1D
   generic, public                                                     ::    fInvTransform           =>    fInvTransform_0D
   procedure, private                                                  ::    fInvTransform_0D
+  procedure, public                                                   ::    WriteInfo
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer     
 end type
@@ -387,6 +391,29 @@ contains
     elseif ( This%DistTRight ) then
       Value = Value * dabs(-(This%DistB-X))
     end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteInfo( This, File )
+
+    class(DistInfBoundTransf_Type), intent(in)                        ::    This
+    type(SMUQFile_Type), intent(inout)                                ::    File
+
+    character(*), parameter                                           ::    ProcName='WriteInfo'
+    integer                                                           ::    i
+    type(String_Type), dimension(3)                                   ::    Strings
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    
+    Strings(1) = 'infboundtransf'
+    Strings(2) = '-Inf'
+    Strings(3) = 'Inf'
+
+    call File%Append( Strings=Strings )
+
+    call This%DistProb%WriteInfo( File=File )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

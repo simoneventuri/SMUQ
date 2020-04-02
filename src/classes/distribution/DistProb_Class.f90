@@ -24,6 +24,7 @@ use StringRoutines_Module
 use QuadPack_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
@@ -70,6 +71,7 @@ contains
   procedure(InvCDF_R0D_DistProb), deferred, public                    ::    InvCDF_R0D
   procedure(PDF_R0D_DistProb), deferred, private                      ::    PDF_R0D
   procedure(SetDefaults_DistProb), deferred, public                   ::    SetDefaults
+  procedure(WriteInfo_DistProb), deferred, public                     ::    WriteInfo
   procedure(Copy_DistProb), deferred, public                          ::    Copy
 end type
 
@@ -148,6 +150,15 @@ abstract interface
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
   end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteInfo_DistProb( This, File )
+    import                                                            ::    DistProb_Type
+    import                                                            ::    SMUQFile_Type
+    class(DistProb_Type), intent(in)                                  ::    This
+    type(SMUQFile_Type), intent(inout)                                ::    File
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
