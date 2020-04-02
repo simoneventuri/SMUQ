@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module TrajectoryDesign_Class
+module RadialDesign_Class
 
 use Parameters_Library
 use Input_Library
@@ -30,22 +30,22 @@ use LinkedList0D_Class                                            ,only:    Link
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use SampleMethod_Factory_Class                                    ,only:    SampleMethod_Factory
 use SampleLHS_Class                                               ,only:    SampleLHS_Type
+use SampleQuasiMC_Class                                           ,only:    SampleQuasiMC_Type
 use RandPseudo_Class                                              ,only:    RandPseudo_Type
 
 implicit none
 
 private
 
-public                                                                ::    TrajectoryDesign_Type
+public                                                                ::    RadialDesign_Type
 
-type                                                                  ::    TrajectoryDesign_Type
+type                                                                  ::    RadialDesign_Type
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Name
-  integer                                                             ::    NbGridLevels
-  integer                                                             ::    PerturbationSize
-  type(RandPseudo_Type)                                               ::    RNG
+  real(rkp)                                                           ::    Eps
   class(SampleMethod_Type), allocatable                               ::    Sampler
+  integer                                                             ::    AuxilaryShift
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -67,14 +67,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize( This )
 
-    class(TrajectoryDesign_Type), intent(inout)                       ::    This
+    class(RadialDesign_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer(8)                                                        ::    SysTimeCount
 
     if ( .not. This%Initialized ) then
       This%Initialized = .true.
-      This%Name = 'trajectorydesign'
+      This%Name = 'radialdesign'
       call This%SetDefaults()
     end if
 
@@ -84,15 +84,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset( This )
 
-    class(TrajectoryDesign_Type), intent(inout)                       ::    This
+    class(RadialDesign_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
 
     This%Initialized=.false.
     This%Constructed=.false.
-
-    call This%RNG%Reset()
 
     if ( allocated(This%Sampler) ) deallocate(This%Sampler, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
@@ -105,12 +103,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults(This)
 
-    class(TrajectoryDesign_Type), intent(inout)                       ::    This
+    class(RadialDesign_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-    This%NbGridLevels = 0
-    This%PerturbationSize = 0
+    This%AuxilaryShift = 4
+    This%Eps = 1.0d-10
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -120,7 +118,7 @@ contains
 
     use StringRoutines_Module
 
-    class(TrajectoryDesign_Type), intent(inout)                       ::    This
+    class(RadialDesign_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -133,6 +131,7 @@ contains
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    VarI0D
+    real(rkp)                                                         ::    VarR0D
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
@@ -142,40 +141,28 @@ contains
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
-    ParameterName = 'nb_grid_levels'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if ( Found ) then
-      This%NbGridLevels = VarI0D
-      if ( This%NbGridLevels <= 1 ) call Error%Raise( 'Must specify at least 2 grid levels', ProcName=ProcName )
-    end if
+    ParameterName = 'epsilon'
+    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%Eps = VarR0D
+    if ( This%Eps < 0 ) call Error%Raise( 'Epsilon must be non-negative', ProcName=ProcName )
 
-    ParameterName = 'perturbation_size'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if ( Found ) then
-      This%PerturbationSize = VarI0D
-      if ( This%PerturbationSize <= 0 ) call Error%Raise( 'Perturbation size must be above 0', ProcName=ProcName )
-    end if
+    ParameterName = 'auxilary_shift'
+    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
+    if ( Found ) This%AuxilaryShift = VarI0D
+    if ( This%AuxilaryShift < 0 ) call Error%Raise( 'Auxilary shift must be a non-negative integer', ProcName=ProcName )
 
     SectionName = 'sampler'
     if ( Input%HasSection( SubSectionName=SectionName ) ) then
       call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
       call SampleMethod_Factory%Construct( Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc )
     else
-      allocate( SampleLHS_Type :: This%Sampler )
+      allocate( SampleQuasiMC_Type :: This%Sampler )
       select type (Object => This%Sampler)
-        type is (SampleLHS_Type)
+        type is (SampleQuasiMC_Type)
           call Object%Construct()
         class default
           call Error%Raise( Line='Something went wrong', ProcName=ProcName )
       end select
-    end if
-
-    SectionName = 'rng'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%RNG%Construct( Input=InputSection, Prefix=PrefixLoc )
-    else
-      call This%RNG%Construct()
     end if
 
     This%Constructed = .true.
@@ -184,13 +171,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1 ( This, NbGridLevels, PerturbationSize, Sampler, RNG )
+  subroutine ConstructCase1 ( This, Sampler, AuxilaryShift, Eps )
 
-    class(TrajectoryDesign_Type), intent(inout)                       ::    This
-    integer, optional, intent(in)                                     ::    NbGridLevels
-    integer, optional, intent(in)                                     ::    PerturbationSize
+    class(RadialDesign_Type), intent(inout)                           ::    This
     class(SampleMethod_Type), optional, intent(in)                    ::    Sampler
-    type(RandPseudo_Type), optional, intent(in)                       ::    RNG
+    integer, optional, intent(in)                                     ::    AuxilaryShift
+    real(rkp), optional, intent(in)                                   ::    Eps
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
@@ -198,29 +184,19 @@ contains
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
 
-    if ( present(NbGridLevels) ) then
-      This%NbGridLevels = NbGridLevels
-      if ( This%NbGridLevels <= 1 ) call Error%Raise( 'Must specify at least 2 grid levels', ProcName=ProcName )
-    end if
+    if ( present(Eps) ) This%Eps = Eps
+    if ( This%Eps < 0 ) call Error%Raise( 'Epsilon must be non-negative', ProcName=ProcName )
 
-    if ( present(PerturbationSize) ) then
-      This%PerturbationSize = PerturbationSize
-      if ( This%PerturbationSize <= 0 ) call Error%Raise( 'Perturbation size must be above zero', ProcName=ProcName )
-    end if
-
-    if ( present(RNG) ) then
-      This%RNG = RNG
-    else
-      call This%RNG%Construct()
-    end if
+    if ( present(AuxilaryShift) ) This%AuxilaryShift = AuxilaryShift
+    if ( This%AuxilaryShift < 0 ) call Error%Raise( 'Auxilary shift must be a non-negative integer', ProcName=ProcName )
 
     if ( present(Sampler) ) then
       allocate(This%Sampler, source=Sampler, stat=StatLoc)
       if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
     else
-      allocate( SampleLHS_Type :: This%Sampler )
+      allocate( SampleQuasiMC_Type :: This%Sampler )
       select type (Object => This%Sampler)
-        type is (SampleLHS_Type)
+        type is (SampleQuasiMC_Type)
           call Object%Construct()
         class default
           call Error%Raise( Line='Something went wrong', ProcName=ProcName )
@@ -239,7 +215,7 @@ contains
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
-    class(TrajectoryDesign_Type), intent(in)                          ::    This
+    class(RadialDesign_Type), intent(in)                              ::    This
     character(*), intent(in)                                          ::    MainSectionName
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -266,13 +242,8 @@ contains
 
     if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
 
-    if ( This%NbGridLevels > 0 ) call GetInput%AddParameter( Name='nb_grid_levels',                                               &
-                                                                                  Value=ConvertToString(Value=This%NbGridLevels) )
-    if ( This%PerturbationSize > 0 ) call GetInput%AddParameter( Name='perturbation_size',                                        &
-                                                                              Value=ConvertToString(Value=This%PerturbationSize) )
-
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/rng'
-    call GetInput%AddSection( Section=This%RNG%GetInput( MainSectionName='rng', Prefix=PrefixLoc, Directory=DirectorySub ) )
+    call GetInput%AddParameter( Name='epsilon', Value=ConvertToString(Value=This%Eps) )
+    call GetInput%AddParameter( Name='auxilary_shift', Value=ConvertToString(Value=This%AuxilaryShift) )
 
     if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
     call GetInput%AddSection( Section=SampleMethod_Factory%GetObjectInput( Object=This%Sampler, MainSectionName='sampler',        &
@@ -282,169 +253,99 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Draw( This, NbDim, NbTrajectories, Trajectories, StepSize, Indices )
+  subroutine Draw( This, NbDim, NbBlocks, Blocks, StepSize )
 
-    class(TrajectoryDesign_Type), intent(inout)                       ::    This
-    integer, intent(in)                                               ::    NbTrajectories
+    class(RadialDesign_Type), intent(inout)                           ::    This
+    integer, intent(in)                                               ::    NbBlocks
     integer, intent(in)                                               ::    NbDim
-    real(rkp), dimension(:,:), intent(inout)                          ::    Trajectories
+    real(rkp), dimension(:,:), intent(inout)                          ::    Blocks
     real(rkp), dimension(:,:), optional, intent(inout)                ::    StepSize
-    integer, dimension(:,:), optional, intent(inout)                  ::    Indices
     
     character(*), parameter                                           ::    ProcName='Draw'
     integer                                                           ::    StatLoc=0
-    integer, allocatable, dimension(:)                                ::    Signs
-    integer, allocatable, dimension(:)                                ::    PermutationIndices
-    integer                                                           ::    NbGridLevelsLoc
     integer                                                           ::    NbEntries
     integer                                                           ::    NbDimP1
+    integer                                                           ::    NbDimTwo
     real(rkp), allocatable, dimension(:,:)                            ::    XStar
-    real(rkp), allocatable, dimension(:,:)                            ::    B
-    real(rkp), allocatable, dimension(:,:)                            ::    P
-    integer                                                           ::    VarI0D
-    real(rkp)                                                         ::    VarR0D
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
-    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
-    integer, allocatable, dimension(:,:)                              ::    VarI2D
-    real(rkp)                                                         ::    GridSize
-    integer                                                           ::    PerturbationSizeLoc
-    real(rkp)                                                         ::    PerturbationSize
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii
     integer                                                           ::    iv
+    integer                                                           ::    iOffset
+    integer                                                           ::    iBlockMin
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
-    NbGridLevelsLoc = NbDim
-    if ( This%NbGridLevels > 0 ) NbGridLevelsLoc = This%NbGridLevels
-
-    PerturbationSizeLoc = nint(real(NbGridLevelsLoc,rkp)/Two)
-    if ( This%PerturbationSize > 0 ) PerturbationSizeLoc = This%PerturbationSize
-    if ( PerturbationSizeLoc <= 0 ) call Error%Raise( 'Perturbation size must be above zero', ProcName=ProcName )
-    if ( PerturbationSizeLoc >= NbGridLevelsLoc ) call Error%Raise( 'Perturbation size must be lower than number of grid levels', &
-                                                                                                               ProcName=ProcName )
-
-    NbEntries = (NbDim+1)*NbTrajectories
     NbDimP1 = NbDim+1
+    NbDimTwo = NbDim*2
+    NbEntries = NbDimP1*NbBlocks
+
+    allocate(VarR1D(NbDim), stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    VarR1D = Zero
 
     if ( present(StepSize) ) then
-      if ( size(StepSize,1) /= NbDim .or. size(StepSize,2) /= NbTrajectories ) call Error%Raise( 'Passed step size array of ' //  &
+      if ( size(StepSize,1) /= NbDim .or. size(StepSize,2) /= NbBlocks ) call Error%Raise( 'Passed step size array of ' //        &
                                                                                              'incorrect size', ProcName=ProcName )
     end if
 
-    if ( present(Indices) ) then
-      if ( size(Indices,1) /= NbDim .or. size(Indices,2) /= NbTrajectories ) call Error%Raise( 'Passed indices array of ' //      &
-                                                                                             'incorrect size', ProcName=ProcName )
-    end if
-
-    if ( size(Trajectories,2) /= NbEntries .or. size(Trajectories,1) /= NbDim ) call Error%Raise( 'Passed trajectories ' //       &
+    if ( size(Blocks,2) /= NbEntries .or. size(Blocks,1) /= NbDim ) call Error%Raise( 'Passed blocks ' //                         &
                                                                                     'array of incorrect size', ProcName=ProcName )
 
-    Trajectories = Zero
+    Blocks = Zero
+    XStar = This%Sampler%Draw( NbSamples=NbBlocks+This%AuxilaryShift, NbDim=NbDimTwo )
 
-    GridSize = One / real(NbGridLevelsLoc-1,rkp)
-    PerturbationSize = GridSize*real(PerturbationSizeLoc,rkp)
-
-    allocate(Signs(NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Signs', ProcName=ProcName, stat=StatLoc )
-    Signs = 1
-      
-    allocate(PermutationIndices(NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='PermutationIndices', ProcName=ProcName, stat=StatLoc )
-    PermutationIndices = 0
-
-    allocate(P(NbDim,NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='P', ProcName=ProcName, stat=StatLoc )
-    P = Zero
-
-    allocate(B(NbDim+1,NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='B', ProcName=ProcName, stat=StatLoc )
-    call StrictTriangular( Array=B, UL='L' )
-
-    VarI0D = NbGridLevelsLoc-PerturbationSizeLoc
-
-    VarR1D = LinSequence( SeqStart=0, SeqEnd=VarI0D )
-    VarR1D = VarR1D / real(VarI0D,rkp)
-
-    VarR2D = This%Sampler%Draw( NbSamples=NbTrajectories, NbDim=NbDim )
-
-    allocate(VarI2D(NbDim, NbTrajectories) , stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
-    VarI2D = 0
-
-    i = 1
-    do i = 1, NbTrajectories
-      ii = 1
-      do ii = 1, NbDim
-        iv = 0
-        iii = 1
-        do iii = 1, VarI0D
-          if ( iii < VarI0D ) then
-            if ( VarR2D(ii,i) >= VarR1D(iii) .and. VarR2D(ii,i) < VarR1D(iii+1) ) iv = iii
-          else
-            if ( VarR2D(ii,i) >= VarR1D(iii) ) iv = iii
+    ! generating lager sample size if auxillary points do not differ from non-auxillary ones in any dimension
+    do
+      iOffset = 0
+      iv = 0
+      i = 1
+      do i = 1, NbBlocks
+        ii = 1
+        iii = 0
+        do ii = This%AuxilaryShift+iOffset+i, size(XStar,2)
+          VarR1D = dabs(XStar(1:NbDim,i)-XStar(NbDimP1:NbDimTwo,ii))
+          if ( all(VarR1D>This%Eps) ) then
+            iv = iv + 1
+            exit
           end if
+          iii = iii + 1
         end do
-        if ( iv == 0 ) call Error%Raise( 'Something went wrong', ProcName=ProcName )
-        VarI2D(ii,i) = iv - 1
-      end do
-    end do 
-
-    deallocate(VarR1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-
-    XStar = real(VarI2D,rkp) * GridSize
-
-    deallocate(VarI2D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI2D', ProcName=ProcName, stat=StatLoc )
-
-    i = 1
-    do i = 1, NbTrajectories
-      PermutationIndices = LinSequence( SeqStart=1, SeqEnd=NbDim )
-      call ScrambleArray( Array=PermutationIndices, RNG=This%RNG )
-      if ( present(Indices) ) Indices(:,i) = PermutationIndices
-      P = Zero
-
-      ii = 1
-      do ii = 1, NbDim
-        VarR0D = This%RNG%Draw()
-        if ( VarR0D < 0.5 ) Signs(ii) = - 1
-        P(PermutationIndices(ii),ii) = One
-      end do
-      if ( present(StepSize) ) StepSize(:,i) = PerturbationSize * real(Signs,rkp)
-
-      VarR2D = B*Two - One
-
-      ! performing loop to carry out multiplication of triangular matrix by a diagonal one and addition to the multiplication 
-      ! of J by x' because it is faster
-      VarR0D = PerturbationSize / Two
-      ii = 1
-      do ii = 1, NbDim
-        VarR2D(:,ii) = (VarR2D(:,ii)*Signs(ii) + One)*VarR0D + XStar(ii,i)
+        iOffset = iOffset + iii
+        if ( This%AuxilaryShift+iOffset+i+1 > size(XStar,2) ) exit
       end do
 
-      call DGEMM( 'N', 'T', NbDim, NbDimP1, NbDim, One, P, NbDim, VarR2D, NbDimP1, Zero,                                          &
-                                                                                Trajectories(:,(i-1)*NbDimP1+1:i*NbDimP1), NbDim )
+      if ( iv == NbBlocks ) exit
+      deallocate(XStar, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Deallocate( Name='XStar', ProcName=ProcName, stat=StatLoc )
+      XStar = This%Sampler%Draw( NbSamples=NbBlocks+This%AuxilaryShift+iOffset, NbDim=NbDimTwo )
     end do
 
-    deallocate(P, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='P', ProcName=ProcName, stat=StatLoc )
+    iOffset = 0
 
-    deallocate(B, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='B', ProcName=ProcName, stat=StatLoc )
-
-    deallocate(VarR2D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    i = 1
+    do i = 1, NbBlocks
+      iBlockMin = (i-1)*NbDimP1+1
+      Blocks(:,iBlockMin) = XStar(1:NbDim,i)
+      do
+        VarR1D = dabs(XStar(1:NbDim,i)-XStar(NbDimP1:NbDimTwo,i+This%AuxilaryShift+iOffset))
+        if ( all(VarR1D>This%Eps) ) exit
+        iOffset = iOffset + 1
+      end do
+      ii = 1
+      do ii = 1, NbDim
+        Blocks(:,iBlockMin+ii) = Blocks(:,iBlockMin)
+        Blocks(ii,iBlockMin+ii) = XStar(NbDim+ii,i+This%AuxilaryShift+iOffset)
+        if ( present(StepSize) ) StepSize(ii,i) = Blocks(ii,iBlockMin+ii) - Blocks(ii,iBlockMin)
+      end do
+    end do
 
     deallocate(XStar, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='XStar', ProcName=ProcName, stat=StatLoc )
 
-    deallocate(Signs, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Signs', ProcName=ProcName, stat=StatLoc )
-
-    deallocate(PermutationIndices, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='PermutationIndices', ProcName=ProcName, stat=StatLoc )
+    deallocate(VarR1D, stat=StatLoc)
+    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -452,8 +353,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
-    class(TrajectoryDesign_Type), intent(out)                         ::    LHS
-    class(TrajectoryDesign_Type), intent(in)                          ::    RHS
+    class(RadialDesign_Type), intent(out)                             ::    LHS
+    class(RadialDesign_Type), intent(in)                              ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
@@ -463,10 +364,7 @@ contains
     LHS%Constructed = RHS%Constructed
 
     if ( RHS%Constructed ) then
-      LHS%RNG=RHS%RNG
       LHS%Sampler = RHS%Sampler
-      LHS%PerturbationSize = RHS%PerturbationSize
-      LHS%NbGridLevels = RHS%NbGridLevels
     end if
 
   end subroutine
@@ -475,7 +373,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer( This )
 
-    type(TrajectoryDesign_Type), intent(inout)                        ::    This
+    type(RadialDesign_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0

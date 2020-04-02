@@ -25,6 +25,7 @@ use Error_Class                                                   ,only:    Erro
 use SAMethod_Class                                                ,only:    SAMethod_Type
 use SASobol_Class                                                 ,only:    SASobol_Type
 use SAMorrisTrajectory_Class                                      ,only:    SAMorrisTrajectory_Type
+use SAMorrisRadial_Class                                          ,only:    SAMorrisRadial_Type
 
 implicit none
 
@@ -64,6 +65,9 @@ contains
 
       case('morris_trajectory')
         allocate( SAMorrisTrajectory_Type :: Object )
+
+      case('morris_radial')
+        allocate( SAMorrisRadial_Type :: Object )
 
       case default
         call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
@@ -125,6 +129,9 @@ contains
 
       type is (SAMorrisTrajectory_Type)
         GetOption = 'morris_trajectory'
+
+      type is (SAMorrisRadial_Type)
+        GetOption = 'morris_radial'
 
       class default
         call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )

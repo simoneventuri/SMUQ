@@ -3,4 +3,5 @@ add_target_sources ( smuqApp
   SAMethod_Class.f90
   SASobol_Class.f90
   SAMorrisTrajectory_Class.f90
+  SAMorrisRadial_Class.f90
   )
