@@ -701,11 +701,7 @@ contains
 
       PrefixLoc = Directory
 
-      FileName = '/names.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Array=This%ParamName, File=File )
-
-      FileName = '/labels.dat'
+      FileName = '/variables.dat'
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
       call ExportArray( Array=This%Label, File=File )
 
@@ -713,13 +709,21 @@ contains
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
       call ExportArray( Array=This%CorrMat, File=File )
 
-      PrefixLoc = Directory // '/distributions'
-      call MakeDirectory( Path=PrefixLoc, Options='-p' )
-
       i = 1
       do i = 1, This%NbDim
+        PrefixLoc = Directory // '/' // This%Label(i)
+        call MakeDirectory( Path=PrefixLoc, Options='-p' )
+        
+        FileName = '/name.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call File%Export(String=This%ParamName(i))
+
+        FileName = '/label.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call File%Export(String=This%Label(i))
+
+        FileName = '/distribution.dat'
         DistProb => This%DistProb(i)%GetPointer()
-        FileName = '/' // This%Label(i) // '.dat'
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
         call DistProb%WriteInfo( File=File )
         nullify(DistProb)

@@ -75,6 +75,7 @@ contains
   procedure, public                                                   ::    GetNbNodes
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    IsDataDefined
+  procedure, public                                                   ::    WriteInfo
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -621,6 +622,53 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteInfo( This, Directory )
+
+    class(Response_Type), intent(in)                                  ::    This
+    character(*), intent(in)                                          ::    Directory
+
+    character(*), parameter                                           ::    ProcName='WriteInfo'
+    integer                                                           ::    StatLoc=0
+    character(:), allocatable                                         ::    PrefixLoc
+    integer                                                           ::    i
+    type(SMUQFile_Type)                                               ::    File
+    character(:), allocatable                                         ::    FileName
+
+    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+
+    if ( len_trim(Directory) /= 0 ) then
+
+      call MakeDirectory( Path=Directory, Options='-p' )
+
+      PrefixLoc = Directory
+
+      FileName = '/name.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call File%Export( String=This%Name )
+
+      FileName = '/label.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call File%Export( String=This%Label )
+
+      FileName = '/coordinates.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Array=This%Coordinates, File=File )
+
+      FileName = '/coordinate_labels.dat'
+      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+      call ExportArray( Array=This%CoordinatesLabels, File=File )
+
+      if ( This%DataDefined ) then
+        FileName = '/data.dat'
+        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
+        call ExportArray( Array=This%ResponseData, File=File )
+      end if
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy( LHS, RHS )
 
     class(Response_Type), intent(out)                                 ::    LHS
@@ -629,32 +677,24 @@ contains
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
-    select type (RHS)
-  
-      type is (Response_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+    call LHS%Reset()
+    LHS%Initialized = RHS%Initialized
+    LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
-          LHS%Name = RHS%Name
-          LHS%Label = RHS%Label
-          LHS%NbDataSets = RHS%NbDataSets
-          LHS%DataDefined = RHS%DataDefined
-          LHS%NbNodes = RHS%NbNodes
-          LHS%NbIndCoordinates = RHS%NbIndCoordinates
-          allocate(LHS%ResponseData, source=RHS%ResponseData, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ResponseData', ProcName=ProcName, stat=StatLoc )
-          allocate(LHS%CoordinatesLabels, source=RHS%CoordinatesLabels, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CoordinatesLabels', ProcName=ProcName, stat=StatLoc )
-          allocate(LHS%Coordinates, source=RHS%Coordinates, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Coordinates', ProcName=ProcName, stat=StatLoc )
-        end if
-      
-      class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
-
-    end select
+    if ( RHS%Constructed ) then
+      LHS%Name = RHS%Name
+      LHS%Label = RHS%Label
+      LHS%NbDataSets = RHS%NbDataSets
+      LHS%DataDefined = RHS%DataDefined
+      LHS%NbNodes = RHS%NbNodes
+      LHS%NbIndCoordinates = RHS%NbIndCoordinates
+      allocate(LHS%ResponseData, source=RHS%ResponseData, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ResponseData', ProcName=ProcName, stat=StatLoc )
+      allocate(LHS%CoordinatesLabels, source=RHS%CoordinatesLabels, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CoordinatesLabels', ProcName=ProcName, stat=StatLoc )
+      allocate(LHS%Coordinates, source=RHS%Coordinates, stat=StatLoc)
+      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Coordinates', ProcName=ProcName, stat=StatLoc )
+    end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

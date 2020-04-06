@@ -745,19 +745,6 @@ contains
         call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
         call ExportArray( Array=This%Histograms(i)%GetBinEdgesPointer(), File=File )
 
-        ii = 1
-        iii = 0
-        do ii = 1, size(Responses,1)
-          if ( Responses(ii)%GetLabel() /= This%Labels(i)%GetValue() ) cycle
-          iii = ii
-          exit
-        end do
-
-        if ( iii == 0 ) call Error%Raise( 'Did not find required response: ' // This%Labels(i)%GetValue(), ProcName=ProcName )
-        FileName = '/' // This%Labels(i)%GetValue() // '/coordinates.dat'
-        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call ExportArray( Array=Responses(iii)%GetCoordinatesPointer(), File=File, RowMajor=.true. )
-
         nullify(VarI2DPtr)
 
       end do

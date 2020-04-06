@@ -11,7 +11,7 @@
 !! This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
 !! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 !!
-!! You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free 
+!! You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free
 !! Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -74,7 +74,7 @@ contains
   procedure, private                                                  ::    fInvTransform_0D
   procedure, public                                                   ::    WriteInfo
   procedure, public                                                   ::    Copy
-  final                                                               ::    Finalizer     
+  final                                                               ::    Finalizer
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -168,7 +168,7 @@ contains
 
     if ( This%Constructed ) call This%Reset()
     if ( .not. This%Initialized ) call This%Initialize()
-    
+
     PrefixLoc = ''
     if ( present(Prefix) ) PrefixLoc = Prefix
 
@@ -204,7 +204,7 @@ contains
     call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
     call ImportArray( Input=InputSection, Array=Samples, Prefix=PrefixLoc )
     nullify( InputSection )
-    
+
     NbSamples = size(Samples)
 
     call DLASRT( 'I', NbSamples, Samples, StatLoc )
@@ -301,7 +301,7 @@ contains
 
     allocate(SamplesLoc, source=Samples, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Allocate( Name='SamplesLoc', ProcName=ProcName, stat=StatLoc )
-    
+
     NbSamples = size(SamplesLoc)
 
     call DLASRT( 'I', NbSamples, SamplesLoc, StatLoc )
@@ -379,7 +379,7 @@ contains
     if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
 
     call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    
+
     call GetInput%AddParameter( Name='kernel', Value=KernelDist_Factory%GetOption( Object=This%Kernel ) )
     call GetInput%AddParameter( Name='bandwidth', Value=ConvertToString(Value=This%Bandwidth) )
     if ( This%TruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
@@ -572,7 +572,7 @@ contains
         end do
         RightBound = LeftBound
         LeftBound = VarR0D
-        
+
       elseif ( P > This%CDFSamples(This%NbCDFSamples) ) then
         LeftBound = This%XCDFSamples(This%NbCDFSamples)
         dx = This%XCDFSamples(This%NbCDFSamples)-This%XCDFSamples(This%NbCDFSamples-1)
@@ -624,7 +624,7 @@ contains
     contains
 
       !!--------------------------------------------------------------------------------------------------------------------------
-      function MinFun( X )  
+      function MinFun( X )
 
         real(8)                                                           ::    MinFun
 
@@ -828,7 +828,7 @@ contains
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
-  
+
       type is (DistKernel_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized

@@ -1066,14 +1066,6 @@ contains
         NbCells = Responses(i)%GetNbNodes()
         iEnd = iStart + NbCells
 
-        FileName = '/' // Responses(i)%GetLabel() // '/nbcells.dat'
-        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call File%Export( String=ConvertToString(Value=NbCells) )
-
-        FileName = '/' // Responses(i)%GetLabel() // '/coordinates.dat'
-        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call ExportArray( Array=Responses(i)%GetCoordinatesPointer(), File=File, RowMajor=.true. )
-
         iii = 0
         ii = iStart+1
         do ii = iStart+1, iEnd

@@ -820,9 +820,6 @@ contains
 
       NbResponses = size(Responses)
 
-      DirectoryLoc = PrefixLoc // '/sample_space'
-      call SampleSpace%WriteInfo( Directory=DirectoryLoc )
-
       FileName = '/sampled_parameters.dat'
       call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
       call ExportArray( Array=This%ParamSample(:,1:This%ParamSampleStep), File=File )
@@ -835,10 +832,6 @@ contains
         ResponseLabel = Responses(i)%GetLabel()
 
         call MakeDirectory( Path=Directory // '/' // ResponseLabel, Options='-p' )
-
-        FileName = '/' // ResponseLabel // '/coordinates.dat'
-        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call ExportArray( Array=Responses(i)%GetCoordinatesPointer(), File=File, RowMajor=.true. )
 
         iii = iii + Responses(i)%GetNbNodes()
         v = 0
