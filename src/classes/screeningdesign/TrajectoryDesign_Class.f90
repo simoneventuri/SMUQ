@@ -406,6 +406,7 @@ contains
       if ( present(Indices) ) Indices(:,i) = PermutationIndices
       P = Zero
 
+      Signs = 1
       ii = 1
       do ii = 1, NbDim
         VarR0D = This%RNG%Draw()
@@ -426,6 +427,7 @@ contains
 
       call DGEMM( 'N', 'T', NbDim, NbDimP1, NbDim, One, P, NbDim, VarR2D, NbDimP1, Zero,                                          &
                                                                                 Trajectories(:,(i-1)*NbDimP1+1:i*NbDimP1), NbDim )
+
     end do
 
     deallocate(P, stat=StatLoc)

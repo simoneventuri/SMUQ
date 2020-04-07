@@ -665,7 +665,6 @@ contains
               iCellMin = 1
               if ( iii > 1 ) iCellMin = sum(NbCellsOutput(1:iii-1)) + 1
               iCellMax = iCellMin + NbCellsOutput(iii) - 1
-
             iv = iCellMin
             do iv = iCellMin, iCellMax
               v = iRunMin
@@ -675,7 +674,7 @@ contains
                 BlockOutput(v-iRunMin+1) = VarR2DPtr(iv-iCellMin+1,1)
                 nullify(VarR2DPtr)
               end do
-              call This%Cells(iv)%UpdateEstimators( BlockOutput=BlockOutput, SampleRan=SampleRan, StepSize=This%StepSize(:,ii) )
+              call This%Cells(iv)%UpdateEstimators( BlockOutput=BlockOutput, SampleRan=SampleRan, StepSize=This%StepSize(:,ii+i) )
             end do
           end do
 

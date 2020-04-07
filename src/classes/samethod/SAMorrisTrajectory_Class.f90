@@ -654,6 +654,7 @@ contains
 
         iii = This%ParamSampleStep
         ii = 1
+
         do ii = 1, NbInputs
           iii = iii + 1
           call Input(ii)%Construct( Input=This%ParamSample(:,iii), Labels=SampleSpace%GetLabel() )
@@ -693,9 +694,9 @@ contains
 
           iii = 1
           do iii = 1, NbResponses
-              iCellMin = 1
-              if ( iii > 1 ) iCellMin = sum(NbCellsOutput(1:iii-1)) + 1
-              iCellMax = iCellMin + NbCellsOutput(iii) - 1
+            iCellMin = 1
+            if ( iii > 1 ) iCellMin = sum(NbCellsOutput(1:iii-1)) + 1
+            iCellMax = iCellMin + NbCellsOutput(iii) - 1
 
             iv = iCellMin
             do iv = iCellMin, iCellMax
@@ -708,7 +709,7 @@ contains
               end do
 
               call This%Cells(iv)%UpdateEstimators( TrajectoryOutput=TrajectoryOutput, SampleRan=SampleRan,                       &
-                                                                        StepSize=This%StepSize(:,ii), Indices=This%Indices(:,ii) )
+                                                                    StepSize=This%StepSize(:,ii+i), Indices=This%Indices(:,ii+i) )
             end do
           end do
 
