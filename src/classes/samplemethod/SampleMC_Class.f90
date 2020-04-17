@@ -56,14 +56,14 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(SampleMC_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer(8)                                                        ::    SysTimeCount
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Initialized = .true.
       This%Name = 'monte_carlo'
       call This%SetDefaults()
@@ -73,7 +73,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(SampleMC_Type), intent(inout)                               ::    This
 
@@ -101,7 +101,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput ( This, Input, Prefix )
+  subroutine ConstructInput (This, Input, Prefix)
 
     class(SampleMC_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -118,15 +118,15 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     SectionName = 'rng'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found)
-    if ( Found) then
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found)
+    if (Found) then
       call This%RNG%Construct(Input=InputSection, Prefix=PrefixLoc)
     else
       call This%RNG%Construct()
@@ -138,7 +138,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1 ( This, RNG )
+  subroutine ConstructCase1 (This, RNG)
 
     class(SampleMC_Type), intent(inout)                               ::    This
     type(RandPseudo_Type), optional, intent(in)                       ::    RNG
@@ -146,10 +146,10 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if ( present(RNG) ) then
+    if (present(RNG)) then
       This%RNG = RNG
     else
       call This%RNG%Construct()
@@ -161,11 +161,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
     class(SampleMC_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -179,26 +179,26 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    VarC0D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/rng'
-    call GetInput%AddSection( Section=This%RNG%GetInput( MainSectionName='rng', Prefix=PrefixLoc, Directory=DirectorySub ))
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/rng'
+    call GetInput%AddSection(Section=This%RNG%GetInput(Name='rng', Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Draw_0D( This, NbSamples )
+  function Draw_0D(This, NbSamples)
 
     real(rkp), allocatable, dimension(:)                              ::    Draw_0D
 
@@ -209,10 +209,10 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (.not. This%Initialized) call This%Initialize()
 
     allocate(Draw_0D(NbSamples), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Draw_0D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Draw_0D', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, NbSamples
@@ -223,7 +223,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Draw_1D( This, NbDim, NbSamples )
+  function Draw_1D(This, NbDim, NbSamples)
 
     real(rkp), allocatable, dimension(:,:)                            ::    Draw_1D
 
@@ -234,18 +234,18 @@ contains
     character(*), parameter                                           ::    ProcName='Draw_1D'
     integer                                                           ::    StatLoc=0
 
-    if ( NbDim <= 0 ) call Error%Raise( Line='Dimensionality of requested sample at or below 0', ProcName=ProcName )
+    if (NbDim <= 0) call Error%Raise(Line='Dimensionality of requested sample at or below 0', ProcName=ProcName)
 
     allocate(Draw_1D(NbDim, NbSamples), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Draw_1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Draw_1D', ProcName=ProcName, stat=StatLoc)
 
-    Draw_1D = This%RNG%DrawMat( Size1=NbDim, Size2=NbSamples, DrawType=1 )
+    Draw_1D = This%RNG%DrawMat(Size1=NbDim, Size2=NbSamples, DrawType=1)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_0D( This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized )
+  subroutine Enrich_0D(This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized)
 
     class(SampleMC_Type), intent(inout)                               ::    This
     real(rkp), dimension(:),intent(in)                                ::    Samples
@@ -257,13 +257,13 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
-    if ( NbEnrichmentSamples < 1 ) call Error%Raise( Line='Inquired less than 1 enrichment sample', ProcName=ProcName )
+    if (NbEnrichmentSamples < 1) call Error%Raise(Line='Inquired less than 1 enrichment sample', ProcName=ProcName)
 
-    if ( present(ReqNormalized) ) then
+    if (present(ReqNormalized)) then
       ReqNormalized = .false.
     else 
       allocate(EnrichmentSamples(NbEnrichmentSamples), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc)
       i = 1
       do i = 1, NbEnrichmentSamples
         EnrichmentSamples(i) = This%RNG%Draw()
@@ -274,7 +274,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_1D( This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized )
+  subroutine Enrich_1D(This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized)
 
     class(SampleMC_Type), intent(inout)                               ::    This
     real(rkp), dimension(:,:),intent(in)                              ::    Samples
@@ -289,15 +289,15 @@ contains
 
     NbDim = size(Samples,1)
 
-    if ( NbDim <= 0 ) call Error%Raise( Line='Dimensionality of requested samples at or below 0', ProcName=ProcName )
+    if (NbDim <= 0) call Error%Raise(Line='Dimensionality of requested samples at or below 0', ProcName=ProcName)
 
-    if ( NbEnrichmentSamples < 1 ) call Error%Raise( Line='Inquired less than 1 enrichment sample', ProcName=ProcName )
+    if (NbEnrichmentSamples < 1) call Error%Raise(Line='Inquired less than 1 enrichment sample', ProcName=ProcName)
 
-    if ( present(ReqNormalized) ) then
+    if (present(ReqNormalized)) then
       ReqNormalized = .false.
     else 
       allocate(EnrichmentSamples(NbDim, NbEnrichmentSamples), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc)
       EnrichmentSamples = This%RNG%DrawMat(Size1=NbDim, Size2=NbEnrichmentSamples, DrawType=1)
     end if
 
@@ -305,7 +305,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(SampleMC_Type), intent(out)                                 ::    LHS
     class(SampleMethod_Type), intent(in)                              ::    RHS
@@ -320,12 +320,12 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%RNG=RHS%RNG
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -333,7 +333,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(SampleMC_Type), intent(inout)                                ::    This
 

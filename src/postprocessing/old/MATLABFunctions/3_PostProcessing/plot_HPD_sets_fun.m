@@ -1,4 +1,4 @@
-function i_figure = plot_HPD_sets_fun(PlottingFormat, i_figure, save_fig, proc, nb_pcolor, HPD_tol, check_Output_Posterior, x_check )
+function i_figure = plot_HPD_sets_fun(PlottingFormat, i_figure, save_fig, proc, nb_pcolor, HPD_tol, check_Output_Posterior, x_check)
 
     filename = './problem_parameters.dat';
     delimiter = ' ';
@@ -69,7 +69,7 @@ function i_figure = plot_HPD_sets_fun(PlottingFormat, i_figure, save_fig, proc, 
     data_scale = char(dataArray{:, 1});
     clearvars filename delimiter formatSpec fileID dataArray ans;
     
-    if ( data_scale == 'log' )
+    if (data_scale == 'log')
         y_data = 10.^y_data;
         y_data_orig = 10.^y_data_orig;
     end              
@@ -134,7 +134,7 @@ function i_figure = plot_HPD_sets_fun(PlottingFormat, i_figure, save_fig, proc, 
 
     end                                             
            
-    if ( data_scale == 'log' )
+    if (data_scale == 'log')
         y_Max_Post = 10.^y_Max_Post;
         y_Max_Like = 10.^y_Max_Like;
     end  
@@ -189,7 +189,7 @@ function i_figure = plot_HPD_sets_fun(PlottingFormat, i_figure, save_fig, proc, 
 
     for j=1:length(hist_x_nodes)
         for i=1:nb_bins_histogram
-            Hist_Matrix(i,j) = Hist_Vector( (j-1)*(nb_bins_histogram)+ i);
+            Hist_Matrix(i,j) = Hist_Vector((j-1)*(nb_bins_histogram)+ i);
         end 
     end
     

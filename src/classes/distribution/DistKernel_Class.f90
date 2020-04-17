@@ -82,13 +82,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(DistKernel_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'kernel'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -98,24 +98,24 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(DistKernel_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%TransformedSamples) ) deallocate(This%TransformedSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TransformedSamples', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%TransformedSamples)) deallocate(This%TransformedSamples, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%TransformedSamples', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%XCDFSamples) ) deallocate(This%XCDFSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XCDFSamples', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%XCDFSamples)) deallocate(This%XCDFSamples, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%XCDFSamples', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%CDFSamples) ) deallocate(This%CDFSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%CDFSamples)) deallocate(This%CDFSamples, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Kernel) ) deallocate(This%Kernel, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Kernel', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Kernel)) deallocate(This%Kernel, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Kernel', ProcName=ProcName, stat=StatLoc)
 
     This%Initialized = .false.
     This%Constructed = .false.
@@ -126,7 +126,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(DistKernel_Type), intent(inout)                             ::    This
 
@@ -143,7 +143,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(DistKernel_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -166,82 +166,82 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    Samples
     integer                                                           ::    NbSamples
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'a'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%A = VarR0D
       This%TruncatedLeft = .true.
     end if
 
     ParameterName = 'b'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%B = VarR0D
       This%TruncatedRight = .true.
     end if
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    if (This%TruncatedLeft .and. This%TruncatedRight) then
+      if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
     end if
 
     ParameterName = 'kernel'
-    call Input%GetValue( VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
-      call KernelDist_Factory%Construct( Object=This%Kernel, DesiredType=VarC0D )
+    call Input%GetValue(VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
+      call KernelDist_Factory%Construct(Object=This%Kernel, DesiredType=VarC0D)
     else
-      call DistNorm%Construct( Mu=Zero, Sigma=One )
+      call DistNorm%Construct(Mu=Zero, Sigma=One)
       allocate(This%Kernel, source=DistNorm, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Kernel', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%Kernel', ProcName=ProcName, stat=StatLoc)
     end if
 
     SectionName = 'samples'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call ImportArray( Input=InputSection, Array=Samples, Prefix=PrefixLoc )
-    nullify( InputSection )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call ImportArray(Input=InputSection, Array=Samples, Prefix=PrefixLoc)
+    nullify(InputSection)
 
     NbSamples = size(Samples)
 
-    call DLASRT( 'I', NbSamples, Samples, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( 'Something went wrong in DLASRT', ProcName=ProcName )
+    call DLASRT('I', NbSamples, Samples, StatLoc)
+    if (StatLoc /= 0) call Error%Raise('Something went wrong in DLASRT', ProcName=ProcName)
 
     SampleMin = Samples(1)
     SampleMax = Samples(NbSamples)
 
-    if ( This%TruncatedLeft .and. SampleMin < This%A ) call Error%Raise( "Sample data below minimum", ProcName=ProcName )
-    if ( This%TruncatedRight .and. SampleMax > This%B ) call Error%Raise( "Sample data above maximum", ProcName=ProcName)
+    if (This%TruncatedLeft .and. SampleMin < This%A) call Error%Raise("Sample data below minimum", ProcName=ProcName)
+    if (This%TruncatedRight .and. SampleMax > This%B) call Error%Raise("Sample data above maximum", ProcName=ProcName)
 
-    call This%Transform( Values=Samples )
-    call move_alloc( Samples, This%TransformedSamples )
+    call This%Transform(Values=Samples)
+    call move_alloc(Samples, This%TransformedSamples)
 
     ParameterName = 'bandwidth'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%Bandwidth = VarR0D
     else
-      This%Bandwidth = ComputeRoTBandwidth( Samples=This%TransformedSamples )
+      This%Bandwidth = ComputeRoTBandwidth(Samples=This%TransformedSamples)
     end if
 
-    if ( This%Bandwidth <= Zero ) call Error%Raise( Line='Bandwidth specified to be at or below zero', ProcName=ProcName )
+    if (This%Bandwidth <= Zero) call Error%Raise(Line='Bandwidth specified to be at or below zero', ProcName=ProcName)
 
     allocate(This%XCDFSamples(This%NbCDFSamples), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%XCDFSamples', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%XCDFSamples', ProcName=ProcName, stat=StatLoc)
     allocate(This%CDFSamples(This%NbCDFSamples), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc)
     This%CDFSamples = Zero
 
-    This%XCDFSamples = LinSpace( InterMin=SampleMin, InterMax=SampleMax, NbNodes=This%NbCDFSamples )
-    call This%Transform( Values=This%XCDFSamples )
+    This%XCDFSamples = LinSpace(InterMin=SampleMin, InterMax=SampleMax, NbNodes=This%NbCDFSamples)
+    call This%Transform(Values=This%XCDFSamples)
 
     i = 1
     do i = 1, This%NbCDFSamples
-      This%CDFSamples(i) = This%ComputeCDF( X=This%XCDFSamples(i), Samples=This%TransformedSamples, Bandwidth=This%Bandwidth,     &
-                                                                                                              Kernel=This%Kernel )
+      This%CDFSamples(i) = This%ComputeCDF(X=This%XCDFSamples(i), Samples=This%TransformedSamples, Bandwidth=This%Bandwidth,     &
+                                                                                                              Kernel=This%Kernel)
     end do
 
     This%Constructed = .true.
@@ -250,7 +250,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Samples, Kernel, Bandwidth, A, B )
+  subroutine ConstructCase1(This, Samples, Kernel, Bandwidth, A, B)
 
     class(DistKernel_Type), intent(inout)                             ::    This
     real(rkp), dimension(:), intent(in)                               ::    Samples
@@ -273,70 +273,70 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    SamplesLoc
     integer                                                           ::    NbSamples
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if ( present(A) ) then
+    if (present(A)) then
       This%A = A
       This%TruncatedLeft = .true.
     end if
 
-    if ( present(B) ) then
+    if (present(B)) then
       This%B = B
       This%TruncatedRight = .true.
     end if
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    if (This%TruncatedLeft .and. This%TruncatedRight) then
+      if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
     end if
 
-    if ( present(Kernel) ) then
+    if (present(Kernel)) then
       allocate(This%Kernel, source=Kernel, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Kernel', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%Kernel', ProcName=ProcName, stat=StatLoc)
     else
-      call DistNorm%Construct( Mu=Zero, Sigma=One )
+      call DistNorm%Construct(Mu=Zero, Sigma=One)
       allocate(This%Kernel, source=DistNorm, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Kernel', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%Kernel', ProcName=ProcName, stat=StatLoc)
     end if
 
     allocate(SamplesLoc, source=Samples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='SamplesLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='SamplesLoc', ProcName=ProcName, stat=StatLoc)
 
     NbSamples = size(SamplesLoc)
 
-    call DLASRT( 'I', NbSamples, SamplesLoc, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( 'Something went wrong in DLASRT', ProcName=ProcName )
+    call DLASRT('I', NbSamples, SamplesLoc, StatLoc)
+    if (StatLoc /= 0) call Error%Raise('Something went wrong in DLASRT', ProcName=ProcName)
 
     SampleMin = SamplesLoc(1)
     SampleMax = SamplesLoc(NbSamples)
 
-    if ( This%TruncatedLeft .and. SampleMin < This%A ) call Error%Raise( "Sample data below minimum", ProcName=ProcName )
-    if ( This%TruncatedRight .and. SampleMax > This%B ) call Error%Raise( "Sample data above maximum", ProcName=ProcName)
+    if (This%TruncatedLeft .and. SampleMin < This%A) call Error%Raise("Sample data below minimum", ProcName=ProcName)
+    if (This%TruncatedRight .and. SampleMax > This%B) call Error%Raise("Sample data above maximum", ProcName=ProcName)
 
-    call This%Transform( Values=SamplesLoc )
-    call move_alloc( SamplesLoc, This%TransformedSamples )
+    call This%Transform(Values=SamplesLoc)
+    call move_alloc(SamplesLoc, This%TransformedSamples)
 
-    if ( present(Bandwidth) ) then
+    if (present(Bandwidth)) then
       This%Bandwidth = Bandwidth
     else
-      This%Bandwidth = ComputeRoTBandwidth( Samples=This%TransformedSamples )
+      This%Bandwidth = ComputeRoTBandwidth(Samples=This%TransformedSamples)
     end if
 
-    if ( This%Bandwidth <= Zero ) call Error%Raise( Line='Bandwidth specified to be at or below zero', ProcName=ProcName )
+    if (This%Bandwidth <= Zero) call Error%Raise(Line='Bandwidth specified to be at or below zero', ProcName=ProcName)
 
     allocate(This%XCDFSamples(This%NbCDFSamples), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%XCDFSamples', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%XCDFSamples', ProcName=ProcName, stat=StatLoc)
     allocate(This%CDFSamples(This%NbCDFSamples), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc)
     This%CDFSamples = Zero
 
-    This%XCDFSamples = LinSpace( InterMin=SampleMin, InterMax=SampleMax, NbNodes=This%NbCDFSamples )
-    call This%Transform( Values=This%XCDFSamples )
+    This%XCDFSamples = LinSpace(InterMin=SampleMin, InterMax=SampleMax, NbNodes=This%NbCDFSamples)
+    call This%Transform(Values=This%XCDFSamples)
 
     i = 1
     do i = 1, This%NbCDFSamples
-      This%CDFSamples(i) = This%ComputeCDF( X=This%XCDFSamples(i), Samples=This%TransformedSamples, Bandwidth=This%Bandwidth,     &
-                                                                                                              Kernel=This%Kernel )
+      This%CDFSamples(i) = This%ComputeCDF(X=This%XCDFSamples(i), Samples=This%TransformedSamples, Bandwidth=This%Bandwidth,     &
+                                                                                                              Kernel=This%Kernel)
     end do
 
     This%Constructed = .true.
@@ -345,12 +345,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(DistKernel_Type), intent(in)                                ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -366,54 +366,54 @@ contains
     character(:), allocatable                                         ::    FileName
     type(SMUQFile_Type)                                               ::    File
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='kernel', Value=KernelDist_Factory%GetOption( Object=This%Kernel ) )
-    call GetInput%AddParameter( Name='bandwidth', Value=ConvertToString(Value=This%Bandwidth) )
-    if ( This%TruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
-    if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
+    call GetInput%AddParameter(Name='kernel', Value=KernelDist_Factory%GetOption(Object=This%Kernel))
+    call GetInput%AddParameter(Name='bandwidth', Value=ConvertToString(Value=This%Bandwidth))
+    if (This%TruncatedLeft) call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
+    if (This%TruncatedRight) call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
 
     allocate(VarR1D, source=This%TransformedSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
-    call This%InvTransform( Values=VarR1D )
+    call This%InvTransform(Values=VarR1D)
 
-    if ( ExternalFlag ) then
+    if (ExternalFlag) then
         SectionName = 'samples'
-        call GetInput%AddSection( SectionName=SectionName )
-        call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+        call GetInput%AddSection(SectionName=SectionName)
+        call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
         FileName = DirectoryLoc // '/samples.dat'
-        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call ExportArray( Input=InputSection, Array=VarR1D, File=File )
+        call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+        call ExportArray(Input=InputSection, Array=VarR1D, File=File)
         nullify(InputSection)
     else
         SectionName = 'samples'
-        call GetInput%AddSection( SectionName=SectionName )
-        call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-        call ExportArray( Input=InputSection, Array=VarR1D )
+        call GetInput%AddSection(SectionName=SectionName)
+        call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+        call ExportArray(Input=InputSection, Array=VarR1D)
         nullify(InputSection)
     end if
 
     deallocate(VarR1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X )
+  function PDF_R0D(This, X)
 
     real(rkp)                                                         ::    PDF_R0D
 
@@ -423,20 +423,20 @@ contains
     character(*), parameter                                           ::    ProcName='PDF_R0D'
     real(rkp)                                                         ::    XLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     XLoc = X
-    call This%Transform( Value=XLoc )
+    call This%Transform(Value=XLoc)
 
-    PDF_R0D = This%ComputePDF( X=XLoc, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel )
+    PDF_R0D = This%ComputePDF(X=XLoc, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel)
 
-    call This%fInvTransform( Value=PDF_R0D, X=X )
+    call This%fInvTransform(Value=PDF_R0D, X=X)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF( X, Samples, Bandwidth, Kernel )
+  function ComputePDF(X, Samples, Bandwidth, Kernel)
 
     real(rkp)                                                         ::    ComputePDF
 
@@ -450,7 +450,7 @@ contains
     integer                                                           ::    i
     real(rkp)                                                         ::    XLoc
 
-    if ( Bandwidth <= Zero ) call Error%Raise( "Specified bandwidth at or below zero", ProcName=ProcName )
+    if (Bandwidth <= Zero) call Error%Raise("Specified bandwidth at or below zero", ProcName=ProcName)
 
     NbSamples = size(Samples)
 
@@ -459,7 +459,7 @@ contains
     i = 1
     do i = 1, NbSamples
       XLoc = (X - Samples(i))/Bandwidth
-      ComputePDF = ComputePDF + Kernel%PDF( X=XLoc )
+      ComputePDF = ComputePDF + Kernel%PDF(X=XLoc)
     end do
     ComputePDF = ComputePDF * One/(real(NbSamples,rkp)*Bandwidth)
 
@@ -467,7 +467,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X )
+  function CDF_R0D(This, X)
 
     real(rkp)                                                         ::    CDF_R0D
 
@@ -477,18 +477,18 @@ contains
     character(*), parameter                                           ::    ProcName='CDF_R0D'
     real(rkp)                                                         ::    XLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     XLoc = X
-    call This%Transform( Value=XLoc )
+    call This%Transform(Value=XLoc)
 
-    CDF_R0D = This%ComputeCDF( X=XLoc, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel )
+    CDF_R0D = This%ComputeCDF(X=XLoc, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeCDF( X, Samples, Bandwidth, Kernel )
+  function ComputeCDF(X, Samples, Bandwidth, Kernel)
 
     real(rkp)                                                         ::    ComputeCDF
 
@@ -502,7 +502,7 @@ contains
     integer                                                           ::    i
     real(rkp)                                                         ::    XLoc
 
-    if ( Bandwidth <= Zero ) call Error%Raise( "Specified bandwidth at or below zero", ProcName=ProcName )
+    if (Bandwidth <= Zero) call Error%Raise("Specified bandwidth at or below zero", ProcName=ProcName)
 
     NbSamples = size(Samples)
 
@@ -511,7 +511,7 @@ contains
     i = 1
     do i = 1, NbSamples
       XLoc = (X - Samples(i))/Bandwidth
-      ComputeCDF = ComputeCDF + Kernel%CDF( X=XLoc )
+      ComputeCDF = ComputeCDF + Kernel%CDF(X=XLoc)
     end do
     ComputeCDF = ComputeCDF * One/(real(NbSamples,rkp))
 
@@ -519,7 +519,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P )
+  function InvCDF_R0D(This, P)
 
     real(rkp)                                                         ::    InvCDF_R0D
 
@@ -538,99 +538,99 @@ contains
     real(rkp)                                                         ::    Tol
     procedure(Fun), pointer                                           ::    PMinFun=>null()
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     InvCDF_R0D = Zero
 
-    if ( P == Zero ) then
-      if ( This%TruncatedLeft ) then
+    if (P == Zero) then
+      if (This%TruncatedLeft) then
         InvCDF_R0D = This%A
       else
         InvCDF_R0D = -huge(One)
       end if
-    elseif ( P == One ) then
-      if ( This%TruncatedRight ) then
+    elseif (P == One) then
+      if (This%TruncatedRight) then
         InvCDF_R0D = This%B
       else
         InvCDF_R0D = huge(One)
       end if
     else
       ! finds a suitable range for Brent root finder
-      if ( P < This%CDFSamples(1) ) then
+      if (P < This%CDFSamples(1)) then
         RightBound = This%XCDFSamples(1)
         dx = This%XCDFSamples(2)-This%XCDFSamples(1)
         LeftBound = RightBound
         do
           VarR0D = LeftBound - dx
-          if ( VarR0D < -huge(One) ) then
+          if (VarR0D < -huge(One)) then
             dx = dx / Two
             cycle
           end if
-          if ( This%ComputeCDF( X=VarR0D, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel ) < P )   &
+          if (This%ComputeCDF(X=VarR0D, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel) < P)   &
                                                                                                                               exit
           LeftBound = VarR0D
         end do
         RightBound = LeftBound
         LeftBound = VarR0D
 
-      elseif ( P > This%CDFSamples(This%NbCDFSamples) ) then
+      elseif (P > This%CDFSamples(This%NbCDFSamples)) then
         LeftBound = This%XCDFSamples(This%NbCDFSamples)
         dx = This%XCDFSamples(This%NbCDFSamples)-This%XCDFSamples(This%NbCDFSamples-1)
         RightBound = LeftBound
         do
           VarR0D = RightBound + dx
-          if ( VarR0D > huge(One) ) then
+          if (VarR0D > huge(One)) then
             dx = dx / Two
             cycle
           end if
-          if ( This%ComputeCDF( X=VarR0D, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel ) > P )   &
+          if (This%ComputeCDF(X=VarR0D, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel) > P)   &
                                                                                                                               exit
         end do
         LeftBound = RightBound
         RightBound = VarR0D
       else
-        if ( any( This%CDFSamples == P ) ) then
+        if (any(This%CDFSamples == P)) then
           istop = 0
           i = 1
           do i = 1, This%NbCDFSamples
-            if ( This%CDFSamples(i) == P ) then
+            if (This%CDFSamples(i) == P) then
               istop = i
               exit
             end if
           end do
-          if ( istop == 0 ) call Error%Raise( 'Something went wrong', ProcName=ProcName )
+          if (istop == 0) call Error%Raise('Something went wrong', ProcName=ProcName)
           InvCDF_R0D = This%CDFSamples(istop)
         else
           istop = 0
           i = 2
           do i = 2, This%NbCDFSamples
-            if ( This%CDFSamples(i) > P .or. i == This%NbCDFSamples) then
+            if (This%CDFSamples(i) > P .or. i == This%NbCDFSamples) then
               istop = i
               exit
             end if
           end do
-          if ( istop == 0 ) call Error%Raise( 'Something went wrong', ProcName=ProcName )
+          if (istop == 0) call Error%Raise('Something went wrong', ProcName=ProcName)
           LeftBound = This%XCDFSamples(istop-1)
           RightBound = This%XCDFSamples(istop)
           MachEp = epsilon(MachEp)
           Tol = 1.d-8
           PMinFun => MinFun
-          InvCDF_R0D = real(Brent_Zero( LeftBound, RightBound, MachEp, Tol, PMinFun ),rkp)
+          InvCDF_R0D = real(Brent_Zero(LeftBound, RightBound, MachEp, Tol, PMinFun),rkp)
         end if
-        call This%InvTransform( Value=InvCDF_R0D )
+        call This%InvTransform(Value=InvCDF_R0D)
       end if
     end if
 
     contains
 
       !!--------------------------------------------------------------------------------------------------------------------------
-      function MinFun( X )
+      function MinFun(X)
 
         real(8)                                                           ::    MinFun
 
         real(8), intent(in)                                               ::    X
 
-        MinFun = This%ComputeCDF( X=X, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel ) - P
+        MinFun = This%ComputeCDF(X=X, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel) - P
 
       end function
       !!--------------------------------------------------------------------------------------------------------------------------
@@ -639,7 +639,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeRoTBandwidth( Samples )
+  function ComputeRoTBandwidth(Samples)
 
     real(rkp)                                                         ::    ComputeRoTBandwidth
 
@@ -653,7 +653,7 @@ contains
 
     NbSamples = size(Samples)
 
-    if ( mod(NbSamples,2) == 0 ) then
+    if (mod(NbSamples,2) == 0) then
       Median = (Samples(NbSamples/2) + Samples(NbSamples/2+1))/Two
     else
       Median = Samples(NbSamples/2+1)
@@ -661,10 +661,10 @@ contains
 
     VarR1D = dabs(Samples-Median)
 
-    call DLASRT( 'I', NbSamples, VarR1D, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( 'Something went wrong in DLASRT', ProcName=ProcName )
+    call DLASRT('I', NbSamples, VarR1D, StatLoc)
+    if (StatLoc /= 0) call Error%Raise('Something went wrong in DLASRT', ProcName=ProcName)
 
-    if ( mod(NbSamples,2) == 0 ) then
+    if (mod(NbSamples,2) == 0) then
       Median = (VarR1D(NbSamples/2) + VarR1D(NbSamples/2+1))/Two
     else
       Median = VarR1D(NbSamples/2+1)
@@ -676,7 +676,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_0D( This, Value )
+  subroutine Transform_0D(This, Value)
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(inout)                                          ::    Value
@@ -684,11 +684,11 @@ contains
     character(*), parameter                                           ::    ProcName='Transform_0D'
     integer                                                           ::    StatLoc=0
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
+    if (This%TruncatedLeft .and. This%TruncatedRight) then
       Value = dlog((Value-This%A)/(This%B-Value))
-    elseif ( This%TruncatedLeft ) then
+    elseif (This%TruncatedLeft) then
       Value = dlog(Value-This%A)
-    elseif ( This%TruncatedRight ) then
+    elseif (This%TruncatedRight) then
       Value = dlog(One/(This%B-Value))
     end if
 
@@ -696,7 +696,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_1D( This, Values )
+  subroutine Transform_1D(This, Values)
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), dimension(:), intent(inout)                            ::    Values
@@ -704,11 +704,11 @@ contains
     character(*), parameter                                           ::    ProcName='Transform_1D'
     integer                                                           ::    StatLoc=0
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
+    if (This%TruncatedLeft .and. This%TruncatedRight) then
       Values = dlog((Values-This%A)/(This%B-Values))
-    elseif ( This%TruncatedLeft ) then
+    elseif (This%TruncatedLeft) then
       Values = dlog(Values-This%A)
-    elseif ( This%TruncatedRight ) then
+    elseif (This%TruncatedRight) then
       Values = dlog(One/(This%B-Values))
     end if
 
@@ -716,7 +716,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine InvTransform_0D( This, Value )
+  subroutine InvTransform_0D(This, Value)
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(inout)                                          ::    Value
@@ -724,11 +724,11 @@ contains
     character(*), parameter                                           ::    ProcName='InvTransform_0D'
     integer                                                           ::    StatLoc=0
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      Value = (This%B*dexp(Value)+This%A) / ( One+dexp(Value) )
-    elseif ( This%TruncatedLeft ) then
+    if (This%TruncatedLeft .and. This%TruncatedRight) then
+      Value = (This%B*dexp(Value)+This%A) / (One+dexp(Value))
+    elseif (This%TruncatedLeft) then
       Value = dexp(Value)+This%A
-    elseif ( This%TruncatedRight ) then
+    elseif (This%TruncatedRight) then
       Value = This%B - One/dexp(Value)
     end if
 
@@ -736,7 +736,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine InvTransform_1D( This, Values )
+  subroutine InvTransform_1D(This, Values)
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), dimension(:), intent(inout)                            ::    Values
@@ -744,11 +744,11 @@ contains
     character(*), parameter                                           ::    ProcName='InvTransform_1D'
     integer                                                           ::    StatLoc=0
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      Values = (This%B*dexp(Values)+This%A) / ( One+dexp(Values) )
-    elseif ( This%TruncatedLeft ) then
+    if (This%TruncatedLeft .and. This%TruncatedRight) then
+      Values = (This%B*dexp(Values)+This%A) / (One+dexp(Values))
+    elseif (This%TruncatedLeft) then
       Values = dexp(Values)+This%A
-    elseif ( This%TruncatedRight ) then
+    elseif (This%TruncatedRight) then
       Values = This%B - One/dexp(Values)
     end if
 
@@ -756,7 +756,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine fInvTransform_0D( This, Value, X )
+  subroutine fInvTransform_0D(This, Value, X)
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(inout)                                          ::    Value
@@ -765,11 +765,11 @@ contains
     character(*), parameter                                           ::    ProcName='fInvTransform_0D'
     integer                                                           ::    StatLoc=0
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
+    if (This%TruncatedLeft .and. This%TruncatedRight) then
       Value = Value * dabs((This%B-This%A)/((X-This%A)*(This%B-X)))
-    elseif ( This%TruncatedLeft ) then
+    elseif (This%TruncatedLeft) then
       Value = Value * dabs(One / (X-This%A))
-    elseif ( This%TruncatedRight ) then
+    elseif (This%TruncatedRight) then
       Value = Value * dabs(One / (This%B-X))
     end if
 
@@ -777,7 +777,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo( This, File )
+  subroutine WriteInfo(This, File)
 
     class(DistKernel_Type), intent(in)                                ::    This
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -788,38 +788,38 @@ contains
     type(String_Type), allocatable, dimension(:)                      ::    Strings
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     allocate(VarR1D, source=This%TransformedSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
-    call This%InvTransform( Values=VarR1D )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+    call This%InvTransform(Values=VarR1D)
 
     allocate(Strings(4+size(VarR1D,1)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
 
     Strings(1) = 'kernel'
     Strings(2) = ConvertToString(Value=size(VarR1D,1))
     Strings(3) = '-Inf'
-    if ( This%TruncatedLeft ) Strings(3) = ConvertToString(Value=This%A)
+    if (This%TruncatedLeft) Strings(3) = ConvertToString(Value=This%A)
     Strings(4) = 'Inf'
-    if ( This%TruncatedRight ) Strings(4) = ConvertToString(Value=This%B)
+    if (This%TruncatedRight) Strings(4) = ConvertToString(Value=This%B)
     Strings(5:4+size(VarR1D,1)) = ConvertToStrings(Values=VarR1D)
 
     deallocate(VarR1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
     deallocate(Strings, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
 
-    call File%Append( Strings=Strings )
+    call File%Append(Strings=Strings)
 
-    call This%Kernel%WriteInfo( File=File )
+    call This%Kernel%WriteInfo(File=File)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(DistKernel_Type), intent(out)                               ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
@@ -834,7 +834,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%A = RHS%A
           LHS%B = RHS%B
           LHS%TruncatedLeft = RHS%TruncatedLeft
@@ -842,17 +842,17 @@ contains
           LHS%Bandwidth = RHS%Bandwidth
           LHS%NbCDFSamples = RHS%NbCDFSamples
           allocate(LHS%TransformedSamples, source=RHS%TransformedSamples, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%TransformedSamples', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%TransformedSamples', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%XCDFSamples, source=RHS%XCDFSamples, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%XCDFSamples', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%XCDFSamples', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%CDFSamples, source=RHS%CDFSamples, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CDFSamples', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%CDFSamples', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%Kernel, source=RHS%Kernel, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Kernel', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Kernel', ProcName=ProcName, stat=StatLoc)
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -860,24 +860,24 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(DistKernel_Type), intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%TransformedSamples) ) deallocate(This%TransformedSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TransformedSamples', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%TransformedSamples)) deallocate(This%TransformedSamples, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%TransformedSamples', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%XCDFSamples) ) deallocate(This%XCDFSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XCDFSamples', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%XCDFSamples)) deallocate(This%XCDFSamples, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%XCDFSamples', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%CDFSamples) ) deallocate(This%CDFSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%CDFSamples)) deallocate(This%CDFSamples, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Kernel) ) deallocate(This%Kernel, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Kernel', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Kernel)) deallocate(This%Kernel, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Kernel', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -58,28 +58,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_HierCovFunction( This )
+  subroutine Initialize_HierCovFunction(This)
     import                                                            ::    HierCovFunction_Type
     class(HierCovFunction_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_HierCovFunction( This )
+  subroutine Reset_HierCovFunction(This)
     import                                                            ::    HierCovFunction_Type
     class(HierCovFunction_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_HierCovFunction( This )
+  subroutine SetDefaults_HierCovFunction(This)
     import                                                            ::    HierCovFunction_Type
     class(HierCovFunction_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_HierCovFunction( This, Input, Prefix )
+  subroutine ConstructInput_HierCovFunction(This, Input, Prefix)
     import                                                            ::    HierCovFunction_Type
     import                                                            ::    InputSection_Type
     class(HierCovFunction_Type), intent(inout)                        ::    This
@@ -89,19 +89,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_HierCovFunction( This, MainSectionName, Prefix, Directory )
+  function GetInput_HierCovFunction(This, Name, Prefix, Directory)
     import                                                            ::    HierCovFunction_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_HierCovFunction
     class(HierCovFunction_Type), intent(in)                           ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate_HierCovFunction( This, Input, CovFunction )
+  subroutine Generate_HierCovFunction(This, Input, CovFunction)
     import                                                            ::    HierCovFunction_Type
     import                                                            ::    Input_Type
     import                                                            ::    CovFunction_Type
@@ -112,7 +112,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_HierCovFunction( LHS, RHS )
+  impure elemental subroutine Copy_HierCovFunction(LHS, RHS)
     import                                                            ::    HierCovFunction_Type
     class(HierCovFunction_Type), intent(out)                          ::    LHS
     class(HierCovFunction_Type), intent(in)                           ::    RHS
@@ -124,7 +124,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
 
@@ -137,7 +137,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This )
+  function IsConstructed(This)
 
     logical                                                           ::    IsConstructed
 
@@ -150,7 +150,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsInputRequired( This )
+  function IsInputRequired(This)
 
     logical                                                           ::    IsInputRequired
 

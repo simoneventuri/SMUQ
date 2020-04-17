@@ -36,7 +36,7 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMean( Values )
+  function ComputeMean(Values)
 
     real(rkp)                                                         ::    ComputeMean
     real(rkp), dimension(:), intent(in)                               ::    Values 
@@ -49,7 +49,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeSampleVar( Values, Mean )
+  function ComputeSampleVar(Values, Mean)
 
     real(rkp)                                                         ::    ComputeSampleVar
     real(rkp), dimension(:), intent(in)                               ::    Values
@@ -60,12 +60,12 @@ contains
     integer(ikp)                                                      ::    i, iMax
 
     if (size(Values,1)>1) then
-      if ( present(Mean) ) then
+      if (present(Mean)) then
         Mean_Loc = Mean
       else
-        Mean_Loc = ComputeMean( Values )
+        Mean_Loc = ComputeMean(Values)
       end if
-      ComputeSampleVar = sum( (Values - Mean_Loc)**2 ) / real(size(Values)-1,rkp)
+      ComputeSampleVar = sum((Values - Mean_Loc)**2) / real(size(Values)-1,rkp)
     else
       ComputeSampleVar = Zero
     end if
@@ -74,7 +74,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePopulationVar( Values, Mean )
+  function ComputePopulationVar(Values, Mean)
 
     real(rkp)                                                         ::    ComputePopulationVar
     real(rkp), dimension(:), intent(in)                               ::    Values
@@ -85,12 +85,12 @@ contains
     integer(ikp)                                                      ::    i, iMax
 
     if (size(Values,1)>1) then
-      if ( present(Mean) ) then
+      if (present(Mean)) then
         Mean_Loc = Mean
       else
-        Mean_Loc = ComputeMean( Values )
+        Mean_Loc = ComputeMean(Values)
       end if
-      ComputePopulationVar = sum( (Values - Mean_Loc)**2 ) / real(size(Values),rkp)
+      ComputePopulationVar = sum((Values - Mean_Loc)**2) / real(size(Values),rkp)
     else
       ComputePopulationVar = Zero
     end if

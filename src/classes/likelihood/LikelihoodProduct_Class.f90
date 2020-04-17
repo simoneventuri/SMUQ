@@ -57,13 +57,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(LikelihoodProduct_Type), intent(inout)                      ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'LikelihoodProduct'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -73,7 +73,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(LikelihoodProduct_Type), intent(inout)                      ::    This
 
@@ -83,8 +83,8 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%Likelihoods) ) deallocate(This%Likelihoods, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Likelihoods', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Likelihoods)) deallocate(This%Likelihoods, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Likelihoods', ProcName=ProcName, stat=StatLoc)
     This%NbLikelihoods = 0
 
     call This%SetDefaults()
@@ -93,7 +93,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(LikelihoodProduct_Type), intent(inout)                        ::    This
 
@@ -103,7 +103,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(LikelihoodProduct_Type), intent(inout)                      ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -122,25 +122,25 @@ contains
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     class(LikelihoodFunction_Type), allocatable                       ::    LikelihoodFunction
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     This%NbLikelihoods = Input%GetNumberofSubSections()
 
     allocate(This%Likelihoods(This%NbLikelihoods), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Likelihoods', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Likelihoods', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, This%NbLikelihoods
       SectionName = 'likelihood' // ConvertToString(Value=i)
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call LikelihoodFunction_Factory%Construct( Object=LikelihoodFunction, Input=InputSection, Prefix=PrefixLoc )
-      call This%Likelihoods(i)%Set( Object=LikelihoodFunction )
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call LikelihoodFunction_Factory%Construct(Object=LikelihoodFunction, Input=InputSection, Prefix=PrefixLoc)
+      call This%Likelihoods(i)%Set(Object=LikelihoodFunction)
       deallocate(LikelihoodFunction, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='LikelihoodFunction', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='LikelihoodFunction', ProcName=ProcName, stat=StatLoc)
     end do
 
     This%Constructed = .true.
@@ -149,12 +149,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(LikelihoodProduct_Type), intent(inout)                      ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -169,32 +169,32 @@ contains
     integer                                                           ::    i
     class(LikelihoodFunction_Type), pointer                           ::    LFunctionPtr=>null()
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
   
     i = 1
     do i = 1, This%NbLikelihoods
       SectionName = 'likelihood' // ConvertToString(Value=i)
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/likelihood' // ConvertToString(Value=i)
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/likelihood' // ConvertToString(Value=i)
       LFunctionPtr => This%Likelihoods(i)%GetPointer()
-      call GetInput%AddSection( Section=LikelihoodFunction_Factory%GetObjectInput( Object=LFunctionPtr,                           &
-                                                         MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ) )
+      call GetInput%AddSection(Section=LikelihoodFunction_Factory%GetObjectInput(Object=LFunctionPtr,                           &
+                                                         Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
     end do
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_1D( This, Responses, Input, Output, LogValue )
+  function Evaluate_1D(This, Responses, Input, Output, LogValue)
 
     real(rkp)                                                         ::    Evaluate_1D
 
@@ -218,7 +218,7 @@ contains
     TVarR0D = dlog(tiny(VarR0D))
 
     LogValueLoc = .false.
-    if ( present(LogValue) ) LogValueLoc = LogValue
+    if (present(LogValue)) LogValueLoc = LogValue
 
     Evaluate_1D = Zero
 
@@ -226,10 +226,10 @@ contains
 
       LFunctionPtr => This%Likelihoods(i)%GetPointer()
 
-      VarR0D = LFunctionPtr%Evaluate( Responses=Responses, Input=Input, Output=Output, LogValue=.true. )
+      VarR0D = LFunctionPtr%Evaluate(Responses=Responses, Input=Input, Output=Output, LogValue=.true.)
       nullify(LFunctionPtr)
 
-      if ( VarR0D <= -huge(One) ) then
+      if (VarR0D <= -huge(One)) then
         Evaluate_1D = VarR0D
         exit
       end if
@@ -238,14 +238,14 @@ contains
       
     end do
 
-    if ( .not. LogValueLoc ) then
-      if ( Evaluate_1D > TVarR0D .and. Evaluate_1D < HVarR0D ) then
+    if (.not. LogValueLoc) then
+      if (Evaluate_1D > TVarR0D .and. Evaluate_1D < HVarR0D) then
         Evaluate_1D = dexp(Evaluate_1D)
-      elseif (Evaluate_1D < TVarR0D ) then
+      elseif (Evaluate_1D < TVarR0D) then
         Evaluate_1D= Zero
       else
-        call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
-                           ConvertToString(Value=Evaluate_1D) // '. Consider changing value of the scalar modifier of responses' )
+        call Error%Raise(Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
+                           ConvertToString(Value=Evaluate_1D) // '. Consider changing value of the scalar modifier of responses')
       end if
     end if
 
@@ -253,7 +253,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_0D( This, Response, Input, Output, LogValue )
+  function Evaluate_0D(This, Response, Input, Output, LogValue)
 
     real(rkp)                                                         ::    Evaluate_0D
 
@@ -277,7 +277,7 @@ contains
     TVarR0D = dlog(tiny(VarR0D))
 
     LogValueLoc = .false.
-    if ( present(LogValue) ) LogValueLoc = LogValue
+    if (present(LogValue)) LogValueLoc = LogValue
 
     Evaluate_0D = Zero
 
@@ -285,10 +285,10 @@ contains
 
       LFunctionPtr => This%Likelihoods(i)%GetPointer()
 
-      VarR0D = LFunctionPtr%Evaluate( Response=Response, Input=Input, Output=Output, LogValue=.true. )
+      VarR0D = LFunctionPtr%Evaluate(Response=Response, Input=Input, Output=Output, LogValue=.true.)
       nullify(LFunctionPtr)
 
-      if ( VarR0D <= -huge(One) ) then
+      if (VarR0D <= -huge(One)) then
         Evaluate_0D = VarR0D
         exit
       end if
@@ -297,14 +297,14 @@ contains
       
     end do
 
-    if ( .not. LogValueLoc ) then
-      if ( Evaluate_0D > TVarR0D .and. Evaluate_0D < HVarR0D ) then
+    if (.not. LogValueLoc) then
+      if (Evaluate_0D > TVarR0D .and. Evaluate_0D < HVarR0D) then
         Evaluate_0D = dexp(Evaluate_0D)
-      elseif (Evaluate_0D < TVarR0D ) then
+      elseif (Evaluate_0D < TVarR0D) then
         Evaluate_0D= Zero
       else
-        call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
-                           ConvertToString(Value=Evaluate_0D) // '. Consider changing value of the scalar modifier of responses' )
+        call Error%Raise(Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
+                           ConvertToString(Value=Evaluate_0D) // '. Consider changing value of the scalar modifier of responses')
       end if
     end if
 
@@ -312,7 +312,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(LikelihoodProduct_Type), intent(out)                        ::    LHS
     class(LikelihoodFunction_Type), intent(in)                        ::    RHS
@@ -328,16 +328,16 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Name = RHS%Name
           LHS%Label = RHS%Label
           LHS%NbLikelihoods = RHS%NbLikelihoods
           allocate(LHS%Likelihoods, source=RHS%Likelihoods, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Likelihoods', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Likelihoods', ProcName=ProcName, stat=StatLoc)
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -345,15 +345,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(LikelihoodProduct_Type), intent(inout)                       ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
   
-    if ( allocated(This%Likelihoods) ) deallocate(This%Likelihoods, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Likelihoods', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Likelihoods)) deallocate(This%Likelihoods, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Likelihoods', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

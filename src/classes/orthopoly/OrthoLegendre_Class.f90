@@ -53,12 +53,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
     class(OrthoLegendre_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'legendre'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -68,7 +68,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(OrthoLegendre_Type), intent(inout)                          ::    This
 
@@ -96,7 +96,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     use String_Library
 
@@ -111,15 +111,15 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'normalized'
-    call Input%GetValue( value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Normalized = VarL0D
+    call Input%GetValue(value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Normalized = VarL0D
 
     This%Constructed = .true.
 
@@ -127,17 +127,17 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Normalized )
+  subroutine ConstructCase1(This, Normalized)
     
     class(OrthoLegendre_Type), intent(inout)                          ::    This
     logical, optional, intent(in)                                     ::    Normalized 
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if ( present(Normalized) ) This%Normalized = Normalized
+    if (present(Normalized)) This%Normalized = Normalized
 
     This%Constructed = .true.
 
@@ -145,13 +145,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use String_Library
 
     type(InputSection_Type)                                           ::    GetInput
     class(OrthoLegendre_Type), intent(in)                             ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -162,26 +162,26 @@ contains
     logical                                                           ::    ExternalFlag=.false.
     character(:), allocatable                                         ::    SectionName
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='normalized', Value=ConvertToString(Value=This%Normalized) )
+    call GetInput%AddParameter(Name='normalized', Value=ConvertToString(Value=This%Normalized))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Returns the value of a polynomial of order 'n' for value of 'x'
-  function Eval_N( This, Order, X, Normalized )
+  function Eval_N(This, Order, X, Normalized)
 
     real(rkp)                                                         ::    Eval_N
 
@@ -198,19 +198,19 @@ contains
     integer                                                           ::    i
     logical                                                           ::    NormalizedLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( X < -One ) call Error%Raise( Line='X argument below allowable minimum of -1', ProcName=ProcName )
-    if ( X > One ) call Error%Raise( Line='X argument above allowable maximum of 1', ProcName=ProcName )
+    if (X < -One) call Error%Raise(Line='X argument below allowable minimum of -1', ProcName=ProcName)
+    if (X > One) call Error%Raise(Line='X argument above allowable maximum of 1', ProcName=ProcName)
 
     NormalizedLoc = This%Normalized
-    if ( present(Normalized) ) NormalizedLoc = Normalized
+    if (present(Normalized)) NormalizedLoc = Normalized
 
-    if ( Order < -1 ) call Error%Raise( "An order of below -1 was requested but is not supported" )
+    if (Order < -1) call Error%Raise("An order of below -1 was requested but is not supported")
 
-    if ( Order == -1 ) then
+    if (Order == -1) then
       Eval_N = This%polyorderm1
-    elseif ( Order == 0 ) then
+    elseif (Order == 0) then
       Eval_N = This%polyorder0
     else
       valnm1 = This%polyorderm1
@@ -225,14 +225,14 @@ contains
       Eval_N = valnp1
     end if
 
-    if ( NormalizedLoc ) Eval_N = Eval_N / This%NFactor( Order=Order )
+    if (NormalizedLoc) Eval_N = Eval_N / This%NFactor(Order=Order)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Returns the values of a polynomials of order 'm' to 'n' for value of 'x'
-  function Eval_MN( This, MinOrder, MaxOrder, X, Normalized)
+  function Eval_MN(This, MinOrder, MaxOrder, X, Normalized)
 
     real(rkp), dimension(:), allocatable                              ::    Eval_MN
 
@@ -251,30 +251,30 @@ contains
     integer                                                           ::    StatLoc=0
     logical                                                           ::    NormalizedLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     NormalizedLoc = This%Normalized
-    if ( present(Normalized) ) NormalizedLoc = Normalized
+    if (present(Normalized)) NormalizedLoc = Normalized
 
-    if ( X < -One ) call Error%Raise( Line='X argument below allowable minimum of -1', ProcName=ProcName )
-    if ( X > One ) call Error%Raise( Line='X argument above allowable maximum of 1', ProcName=ProcName )
+    if (X < -One) call Error%Raise(Line='X argument below allowable minimum of -1', ProcName=ProcName)
+    if (X > One) call Error%Raise(Line='X argument above allowable maximum of 1', ProcName=ProcName)
 
-    if ( MinOrder < -1 ) call Error%Raise( "A starting order of below -1 was requested but is not supported" )
-    if ( MinOrder > MaxOrder ) call Error%Raise( "Starting order was specified to be larger than the final order" )
+    if (MinOrder < -1) call Error%Raise("A starting order of below -1 was requested but is not supported")
+    if (MinOrder > MaxOrder) call Error%Raise("Starting order was specified to be larger than the final order")
 
     allocate(Eval_MN(MaxOrder-MinOrder+1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Eval_MN', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Eval_MN', ProcName=ProcName, stat=StatLoc)
 
-    if ( MinOrder == MaxOrder ) then
-      Eval_MN(1) = This%Eval( Order=MinOrder, X=X )
+    if (MinOrder == MaxOrder) then
+      Eval_MN(1) = This%Eval(Order=MinOrder, X=X)
     else
       i_offset = 0
-      if ( MinOrder == -1 )  then
-        Eval_MN(1) = This%Eval( Order=-1, X=X, Normalized=NormalizedLoc )
-        Eval_MN(2) = This%Eval( Order=0, X=X, Normalized=NormalizedLoc )
+      if (MinOrder == -1)  then
+        Eval_MN(1) = This%Eval(Order=-1, X=X, Normalized=NormalizedLoc)
+        Eval_MN(2) = This%Eval(Order=0, X=X, Normalized=NormalizedLoc)
         i_offset = 2
       elseif (MinOrder == 0) then
-        Eval_MN(1) = This%Eval( Order=0, X=X, Normalized=NormalizedLoc )
+        Eval_MN(1) = This%Eval(Order=0, X=X, Normalized=NormalizedLoc)
         i_offset = 1
       end if
       i = 1
@@ -286,9 +286,9 @@ contains
         valnp1 = ((Two*nt+One)*X*valnp0-nt*valnm1)/(nt+One)
         valnm1 = valnp0
         valnp0 = valnp1
-        if ( i >= MinOrder ) then
+        if (i >= MinOrder) then
           Eval_MN(i+i_offset-ii) = valnp1
-          if ( NormalizedLoc ) Eval_MN(i+i_offset-ii) = Eval_MN(i+i_offset-ii) / This%NFactor( Order=i )
+          if (NormalizedLoc) Eval_MN(i+i_offset-ii) = Eval_MN(i+i_offset-ii) / This%NFactor(Order=i)
         else
           ii = ii + 1
         end if
@@ -301,7 +301,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function NFactor( Order )
+  function NFactor(Order)
 
     real(rkp)                                                         ::    NFactor
 
@@ -309,8 +309,8 @@ contains
 
     character(*), parameter                                           ::    ProcName='NFactor'
 
-    if ( Order > 0 ) then
-      NFactor = One / dsqrt( Two*real(Order,rkp)+One )
+    if (Order > 0) then
+      NFactor = One / dsqrt(Two*real(Order,rkp)+One)
     else
       NFactor = One
     end if
@@ -319,7 +319,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(OrthoLegendre_Type), intent(out)                            ::    LHS
     class(OrthoPoly_Type), intent(in)                                 ::    RHS
@@ -333,12 +333,12 @@ contains
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Normalized = RHS%Normalized
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -346,7 +346,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(OrthoLegendre_Type), intent(inout)                           ::    This
 

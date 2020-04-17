@@ -83,13 +83,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'smuqfile'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -99,7 +99,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
 
@@ -120,7 +120,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
 
@@ -133,7 +133,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -146,27 +146,27 @@ contains
     character(:), allocatable                                         ::    VarC0D
     logical                                                           ::    Found
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'file'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
     This%File = VarC0D
     This%FullFile = PrefixLoc // This%File
 
     ParameterName = 'comment'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Comment = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Comment = VarC0D
 
     ParameterName = 'separator'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Separator = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Separator = VarC0D
 
-    if ( This%Comment == '1X' .or. len(This%Comment) == 0 ) This%Comment = ' '
-    if ( This%Separator == '1X' .or. len(This%Separator) == 0 ) This%Separator = ' '
+    if (This%Comment == '1X' .or. len(This%Comment) == 0) This%Comment = ' '
+    if (This%Separator == '1X' .or. len(This%Separator) == 0) This%Separator = ' '
 
     This%Constructed = .true.
 
@@ -174,7 +174,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, File, Prefix, Comment, Separator )
+  subroutine ConstructCase1(This, File, Prefix, Comment, Separator)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    File
@@ -186,21 +186,21 @@ contains
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     This%File = trim(adjustl(File))
     This%FullFile = PrefixLoc // This%File
 
-    if ( present(Comment) ) This%Comment = Comment
+    if (present(Comment)) This%Comment = Comment
 
-    if ( present(Separator) ) This%Separator = Separator
+    if (present(Separator)) This%Separator = Separator
 
-    if ( This%Comment == '1X' .or. len(This%Comment) == 0 ) This%Comment = ' '
-    if ( This%Separator == '1X' .or. len(This%Separator) == 0 ) This%Separator = ' '
+    if (This%Comment == '1X' .or. len(This%Comment) == 0) This%Comment = ' '
+    if (This%Separator == '1X' .or. len(This%Separator) == 0) This%Separator = ' '
 
     This%Constructed = .true.
 
@@ -208,12 +208,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(SMUQFile_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -225,31 +225,31 @@ contains
     character(:), allocatable                                         ::    CommentLoc
     character(:), allocatable                                         ::    SeparatorLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
     CommentLoc = This%Comment
-    if ( CommentLoc == ' ' ) CommentLoc = '1X'
+    if (CommentLoc == ' ') CommentLoc = '1X'
     SeparatorLoc = This%Separator
-    if ( SeparatorLoc == ' ' ) SeparatorLoc = '1X'
+    if (SeparatorLoc == ' ') SeparatorLoc = '1X'
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddParameter( Name='file', Value=This%File )
-    call GetInput%AddParameter( Name='comment', Value=CommentLoc  )
-    call GetInput%AddParameter( Name='separator', Value=SeparatorLoc )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+    call GetInput%AddParameter(Name='file', Value=This%File)
+    call GetInput%AddParameter(Name='comment', Value=CommentLoc)
+    call GetInput%AddParameter(Name='separator', Value=SeparatorLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportFile( This, Strings, Mandatory, Found )
+  subroutine ImportFile(This, Strings, Mandatory, Found)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(String_Type), allocatable, dimension(:), intent(out)         ::    Strings
@@ -265,34 +265,34 @@ contains
     character(:), allocatable                                         ::    Record
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( present(Mandatory) ) MandatoryLoc = Mandatory
+    if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call This%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=Mandatory, Found=FoundLoc )
+    call This%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=Mandatory, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = This%GetNbLines()
       allocate(Strings(NbLines), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
 
       i = 1
       do i = 1, NbLines
         call This%ReadRecord(Unit=UnitLoc, Record=Record, Stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong reading the record from file', ProcName=ProcName )
-        call Strings(i)%Set_Value( Value=Record )
+        if (StatLoc /= 0) call Error%Raise(Line='Something went wrong reading the record from file', ProcName=ProcName)
+        call Strings(i)%Set_Value(Value=Record)
       end do
 
       call This%Close()
     end if
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Export0D_CharString( This, String )
+  subroutine Export0D_CharString(This, String)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    String
@@ -301,12 +301,12 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc 
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    call This%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+    call This%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
 
-    write( unit=UnitLoc, fmt='(A)', iostat=StatLoc ) String
-    if ( StatLoc /= 0 ) call Error%Write( File=This%FullFile, ProcName=ProcName, iostat=StatLoc )
+    write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) String
+    if (StatLoc /= 0) call Error%Write(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
 
     call This%Close()
 
@@ -314,7 +314,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Export0D_String( This, String )
+  subroutine Export0D_String(This, String)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(String_Type), intent(in)                                     ::    String
@@ -323,12 +323,12 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc 
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    call This%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+    call This%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
 
-    write( unit=UnitLoc, fmt='(A)', iostat=StatLoc ) String%GetValue()
-    if ( StatLoc /= 0 ) call Error%Write( File=This%FullFile, ProcName=ProcName, iostat=StatLoc )
+    write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) String%GetValue()
+    if (StatLoc /= 0) call Error%Write(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
 
     call This%Close()
 
@@ -336,7 +336,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Export1D_Strings( This, Strings )
+  subroutine Export1D_Strings(This, Strings)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(String_Type), dimension(:), intent(in)                       ::    Strings
@@ -347,15 +347,15 @@ contains
     integer                                                           ::    NbLines=0
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    call This%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+    call This%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
 
     NbLines = size(Strings,1)
     i = 1
     do i = 1, NbLines
-      write( unit=UnitLoc, fmt='(A)', iostat=StatLoc ) Strings(i)%GetValue()
-      if ( StatLoc /= 0 ) call Error%Write( File=This%FullFile, ProcName=ProcName, iostat=StatLoc )
+      write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) Strings(i)%GetValue()
+      if (StatLoc /= 0) call Error%Write(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
     end do
 
     call This%Close()
@@ -364,7 +364,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Append0D_CharString( This, String )
+  subroutine Append0D_CharString(This, String)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    String
@@ -374,22 +374,22 @@ contains
     integer                                                           ::    UnitLoc=0 
     logical                                                           ::    Found 
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( This%Exists() ) then
-      call This%Open( Unit=UnitLoc, Action='write', Status='old', Position='append', Mandatory=.false., Found=Found )
-      write( unit=UnitLoc, fmt='(A)', iostat=StatLoc ) String
-      if ( StatLoc /= 0 ) call Error%Write( File=This%FullFile, ProcName=ProcName, iostat=StatLoc )
+    if (This%Exists()) then
+      call This%Open(Unit=UnitLoc, Action='write', Status='old', Position='append', Mandatory=.false., Found=Found)
+      write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) String
+      if (StatLoc /= 0) call Error%Write(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
       call This%Close()
     else
-      call This%Export( String=String )
+      call This%Export(String=String)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Append0D_String( This, String )
+  subroutine Append0D_String(This, String)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(String_Type), intent(in)                                     ::    String
@@ -399,22 +399,22 @@ contains
     integer                                                           ::    UnitLoc=0
     logical                                                           ::    Found 
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( This%Exists() ) then
-      call This%Open( Unit=UnitLoc, Action='write', Status='old', Position='append', Mandatory=.false., Found=Found )
-      write( unit=UnitLoc, fmt='(A)', iostat=StatLoc ) String%GetValue()
-      if ( StatLoc /= 0 ) call Error%Write( File=This%FullFile, ProcName=ProcName, iostat=StatLoc )
+    if (This%Exists()) then
+      call This%Open(Unit=UnitLoc, Action='write', Status='old', Position='append', Mandatory=.false., Found=Found)
+      write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) String%GetValue()
+      if (StatLoc /= 0) call Error%Write(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
       call This%Close()
     else
-      call This%Export( String=String )
+      call This%Export(String=String)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Append1D_Strings( This, Strings )
+  subroutine Append1D_Strings(This, Strings)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     type(String_Type), dimension(:), intent(in)                       ::    Strings
@@ -426,26 +426,26 @@ contains
     integer                                                           ::    i
     logical                                                           ::    Found
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( This%Exists() ) then
-    call This%Open( Unit=UnitLoc, Action='write', Status='old', Position='append', Mandatory=.false., Found=Found )
+    if (This%Exists()) then
+    call This%Open(Unit=UnitLoc, Action='write', Status='old', Position='append', Mandatory=.false., Found=Found)
       NbLines = size(Strings,1)
       i = 1
       do i = 1, NbLines
-        write( unit=UnitLoc, fmt='(A)', iostat=StatLoc ) Strings(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( File=This%FullFile, ProcName=ProcName, iostat=StatLoc )
+        write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) Strings(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
       end do
       call This%Close()
     else
-      call This%Export( Strings=Strings )
+      call This%Export(Strings=Strings)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Open( This, Unit, Action, Status, Position, Stat, Mandatory, Found )
+  subroutine Open(This, Unit, Action, Status, Position, Stat, Mandatory, Found)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     integer, optional, intent(out)                                    ::    Unit
@@ -468,33 +468,33 @@ contains
     ActionLoc = 'readwrite'
     StatusLoc = 'old'
     PositionLoc = 'rewind'
-    if ( present(Mandatory) ) MandatoryLoc = Mandatory
-    if ( present(Action) ) ActionLoc = Action
-    if ( present(Status) ) StatusLoc = Status
-    if ( present(Position) ) PositionLoc = Position
+    if (present(Mandatory)) MandatoryLoc = Mandatory
+    if (present(Action)) ActionLoc = Action
+    if (present(Status)) StatusLoc = Status
+    if (present(Position)) PositionLoc = Position
 
-    if ( .not. This%Exists() .and. StatusLoc == 'old' ) then
-      if ( MandatoryLoc ) call Error%Raise( Line='Mandatory file does not exist: ' // This%FullFile, ProcName=ProcName )
+    if (.not. This%Exists() .and. StatusLoc == 'old') then
+      if (MandatoryLoc) call Error%Raise(Line='Mandatory file does not exist: ' // This%FullFile, ProcName=ProcName)
       FoundLoc = .false.
       UnitLoc = -1
     else
-      if ( This%Opened() ) call This%Close()
-      open( newunit=UnitLoc, file=This%FullFile, action=ActionLoc, status=StatusLoc, position=PositionLoc, iostat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Open( File=This%FullFile, ProcName=ProcName, iostat=StatLoc )
+      if (This%Opened()) call This%Close()
+      open(newunit=UnitLoc, file=This%FullFile, action=ActionLoc, status=StatusLoc, position=PositionLoc, iostat=StatLoc)
+      if (StatLoc /= 0) call Error%Open(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
       This%Unit = UnitLoc
       This%FileOpened = .true.
       FoundLoc = .true.
     end if
 
-    if ( present(Found) ) Found = FoundLoc
-    if ( present(Unit) ) Unit = UnitLoc
-    if ( present(Stat) ) Stat=StatLoc
+    if (present(Found)) Found = FoundLoc
+    if (present(Unit)) Unit = UnitLoc
+    if (present(Stat)) Stat=StatLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Close( This, Stat )
+  subroutine Close(This, Stat)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
     integer, optional, intent(out)                                    ::    Stat
@@ -502,18 +502,18 @@ contains
     character(*), parameter                                           ::    ProcName='Close'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Opened() ) close(Unit=This%Unit, iostat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Close( ProcName=ProcName, Unit=This%Unit, File=This%FullFile, iostat=StatLoc )
+    if (This%Opened()) close(Unit=This%Unit, iostat=StatLoc)
+    if (StatLoc /= 0) call Error%Close(ProcName=ProcName, Unit=This%Unit, File=This%FullFile, iostat=StatLoc)
     This%Unit = -1
     This%FileOpened = .false.
 
-    if( present(Stat) ) Stat = StatLoc
+    if(present(Stat)) Stat = StatLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Exists( This )
+  function Exists(This)
 
     logical                                                           ::    Exists
 
@@ -522,15 +522,15 @@ contains
     character(*), parameter                                           ::    ProcName='Exists'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    inquire( file=This%FullFile, exist=Exists )
+    inquire(file=This%FullFile, exist=Exists)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Opened( This )
+  function Opened(This)
 
     logical                                                           ::    Opened
 
@@ -539,10 +539,10 @@ contains
     character(*), parameter                                           ::    ProcName='Opened'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
 ! broken in gcc 7.3
-!    inquire( file=This%FullFile, opened=Opened )
+!    inquire(file=This%FullFile, opened=Opened)
 
     Opened = This%FileOpened
 
@@ -550,7 +550,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetComment( This )
+  function GetComment(This)
 
     character(:), allocatable                                         ::    GetComment
 
@@ -558,7 +558,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetComment'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetComment = This%Comment
 
@@ -566,7 +566,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSeparator( This )
+  function GetSeparator(This)
 
     character(:), allocatable                                         ::    GetSeparator
 
@@ -574,7 +574,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetSeparator'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetSeparator = This%Separator
 
@@ -582,7 +582,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetFile( This )
+  function GetFile(This)
 
     character(:), allocatable                                         ::    GetFile
 
@@ -590,7 +590,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetFile'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetFile = This%File
 
@@ -598,7 +598,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetFullFile( This )
+  function GetFullFile(This)
 
     character(:), allocatable                                         ::    GetFullFile
 
@@ -606,7 +606,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetFullFile'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetFullFile = This%FullFIle
 
@@ -614,7 +614,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbLines( This )
+  function GetNbLines(This)
 
     integer                                                           ::    GetNbLines
 
@@ -623,9 +623,9 @@ contains
     character(*), parameter                                           ::    ProcName='GetNbLines'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( .not. This%Opened() ) call Error%Raise( Line='File was never opened', ProcName=ProcName)
+    if (.not. This%Opened()) call Error%Raise(Line='File was never opened', ProcName=ProcName)
 
     GetNbLines = 0
 
@@ -633,7 +633,7 @@ contains
 
     do 
       read(unit=This%Unit, fmt=*, iostat=StatLoc)
-      if ( IS_IOSTAT_END(StatLoc) ) exit
+      if (IS_IOSTAT_END(StatLoc)) exit
       GetNbLines = GetNbLines + 1
     end do
 
@@ -643,16 +643,16 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Rewind( This )
+  subroutine Rewind(This)
 
     class(SMUQFile_Type), intent(in)                                  ::    This
 
     character(*), parameter                                           ::    ProcName='Rewind'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( .not. This%Opened() ) call Error%Raise( Line='File was never opened', ProcName=ProcName)
+    if (.not. This%Opened()) call Error%Raise(Line='File was never opened', ProcName=ProcName)
 
     Rewind(This%Unit, iostat=StatLoc)
     if (StatLoc /= 0) call Error%Rewind(ProcName=ProcName, Unit=This%Unit, File=This%FullFile, iostat=StatLoc)
@@ -661,25 +661,25 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Backspace( This )
+  subroutine Backspace(This)
 
     class(SMUQFile_Type), intent(in)                                  ::    This
 
     character(*), parameter                                           ::    ProcName='Backspace'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( .not. This%Opened() ) call Error%Raise( Line='File was never opened', ProcName=ProcName)
+    if (.not. This%Opened()) call Error%Raise(Line='File was never opened', ProcName=ProcName)
 
     Backspace(This%Unit, iostat=StatLoc)
-    if (StatLoc /= 0) call Error%Raise( Line='Something went wrong backspacing the file', ProcName=ProcName )
+    if (StatLoc /= 0) call Error%Raise(Line='Something went wrong backspacing the file', ProcName=ProcName)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReadRecord( Unit, Record, Stat )
+  subroutine ReadRecord(Unit, Record, Stat)
 
     integer, intent(in)                                               ::    Unit
     character(:), allocatable, intent(out)                            ::    Record
@@ -695,21 +695,21 @@ contains
 !    Record = ''
 !    do
 !      read (unit=Unit,fmt='(A)',advance='NO',iostat=StatLoc, size=ReadSize) Buffer
-!      if ( .not. IS_IOSTAT_END(StatLoc) ) exit
+!      if (.not. IS_IOSTAT_END(StatLoc)) exit
 !      Record = Record // Buffer(1:100)
 !      if (IS_IOSTAT_EOR(StatLoc)) exit
 !    end do
 !    Record = trim(adjustl(Record))
 
     read (unit=Unit,fmt='(A10000)', iostat=StatLoc) Buffer
-    if ( StatLoc == 0 ) Record = trim(adjustl(Buffer))
-    if ( present(Stat) ) Stat=StatLoc
+    if (StatLoc == 0) Record = trim(adjustl(Buffer))
+    if (present(Stat)) Stat=StatLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(SMUQFile_Type), intent(out)                                 ::    LHS
     class(SMUQFile_Type), intent(in)                                  ::    RHS
@@ -721,7 +721,7 @@ contains
     LHS%Initialized = RHS%Initialized
     LHS%Constructed = RHS%Constructed
 
-    if ( RHS%Constructed ) then
+    if (RHS%Constructed) then
       LHS%File = RHS%File
       LHS%FullFile = RHS%FullFile
       LHS%Comment = RHS%Comment

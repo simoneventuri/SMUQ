@@ -55,28 +55,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize_TestFunction( This )
+  subroutine Initialize_TestFunction(This)
     import                                                            ::    TestFunction_Type
     class(TestFunction_Type), intent(inout)                           ::    This
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset_TestFunction( This )
+  subroutine Reset_TestFunction(This)
     import                                                            ::    TestFunction_Type
     class(TestFunction_Type), intent(inout)                           ::    This
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults_TestFunction( This )
+  subroutine SetDefaults_TestFunction(This)
     import                                                            ::    TestFunction_Type
     class(TestFunction_Type), intent(inout)                           ::    This
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput_TestFunction( This, Input, Prefix )
+  subroutine ConstructInput_TestFunction(This, Input, Prefix)
     import                                                            ::    TestFunction_Type
     import                                                            ::    InputSection_Type
     class(TestFunction_Type), intent(inout)                           ::    This
@@ -86,19 +86,19 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput_TestFunction( This, MainSectionName, Prefix, Directory )
+  function GetInput_TestFunction(This, Name, Prefix, Directory)
     import                                                            ::    TestFunction_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_TestFunction
     class(TestFunction_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run_TestFunction( This, Input, Output )
+  subroutine Run_TestFunction(This, Input, Output)
     use Parameters_Library
     import                                                            ::    TestFunction_Type
     import                                                            ::    Input_Type
@@ -110,7 +110,7 @@ abstract interface
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  impure elemental subroutine Copy_TestFunction( LHS, RHS )
+  impure elemental subroutine Copy_TestFunction(LHS, RHS)
     import                                                            ::    TestFunction_Type
     class(TestFunction_Type), intent(out)                             ::    LHS
     class(TestFunction_Type), intent(in)                              ::    RHS
@@ -122,7 +122,7 @@ end interface
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
 
@@ -130,7 +130,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetName'
 
-    if ( .not. This%Constructed ) call Error%Raise( 'Object not yet constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise('Object not yet constructed', ProcName=ProcName)
 
     GetName = This%Name
 
@@ -138,7 +138,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetLabel( This )
+  function GetLabel(This)
 
     character(:), allocatable                                         ::    GetLabel
 
@@ -146,7 +146,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetLabel'
 
-    if ( .not. This%Constructed ) call Error%Raise( 'Object not yet constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise('Object not yet constructed', ProcName=ProcName)
 
     GetLabel = This%Label
 

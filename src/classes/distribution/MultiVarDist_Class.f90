@@ -73,13 +73,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'multivariate'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -89,7 +89,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
 
@@ -99,12 +99,12 @@ contains
     This%Initialized = .false.
     This%Constructed = .false.
 
-    if ( allocated(This%Distributions) ) deallocate(This%Distributions, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Distributions', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Distributions)) deallocate(This%Distributions, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Distributions', ProcName=ProcName, stat=StatLoc)
     This%NbDim = 0
 
-    if ( allocated(This%CorrMat) ) deallocate(This%CorrMat, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%CorrMat)) deallocate(This%CorrMat, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
     This%Correlated = .false.
 
     call This%Initialize()
@@ -113,7 +113,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
 
@@ -123,7 +123,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -140,43 +140,43 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     class(DistProb_Type), allocatable                                 ::    DistProb
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
     
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     SectionName = 'distributions'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     This%NbDim = InputSection%GetNumberOfSubSections()
 
     allocate(This%Distributions(This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Distributions', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Distributions', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, This%NbDim
       SubSectionName = SectionName // '>distribution' // ConvertToString(Value=i)
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call DistProb_Factory%Construct( Object=DistProb, Input=InputSection, Prefix=PrefixLoc )
-      nullify( InputSection )
-      call This%Distributions(i)%Set( Object=DistProb )
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+      call DistProb_Factory%Construct(Object=DistProb, Input=InputSection, Prefix=PrefixLoc)
+      nullify(InputSection)
+      call This%Distributions(i)%Set(Object=DistProb)
       deallocate(DistProb, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistProb', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
     end do 
 
     SectionName = 'correlation_matrix'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=This%CorrMat, Prefix=PrefixLoc )
-      nullify( InputSection )
-      This%Correlated = .not. IsDiagonal( Array=This%CorrMat )
+    if (Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call ImportArray(Input=InputSection, Array=This%CorrMat, Prefix=PrefixLoc)
+      nullify(InputSection)
+      This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
     else
       This%CorrMat = EyeR(N=This%NbDim)
       This%Correlated = .false.
     end if
 
-    if ( size(This%Corrmat,1) /= This%NbDim .or. size(This%CorrMat,2) /= This%NbDim ) call Error%Raise(                           &
-                                                       Line='Improper sizes for the input correlation matrix', ProcName=ProcName ) 
+    if (size(This%Corrmat,1) /= This%NbDim .or. size(This%CorrMat,2) /= This%NbDim) call Error%Raise(                         &
+                                                       Line='Improper sizes for the input correlation matrix', ProcName=ProcName) 
 
     This%Constructed = .true.
 
@@ -184,7 +184,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructCase1( This, Distributions, CorrMat )
+  subroutine ConstructCase1(This, Distributions, CorrMat)
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
     type(DistProbContainer_Type), dimension(:), intent(in)                 ::    Distributions
@@ -193,20 +193,20 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset
-    if ( .not. This%Initialized ) call This%Initialize  
+    if (This%Constructed) call This%Reset
+    if (.not. This%Initialized) call This%Initialize  
 
     This%NbDim = size(Distributions,1)
 
     allocate(This%Distributions, source=Distributions, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Distributions', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Distributions', ProcName=ProcName, stat=StatLoc)
 
     allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
 
-    if ( present(CorrMat) ) then
-      if ( size(CorrMat,1) /= This%NbDim .or. size(CorrMat,1) /= This%NbDim ) call Error%Raise( Line='Incorrect shape' //         &
-                                                                                 ' of the correlation matrix', ProcName=ProcName )
+    if (present(CorrMat)) then
+      if (size(CorrMat,1) /= This%NbDim .or. size(CorrMat,1) /= This%NbDim) call Error%Raise(Line='Incorrect shape' //         &
+                                                                                 ' of the correlation matrix', ProcName=ProcName)
       This%CorrMat = CorrMat
       This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
     else
@@ -220,7 +220,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructCase2( This, Distributions, CorrMat )
+  subroutine ConstructCase2(This, Distributions, CorrMat)
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
     class(DistProb_Type), dimension(:), intent(in)                    ::    Distributions
@@ -230,25 +230,25 @@ contains
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset
-    if ( .not. This%Initialized ) call This%Initialize  
+    if (This%Constructed) call This%Reset
+    if (.not. This%Initialized) call This%Initialize  
 
     This%NbDim = size(Distributions,1)
 
     allocate(This%Distributions(This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Distributions', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Distributions', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, This%NbDim
-      call This%Distributions(i)%Set( Object=Distributions(i) )
+      call This%Distributions(i)%Set(Object=Distributions(i))
     end do
 
     allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
 
-    if ( present(CorrMat) ) then
-      if ( size(CorrMat,1) /= This%NbDim .or. size(CorrMat,1) /= This%NbDim ) call Error%Raise( Line='Incorrect shape' //         &
-                                                                                 ' of the correlation matrix', ProcName=ProcName )
+    if (present(CorrMat)) then
+      if (size(CorrMat,1) /= This%NbDim .or. size(CorrMat,1) /= This%NbDim) call Error%Raise(Line='Incorrect shape' //         &
+                                                                                 ' of the correlation matrix', ProcName=ProcName)
       This%CorrMat = CorrMat
       This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
     else
@@ -262,7 +262,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructCase3( This, SampleSpace )
+  subroutine ConstructCase3(This, SampleSpace)
 
     class(MultiVarDist_Type), intent(inout)                           ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
@@ -270,17 +270,17 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase3'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset
-    if ( .not. This%Initialized ) call This%Initialize  
+    if (This%Constructed) call This%Reset
+    if (.not. This%Initialized) call This%Initialize  
 
     This%NbDim = SampleSpace%GetNbDim()
 
     allocate(This%Distributions(This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='TThis%Distributions', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='TThis%Distributions', ProcName=ProcName, stat=StatLoc)
     This%Distributions = SampleSpace%GetDistribution()
 
     allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
     This%CorrMat = SampleSpace%GetCorrMat()
 
     This%Correlated = SampleSpace%IsCorrelated()
@@ -291,14 +291,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(MultiVarDist_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -316,40 +316,40 @@ contains
     class(DistProb_Type), pointer                                     ::    DistProb=>null()
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
     SectionName = 'distributions'
     call GetInput%AddSection(SectionName=SectionName)
     i = 1
     do i = 1, This%NbDim
       DistProb => This%Distributions(i)%GetPointer()
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/distribution' // ConvertToString(i)
-      call GetInput%AddSection( Section=DistProb_Factory%GetObjectInput( Object=DistProb, MainSectionName='distribution' //       &
-                                 ConvertToString(Value=i), Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/distribution' // ConvertToString(i)
+      call GetInput%AddSection(Section=DistProb_Factory%GetObjectInput(Object=DistProb, Name='distribution' //       &
+                                 ConvertToString(Value=i), Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SectionName)
       nullify(DistProb)
     end do
 
     SectionName='correlation_matrix'
-    call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    if ( ExternalFlag ) then
+    call GetInput%AddSection(SectionName=SectionName)
+    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    if (ExternalFlag) then
       FileName = DirectoryLoc // '/correlation_matrix.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%CorrMat, File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Input=InputSection, Array=This%CorrMat, File=File)
     else
-      call ExportArray( Input=InputSection, Array=This%CorrMat )
+      call ExportArray(Input=InputSection, Array=This%CorrMat)
     end if
     nullify(InputSection)
 
@@ -357,7 +357,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF( This, X )
+  function PDF(This, X)
 
     real(rkp)                                                         ::    PDF
 
@@ -369,8 +369,8 @@ contains
     integer                                                           ::    i
     class(DistProb_Type), pointer                                     ::    DistProb=>null()
 
-    if ( This%Correlated ) call Error%Raise( 'Correlated multivariate non-normal distribution pdf is not yet supported',          &
-                                                                                                               ProcName=ProcName )
+    if (This%Correlated) call Error%Raise('Correlated multivariate non-normal distribution pdf is not yet supported',          &
+                                                                                                               ProcName=ProcName)
 
     PDF = One
 
@@ -384,7 +384,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDim( This )
+  function GetNbDim(This)
 
     real(rkp)                                                         ::    GetNbDim
 
@@ -393,7 +393,7 @@ contains
     character(*), parameter                                           ::    ProcName='GetNbDim'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetNbDim = This%NbDim
 
@@ -401,7 +401,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This )
+  function IsConstructed(This)
 
     logical                                                           ::    IsConstructed
 
@@ -416,7 +416,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(MultiVarDist_Type), intent(out)                             ::    LHS
     class(MultiVarDist_Type), intent(in)                              ::    RHS
@@ -431,18 +431,18 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Name = RHS%Name
           allocate(LHS%Distributions, source=RHS%Distributions, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Distributions', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Distributions', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%CorrMat, source=RHS%CorrMat, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CorrMat', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%CorrMat', ProcName=ProcName, stat=StatLoc)
           LHS%NbDim = RHS%NbDim
           LHS%Correlated = RHS%Correlated
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -450,18 +450,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(MultiVarDist_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%Distributions) ) deallocate(This%Distributions, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Distributions', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Distributions)) deallocate(This%Distributions, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Distributions', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%CorrMat) ) deallocate(This%CorrMat, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%CorrMat)) deallocate(This%CorrMat, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

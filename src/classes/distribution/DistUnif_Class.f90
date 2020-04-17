@@ -62,13 +62,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(DistUnif_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'uniform'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -78,7 +78,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(DistUnif_Type), intent(inout)                               ::    This
 
@@ -94,7 +94,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(DistUnif_Type), intent(inout)                               ::    This
 
@@ -109,7 +109,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(DistUnif_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -123,24 +123,24 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     This%TruncatedLeft=.true.
     This%TruncatedRight=.true.
 
     ParameterName = 'a'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true.)
     This%A = VarR0D
 
     ParameterName = 'b'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true.)
     This%B = VarR0D
 
-    if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
 
     This%Constructed = .true.
 
@@ -148,7 +148,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, A, B )
+  subroutine ConstructCase1(This, A, B)
     
     class(DistUnif_Type), intent(inout)                               ::    This
     real(rkp), intent(in)                                             ::    A
@@ -156,8 +156,8 @@ contains
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     This%TruncatedLeft=.true.
     This%TruncatedRight=.true.
@@ -166,7 +166,7 @@ contains
 
     This%B = B
 
-    if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
 
     This%Constructed = .true.
 
@@ -174,14 +174,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(DistUnif_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -191,26 +191,26 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
-    call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
+    call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
+    call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X )
+  function PDF_R0D(This, X)
 
     real(rkp)                                                         ::    PDF_R0D
 
@@ -219,15 +219,15 @@ contains
 
     character(*), parameter                                           ::    ProcName='PDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    PDF_R0D = This%ComputeUnifPDF( X, This%A, This%B )
+    PDF_R0D = This%ComputeUnifPDF(X, This%A, This%B)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
 !  !!------------------------------------------------------------------------------------------------------------------------------
-!  function PDF_R2D( This, NbNodes )
+!  function PDF_R2D(This, NbNodes)
 
 !    use ComputingRoutines_Module
 
@@ -241,23 +241,23 @@ contains
 !    integer                                                           ::    StatLoc=0
 !    integer                                                           ::    i
 
-!    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+!    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-!    if ( NbNodes < 3 ) call Error%Raise( Line='Specified number of points lower than minimum of 3', ProcName=ProcName )
+!    if (NbNodes < 3) call Error%Raise(Line='Specified number of points lower than minimum of 3', ProcName=ProcName)
 
 !    BinMass = One / real(NbNodes-1,rkp)
 
-!    allocate(PDF_R2D(NbNodes,2), stat=StatLoc )
-!    if ( StatLoc /= 0 ) call Error%Allocate( Name='PDF_R2D', ProcName=ProcName, stat=StatLoc )
+!    allocate(PDF_R2D(NbNodes,2), stat=StatLoc)
+!    if (StatLoc /= 0) call Error%Allocate(Name='PDF_R2D', ProcName=ProcName, stat=StatLoc)
 
-!    PDF_R2D(:,1) = LinSpace( InterMin=This%A, InterMax=This%B, NbNodes=NbNodes )
-!    PDF_R2D(:,2) = One / ( This%B - This%A )
+!    PDF_R2D(:,1) = LinSpace(InterMin=This%A, InterMax=This%B, NbNodes=NbNodes)
+!    PDF_R2D(:,2) = One / (This%B - This%A)
 
 !  end function
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeUnifPDF( X, A, B )
+  function ComputeUnifPDF(X, A, B)
 
     real(rkp)                                                         ::    ComputeUnifPDF
 
@@ -267,7 +267,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='ComputeUnifPDF'
 
-    if ( X < A .or. X > B) then
+    if (X < A .or. X > B) then
       ComputeUnifPDF = Zero
     else
       ComputeUnifPDF = One/(B-A)
@@ -277,7 +277,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X )
+  function CDF_R0D(This, X)
 
     real(rkp)                                                         ::    CDF_R0D
 
@@ -286,15 +286,15 @@ contains
 
     character(*), parameter                                           ::    ProcName='CDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    CDF_R0D = ComputeUnifCDF( X, This%A, This%B )
+    CDF_R0D = ComputeUnifCDF(X, This%A, This%B)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeUnifCDF( X, A, B )
+  function ComputeUnifCDF(X, A, B)
 
     real(rkp)                                                         ::    ComputeUnifCDF
 
@@ -304,9 +304,9 @@ contains
 
     character(*), parameter                                           ::    ProcName='ComputeUnifCDF'
 
-    if ( X < A ) then
+    if (X < A) then
       ComputeUnifCDF = Zero
-    elseif ( X > B ) then
+    elseif (X > B) then
       ComputeUnifCDF = One
     else
       ComputeUnifCDF = (X-A) / (B-A)
@@ -316,7 +316,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P )
+  function InvCDF_R0D(This, P)
 
     real(rkp)                                                         ::    InvCDF_R0D
 
@@ -325,15 +325,15 @@ contains
 
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    InvCDF_R0D = ComputeUnifInvCDF( P, This%A, This%B )
+    InvCDF_R0D = ComputeUnifInvCDF(P, This%A, This%B)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeUnifInvCDF( P, A, B )
+  function ComputeUnifInvCDF(P, A, B)
 
     real(rkp)                                                         ::    ComputeUnifInvCDF
 
@@ -346,8 +346,8 @@ contains
     real(rkp)                                                         ::    CDFRight
     real(rkp)                                                         ::    VarR0D
 
-    if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
-    if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
+    if (P < Zero) call Error%Raise(Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName)
+    if (P > One) call Error%Raise(Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName)
 
     ComputeUnifInvCDF = A + P*(B-A)
 
@@ -355,7 +355,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment( This, Moment )
+  function GetMoment(This, Moment)
 
     real(rkp)                                                         ::    GetMoment
 
@@ -365,11 +365,11 @@ contains
     character(*), parameter                                           ::    ProcName='GetMoment'
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
+    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-    if ( Moment > 0 ) then
+    if (Moment > 0) then
       i = 0
       GetMoment = Zero
       do i = 0, Moment
@@ -384,7 +384,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo( This, File )
+  subroutine WriteInfo(This, File)
 
     class(DistUnif_Type), intent(in)                                  ::    This
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -393,19 +393,19 @@ contains
     integer                                                           ::    i
     type(String_Type), dimension(3)                                   ::    Strings
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     Strings(1) = 'uniform'
     Strings(2) = ConvertToString(Value=This%A)
     Strings(3) = ConvertToString(Value=This%B)
 
-    call File%Append( Strings=Strings )
+    call File%Append(Strings=Strings)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(DistUnif_Type), intent(out)                                 ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
@@ -420,7 +420,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%A = RHS%A
           LHS%B = RHS%B
           LHS%TruncatedLeft=RHS%TruncatedLeft
@@ -428,7 +428,7 @@ contains
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -436,7 +436,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(DistUnif_Type), intent(inout)                                ::    This
 

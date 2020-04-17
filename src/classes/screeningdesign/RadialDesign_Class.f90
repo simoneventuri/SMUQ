@@ -65,14 +65,14 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(RadialDesign_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer(8)                                                        ::    SysTimeCount
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Initialized = .true.
       This%Name = 'radialdesign'
       call This%SetDefaults()
@@ -82,7 +82,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(RadialDesign_Type), intent(inout)                           ::    This
 
@@ -92,8 +92,8 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%Sampler) ) deallocate(This%Sampler, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Sampler)) deallocate(This%Sampler, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Sampler', ProcName=ProcName, stat=StatLoc)
 
     call This%Initialize()
 
@@ -114,7 +114,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput ( This, Input, Prefix )
+  subroutine ConstructInput (This, Input, Prefix)
 
     use StringRoutines_Module
 
@@ -135,33 +135,33 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'epsilon'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Eps = VarR0D
-    if ( This%Eps < 0 ) call Error%Raise( 'Epsilon must be non-negative', ProcName=ProcName )
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Eps = VarR0D
+    if (This%Eps < 0) call Error%Raise('Epsilon must be non-negative', ProcName=ProcName)
 
     ParameterName = 'auxilary_shift'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%AuxilaryShift = VarI0D
-    if ( This%AuxilaryShift < 0 ) call Error%Raise( 'Auxilary shift must be a non-negative integer', ProcName=ProcName )
+    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%AuxilaryShift = VarI0D
+    if (This%AuxilaryShift < 0) call Error%Raise('Auxilary shift must be a non-negative integer', ProcName=ProcName)
 
     SectionName = 'sampler'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call SampleMethod_Factory%Construct( Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc )
+    if (Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call SampleMethod_Factory%Construct(Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc)
     else
-      allocate( SampleQuasiMC_Type :: This%Sampler )
+      allocate(SampleQuasiMC_Type :: This%Sampler)
       select type (Object => This%Sampler)
         type is (SampleQuasiMC_Type)
           call Object%Construct()
         class default
-          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+          call Error%Raise(Line='Something went wrong', ProcName=ProcName)
       end select
     end if
 
@@ -171,7 +171,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1 ( This, Sampler, AuxilaryShift, Eps )
+  subroutine ConstructCase1 (This, Sampler, AuxilaryShift, Eps)
 
     class(RadialDesign_Type), intent(inout)                           ::    This
     class(SampleMethod_Type), optional, intent(in)                    ::    Sampler
@@ -181,25 +181,25 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if ( present(Eps) ) This%Eps = Eps
-    if ( This%Eps < 0 ) call Error%Raise( 'Epsilon must be non-negative', ProcName=ProcName )
+    if (present(Eps)) This%Eps = Eps
+    if (This%Eps < 0) call Error%Raise('Epsilon must be non-negative', ProcName=ProcName)
 
-    if ( present(AuxilaryShift) ) This%AuxilaryShift = AuxilaryShift
-    if ( This%AuxilaryShift < 0 ) call Error%Raise( 'Auxilary shift must be a non-negative integer', ProcName=ProcName )
+    if (present(AuxilaryShift)) This%AuxilaryShift = AuxilaryShift
+    if (This%AuxilaryShift < 0) call Error%Raise('Auxilary shift must be a non-negative integer', ProcName=ProcName)
 
-    if ( present(Sampler) ) then
+    if (present(Sampler)) then
       allocate(This%Sampler, source=Sampler, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Sampler', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%Sampler', ProcName=ProcName, stat=StatLoc)
     else
-      allocate( SampleQuasiMC_Type :: This%Sampler )
+      allocate(SampleQuasiMC_Type :: This%Sampler)
       select type (Object => This%Sampler)
         type is (SampleQuasiMC_Type)
           call Object%Construct()
         class default
-          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+          call Error%Raise(Line='Something went wrong', ProcName=ProcName)
       end select
     end if
 
@@ -209,14 +209,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use CommandRoutines_Module
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
     class(RadialDesign_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -230,30 +230,30 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    VarC0D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%AddParameter( Name='epsilon', Value=ConvertToString(Value=This%Eps) )
-    call GetInput%AddParameter( Name='auxilary_shift', Value=ConvertToString(Value=This%AuxilaryShift) )
+    call GetInput%AddParameter(Name='epsilon', Value=ConvertToString(Value=This%Eps))
+    call GetInput%AddParameter(Name='auxilary_shift', Value=ConvertToString(Value=This%AuxilaryShift))
 
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
-    call GetInput%AddSection( Section=SampleMethod_Factory%GetObjectInput( Object=This%Sampler, MainSectionName='sampler',        &
-                                                                                      Prefix=PrefixLoc, Directory=DirectorySub ) )
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/sampler'
+    call GetInput%AddSection(Section=SampleMethod_Factory%GetObjectInput(Object=This%Sampler, Name='sampler',        &
+                                                                                      Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Draw( This, NbDim, NbBlocks, Blocks, StepSize )
+  subroutine Draw(This, NbDim, NbBlocks, Blocks, StepSize)
 
     class(RadialDesign_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    NbBlocks
@@ -275,26 +275,26 @@ contains
     integer                                                           ::    iBlockMin
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     NbDimP1 = NbDim+1
     NbDimTwo = NbDim*2
     NbEntries = NbDimP1*NbBlocks
 
     allocate(VarR1D(NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
     VarR1D = Zero
 
-    if ( present(StepSize) ) then
-      if ( size(StepSize,1) /= NbDim .or. size(StepSize,2) /= NbBlocks ) call Error%Raise( 'Passed step size array of ' //        &
-                                                                                             'incorrect size', ProcName=ProcName )
+    if (present(StepSize)) then
+      if (size(StepSize,1) /= NbDim .or. size(StepSize,2) /= NbBlocks) call Error%Raise('Passed step size array of ' //        &
+                                                                                             'incorrect size', ProcName=ProcName)
     end if
 
-    if ( size(Blocks,2) /= NbEntries .or. size(Blocks,1) /= NbDim ) call Error%Raise( 'Passed blocks ' //                         &
-                                                                                    'array of incorrect size', ProcName=ProcName )
+    if (size(Blocks,2) /= NbEntries .or. size(Blocks,1) /= NbDim) call Error%Raise('Passed blocks ' //                         &
+                                                                                    'array of incorrect size', ProcName=ProcName)
 
     Blocks = Zero
-    XStar = This%Sampler%Draw( NbSamples=NbBlocks+This%AuxilaryShift, NbDim=NbDimTwo )
+    XStar = This%Sampler%Draw(NbSamples=NbBlocks+This%AuxilaryShift, NbDim=NbDimTwo)
 
     ! generating lager sample size if auxillary points do not differ from non-auxillary ones in any dimension
     do
@@ -306,20 +306,20 @@ contains
         iii = 0
         do ii = This%AuxilaryShift+iOffset+i, size(XStar,2)
           VarR1D = dabs(XStar(1:NbDim,i)-XStar(NbDimP1:NbDimTwo,ii))
-          if ( all(VarR1D>This%Eps) ) then
+          if (all(VarR1D>This%Eps)) then
             iv = iv + 1
             exit
           end if
           iii = iii + 1
         end do
         iOffset = iOffset + iii
-        if ( This%AuxilaryShift+iOffset+i+1 > size(XStar,2) ) exit
+        if (This%AuxilaryShift+iOffset+i+1 > size(XStar,2)) exit
       end do
 
-      if ( iv == NbBlocks ) exit
+      if (iv == NbBlocks) exit
       deallocate(XStar, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='XStar', ProcName=ProcName, stat=StatLoc )
-      XStar = This%Sampler%Draw( NbSamples=NbBlocks+This%AuxilaryShift+iOffset, NbDim=NbDimTwo )
+      if (StatLoc /= 0) call Error%Deallocate(Name='XStar', ProcName=ProcName, stat=StatLoc)
+      XStar = This%Sampler%Draw(NbSamples=NbBlocks+This%AuxilaryShift+iOffset, NbDim=NbDimTwo)
     end do
 
     iOffset = 0
@@ -330,28 +330,28 @@ contains
       Blocks(:,iBlockMin) = XStar(1:NbDim,i)
       do
         VarR1D = dabs(XStar(1:NbDim,i)-XStar(NbDimP1:NbDimTwo,i+This%AuxilaryShift+iOffset))
-        if ( all(VarR1D>This%Eps) ) exit
+        if (all(VarR1D>This%Eps)) exit
         iOffset = iOffset + 1
       end do
       ii = 1
       do ii = 1, NbDim
         Blocks(:,iBlockMin+ii) = Blocks(:,iBlockMin)
         Blocks(ii,iBlockMin+ii) = XStar(NbDim+ii,i+This%AuxilaryShift+iOffset)
-        if ( present(StepSize) ) StepSize(ii,i) = Blocks(ii,iBlockMin+ii) - Blocks(ii,iBlockMin)
+        if (present(StepSize)) StepSize(ii,i) = Blocks(ii,iBlockMin+ii) - Blocks(ii,iBlockMin)
       end do
     end do
 
     deallocate(XStar, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='XStar', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='XStar', ProcName=ProcName, stat=StatLoc)
 
     deallocate(VarR1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(RadialDesign_Type), intent(out)                             ::    LHS
     class(RadialDesign_Type), intent(in)                              ::    RHS
@@ -363,7 +363,7 @@ contains
     LHS%Initialized = RHS%Initialized
     LHS%Constructed = RHS%Constructed
 
-    if ( RHS%Constructed ) then
+    if (RHS%Constructed) then
       LHS%Sampler = RHS%Sampler
     end if
 
@@ -371,7 +371,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(RadialDesign_Type), intent(inout)                            ::    This
 

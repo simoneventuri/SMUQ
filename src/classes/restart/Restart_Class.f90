@@ -60,13 +60,13 @@ type(Restart_Type)                                                    ::    Rest
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(Restart_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'restart'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -76,7 +76,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(Restart_Type), intent(inout)                                ::    This
 
@@ -94,7 +94,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(Restart_Type), intent(inout)                                ::    This
 
@@ -107,7 +107,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Input, Prefix )
+  subroutine ConstructCase1(This, Input, Prefix)
     
     class(Restart_Type), intent(inout)                                ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -118,25 +118,25 @@ contains
     integer                                                           ::    UnitLoc=0
     character(:), allocatable                                         ::    VarC0D
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
-    call This%Input%SetName( SectionName=This%InputName )
+    call This%Input%SetName(SectionName=This%InputName)
 
     This%RestartSection = Input%GetName()
 
     This%Prefix = Prefix
 
-    call CopyDirectory( Source=ProgramDefs%GetCaseDir(), Destination=This%Prefix, ContentsOnly=.true. )
+    call CopyDirectory(Source=ProgramDefs%GetCaseDir(), Destination=This%Prefix, ContentsOnly=.true.)
 
-    call This%Input%AddSection( Section=Input )
+    call This%Input%AddSection(Section=Input)
 
     VarC0D = ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
-    call This%RestartFile%Construct( File=VarC0D, Prefix=This%Prefix )
+    call This%RestartFile%Construct(File=VarC0D, Prefix=This%Prefix)
 
-    call This%RestartFile%Open( Unit=UnitLoc, Action='write', Status='replace' )
+    call This%RestartFile%Open(Unit=UnitLoc, Action='write', Status='replace')
 
-    call Input%Write( FileUnit=UnitLoc )
+    call Input%Write(FileUnit=UnitLoc)
 
     call This%RestartFile%Close()
 
@@ -146,7 +146,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPrefix( This )
+  function GetPrefix(This)
     
     character(:), allocatable                                         ::    GetPrefix
 
@@ -161,7 +161,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDirectory( This, SectionChain )
+  function GetDirectory(This, SectionChain)
     
     use String_Library
 
@@ -176,7 +176,7 @@ contains
     integer                                                           ::    NbSections=0
     integer                                                           ::    i
 
-    call Parse( Input=SectionChain, Separator='>', Output=SectionNames )
+    call Parse(Input=SectionChain, Separator='>', Output=SectionNames)
     NbSections = size(SectionNames,1)
 
     GetDirectory = ''
@@ -186,13 +186,13 @@ contains
     end do
 
     deallocate(SectionNames, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='SectionNames', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='SectionNames', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Update( This, InputSection, SectionChain )
+  subroutine Update(This, InputSection, SectionChain)
     
     use String_Library
 
@@ -207,21 +207,21 @@ contains
     integer                                                           ::    UnitLoc=0
     character(:), allocatable                                         ::    Line
 
-    call This%Input%FindTargetSection( TargetSection=InputSectionPointer, FromSubSection=SectionChain, Mandatory=.true. )
+    call This%Input%FindTargetSection(TargetSection=InputSectionPointer, FromSubSection=SectionChain, Mandatory=.true.)
 
     SectionName = InputSectionPointer%GetName()
 
     InputSectionPointer = InputSection
 
-    call InputSectionPointer%SetName( SectionName=SectionName )
+    call InputSectionPointer%SetName(SectionName=SectionName)
 
     nullify(InputSectionPointer)
 
-    call This%Input%FindTargetSection( TargetSection=InputSectionPointer, FromSubSection=This%RestartSection, Mandatory=.true. )
+    call This%Input%FindTargetSection(TargetSection=InputSectionPointer, FromSubSection=This%RestartSection, Mandatory=.true.)
 
-    call This%RestartFile%Open( Unit=UnitLoc, Action='write', Status='replace' )
+    call This%RestartFile%Open(Unit=UnitLoc, Action='write', Status='replace')
 
-    call InputSectionPointer%Write( FileUnit=UnitLoc )
+    call InputSectionPointer%Write(FileUnit=UnitLoc)
 
     call This%RestartFile%Close()
 
@@ -229,7 +229,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(Restart_Type), intent(out)                                  ::    LHS
     class(Restart_Type), intent(in)                                   ::    RHS
@@ -241,7 +241,7 @@ contains
     LHS%Initialized = RHS%Initialized
     LHS%Constructed = RHS%Constructed
 
-    if ( RHS%Constructed ) then
+    if (RHS%Constructed) then
       LHS%RestartFile = RHS%RestartFile
       LHS%Input = RHS%Input
       LHS%Prefix = RHS%Prefix
@@ -252,7 +252,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(Restart_Type), intent(inout)                                 ::    This
 

@@ -65,28 +65,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_Model( This )
+  subroutine Initialize_Model(This)
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_Model( This )
+  subroutine Reset_Model(This)
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_Model( This )
+  subroutine SetDefaults_Model(This)
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_Model( This, Input, Prefix )
+  subroutine ConstructInput_Model(This, Input, Prefix)
     import                                                            ::    Model_Type
     import                                                            ::    InputSection_Type
     class(Model_Type), intent(inout)                                  ::    This
@@ -96,19 +96,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_Model( This, MainSectionName, Prefix, Directory )
+  function GetInput_Model(This, Name, Prefix, Directory)
     import                                                            ::    Model_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_Model
     class(Model_Type), intent(in)                                     ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_0D_Model( This, Input, Output, Stat )
+  subroutine Run_0D_Model(This, Input, Output, Stat)
     import                                                            ::    Output_Type
     import                                                            ::    Input_Type
     import                                                            ::    Model_Type
@@ -120,7 +120,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_1D_Model( This, Input, Output, Stat )
+  subroutine Run_1D_Model(This, Input, Output, Stat)
     import                                                            ::    Output_Type
     import                                                            ::    Input_Type
     import                                                            ::    Model_Type
@@ -132,7 +132,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_Model( LHS, RHS )
+  impure elemental subroutine Copy_Model(LHS, RHS)
     import                                                            ::    Model_Type
     class(Model_Type), intent(out)                                    ::    LHS
     class(Model_Type), intent(in)                                     ::    RHS
@@ -144,7 +144,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(Model_Type), intent(inout)                                  ::    This
@@ -157,7 +157,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel( This )
+  function GetLabel(This)
 
     character(:), allocatable                                         ::    GetLabel
     class(Model_Type), intent(inout)                                  ::    This
@@ -170,7 +170,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbOutputs( This )
+  function GetNbOutputs(This)
 
     integer                                                           ::    GetNbOutputs
     class(Model_Type), intent(inout)                                  ::    This
@@ -183,7 +183,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RunPreProcess_0D( This, Input, Output, Stat )
+  subroutine RunPreProcess_0D(This, Input, Output, Stat)
  
     class(Model_Type), intent(inout)                                  ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -194,20 +194,20 @@ contains
     integer                                                           ::    StatLoc=0
     type(Input_Type)                                                  ::    InputLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if ( This%InputProcessor%IsConstructed() ) then
-      call This%InputProcessor%ProcessInput( Input=Input, ProcessedInput=InputLoc )
-      if ( present(Stat) ) then
-        call This%Run_0D( Input=InputLoc, Output=Output, Stat=Stat )
+    if (This%InputProcessor%IsConstructed()) then
+      call This%InputProcessor%ProcessInput(Input=Input, ProcessedInput=InputLoc)
+      if (present(Stat)) then
+        call This%Run_0D(Input=InputLoc, Output=Output, Stat=Stat)
       else
-        call This%Run_0D( Input=InputLoc, Output=Output )
+        call This%Run_0D(Input=InputLoc, Output=Output)
       end if
     else
-      if ( present(Stat) ) then
-        call This%Run_0D( Input=Input, Output=Output, Stat=Stat )
+      if (present(Stat)) then
+        call This%Run_0D(Input=Input, Output=Output, Stat=Stat)
       else
-        call This%Run_0D( Input=Input, Output=Output )
+        call This%Run_0D(Input=Input, Output=Output)
       end if
     end if
 
@@ -215,7 +215,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RunPreprocess_1D( This, Input, Output, Stat )
+  subroutine RunPreprocess_1D(This, Input, Output, Stat)
  
     class(Model_Type), intent(inout)                                  ::    This
     type(Input_Type), dimension(:), intent(in)                        ::    Input
@@ -226,22 +226,22 @@ contains
     integer                                                           ::    StatLoc=0
     type(Input_Type), allocatable, dimension(:)                       ::    InputLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if ( This%InputProcessor%IsConstructed() ) then
-      call This%InputProcessor%ProcessInput( Input=Input, ProcessedInput=InputLoc )
-      if ( present(Stat) ) then
-        call This%Run_1D( Input=InputLoc, Output=Output, Stat=Stat )
+    if (This%InputProcessor%IsConstructed()) then
+      call This%InputProcessor%ProcessInput(Input=Input, ProcessedInput=InputLoc)
+      if (present(Stat)) then
+        call This%Run_1D(Input=InputLoc, Output=Output, Stat=Stat)
       else
-        call This%Run_1D( Input=InputLoc, Output=Output )
+        call This%Run_1D(Input=InputLoc, Output=Output)
       end if
       deallocate(InputLoc, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='InputLoc', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='InputLoc', ProcName=ProcName, stat=StatLoc)
     else
-      if ( present(Stat) ) then
-        call This%Run_1D( Input=Input, Output=Output, Stat=Stat )
+      if (present(Stat)) then
+        call This%Run_1D(Input=Input, Output=Output, Stat=Stat)
       else
-        call This%Run_1D( Input=Input, Output=Output )
+        call This%Run_1D(Input=Input, Output=Output)
       end if
     end if
 

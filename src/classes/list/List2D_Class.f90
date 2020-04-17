@@ -65,7 +65,7 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Set( This, Values )
+  subroutine Set(This, Values)
 
     class(List2D_Type), intent(inout)                                 ::    This
     class(*), dimension(:,:), intent(in)                              ::    Values
@@ -73,10 +73,10 @@ contains
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Purge()
+    if (This%Constructed) call This%Purge()
 
-    allocate( This%Values, source=Values, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Tail%Values', stat=StatLoc)
+    allocate(This%Values, source=Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Tail%Values', stat=StatLoc)
 
     This%Constructed=.true.
 
@@ -84,7 +84,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetR2D( This, Values )
+  subroutine GetR2D(This, Values)
 
     class(List2D_Type), intent(in)                                    ::    This
     real(rkp), dimension(:,:), allocatable, intent(out)               ::    Values
@@ -92,12 +92,12 @@ contains
     character(*), parameter                                           ::    ProcName='GetR2D'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
     select type (Value => This%Values)
       type is (real(rkp))
-        allocate( Values, source=Value, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Values', stat=StatLoc)
+        allocate(Values, source=Value, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
       class default
         call Error%Raise("Requested value does not match the requested type")
     end select
@@ -106,7 +106,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetR2DPointer( This, Values )
+  subroutine GetR2DPointer(This, Values)
 
     class(List2D_Type), target, intent(in)                            ::    This
     real(rkp), dimension(:,:), pointer, intent(inout)                 ::    Values
@@ -114,9 +114,9 @@ contains
     character(*), parameter                                           ::    ProcName='GetR2DPointer'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
     select type (Value => This%Values)
       type is (real(rkp))
@@ -129,7 +129,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetI2D( This, Values )
+  subroutine GetI2D(This, Values)
 
     class(List2D_Type), intent(in)                                    ::    This
     integer, dimension(:,:), allocatable, intent(out)                 ::    Values
@@ -137,12 +137,12 @@ contains
     character(*), parameter                                           ::    ProcName='GetI2D'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
     select type (Value => This%Values)
       type is (integer)
-        allocate( Values, source=Value, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Values', stat=StatLoc)
+        allocate(Values, source=Value, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
       class default
         call Error%Raise("Requested value does not match the requested type")
     end select
@@ -151,7 +151,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetI2DPointer( This, Values )
+  subroutine GetI2DPointer(This, Values)
 
     class(List2D_Type), target, intent(in)                            ::    This
     integer, dimension(:,:), pointer, intent(inout)                   ::    Values
@@ -159,9 +159,9 @@ contains
     character(*), parameter                                           ::    ProcName='GetI2DPointer'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
     select type (Value => This%Values)
       type is (integer)
@@ -174,7 +174,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetC2D( This, Values )
+  subroutine GetC2D(This, Values)
 
     class(List2D_Type), intent(in)                                    ::    This
     character(:), dimension(:,:), allocatable, intent(out)            ::    Values
@@ -182,12 +182,12 @@ contains
     character(*), parameter                                           ::    ProcName='GetC2D'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
     select type (Value => This%Values)
       type is (character(*))
-        allocate( Values, source=Value, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Values', stat=StatLoc)
+        allocate(Values, source=Value, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
       class default
         call Error%Raise("Requested value does not match the requested type")
     end select
@@ -196,7 +196,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetC2DPointer( This, Values )
+  subroutine GetC2DPointer(This, Values)
 
     class(List2D_Type), target, intent(in)                            ::    This
     character(:), dimension(:,:), pointer, intent(inout)              ::    Values
@@ -204,9 +204,9 @@ contains
     character(*), parameter                                           ::    ProcName='GetC2DPointer'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
     select type (Value => This%Values)
       type is (character(*))
@@ -219,7 +219,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetL2D( This, Values )
+  subroutine GetL2D(This, Values)
 
     class(List2D_Type), intent(in)                                    ::    This
     logical, dimension(:,:), allocatable, intent(out)                 ::    Values
@@ -227,12 +227,12 @@ contains
     character(*), parameter                                           ::    ProcName='GetL2D'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
     select type (Value => This%Values)
       type is (logical)
-        allocate( Values, source=Value, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Values', stat=StatLoc)
+        allocate(Values, source=Value, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
       class default
         call Error%Raise("Requested value does not match the requested type")
     end select
@@ -241,7 +241,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetL2DPointer( This, Values )
+  subroutine GetL2DPointer(This, Values)
 
     class(List2D_Type), target, intent(in)                            ::    This
     logical, dimension(:,:), pointer, intent(inout)                   ::    Values
@@ -249,9 +249,9 @@ contains
     character(*), parameter                                           ::    ProcName='GetL2DPointer'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
     select type (Value => This%Values)
       type is (logical)
@@ -264,7 +264,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetCX2D( This, Values )
+  subroutine GetCX2D(This, Values)
 
     class(List2D_Type), intent(in)                                    ::    This
     complex, dimension(:,:), allocatable, intent(out)                 ::    Values
@@ -272,12 +272,12 @@ contains
     character(*), parameter                                           ::    ProcName='GetCX2D'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
     select type (Value => This%Values)
       type is (complex)
-        allocate( Values, source=Value, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Values', stat=StatLoc)
+        allocate(Values, source=Value, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
       class default
         call Error%Raise("Requested value does not match the requested type")
     end select
@@ -286,7 +286,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetCX2DPointer( This, Values )
+  subroutine GetCX2DPointer(This, Values)
 
     class(List2D_Type), target, intent(in)                            ::    This
     complex, dimension(:,:), pointer, intent(inout)                   ::    Values
@@ -294,9 +294,9 @@ contains
     character(*), parameter                                           ::    ProcName='GetCX2DPointer'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
     select type (Value => This%Values)
       type is (complex)
@@ -309,15 +309,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Purge( This )
+  subroutine Purge(This)
 
     class(List2D_Type), intent(inout)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='Purge'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
 
     This%Constructed=.false.
 
@@ -325,7 +325,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(List2D_Type), intent(out)                                   ::    LHS
     class(List2D_Type), intent(in)                                    ::    RHS
@@ -337,24 +337,24 @@ contains
 
     LHS%Constructed = RHS%Constructed
 
-    if ( RHS%Constructed ) then
+    if (RHS%Constructed) then
       allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Values', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='LHS%Values', ProcName=ProcName, stat=StatLoc)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine FinalizerList( This )
+  impure elemental subroutine FinalizerList(This)
 
     type(List2D_Type), intent(inout)                                  ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

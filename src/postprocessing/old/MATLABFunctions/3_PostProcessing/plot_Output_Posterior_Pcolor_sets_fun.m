@@ -1,4 +1,4 @@
-function i_figure = plot_Output_Posterior_Pcolor_sets_fun(PlottingFormat, i_figure, save_fig, proc, plot_Max_Like, plot_Max_Post, check_Output_Posterior, x_check )
+function i_figure = plot_Output_Posterior_Pcolor_sets_fun(PlottingFormat, i_figure, save_fig, proc, plot_Max_Like, plot_Max_Post, check_Output_Posterior, x_check)
 
                                                      
     filename = './problem_parameters.dat';
@@ -70,7 +70,7 @@ function i_figure = plot_Output_Posterior_Pcolor_sets_fun(PlottingFormat, i_figu
     data_scale = char(dataArray{:, 1});
     clearvars filename delimiter formatSpec fileID dataArray ans;
     
-    if ( data_scale == 'log' )
+    if (data_scale == 'log')
         y_data = 10.^y_data;
     end                                                 
           
@@ -134,7 +134,7 @@ function i_figure = plot_Output_Posterior_Pcolor_sets_fun(PlottingFormat, i_figu
 
     end                                             
         
-    if ( data_scale == 'log' )
+    if (data_scale == 'log')
         y_Max_Post = 10.^y_Max_Post;
         y_Max_Like = 10.^y_Max_Like;
     end  
@@ -189,7 +189,7 @@ function i_figure = plot_Output_Posterior_Pcolor_sets_fun(PlottingFormat, i_figu
 
     for j=1:length(hist_x_nodes)
         for i=1:nb_bins_histogram
-            Hist_Matrix(i,j) = Hist_Vector( (j-1)*(nb_bins_histogram)+ i);
+            Hist_Matrix(i,j) = Hist_Vector((j-1)*(nb_bins_histogram)+ i);
         end 
     end
                                                                                            

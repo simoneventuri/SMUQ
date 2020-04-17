@@ -51,28 +51,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_LinSolverMethod( This )
+  subroutine Initialize_LinSolverMethod(This)
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_LinSolverMethod( This )
+  subroutine Reset_LinSolverMethod(This)
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_LinSolverMethod( This )
+  subroutine SetDefaults_LinSolverMethod(This)
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_LinSolverMethod( This, Input, Prefix )
+  subroutine ConstructInput_LinSolverMethod(This, Input, Prefix)
     import                                                            ::    LinSolverMethod_Type
     import                                                            ::    InputSection_Type
     class(LinSolverMethod_Type), intent(inout)                        ::    This
@@ -82,7 +82,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSystem_LinSolverMethod( This, System, Goal, Coefficients, CVError )
+  subroutine SolveSystem_LinSolverMethod(This, System, Goal, Coefficients, CVError)
     use Parameters_Library
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(in)                           ::    This
@@ -94,19 +94,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_LinSolverMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_LinSolverMethod(This, Name, Prefix, Directory)
     import                                                            ::    LinSolverMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_LinSolverMethod
     class(LinSolverMethod_Type), intent(in)                           ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_LinSolverMethod( LHS, RHS )
+  impure elemental subroutine Copy_LinSolverMethod(LHS, RHS)
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(out)                          ::    LHS
     class(LinSolverMethod_Type), intent(in)                           ::    RHS
@@ -118,7 +118,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
 

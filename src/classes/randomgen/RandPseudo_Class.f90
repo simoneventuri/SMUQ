@@ -64,18 +64,18 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(RandPseudo_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer(8)                                                        ::    SysTimeCount
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Initialized = .true.
       This%Name = 'pseudo'
 
-      call system_clock( SysTimeCount )
+      call system_clock(SysTimeCount)
       This%SeedDefault = SysTimeCount
 
       call This%SetDefaults()
@@ -85,7 +85,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(RandPseudo_Type), intent(inout)                             ::    This
 
@@ -115,7 +115,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput ( This, Input, Prefix )
+  subroutine ConstructInput (This, Input, Prefix)
 
     class(RandPseudo_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -134,32 +134,32 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'seed'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then 
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then 
       This%Seed = ConvertToInteger8(String=VarC0D)
       call This%PRNG%init_genrand64(This%Seed)
     end if
 
     SectionName = 'internal_generator'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
+    if (Input%HasSection(SubSectionName=SectionName)) then
       ParameterName = 'mti'
-      call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName )
+      call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName)
       This%PRNG%mti = VarI0D
 
       SubSectionName = SectionName // '>mt'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=VarI1D_8, Prefix=PrefixLoc )
-      nullify( InputSection )
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+      call ImportArray(Input=InputSection, Array=VarI1D_8, Prefix=PrefixLoc)
+      nullify(InputSection)
       This%PRNG%mt = VarI1D_8
       deallocate(VarI1D_8, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D_8', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D_8', ProcName=ProcName, stat=StatLoc)
     end if
 
     This%Constructed = .true.
@@ -168,7 +168,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase1 ( This, Seed )
+  subroutine ConstructCase1 (This, Seed)
 
     class(RandPseudo_Type), intent(inout)                             ::    This
     integer(8), optional, intent(in)                                  ::    Seed
@@ -176,10 +176,10 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if ( present(seed) ) then
+    if (present(seed)) then
       This%Seed = Seed
       call This%PRNG%init_genrand64(This%Seed)
     end if
@@ -190,11 +190,11 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
     class(RandPseudo_Type), intent(in)                                ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -210,37 +210,37 @@ contains
     type(SMUQFile_Type)                                               ::    File
     character(:), allocatable                                         ::    VarC0D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%AddParameter( Name='seed', Value=ConvertToString( Value=This%Seed ) )
+    call GetInput%AddParameter(Name='seed', Value=ConvertToString(Value=This%Seed))
 
     SectionName = 'internal_generator'
-    call GetInput%AddSection( SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
 
-    call GetInput%AddParameter( Name='mti', Value=ConvertToString(Value=This%PRNG%mti), SectionName=SectionName )
+    call GetInput%AddParameter(Name='mti', Value=ConvertToString(Value=This%PRNG%mti), SectionName=SectionName)
 
     SubSectionName = 'mt'
-    call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+    call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
     SubSectionName = SectionName // '>' // SubSectionName
-    call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-    if ( ExternalFlag ) then
+    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+    if (ExternalFlag) then
       FileName = DirectoryLoc // '/mt.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%PRNG%mt, File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Input=InputSection, Array=This%PRNG%mt, File=File)
     else
-      call ExportArray( Input=InputSection, Array=This%PRNG%mt )
+      call ExportArray(Input=InputSection, Array=This%PRNG%mt)
     end if
     nullify(InputSection)
 
@@ -248,7 +248,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Draw( This, DrawType )
+  function Draw(This, DrawType)
 
     real(rkp)                                                         ::    Draw
 
@@ -258,15 +258,15 @@ contains
     character(*), parameter                                           ::    ProcName='Draw'
     integer                                                           ::    DrawTypeLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if ( present(DrawType) ) then 
+    if (present(DrawType)) then 
       DrawTypeLoc = DrawType
     else
       DrawTypeLoc = This%DrawType
     end if
 
-    select case ( DrawTypeLoc )
+    select case (DrawTypeLoc)
       case (1)
         Draw = real(This%PRNG%genrand64_real1(),rkp)
       case (2)
@@ -274,14 +274,14 @@ contains
       case (3)
         Draw = real(This%PRNG%genrand64_real3(),rkp)
       case default
-        call Error%Raise( Line='Something went wrong when selecting draw type', ProcName=ProcName )
+        call Error%Raise(Line='Something went wrong when selecting draw type', ProcName=ProcName)
     end select
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function DrawVec( This, Size1, DrawType )
+  function DrawVec(This, Size1, DrawType)
 
     real(rkp), allocatable, dimension(:)                              ::    DrawVec
 
@@ -294,14 +294,14 @@ contains
     integer                                                           ::    i
     integer                                                           ::    DrawTypeLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if ( Size1 <= 0 ) call Error%Raise( Line='Size 1 of requested sample at or below 0', ProcName=ProcName )
+    if (Size1 <= 0) call Error%Raise(Line='Size 1 of requested sample at or below 0', ProcName=ProcName)
 
-    allocate( DrawVec(Size1), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='DrawSample_1D', ProcName=ProcName, stat=StatLoc )
+    allocate(DrawVec(Size1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='DrawSample_1D', ProcName=ProcName, stat=StatLoc)
 
-    if ( present(DrawType) ) then 
+    if (present(DrawType)) then 
       DrawTypeLoc = DrawType
     else
       DrawTypeLoc = This%DrawType
@@ -309,14 +309,14 @@ contains
 
     i = 1
     do i = 1, Size1
-      DrawVec(i) = This%Draw( DrawType=DrawTypeLoc )
+      DrawVec(i) = This%Draw(DrawType=DrawTypeLoc)
     end do
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function DrawMat( This, Size1, Size2, DrawType )
+  function DrawMat(This, Size1, Size2, DrawType)
 
     real(rkp), allocatable, dimension(:,:)                            ::    DrawMat
 
@@ -330,16 +330,16 @@ contains
     integer                                                           ::    i
     integer                                                           ::    DrawTypeLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if ( Size1 <= 0 ) call Error%Raise( Line='Size 1 of requested sample at or below 0', ProcName=ProcName )
+    if (Size1 <= 0) call Error%Raise(Line='Size 1 of requested sample at or below 0', ProcName=ProcName)
 
-    if ( Size2 <= 0 ) call Error%Raise( Line='Size 2 of requested samples at or below 0', ProcName=ProcName )
+    if (Size2 <= 0) call Error%Raise(Line='Size 2 of requested samples at or below 0', ProcName=ProcName)
 
     allocate(DrawMat(Size1, Size2), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='DrawMat', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='DrawMat', ProcName=ProcName, stat=StatLoc)
 
-    if ( present(DrawType) ) then 
+    if (present(DrawType)) then 
       DrawTypeLoc = DrawType
     else
       DrawTypeLoc = This%DrawType
@@ -347,14 +347,14 @@ contains
 
     i = 1
     do i = 1, Size2
-      DrawMat(:,i) = This%DrawVec( Size1=Size1, DrawType=DrawTypeLoc )
+      DrawMat(:,i) = This%DrawVec(Size1=Size1, DrawType=DrawTypeLoc)
     end do
 
   end function
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(RandPseudo_Type), intent(out)                               ::    LHS
     class(Randpseudo_Type), intent(in)                                ::    RHS
@@ -366,7 +366,7 @@ contains
     LHS%Initialized = RHS%Initialized
     LHS%Constructed = RHS%Constructed
 
-    if ( RHS%Constructed ) then
+    if (RHS%Constructed) then
       LHS%Seed = RHS%Seed
       LHS%SeedDefault = RHS%SeedDefault
       LHS%PRNG = RHS%PRNG
@@ -377,7 +377,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(RandPseudo_Type), intent(inout)                              ::    This
 

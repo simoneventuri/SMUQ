@@ -56,28 +56,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_MFileInput( This )
+  subroutine Initialize_MFileInput(This)
     import                                                            ::    MFileInput_Type
     class(MFileInput_Type), intent(inout)                             ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_MFileInput( This )
+  subroutine Reset_MFileInput(This)
     import                                                            ::    MFileInput_Type
     class(MFileInput_Type), intent(inout)                             ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_MFileInput( This )
+  subroutine SetDefaults_MFileInput(This)
     import                                                            ::    MFileInput_Type
     class(MFileInput_Type), intent(inout)                             ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_MFileInput( This, Input, Prefix )
+  subroutine ConstructInput_MFileInput(This, Input, Prefix)
     import                                                            ::    MFileInput_Type
     import                                                            ::    InputSection_Type
     class(MFileInput_Type), intent(inout)                             ::    This
@@ -87,19 +87,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_MFileInput( This, MainSectionName, Prefix, Directory )
+  function GetInput_MFileInput(This, Name, Prefix, Directory)
     import                                                            ::    InputSection_Type
     import                                                            ::    MFileInput_Type
     type(InputSection_Type)                                           ::    GetInput_MFileInput
     class(MFileInput_Type), intent(inout)                             ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInput_MFileInput( This, Input, Template, ProcessedTemplate, File )
+  subroutine WriteInput_MFileInput(This, Input, Template, ProcessedTemplate, File)
     import                                                            ::    MFileInput_Type
     import                                                            ::    Input_Type
     import                                                            ::    String_Type
@@ -113,7 +113,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_MFileInput( LHS, RHS )
+  impure elemental subroutine Copy_MFileInput(LHS, RHS)
     import                                                            ::    MFileInput_Type
     class(MFileInput_Type), intent(out)                               ::    LHS
     class(MFileInput_Type), intent(in)                                ::    RHS
@@ -125,7 +125,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(MFileInput_Type), intent(inout)                             ::    This

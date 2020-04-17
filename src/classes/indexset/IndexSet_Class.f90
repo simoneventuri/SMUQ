@@ -55,21 +55,21 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_IndexSet( This )
+  subroutine Initialize_IndexSet(This)
     import                                                            ::    IndexSet_Type
     class(IndexSet_Type), intent(inout)                               ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_IndexSet( This )
+  subroutine Reset_IndexSet(This)
     import                                                            ::    IndexSet_Type
     class(IndexSet_Type), intent(inout)                               ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_IndexSet( This, Input, Prefix )
+  subroutine ConstructInput_IndexSet(This, Input, Prefix)
     import                                                            ::    IndexSet_Type
     import                                                            ::    InputSection_Type
     class(IndexSet_Type), intent(inout)                               ::    This
@@ -79,26 +79,26 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_IndexSet( This )
+  subroutine SetDefaults_IndexSet(This)
     import                                                            ::    IndexSet_Type
     class(IndexSet_Type), intent(inout)                               ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_IndexSet( This, MainSectionName, Prefix, Directory )
+  function GetInput_IndexSet(This, Name, Prefix, Directory)
     import                                                            ::    IndexSet_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_IndexSet
     class(IndexSet_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateIndices_IndexSet( This, Order, TupleSize, Indices )
+  subroutine GenerateIndices_IndexSet(This, Order, TupleSize, Indices)
     import                                                            ::    IndexSet_Type
     class(IndexSet_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Order
@@ -108,7 +108,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_IndexSet( LHS, RHS )
+  impure elemental subroutine Copy_IndexSet(LHS, RHS)
     import                                                            ::    IndexSet_Type
     class(IndexSet_Type), intent(out)                                 ::    LHS
     class(IndexSet_Type), intent(in)                                  ::    RHS
@@ -120,7 +120,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine algorithmH( M, p, j, Indices )
+  subroutine algorithmH(M, p, j, Indices)
 
     use LinkedList1D_Class                                        ,only:    LinkedList1D_Type
 
@@ -138,19 +138,19 @@ contains
     integer                                                           ::    StatLoc=0
 
 
-    if ( allocated(Indices) ) deallocate(Indices, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Indices', stat=StatLoc)
+    if (allocated(Indices)) deallocate(Indices, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Indices', stat=StatLoc)
 
     allocate(IndicesRecord)
-    allocate( al(j+1) )
+    allocate(al(j+1))
     al(1) = p-j+1
     al(2:j) = 1
     al(j+1) = -1 
     do
 
       do
-        call IndicesRecord%Append( al(1:j) )
-        if ( al(2) >= al(1)-1 ) exit
+        call IndicesRecord%Append(al(1:j))
+        if (al(2) >= al(1)-1) exit
         al(1) = al(1) - 1
         al(2) = al(2) + 1
       end do
@@ -159,18 +159,18 @@ contains
       s = al(1) + al(2) - 1
       
       do
-        if ( al(k) < (al(1) - 1) ) exit
+        if (al(k) < (al(1) - 1)) exit
         s = s + al(k)
         k = k + 1
       end do
 
-      if ( k > j ) exit
+      if (k > j) exit
       x = al(k) + 1
       al(k) = x
       k = k - 1
 
       do 
-        if ( k <= 1 ) exit
+        if (k <= 1) exit
         al(k) = x
         s = s - x
         k = k - 1
@@ -179,21 +179,21 @@ contains
 
     end do
 
-    deallocate( al )
+    deallocate(al)
 
     NbIndices = IndicesRecord%GetLength()
-    allocate( Indices( M, NbIndices ), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='Indices', stat=StatLoc)
+    allocate(Indices(M, NbIndices), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='Indices', stat=StatLoc)
     Indices = 0
 
     i = 1
     do i = 1, NbIndices
-      call IndicesRecord%Get( i, VarI1D )
-      Indices( M - j + 1: M, i ) = VarI1D
+      call IndicesRecord%Get(i, VarI1D)
+      Indices(M - j + 1: M, i) = VarI1D
     end do
 
     deallocate(VarI1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='VarI1D', stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
 
     deallocate(IndicesRecord)
 
@@ -201,7 +201,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine algorithmL( MTuple, M, Indices )
+  subroutine algorithmL(MTuple, M, Indices)
     
     use LinkedList1D_Class                                        ,only:    LinkedList1D_Type
 
@@ -219,31 +219,31 @@ contains
     integer, dimension(:), allocatable                                ::    VarI1D
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(Indices) ) deallocate(Indices, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Indices', stat=StatLoc)
+    if (allocated(Indices)) deallocate(Indices, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Indices', stat=StatLoc)
 
-    allocate( IndicesRecord, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
+    allocate(IndicesRecord, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
 
-    allocate( al, source=MTuple, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='al', stat=StatLoc)
+    allocate(al, source=MTuple, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='al', stat=StatLoc)
 
     do
 
       call IndicesRecord%Append(al)
       k = M - 1
 
-      if (  k == 0 ) exit
+      if (k == 0) exit
       do
-        if ( al(k) < al(k+1) ) exit
+        if (al(k) < al(k+1)) exit
         k = k - 1
-        if ( k == 0 ) exit
+        if (k == 0) exit
       end do
-      if (  k == 0 ) exit
+      if (k == 0) exit
 
       l = M
       do
-        if ( al(k) < al(l) ) exit
+        if (al(k) < al(l)) exit
         l = l - 1
       end do
 
@@ -255,7 +255,7 @@ contains
       l = M
 
       do
-        if ( r >= l) exit
+        if (r >= l) exit
         VarI0D = al(r)
         al(r) = al(l)
         al(l) = VarI0D
@@ -265,31 +265,31 @@ contains
 
     end do
 
-    deallocate(al, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
+    deallocate(al, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
 
     NbIndices = IndicesRecord%GetLength()
-    allocate( Indices( M, NbIndices ), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( ProcName=ProcName, Name='Indices', stat=StatLoc)
+    allocate(Indices(M, NbIndices), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='Indices', stat=StatLoc)
     Indices = 0
 
     i = 1
     do i = 1, NbIndices
-      call IndicesRecord%Get( i, VarI1D )
+      call IndicesRecord%Get(i, VarI1D)
       Indices(:,i) = VarI1D
     end do
 
-    deallocate(VarI1D, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='VarI1D', stat=StatLoc)
+    deallocate(VarI1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
 
-    deallocate(IndicesRecord, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
+    deallocate(IndicesRecord, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This )
+  function IsConstructed(This)
 
     logical                                                           ::    IsConstructed
 

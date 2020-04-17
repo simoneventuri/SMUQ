@@ -47,36 +47,36 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_C0D( Object, DesiredType )
+  subroutine Construct_C0D(Object, DesiredType)
 
     class(DistProb_Type), allocatable, intent(inout)                  ::    Object                                             
     character(*), intent(in)                                          ::    DesiredType                                               
 
     character(*), parameter                                           ::    ProcName='Construct_C0D' 
 
-    if ( allocated( Object ) ) call Error%Raise( Line="Object already allocated", ProcName=ProcName )
+    if (allocated(Object)) call Error%Raise(Line="Object already allocated", ProcName=ProcName)
 
-    select case ( LowerCase(DesiredType) )
+    select case (LowerCase(DesiredType))
 
       case('uniform')
-        allocate( DistUnif_Type :: Object )
-        select type ( Object ) 
-          type is ( DistUnif_Type )
-            call Object%Construct( A=-One, B=One )
+        allocate(DistUnif_Type :: Object)
+        select type (Object) 
+          type is (DistUnif_Type)
+            call Object%Construct(A=-One, B=One)
           class default
-            call Error%Raise( 'Something went wrong', ProcName=ProcName )
+            call Error%Raise('Something went wrong', ProcName=ProcName)
         end select
       case('normal')
-        allocate( DistNorm_Type :: Object )
-        select type ( Object ) 
-          type is ( DistNorm_Type )
-            call Object%Construct( Mu=Zero, Sigma=One )
+        allocate(DistNorm_Type :: Object)
+        select type (Object) 
+          type is (DistNorm_Type)
+            call Object%Construct(Mu=Zero, Sigma=One)
           class default
-            call Error%Raise( 'Something went wrong', ProcName=ProcName )
+            call Error%Raise('Something went wrong', ProcName=ProcName)
         end select
 
       case default
-        call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
+        call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
 
     end select
 
@@ -86,7 +86,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOption( Object )
+  function GetOption(Object)
 
     character(:), allocatable                                         ::    GetOption
 
@@ -103,7 +103,7 @@ contains
         GetOption = 'normal'
 
       class default
-        call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )
+        call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
 
     end select
 

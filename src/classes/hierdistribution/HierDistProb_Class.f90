@@ -62,28 +62,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_HierDistProb( This )
+  subroutine Initialize_HierDistProb(This)
     import                                                            ::    HierDistProb_Type
     class(HierDistProb_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_HierDistProb( This )
+  subroutine Reset_HierDistProb(This)
     import                                                            ::    HierDistProb_Type
     class(HierDistProb_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_HierDistProb( This )
+  subroutine SetDefaults_HierDistProb(This)
     import                                                            ::    HierDistProb_Type
     class(HierDistProb_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_HierDistProb( This, Input, Prefix )
+  subroutine ConstructInput_HierDistProb(This, Input, Prefix)
     import                                                            ::    HierDistProb_Type
     import                                                            ::    InputSection_Type
     class(HierDistProb_Type), intent(inout)                           ::    This
@@ -93,7 +93,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate_HierDistProb( This, Input, Distribution )
+  subroutine Generate_HierDistProb(This, Input, Distribution)
     import                                                            ::    HierDistProb_Type
     import                                                            ::    DistProb_Type
     import                                                            ::    Input_Type
@@ -104,19 +104,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_HierDistProb( This, MainSectionName, Prefix, Directory )
+  function GetInput_HierDistProb(This, Name, Prefix, Directory)
     import                                                            ::    HierDistProb_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_HierDistProb
     class(HierDistProb_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Directory
     character(*), optional, intent(in)                                ::    Prefix
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_HierDistProb( LHS, RHS )
+  impure elemental subroutine Copy_HierDistProb(LHS, RHS)
     import                                                            ::    HierDistProb_Type
     class(HierDistProb_Type), intent(out)                             ::    LHS
     class(HierDistProb_Type), intent(in)                              ::    RHS
@@ -128,7 +128,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(HierDistProb_Type), intent(in)                              ::    This
@@ -141,7 +141,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsTruncatedLeft( This )
+  function IsTruncatedLeft(This)
 
     logical                                                           ::    IsTruncatedLeft
 
@@ -149,7 +149,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='IsTruncatedLeft'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     IsTruncatedLeft = This%TruncatedLeft
 
@@ -157,7 +157,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsTruncatedRight( This )
+  function IsTruncatedRight(This)
 
     logical                                                           ::    IsTruncatedRight
 
@@ -165,7 +165,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='IsTruncatedRight'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     IsTruncatedRight = This%TruncatedRight
 

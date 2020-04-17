@@ -52,7 +52,7 @@ program SMUQ
   !!--------------------------------------------------------------------------------------------------------------------------------
   !! Getting Running DIrectory
   !!--------------------------------------------------------------------------------------------------------------------------------
-  call GetCurrentDirectoryPath( Path=RunDirectory )
+  call GetCurrentDirectoryPath(Path=RunDirectory)
   write(*,'(A)') 'Running SMUQ in :'
   write(*,'(A)') '  ' // RunDirectory
   write(*,*)
@@ -60,49 +60,49 @@ program SMUQ
   !!--------------------------------------------------------------------------------------------------------------------------------
   !! Reading in command line arguments
   !!--------------------------------------------------------------------------------------------------------------------------------
-  call CMDArgsSection%SetName( 'cmdargs' )
+  call CMDArgsSection%SetName('cmdargs')
   call CMDArgsSection%AddCommandLineArguments()
   
-  call ProgramDefs%Construct( Input=CMDArgsSection, Prefix=RunDirectory )
+  call ProgramDefs%Construct(Input=CMDArgsSection, Prefix=RunDirectory)
          
   !!--------------------------------------------------------------------------------------------------------------------------------                                                                             , 
   !! Setting up run environment
   !!--------------------------------------------------------------------------------------------------------------------------------
   write(*,'(A)') 'Setting up the run environment'
   write(*,*)
-  if ( len_trim(ProgramDefs%GetSuppliedCaseDir()) /= 0 ) then
+  if (len_trim(ProgramDefs%GetSuppliedCaseDir()) /= 0) then
     FileName = ProgramDefs%GetSuppliedCaseDir() // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
-    inquire( File=FileName, Exist=VarL0D )
-    if ( .not. VarL0D ) call Error%Raise( 'Supplied an incompatible external case or it may not exist', ProcName=ProcName )
+    inquire(File=FileName, Exist=VarL0D)
+    if (.not. VarL0D) call Error%Raise('Supplied an incompatible external case or it may not exist', ProcName=ProcName)
   else
     FileName = ProgramDefs%GetCaseDir() // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
-    inquire( File=FileName, Exist=VarL0D )
-    if ( .not. VarL0D ) call Error%Raise( 'Did not find the case directory in the run directory and no external alternative was ' //&
-                                          'supplied', ProcName=ProcName )
+    inquire(File=FileName, Exist=VarL0D)
+    if (.not. VarL0D) call Error%Raise('Did not find the case directory in the run directory and no external alternative was ' //&
+                                          'supplied', ProcName=ProcName)
   end if
   
   write(*,'(A)') '  Creating the output directory : ' 
   write(*,'(A)') '    ' // ProgramDefs%GetOutputDir()
-  call MakeDirectory( Path=ProgramDefs%GetOutputDir(), Options='-p' )
-  call RemoveDirectory( Path=ProgramDefs%GetOutputDir(), ContentsOnly=.true. )
+  call MakeDirectory(Path=ProgramDefs%GetOutputDir(), Options='-p')
+  call RemoveDirectory(Path=ProgramDefs%GetOutputDir(), ContentsOnly=.true.)
   
   write(*,'(A)') '  Creating the log directory : ' 
   write(*,'(A)') '    ' // ProgramDefs%GetLogDir()
-  call MakeDirectory( Path=ProgramDefs%GetLogDir(), Options='-p' )
-  call RemoveDirectory( Path=ProgramDefs%GetLogDir(), ContentsOnly=.true. )
+  call MakeDirectory(Path=ProgramDefs%GetLogDir(), Options='-p')
+  call RemoveDirectory(Path=ProgramDefs%GetLogDir(), ContentsOnly=.true.)
   
   write(*,'(A)') '  Creating the restart directory : ' 
   write(*,'(A)') '    ' // ProgramDefs%GetRestartDir()
-  call MakeDirectory( Path=ProgramDefs%GetRestartDir(), Options='-p' )
-  call RemoveDirectory( Path=ProgramDefs%GetRestartDir(), ContentsOnly=.true. )
+  call MakeDirectory(Path=ProgramDefs%GetRestartDir(), Options='-p')
+  call RemoveDirectory(Path=ProgramDefs%GetRestartDir(), ContentsOnly=.true.)
   
-  call MakeDirectory( Path=ProgramDefs%GetCaseDir(), Options='-p' )
+  call MakeDirectory(Path=ProgramDefs%GetCaseDir(), Options='-p')
   
-  if ( len_trim(ProgramDefs%GetSuppliedCaseDir()) /= 0 ) then
+  if (len_trim(ProgramDefs%GetSuppliedCaseDir()) /= 0) then
     write(*,'(A)') '  Copying over to a local case directory the supplied external case directory : ' 
     write(*,'(A)') '    ' // ProgramDefs%GetSuppliedCaseDir()
-    call RemoveDirectory( Path=ProgramDefs%GetCaseDir(), ContentsOnly=.true. )
-    call CopyDirectory( Source=ProgramDefs%GetSuppliedCaseDir(), Destination=ProgramDefs%GetCaseDir(), ContentsOnly=.true. )
+    call RemoveDirectory(Path=ProgramDefs%GetCaseDir(), ContentsOnly=.true.)
+    call CopyDirectory(Source=ProgramDefs%GetSuppliedCaseDir(), Destination=ProgramDefs%GetCaseDir(), ContentsOnly=.true.)
   end if
   
   write(*,*)
@@ -112,8 +112,8 @@ program SMUQ
   !!--------------------------------------------------------------------------------------------------------------------------------
   !! Initializing logger with log file
   !!--------------------------------------------------------------------------------------------------------------------------------
-  call Logger%Initialize( FileName=ProgramDefs%GetLogFilePath(), Status='REPLACE', Position='REWIND', Procedure='SMUQ',             &
-                                                                                                                     Indentation=2 )
+  call Logger%Initialize(FileName=ProgramDefs%GetLogFilePath(), Status='REPLACE', Position='REWIND', Procedure='SMUQ',             &
+                                                                                                                     Indentation=2)
   
   !!--------------------------------------------------------------------------------------------------------------------------------
   !! Reading in input
@@ -121,9 +121,9 @@ program SMUQ
   write(*,'(A)') 'Reading in input'
   write(*,*)
   FileName = ProgramDefs%GetInputFilePath()
-  call Input%Read( FileName=FileName )
+  call Input%Read(FileName=FileName)
   
-  call Input%Write( Logger=Logger )
+  call Input%Write(Logger=Logger)
   
   SMUQTask = Input%GetName()
   
@@ -131,19 +131,19 @@ program SMUQ
   !! Constructing from input and running analysis
   !!--------------------------------------------------------------------------------------------------------------------------------
   
-  select case ( LowerCase(SMUQTask) )
+  select case (LowerCase(SMUQTask))
     case('main')
       write(*,'(A)') 'Constructing objects from input and creating necessary temporary work directories'
       write(*,*)
       SectionChain = 'main'
-      call Root%Construct( Input=Input, SectionChain=SectionChain, Prefix=ProgramDefs%GetCaseDir() )
-      call RestartUtility%Construct( Input=Root%GetInput(MainSectionName='main', Prefix=ProgramDefs%GetRestartDir(),                &
-                                                                            Directory='/main'), Prefix=ProgramDefs%GetRestartDir() )
+      call Root%Construct(Input=Input, SectionChain=SectionChain, Prefix=ProgramDefs%GetCaseDir())
+      call RestartUtility%Construct(Input=Root%GetInput(Name='main', Prefix=ProgramDefs%GetRestartDir(),                &
+                                                                            Directory='/main'), Prefix=ProgramDefs%GetRestartDir())
       call Root%Run()   
     case('test')
-      call Test( Input=Input, Prefix=ProgramDefs%GetCaseDir() )
+      call Test(Input=Input, Prefix=ProgramDefs%GetCaseDir())
     case default
-      call Error%Raise( Line='Specified task (name of main input section) not recognized' )
+      call Error%Raise(Line='Specified task (name of main input section) not recognized')
   end select
   
   end program

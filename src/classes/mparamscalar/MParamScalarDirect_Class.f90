@@ -52,12 +52,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(MParamScalarDirect_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'MParamScalarDirect'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -67,7 +67,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(MParamScalarDirect_Type), intent(inout)                     ::    This
 
@@ -79,7 +79,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(MParamScalarDirect_Type), intent(inout)                     ::    This
 
@@ -91,7 +91,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(MParamScalarDirect_Type), intent(inout)                     ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -104,19 +104,19 @@ contains
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    VarI0D
     logical                                                           ::    Found
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Dependency = VarC0D
 
     ParameterName = 'transform'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Transform = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Transform = VarC0D
 
     This%Constructed = .true.
 
@@ -124,12 +124,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(MParamScalarDirect_Type), intent(in)                        ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -138,25 +138,25 @@ contains
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddParameter( Name='dependency', Value=This%Dependency )
-    if ( len_trim(This%Transform) /= 0 ) call GetInput%AddParameter( Name='transform', Value=This%Transform)
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+    call GetInput%AddParameter(Name='dependency', Value=This%Dependency)
+    if (len_trim(This%Transform) /= 0) call GetInput%AddParameter(Name='transform', Value=This%Transform)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue( This, Input )
+  function GetValue(This, Input)
 
     real(rkp)                                                         ::    GetValue
 
@@ -165,17 +165,17 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetValue'
     integer                                                           ::    StatLoc=0
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    call Input%GetValue( Value=GetValue, Label=This%Dependency )
+    call Input%GetValue(Value=GetValue, Label=This%Dependency)
 
-    if ( len_trim(This%Transform) /= 0 ) call Transform( Transformation=This%Transform, Value=GetValue )
+    if (len_trim(This%Transform) /= 0) call Transform(Transformation=This%Transform, Value=GetValue)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue( This, Input, Format )
+  function GetCharValue(This, Input, Format)
 
     character(:), allocatable                                         ::    GetCharValue
 
@@ -186,18 +186,18 @@ contains
     character(*), parameter                                           ::    ProcName='GetCharValue'
     character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    StatLoc=0
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    GetCharValue =  ConvertToString( Value=This%GetValue(Input=Input), Format=FormatLoc )
+    GetCharValue =  ConvertToString(Value=This%GetValue(Input=Input), Format=FormatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(MParamScalarDirect_Type), intent(out)                       ::    LHS
     class(MParamScalar_Type), intent(in)                              ::    RHS
@@ -211,13 +211,13 @@ contains
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Dependency = RHS%Dependency
-          if ( len_trim(RHS%Transform) /= 0 ) LHS%Transform = RHS%Transform
+          if (len_trim(RHS%Transform) /= 0) LHS%Transform = RHS%Transform
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 

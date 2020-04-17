@@ -69,14 +69,14 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(ProgramDefs_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Initialized = .true.
       This%Name = 'programdefs'
       call This%SetDefaults()
@@ -86,7 +86,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(ProgramDefs_Type), intent(inout)                            ::    This
 
@@ -102,7 +102,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(ProgramDefs_Type),intent(inout)                             ::    This
 
@@ -123,7 +123,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------  
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
     
     use String_Library
 
@@ -137,49 +137,49 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     logical                                                           ::    Found
 
-    if ( This%Constructed ) call This%Reset
-    if ( .not. This%Initialized ) call This%Initialize 
+    if (This%Constructed) call This%Reset
+    if (.not. This%Initialized) call This%Initialize 
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     This%RunDir = PrefixLoc
 
     ParameterName = 'log_directory'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%LogDir = PrefixLoc // '/' // VarC0D
     else
       This%LogDir = PrefixLoc // '/log'
     end if
 
     ParameterName = 'log_file_name'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%LogFilePath = This%LogDir // '/' // VarC0D
     else
       This%LogFilePath = This%LogDir // '/log.dat'
     end if
 
     ParameterName = 'output_directory'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%OutputDir = PrefixLoc // '/' // VarC0D
     else
       This%OutputDir = PrefixLoc // '/output'
     end if
 
     ParameterName = 'restart_directory'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%RestartDir = PrefixLoc // '/' // VarC0D
     else
       This%RestartDir = PrefixLoc // '/restart'
     end if
 
     ParameterName = 'case_directory'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%CaseDir = PrefixLoc // '/' // VarC0D
     else
       This%CaseDir = PrefixLoc // '/case'
@@ -188,7 +188,7 @@ contains
     This%InputFilePath = This%CaseDir // This%InputFilePrefix // This%InputFileSuffix
 
     ParameterName = 'case'
-    call Input%GetValue( VarC0D, ParameterName, Mandatory=.false., Found=Found )
+    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
     This%SuppliedCaseDir = VarC0D
 
     This%Constructed = .true.
@@ -197,7 +197,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOutputDir( This )
+  function GetOutputDir(This)
 
     character(:), allocatable                                         ::    GetOutputDir
 
@@ -205,7 +205,7 @@ contains
     
     character(*), parameter                                           ::    ProcName='GetOutputDir'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetOutputDir = This%OutputDir
 
@@ -213,7 +213,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetRestartDir( This )
+  function GetRestartDir(This)
 
     character(:), allocatable                                         ::    GetRestartDir
 
@@ -221,7 +221,7 @@ contains
     
     character(*), parameter                                           ::    ProcName='GetRestartDir'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetRestartDir = This%RestartDir
 
@@ -229,7 +229,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInputFilePath( This )
+  function GetInputFilePath(This)
 
     character(:), allocatable                                         ::    GetInputFilePath
 
@@ -237,7 +237,7 @@ contains
     
     character(*), parameter                                           ::    ProcName='GetInputFilePath'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetInputFilePath = This%InputFilePath
 
@@ -245,7 +245,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInputFilePrefix( This )
+  function GetInputFilePrefix(This)
 
     character(:), allocatable                                         ::    GetInputFilePrefix
 
@@ -253,7 +253,7 @@ contains
     
     character(*), parameter                                           ::    ProcName='GetInputFilePrefix'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetInputFilePrefix = This%InputFilePrefix
 
@@ -261,7 +261,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInputFileSuffix( This )
+  function GetInputFileSuffix(This)
 
     character(:), allocatable                                         ::    GetInputFileSuffix
 
@@ -269,7 +269,7 @@ contains
     
     character(*), parameter                                           ::    ProcName='GetInputFileSuffix'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetInputFileSuffix = This%InputFileSuffix
 
@@ -277,7 +277,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSuppliedCaseDir( This )
+  function GetSuppliedCaseDir(This)
 
     character(:), allocatable                                         ::    GetSuppliedCaseDir
 
@@ -285,7 +285,7 @@ contains
     
     character(*), parameter                                           ::    ProcName='GetSuppliedCaseDir'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetSuppliedCaseDir = This%SuppliedCaseDir
 
@@ -293,7 +293,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCaseDir( This )
+  function GetCaseDir(This)
 
     character(:), allocatable                                         ::    GetCaseDir
 
@@ -301,7 +301,7 @@ contains
     
     character(*), parameter                                           ::    ProcName='GetCaseDir'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetCaseDir = This%CaseDir
 
@@ -309,7 +309,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetRunDir( This )
+  function GetRunDir(This)
 
     character(:), allocatable                                         ::    GetRunDir
 
@@ -317,7 +317,7 @@ contains
     
     character(*), parameter                                           ::    ProcName='GetRunDir'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetRunDir = This%RunDir
 
@@ -325,7 +325,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLogDir( This )
+  function GetLogDir(This)
 
     character(:), allocatable                                         ::    GetLogDir
 
@@ -333,7 +333,7 @@ contains
     
     character(*), parameter                                           ::    ProcName='GetLogDir'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetLogDir = This%LogDir
 
@@ -341,7 +341,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLogFilePath( This )
+  function GetLogFilePath(This)
 
     character(:), allocatable                                         ::    GetLogFilePath
 
@@ -349,7 +349,7 @@ contains
     
     character(*), parameter                                           ::    ProcName='GetLogFilePath'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetLogFilePath = This%LogFilePath
 
@@ -357,7 +357,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(ProgramDefs_Type), intent(out)                              ::    LHS
     class(ProgramDefs_Type), intent(in)                               ::    RHS
@@ -370,7 +370,7 @@ contains
     LHS%Initialized = RHS%Initialized
     LHS%Constructed = RHS%Constructed
     
-    if ( RHS%Constructed ) then
+    if (RHS%Constructed) then
       LHS%RunDir = RHS%RunDir
       LHS%LogDir = RHS%LogDir
       LHS%CaseDir = RHS%CaseDir

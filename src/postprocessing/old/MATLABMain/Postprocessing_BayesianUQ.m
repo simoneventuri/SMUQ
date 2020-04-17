@@ -999,7 +999,7 @@ ExtCode = char(ExtCode_cell);
 % 
 %     end
 % 
-%     if (plot_Output_Posterior_Pcolor == 1) || (check_Output_Posterior == 1) || (plot_HPD ==1 )
+%     if (plot_Output_Posterior_Pcolor == 1) || (check_Output_Posterior == 1) || (plot_HPD ==1)
 % 
 %         if data_scale == 'lin'
 %            y_Space_temp = linspace(plot_data_min,plot_data_max,nb_bins_histogram+1);
@@ -1051,7 +1051,7 @@ ExtCode = char(ExtCode_cell);
 %         
 %         for j=1:length(hist_x_nodes)
 %             for i=1:nb_bins_histogram
-%                 Hist_Matrix(i,j) = Hist_Vector( (j-1)*(nb_bins_histogram)+ i);
+%                 Hist_Matrix(i,j) = Hist_Vector((j-1)*(nb_bins_histogram)+ i);
 %             end 
 %         end
 % 

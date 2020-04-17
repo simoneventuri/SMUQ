@@ -61,12 +61,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(MParamTableCrossOver_Type), intent(inout)                   ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'mparamtablecrossover'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -76,14 +76,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(MParamTableCrossOver_Type), intent(inout)                   ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-    if ( allocated(This%OriginalTable) ) deallocate(This%OriginalTable, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%OriginalTable)) deallocate(This%OriginalTable, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc)
 
     This%Initialized = .false.
     This%Constructed = .false.
@@ -94,7 +94,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(MParamTableCrossOver_Type), intent(inout)                   ::    This
 
@@ -104,7 +104,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(MParamTableCrossOver_Type), intent(inout)                   ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -125,53 +125,53 @@ contains
     integer                                                           ::    AbscissaColumn
     type(String_Type), allocatable, dimension(:,:)                    ::    VarR2D
     
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     SectionName = 'original_values'
 
     SubSectionName = SectionName // '>values'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-    call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+    call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
     nullify(InputSection)
 
     allocate(This%OriginalTable(size(VarR2D,2),2), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc)
 
     ParamColumn = 2
     ParameterName = 'parameter_column'
-    call Input%GetValue( Value=VarI0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) ParamColumn = VarI0D
+    call Input%GetValue(Value=VarI0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) ParamColumn = VarI0D
 
     AbscissaColumn = 1
     ParameterName = 'abscissa_column'
-    call Input%GetValue( Value=VarI0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) AbscissaColumn = VarI0D
+    call Input%GetValue(Value=VarI0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) AbscissaColumn = VarI0D
 
-    if ( ParamColumn > size(VarR2D,1) ) call Error%Raise( Line='Specified parameter column is greater than number of columns',    &
-                                                                                                               ProcName=ProcName )
+    if (ParamColumn > size(VarR2D,1)) call Error%Raise(Line='Specified parameter column is greater than number of columns',    &
+                                                                                                               ProcName=ProcName)
 
-    if ( AbscissaColumn > size(VarR2D,1) ) call Error%Raise( Line='Specified abscissa column is greater than number of columns',  &
-                                                                                                               ProcName=ProcName ) 
+    if (AbscissaColumn > size(VarR2D,1)) call Error%Raise(Line='Specified abscissa column is greater than number of columns',  &
+                                                                                                               ProcName=ProcName) 
 
-    if ( AbscissaColumn == ParamColumn ) call Error%Raise( Line='Abscissa and parameter columns set to be the same',              &
-                                                                                                               ProcName=ProcName )  
+    if (AbscissaColumn == ParamColumn) call Error%Raise(Line='Abscissa and parameter columns set to be the same',              &
+                                                                                                               ProcName=ProcName)  
 
     i = 1
     do i = 1, size(VarR2D,2)
-      This%OriginalTable(i,1) = ConvertToReal( String=VarR2D(AbscissaColumn,i)%GetValue() )
-      This%OriginalTable(i,2) = ConvertToReal( String=VarR2D(ParamColumn,i)%GetValue() )
+      This%OriginalTable(i,1) = ConvertToReal(String=VarR2D(AbscissaColumn,i)%GetValue())
+      This%OriginalTable(i,2) = ConvertToReal(String=VarR2D(ParamColumn,i)%GetValue())
     end do
 
     deallocate(VarR2D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
 
     SectionName = 'polynomial'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call This%PolyParam%Construct( Input=InputSection )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call This%PolyParam%Construct(Input=InputSection)
     nullify(InputSection)
 
     This%Constructed = .true.
@@ -180,12 +180,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(MParamTableCrossOver_Type), intent(in)                      ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -199,47 +199,47 @@ contains
     character(:), allocatable                                         ::    FileName
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     type(SMUQFile_Type)                                               ::    File
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
     SectionName = 'original_values'
-    call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%AddParameter( Name='abscissa_column', Value='1', SectionName=SectionName )
-    call GetInput%AddParameter( Name='parameter_column', Value='2', SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
+    call GetInput%AddParameter(Name='abscissa_column', Value='1', SectionName=SectionName)
+    call GetInput%AddParameter(Name='parameter_column', Value='2', SectionName=SectionName)
 
     SubSectionName = 'values'
-    call GetInput%AddSection( SectionName=SubSectionName )
+    call GetInput%AddSection(SectionName=SubSectionName)
     SubSectionName = SectionName // '>values'
-    call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-    if ( ExternalFlag ) then
+    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+    if (ExternalFlag) then
       FileName = DirectoryLoc // '/values.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=transpose(This%OriginalTable), File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Input=InputSection, Array=transpose(This%OriginalTable), File=File)
     else
-      call ExportArray( Input=InputSection, Array=transpose(This%OriginalTable) )
+      call ExportArray(Input=InputSection, Array=transpose(This%OriginalTable))
     end if
 
     SectionName = 'polynomial'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/polynomial'
-    call GetInput%AddSection( Section=This%PolyParam%GetInput(MainSectionName=SectionName, Prefix=PrefixLoc,                      &
-                                                                                                         Directory=DirectorySub) )
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/polynomial'
+    call GetInput%AddSection(Section=This%PolyParam%GetInput(Name=SectionName, Prefix=PrefixLoc,                      &
+                                                                                                         Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue( This, Input, Abscissa )
+  function GetValue(This, Input, Abscissa)
 
     real(rkp), allocatable, dimension(:)                              ::    GetValue
 
@@ -253,29 +253,29 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    PolyVal
     real(rkp), allocatable, dimension(:)                              ::    TableVal
     logical                                                           ::    TripFlag=.false.
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     allocate(GetValue(size(Abscissa,1)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetValue', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='GetValue', ProcName=ProcName, stat=StatLoc)
 
     GetValue = Zero
     
     allocate(TableVal, source=Interpolate(Abscissa=This%OriginalTable(:,1), Ordinate=This%OriginalTable(:,2), Nodes=Abscissa),    &
                                                                                                                      stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
     allocate(Polyval, source=This%PolyParam%GetValue(Input=Input, Abscissa=Abscissa), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Polyval', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Polyval', ProcName=ProcName, stat=StatLoc)
 
     TripFlag = .false.
     GetValue = Zero
 
     i = 1
     do i = 1, size(Abscissa,1)
-      if ( TripFlag ) then
+      if (TripFlag) then
         GetValue(i) = TableVal(i)
       else
-        if ( TableVal(i) > PolyVal(i) ) then
+        if (TableVal(i) > PolyVal(i)) then
           GetValue(i) = TableVal(i)
           TripFlag = .true.
         else
@@ -285,16 +285,16 @@ contains
     end do
 
     deallocate(TableVal, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TableVal', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='TableVal', ProcName=ProcName, stat=StatLoc)
 
     deallocate(PolyVal, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='PolyVal', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='PolyVal', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue( This, Input, Abscissa, Format )
+  function GetCharValue(This, Input, Abscissa, Format)
 
     use String_Library
     use StringRoutines_Module
@@ -315,48 +315,48 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    TableVal
     logical                                                           ::    TripFlag=.false.
     character(:), allocatable                                         ::    FormatLoc
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     allocate(GetCharValue(size(Abscissa,1)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetValue', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='GetValue', ProcName=ProcName, stat=StatLoc)
     
     allocate(TableVal, source=Interpolate(Abscissa=This%OriginalTable(:,1), Ordinate=This%originalTable(:,2), Nodes=Abscissa),    &
                                                                                                                      stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
     allocate(Polyval, source=This%PolyParam%GetValue(Input=Input, Abscissa=Abscissa), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Polyval', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Polyval', ProcName=ProcName, stat=StatLoc)
 
     TripFlag = .false.
 
     i = 1
     do i = 1, size(Abscissa,1)
-      if ( TripFlag ) then
-        call GetCharValue(i)%Set_Value( ConvertToString(Value=TableVal(i), Format=FormatLoc) )
+      if (TripFlag) then
+        call GetCharValue(i)%Set_Value(ConvertToString(Value=TableVal(i), Format=FormatLoc))
       else
-        if ( TableVal(i) > PolyVal(i) ) then
-          call GetCharValue(i)%Set_Value( ConvertToString(Value=TableVal(i), Format=FormatLoc) )
+        if (TableVal(i) > PolyVal(i)) then
+          call GetCharValue(i)%Set_Value(ConvertToString(Value=TableVal(i), Format=FormatLoc))
           TripFlag = .true.
         else
-          call GetCharValue(i)%Set_Value( ConvertToString(Value=PolyVal(i), Format=FormatLoc) )
+          call GetCharValue(i)%Set_Value(ConvertToString(Value=PolyVal(i), Format=FormatLoc))
         end if
       end if
     end do
 
     deallocate(TableVal, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TableVal', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='TableVal', ProcName=ProcName, stat=StatLoc)
 
     deallocate(PolyVal, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='PolyVal', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='PolyVal', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(MParamTableCrossOver_Type), intent(out)                     ::    LHS
     class(MParamTable_Type), intent(in)                               ::    RHS
@@ -370,13 +370,13 @@ contains
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%OriginalTable = RHS%OriginalTable
           LHS%PolyParam = RHS%PolyParam
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -384,15 +384,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(MParamTableCrossOver_Type), intent(inout)                    ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%OriginalTable) ) deallocate(This%OriginalTable, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%OriginalTable)) deallocate(This%OriginalTable, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

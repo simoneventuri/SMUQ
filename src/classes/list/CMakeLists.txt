@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   List1D_Class.f90
   List2D_Class.f90
   List2DAllocReal_Class.f90
@@ -7,4 +7,4 @@ add_target_sources ( smuqApp
   List1DAllocChar_Class.f90
   LinkedList0D_Class.f90
   LinkedList1D_Class.f90
-  LinkedList2D_Class.f90 )
+  LinkedList2D_Class.f90)

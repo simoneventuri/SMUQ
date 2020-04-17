@@ -56,13 +56,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(TestGFun_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'GFun'
       This%Initialized = .true.
     end if
@@ -73,7 +73,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(TestGFun_Type), intent(inout)                               ::    This
 
@@ -85,14 +85,14 @@ contains
 
     This%NbParams = 0
 
-    if ( allocated(This%c) ) deallocate(This%c, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%c', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%c)) deallocate(This%c, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%c', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%InputLabel) ) deallocate(This%InputLabel, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%InputLabel)) deallocate(This%InputLabel, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%InputLabel', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Parameters) ) deallocate(This%Parameters, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Parameters', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Parameters)) deallocate(This%Parameters, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Parameters', ProcName=ProcName, stat=StatLoc)
 
     call This%Initialize()
 
@@ -100,7 +100,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(TestGFun_Type), intent(inout)                               ::    This
 
@@ -113,7 +113,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     use StringRoutines_Module
 
@@ -133,25 +133,25 @@ contains
     integer                                                           ::    i
     logical                                                           ::    MandatoryLoc
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Label = VarC0D
 
     ParameterName = 'nb_dimensions'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
     This%NbParams = VarI0D
 
     allocate(This%InputLabel(This%NbParams), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%InputLabel', ProcName=ProcName, stat=StatLoc)
 
     allocate(This%Parameters(This%NbParams), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Parameters', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Parameters', ProcName=ProcName, stat=StatLoc)
     This%Parameters = Zero
 
     SectionName = 'parameters'
@@ -160,22 +160,22 @@ contains
     do i = 1, This%NbParams
       This%InputLabel(i) = ''
       ParameterName = 'parameter' // ConvertToString(Value=i) // '_dependency'
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-      if ( Found ) This%InputLabel(i) = VarC0D
+      call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
+      if (Found) This%InputLabel(i) = VarC0D
       MandatoryLoc = .not. Found
       ParameterName = 'parameter' // ConvertToString(Value=i)
-      call Input%GetValue( VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found )
-      if ( Found ) This%Parameters(i) = VarR0D
+      call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
+      if (Found) This%Parameters(i) = VarR0D
     end do
 
     allocate(This%c(This%NbParams), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='c', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='c', ProcName=ProcName, stat=StatLoc)
     SectionName = 'c'
-    if ( Input%HasSection( SubSectionName=SectionName, CaseSensitive=.false. ) ) then
+    if (Input%HasSection(SubSectionName=SectionName, CaseSensitive=.false.)) then
       i = 1
       do i = 1, This%NbParams
         ParameterName = 'c' // ConvertToString(Value=i)
-        call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+        call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
         This%c(i) = VarR0D
       end do
     else
@@ -191,13 +191,13 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
     class(TestGFun_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -211,38 +211,38 @@ contains
     character(:), allocatable                                         ::    ParameterName
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='nb_dimensions', Value=ConvertToString(Value=This%NbParams) )
-    call GetInput%AddParameter( Name='label', Value=This%Label )
+    call GetInput%AddParameter(Name='nb_dimensions', Value=ConvertToString(Value=This%NbParams))
+    call GetInput%AddParameter(Name='label', Value=This%Label)
 
     SectionName='parameters'
-    call GetInput%AddSection( SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
     i = 1
     do i = 1, This%NbParams
       ParameterName = 'parameter' // ConvertToString(Value=i) // '_dependency'
-      if ( len_trim(This%InputLabel(i)%GetValue()) > 0 ) call GetInput%AddParameter( Name=ParameterName,                          &
-                                                                    Value=This%InputLabel(i)%GetValue(), SectionName=SectionName )
+      if (len_trim(This%InputLabel(i)%GetValue()) > 0) call GetInput%AddParameter(Name=ParameterName,                          &
+                                                                    Value=This%InputLabel(i)%GetValue(), SectionName=SectionName)
       ParameterName = 'parameter' // ConvertToString(Value=i)
-      call GetInput%AddParameter( Name=ParameterName, Value=ConvertToString(Value=This%Parameters(i)), SectionName=SectionName )
+      call GetInput%AddParameter(Name=ParameterName, Value=ConvertToString(Value=This%Parameters(i)), SectionName=SectionName)
     end do
 
     SectionName='c'
-    call GetInput%AddSection( SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
     i = 1
     do i = 1, This%NbParams
-      call GetInput%AddParameter( Name='c' // ConvertToString(Value=i), Value=ConvertToString(Value=This%c(i)),                   &
-                                                                                                         SectionName=SectionName )
+      call GetInput%AddParameter(Name='c' // ConvertToString(Value=i), Value=ConvertToString(Value=This%c(i)),                   &
+                                                                                                         SectionName=SectionName)
     end do
 
 
@@ -250,7 +250,7 @@ contains
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Run( This, Input, Output )
+  subroutine Run(This, Input, Output)
 
     class(TestGFun_Type), intent(inout)                               ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -265,35 +265,35 @@ contains
     integer                                                           ::    iii
     character(:), allocatable                                         ::    VarC0D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     allocate(Ordinate(1,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
     allocate(X(This%NbParams), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='X', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='X', ProcName=ProcName, stat=StatLoc)
     ii = 1
     do ii = 1, This%NbParams
-      if ( len_trim(This%InputLabel(ii)%GetValue()) /= 0 ) then
-        call Input%GetValue( Value=X(ii), Label=This%InputLabel(ii)%GetValue() )
+      if (len_trim(This%InputLabel(ii)%GetValue()) /= 0) then
+        call Input%GetValue(Value=X(ii), Label=This%InputLabel(ii)%GetValue())
       else
         X(ii) = This%Parameters(ii)
       end if
     end do
-    Ordinate(1,1) = This%ComputeGFun( X, This%c )
+    Ordinate(1,1) = This%ComputeGFun(X, This%c)
 
     deallocate(X, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='X', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='X', ProcName=ProcName, stat=StatLoc)
 
-    call Output%Construct( Values=Ordinate, Label=This%Label )
+    call Output%Construct(Values=Ordinate, Label=This%Label)
 
     deallocate(Ordinate, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function ComputeGFun( X, c )
+  function ComputeGFun(X, c)
 
     real(rkp)                                                         ::    ComputeGFun
 
@@ -309,7 +309,7 @@ contains
     ComputeGFun = One
     i = 1
     do i = 1, NbParams
-        ComputeGFun = ComputeGFun * ( (abs(Four*X(i)-Two)+c(i)) / (One+c(i)) )
+        ComputeGFun = ComputeGFun * ((abs(Four*X(i)-Two)+c(i)) / (One+c(i)))
     end do
 
   end function
@@ -317,7 +317,7 @@ contains
 
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(TestGFun_Type), intent(out)                                 ::    LHS
     class(TestFunction_Type), intent(in)                              ::    RHS
@@ -330,39 +330,39 @@ contains
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Label = RHS%Label
           LHS%NbParams = RHS%NbParams
           allocate(LHS%InputLabel, source=RHS%InputLabel, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%InputLabel', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%InputLabel', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%Parameters, source=RHS%Parameters, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Parameters', ProcName=ProcName, stat=StatLoc )
-          allocate( LHS%c, source=RHS%c, stat=StatLoc )
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%c', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Parameters', ProcName=ProcName, stat=StatLoc)
+          allocate(LHS%c, source=RHS%c, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%c', ProcName=ProcName, stat=StatLoc)
         end if
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
     end select
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(TestGFun_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%InputLabel) ) deallocate(This%InputLabel, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InputLabel', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%InputLabel)) deallocate(This%InputLabel, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%InputLabel', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%c) ) deallocate(This%c, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%c', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%c)) deallocate(This%c, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%c', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Parameters) ) deallocate(This%Parameters, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Parameters', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Parameters)) deallocate(This%Parameters, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Parameters', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!----------------------------------------------------------------------------------------------------------------------------!!

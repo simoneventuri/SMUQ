@@ -93,7 +93,7 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListAppend0D( This, Value )
+  subroutine ListAppend0D(This, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     class(*), intent(in)                                              ::    Value
@@ -106,21 +106,21 @@ contains
 
 
 
-    if ( associated(This%Tail) ) then
-      allocate( This%Tail%Next )
+    if (associated(This%Tail)) then
+      allocate(This%Tail%Next)
       TempNext => This%Tail%Next
       TempNext%Back => This%Tail
       This%Tail => TempNext
       nullify(TempNext)
     else
-      allocate( This%Head )
+      allocate(This%Head)
       This%Tail => This%Head
       This%Browser => This%Head
       This%BrowserLoc = 1
     end if
 
-    allocate( This%Tail%Value, source=Value, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Tail%Value', stat=StatLoc)
+    allocate(This%Tail%Value, source=Value, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Tail%Value', stat=StatLoc)
 
     This%NbNodes = This%NbNodes + 1
 
@@ -130,7 +130,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListAppend1D( This, Values )
+  subroutine ListAppend1D(This, Values)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     class(*), dimension(:), intent(in)                                ::    Values
@@ -142,14 +142,14 @@ contains
 
     i = 1
     do i = 1, Length
-      call This%Append( Value=Values(i) )
+      call This%Append(Value=Values(i))
     end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetR0D( This, Node, Value )
+  subroutine ListGetR0D(This, Node, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     real(rkp), intent(out)                                            ::    Value
@@ -157,7 +157,7 @@ contains
     character(*), parameter                                           ::    ProcName='ListGetR0D'
     type(ListNode0D_Type), pointer                                    ::    NodePointerLoc=>null()
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (ValueLoc => NodePointerLoc%Value)
       type is (real(rkp))
@@ -172,7 +172,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetI0D( This, Node, Value )
+  subroutine ListGetI0D(This, Node, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     integer, intent(out)                                              ::    Value
@@ -181,7 +181,7 @@ contains
     character(*), parameter                                           ::    ProcName='ListGetI0D'
     type(ListNode0D_Type), pointer                                    ::    NodePointerLoc=>null()
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (ValueLoc => NodePointerLoc%Value)
       type is (integer)
@@ -196,7 +196,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetC0D( This, Node, Value )
+  subroutine ListGetC0D(This, Node, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     character(:), allocatable, intent(out)                            ::    Value
@@ -205,7 +205,7 @@ contains
     character(*), parameter                                           ::    ProcName='ListGetC0D'
     type(ListNode0D_Type), pointer                                    ::    NodePointerLoc=>null()
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (ValueLoc => NodePointerLoc%Value)
       type is (character(*))
@@ -220,7 +220,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetL0D( This, Node, Value )
+  subroutine ListGetL0D(This, Node, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     logical, intent(out)                                              ::    Value
@@ -229,7 +229,7 @@ contains
     character(*), parameter                                           ::    ProcName='ListGetL0D'
     type(ListNode0D_Type), pointer                                    ::    NodePointerLoc=>null()
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (ValueLoc => NodePointerLoc%Value)
       type is (logical)
@@ -244,7 +244,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetCX0D( This, Node, Value )
+  subroutine ListGetCX0D(This, Node, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     complex, intent(out)                                              ::    Value
@@ -253,7 +253,7 @@ contains
     character(*), parameter                                           ::    ProcName='ListGetCX0D'
     type(ListNode0D_Type), pointer                                    ::    NodePointerLoc=>null()
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (ValueLoc => NodePointerLoc%Value)
       type is (complex)
@@ -270,7 +270,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetR1D( This, Values, NodeMin, NodeMax )
+  subroutine ListGetR1D(This, Values, NodeMin, NodeMax)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     real(rkp), allocatable, dimension(:), intent(out)                 ::    Values
@@ -282,24 +282,24 @@ contains
     integer                                                           ::    StatLoc
 
     NodeMinLoc = 1
-    if ( present(NodeMin) ) NodeMinLoc = NodeMin
+    if (present(NodeMin)) NodeMinLoc = NodeMin
 
     NodeMaxLoc = This%GetLength()
-    if ( present(NodeMax) ) NodeMaxLoc = NodeMax
+    if (present(NodeMax)) NodeMaxLoc = NodeMax
 
-    allocate( Values(NodeMaxLoc-NodeMinLoc+1), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+    allocate(Values(NodeMaxLoc-NodeMinLoc+1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
 
     i = NodeMinLoc
     do i = NodeMinLoc, NodeMaxLoc
-      call This%Get( Node=i, Value=Values(i-NodeMinLoc+1) )
+      call This%Get(Node=i, Value=Values(i-NodeMinLoc+1))
     end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetI1D( This, Values, NodeMin, NodeMax )
+  subroutine ListGetI1D(This, Values, NodeMin, NodeMax)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     integer, allocatable, dimension(:), intent(out)                   ::    Values
@@ -311,24 +311,24 @@ contains
     integer                                                           ::    StatLoc
 
     NodeMinLoc = 1
-    if ( present(NodeMin) ) NodeMinLoc = NodeMin
+    if (present(NodeMin)) NodeMinLoc = NodeMin
 
     NodeMaxLoc = This%GetLength()
-    if ( present(NodeMax) ) NodeMaxLoc = NodeMax
+    if (present(NodeMax)) NodeMaxLoc = NodeMax
 
-    allocate( Values(NodeMaxLoc-NodeMinLoc+1), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+    allocate(Values(NodeMaxLoc-NodeMinLoc+1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
 
     i = NodeMinLoc
     do i = NodeMinLoc, NodeMaxLoc
-      call This%Get( Node=i, Value=Values(i-NodeMinLoc+1) )
+      call This%Get(Node=i, Value=Values(i-NodeMinLoc+1))
     end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetC1D( This, Values, NodeMin, NodeMax )
+  subroutine ListGetC1D(This, Values, NodeMin, NodeMax)
 
     use String_Library
 
@@ -343,25 +343,25 @@ contains
     integer                                                           ::    StatLoc
 
     NodeMinLoc = 1
-    if ( present(NodeMin) ) NodeMinLoc = NodeMin
+    if (present(NodeMin)) NodeMinLoc = NodeMin
 
     NodeMaxLoc = This%GetLength()
-    if ( present(NodeMax) ) NodeMaxLoc = NodeMax
+    if (present(NodeMax)) NodeMaxLoc = NodeMax
 
-    allocate( Values(NodeMaxLoc-NodeMinLoc+1), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+    allocate(Values(NodeMaxLoc-NodeMinLoc+1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
 
     i = NodeMinLoc
     do i = NodeMinLoc, NodeMaxLoc
-      call This%Get( Node=i, Value=VarC0D )
-      call Values(i)%Initialize( Value=VarC0D )
+      call This%Get(Node=i, Value=VarC0D)
+      call Values(i)%Initialize(Value=VarC0D)
     end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetL1D( This, Values, NodeMin, NodeMax )
+  subroutine ListGetL1D(This, Values, NodeMin, NodeMax)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     logical, allocatable, dimension(:), intent(out)                   ::    Values
@@ -373,24 +373,24 @@ contains
     integer                                                           ::    StatLoc
 
     NodeMinLoc = 1
-    if ( present(NodeMin) ) NodeMinLoc = NodeMin
+    if (present(NodeMin)) NodeMinLoc = NodeMin
 
     NodeMaxLoc = This%GetLength()
-    if ( present(NodeMax) ) NodeMaxLoc = NodeMax
+    if (present(NodeMax)) NodeMaxLoc = NodeMax
 
-    allocate( Values(NodeMaxLoc-NodeMinLoc+1), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+    allocate(Values(NodeMaxLoc-NodeMinLoc+1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
 
     i = NodeMinLoc
     do i = NodeMinLoc, NodeMaxLoc
-      call This%Get( Node=i, Value=Values(i-NodeMinLoc+1) )
+      call This%Get(Node=i, Value=Values(i-NodeMinLoc+1))
     end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetCX1D( This, Values, NodeMin, NodeMax )
+  subroutine ListGetCX1D(This, Values, NodeMin, NodeMax)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     complex, allocatable, dimension(:), intent(out)                   ::    Values
@@ -402,24 +402,24 @@ contains
     integer                                                           ::    StatLoc
 
     NodeMinLoc = 1
-    if ( present(NodeMin) ) NodeMinLoc = NodeMin
+    if (present(NodeMin)) NodeMinLoc = NodeMin
 
     NodeMaxLoc = This%GetLength()
-    if ( present(NodeMax) ) NodeMaxLoc = NodeMax
+    if (present(NodeMax)) NodeMaxLoc = NodeMax
 
-    allocate( Values(NodeMaxLoc-NodeMinLoc+1), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+    allocate(Values(NodeMaxLoc-NodeMinLoc+1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
 
     i = NodeMinLoc
     do i = NodeMinLoc, NodeMaxLoc
-      call This%Get( Node=i, Value=Values(i-NodeMinLoc+1) )
+      call This%Get(Node=i, Value=Values(i-NodeMinLoc+1))
     end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetR0DPointer( This, Node, Value )
+  subroutine ListGetR0DPointer(This, Node, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     real(rkp), pointer, intent(inout)                                 ::    Value
@@ -428,9 +428,9 @@ contains
     character(*), parameter                                           ::    ProcName='ListGetR0DPointer'
     type(ListNode0D_Type), pointer                                    ::    NodePointerLoc=>null()
 
-    if ( associated(Value) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Value)) call Error%Raise("Passed down pointer already associated with another target")
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (NodeValue => NodePointerLoc%Value)
       type is (real(rkp))
@@ -445,7 +445,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetI0DPointer( This, Node, Value )
+  subroutine ListGetI0DPointer(This, Node, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     integer, pointer, intent(inout)                                   ::    Value
@@ -454,9 +454,9 @@ contains
     character(*), parameter                                           ::    ProcName='ListGetI0DPointer'
     type(ListNode0D_Type), pointer                                    ::    NodePointerLoc=>null()
 
-    if ( associated(Value) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Value)) call Error%Raise("Passed down pointer already associated with another target")
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (NodeValue => NodePointerLoc%Value)
       type is (integer)
@@ -471,7 +471,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetC0DPointer( This, Node, Value )
+  subroutine ListGetC0DPointer(This, Node, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     character(:), pointer, intent(inout)                              ::    Value
@@ -480,9 +480,9 @@ contains
     character(*), parameter                                           ::    ProcName='ListGetC0DPointer'
     type(ListNode0D_Type), pointer                                    ::    NodePointerLoc=>null()
 
-    if ( associated(Value) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Value)) call Error%Raise("Passed down pointer already associated with another target")
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (NodeValue => NodePointerLoc%Value)
       type is (character(*))
@@ -497,7 +497,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetL0DPointer( This, Node, Value )
+  subroutine ListGetL0DPointer(This, Node, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     logical, pointer, intent(inout)                                   ::    Value
@@ -506,9 +506,9 @@ contains
     character(*), parameter                                           ::    ProcName='ListGetL0DPointer'
     type(ListNode0D_Type), pointer                                    ::    NodePointerLoc=>null()
 
-    if ( associated(Value) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Value)) call Error%Raise("Passed down pointer already associated with another target")
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (NodeValue => NodePointerLoc%Value)
       type is (logical)
@@ -523,7 +523,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetCX0DPointer( This, Node, Value )
+  subroutine ListGetCX0DPointer(This, Node, Value)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     complex, pointer, intent(inout)                                   ::    Value
@@ -532,9 +532,9 @@ contains
     character(*), parameter                                           ::    ProcName='ListGetCX0DPointer'
     type(ListNode0D_Type), pointer                                    ::    NodePointerLoc=>null()
 
-    if ( associated(Value) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Value)) call Error%Raise("Passed down pointer already associated with another target")
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (NodeValue => NodePointerLoc%Value)
       type is (complex)
@@ -549,7 +549,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetNode0D( This, Node, NodePointer )
+  subroutine ListGetNode0D(This, Node, NodePointer)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    Node
@@ -557,10 +557,10 @@ contains
 
     character(*), parameter                                           ::    ProcName='ListGetNode0D'
 
-    if ( Node < 1 ) call Error%Raise("Requested node index is below 0")
-    if ( Node > This%NbNodes ) call Error%Raise("Requested node index is above the maximum")
+    if (Node < 1) call Error%Raise("Requested node index is below 0")
+    if (Node > This%NbNodes) call Error%Raise("Requested node index is above the maximum")
     
-    call This%MoveBrowser( Node )
+    call This%MoveBrowser(Node)
 
     NodePointer => This%Browser
 
@@ -568,7 +568,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine MoveBrowser( This, Node )
+  subroutine MoveBrowser(This, Node)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    Node
@@ -576,7 +576,7 @@ contains
     character(*), parameter                                           ::    ProcName='MoveBrowser'
     integer                                                           ::    i, i_Max
 
-    if ( Node > This%BrowserLoc ) then
+    if (Node > This%BrowserLoc) then
       i = 1
       i_Max = Node - This%BrowserLoc
       do i = 1, i_Max
@@ -596,7 +596,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ListLength( This )
+  function ListLength(This)
 
     integer                                                           ::    ListLength
     class(LinkedList0D_Type), intent(in)                              ::    This
@@ -609,7 +609,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine PurgeList( This )
+  subroutine PurgeList(This)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
 
@@ -619,7 +619,7 @@ contains
     integer                                                           ::    i
     integer                                                           ::    NbNodesLoc
 
-    if ( .not. associated(This%Head) ) return
+    if (.not. associated(This%Head)) return
 
     TempCurrent => This%Head
     nullify(This%Head)
@@ -630,12 +630,12 @@ contains
 
     i = 1
     do i = 1, NbNodesLoc
-      if ( associated(TempCurrent%Next) ) TempNext => TempCurrent%Next
+      if (associated(TempCurrent%Next)) TempNext => TempCurrent%Next
       deallocate(TempCurrent%Value)
-      if ( associated(TempCurrent%Back) ) nullify(TempCurrent%Back)
-      if ( associated(TempCurrent%Next) ) nullify(TempCurrent%Next)
-      deallocate( TempCurrent )
-      if ( associated(TempNext) ) TempCurrent => Tempnext
+      if (associated(TempCurrent%Back)) nullify(TempCurrent%Back)
+      if (associated(TempCurrent%Next)) nullify(TempCurrent%Next)
+      deallocate(TempCurrent)
+      if (associated(TempNext)) TempCurrent => Tempnext
     end do
 
     This%BrowserLoc=0
@@ -645,7 +645,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RemoveNode( This, Node )
+  subroutine RemoveNode(This, Node)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    Node
@@ -656,23 +656,23 @@ contains
     type(ListNode0D_Type), pointer                                    ::    TempCurrent => null()
     integer                                                           ::    StatLoc=0
 
-    if ( This%NbNodes == 0 ) call Error%Raise( Line='Linked list contains 0 nodes', ProcName=ProcName )
+    if (This%NbNodes == 0) call Error%Raise(Line='Linked list contains 0 nodes', ProcName=ProcName)
 
-    if ( Node > This%NbNodes .or. Node < 1 ) call Error%Raise( Line='Invalid node number removal spec', ProcName=ProcName )
+    if (Node > This%NbNodes .or. Node < 1) call Error%Raise(Line='Invalid node number removal spec', ProcName=ProcName)
 
-    if ( This%NbNodes == 1 ) then
+    if (This%NbNodes == 1) then
       call This%Purge()
     else
-      call This%GetNode( Node=Node, NodePointer=TempCurrent )
+      call This%GetNode(Node=Node, NodePointer=TempCurrent)
       deallocate(TempCurrent%Value, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='Node%Values', ProcName=ProcName, stat=StatLoc )
-      if ( Node == 1 ) then    
+      if (StatLoc /= 0) call Error%Deallocate(Name='Node%Values', ProcName=ProcName, stat=StatLoc)
+      if (Node == 1) then    
           TempNext => TempCurrent%Next
           This%Head => TempNext
           nullify(TempCurrent%Next)
           nullify(TempNext%Back)
           nullify(TempNext)
-      elseif ( Node == This%NbNodes ) then
+      elseif (Node == This%NbNodes) then
           TempBack => TempCurrent%Back
           This%Tail => TempBack
           nullify(TempCurrent%Back)
@@ -691,7 +691,7 @@ contains
           nullify(TempBack)
       end if
       deallocate(TempCurrent, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='TempCurrent', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='TempCurrent', ProcName=ProcName, stat=StatLoc)
     end if
 
     This%NbNodes = This%NbNodes - 1
@@ -700,7 +700,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RemoveNodeRange( This, NodeMin, NodeMax )
+  subroutine RemoveNodeRange(This, NodeMin, NodeMax)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    NodeMin
@@ -709,14 +709,14 @@ contains
     character(*), parameter                                           ::    ProcName='RemoveNodeRange'
     integer                                                           ::    i
 
-    if ( NodeMax > This%NbNodes .or. NodeMin < 1 ) call Error%Raise( Line='Invalid node number removal spec', ProcName=ProcName )
+    if (NodeMax > This%NbNodes .or. NodeMin < 1) call Error%Raise(Line='Invalid node number removal spec', ProcName=ProcName)
 
-    if ( (NodeMax - NodeMin + 1) == This%NbNodes ) then
+    if ((NodeMax - NodeMin + 1) == This%NbNodes) then
       call This%Purge()
     else
       i = 1
       do i = NodeMin, NodeMax
-        call This%Remove( Node=i )
+        call This%Remove(Node=i)
       end do
     end if
 
@@ -724,7 +724,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(LinkedList0D_Type), intent(out)                             ::    LHS
     class(LinkedList0D_Type), intent(in)                              ::    RHS
@@ -735,25 +735,25 @@ contains
 
     call LHS%Purge()
 
-    if ( RHS%NbNodes > 0 ) then
+    if (RHS%NbNodes > 0) then
       NodePointer => RHS%Head
 
       i = 1
       do i = 1, RHS%NbNodes-1
-        call LHS%Append( Value=NodePointer%Value )
-        nullify( NodePointer )
+        call LHS%Append(Value=NodePointer%Value)
+        nullify(NodePointer)
         NodePointer => NodePointer%Next
       end do
 
-      call LHS%Append( Value=NodePointer%Value )
-      nullify( NodePointer )
+      call LHS%Append(Value=NodePointer%Value)
+      nullify(NodePointer)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine FinalizerList( This )
+  impure elemental subroutine FinalizerList(This)
 
     type(LinkedList0D_Type), intent(inout)                            ::    This
 
@@ -765,7 +765,7 @@ contains
     integer                                                           ::    NbNodesLoc
     integer                                                           ::    StatLoc=0
 
-    if ( .not. associated(This%Head) ) return
+    if (.not. associated(This%Head)) return
 
     TempCurrent => This%Head
     nullify(This%Head)
@@ -776,14 +776,14 @@ contains
 
     i = 1
     do i = 1, NbNodesLoc
-      if ( associated(TempCurrent%Next) ) TempNext => TempCurrent%Next
+      if (associated(TempCurrent%Next)) TempNext => TempCurrent%Next
       deallocate(TempCurrent%Value, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='TempCurrent%Values', ProcName=ProcName, stat=StatLoc )
-      if ( associated(TempCurrent%Back) ) nullify(TempCurrent%Back)
-      if ( associated(TempCurrent%Next) ) nullify(TempCurrent%Next)
-      deallocate( TempCurrent, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='TempCurrent', ProcName=ProcName, stat=StatLoc )
-      if ( associated(TempNext) ) TempCurrent => Tempnext
+      if (StatLoc /= 0) call Error%Deallocate(Name='TempCurrent%Values', ProcName=ProcName, stat=StatLoc)
+      if (associated(TempCurrent%Back)) nullify(TempCurrent%Back)
+      if (associated(TempCurrent%Next)) nullify(TempCurrent%Next)
+      deallocate(TempCurrent, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='TempCurrent', ProcName=ProcName, stat=StatLoc)
+      if (associated(TempNext)) TempCurrent => Tempnext
     end do
 
   end subroutine

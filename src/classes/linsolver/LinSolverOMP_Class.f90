@@ -55,13 +55,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(LinSolverOMP_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'LinSolverOMP'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -71,7 +71,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(LinSolverOMP_Type), intent(inout)                           ::    This
 
@@ -82,7 +82,7 @@ contains
     This%Constructed = .false.
 
     deallocate(This%OMPMethod, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OMPMethod', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%OMPMethod', ProcName=ProcName, stat=StatLoc)
 
     call This%Initialize()
 
@@ -90,7 +90,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(LinSolverOMP_Type), intent(inout)                           ::    This
 
@@ -100,7 +100,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(LinSolverOMP_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -110,13 +110,13 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
-    call OMPMethod_Factory%Construct( Object=This%OMPMethod, Input=Input, Prefix=PrefixLoc )
+    call OMPMethod_Factory%Construct(Object=This%OMPMethod, Input=Input, Prefix=PrefixLoc)
 
     This%Constructed = .true.
 
@@ -124,7 +124,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, OMPMethod )
+  subroutine ConstructCase1(This, OMPMethod)
 
     use String_Library
 
@@ -134,11 +134,11 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     allocate(This%OMPMethod, source=OMPMethod, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OMPMethod', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%OMPMethod', ProcName=ProcName, stat=StatLoc)
 
     This%Constructed = .true.
 
@@ -146,12 +146,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(LinSolverOMP_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -161,24 +161,24 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    GetInput = OMPMethod_Factory%GetObjectInput( Object=This%OMPMethod, MainSectionName=MainSectionName, Prefix=PrefixLoc,        &
-                                                                                                          Directory=DirectoryLoc )
+    GetInput = OMPMethod_Factory%GetObjectInput(Object=This%OMPMethod, Name=Name, Prefix=PrefixLoc,        &
+                                                                                                          Directory=DirectoryLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSparse( This, System, Goal, ModelSet, CoefficientsSet, CVError )
+  subroutine SolveSparse(This, System, Goal, ModelSet, CoefficientsSet, CVError)
 
     class(LinSolverOMP_Type), intent(in)                              ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -190,20 +190,20 @@ contains
     character(*), parameter                                           ::    ProcName='SolveSparse'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if ( present(CVError) ) then
-      call This%OMPMethod%SolveSparse( System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet,              &
-                                                                                                                 CVError=CVError )
+    if (present(CVError)) then
+      call This%OMPMethod%SolveSparse(System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet,              &
+                                                                                                                 CVError=CVError)
     else
-      call This%OMPMethod%SolveSparse( System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet )
+      call This%OMPMethod%SolveSparse(System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveFull( This, System, Goal, Coefficients, CVError )
+  subroutine SolveFull(This, System, Goal, Coefficients, CVError)
 
     class(LinSolverOMP_Type), intent(in)                              ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -214,19 +214,19 @@ contains
     character(*), parameter                                           ::    ProcName='SolveFull'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if ( present(CVError) ) then
-      call This%OMPMethod%SolveFull( System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError )
+    if (present(CVError)) then
+      call This%OMPMethod%SolveFull(System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError)
     else
-      call This%OMPMethod%SolveFull( System=System, Goal=Goal, Coefficients=Coefficients )
+      call This%OMPMethod%SolveFull(System=System, Goal=Goal, Coefficients=Coefficients)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(LinSolverOMP_Type), intent(out)                             ::    LHS
     class(LinSolverMethod_Type), intent(in)                           ::    RHS
@@ -239,27 +239,27 @@ contains
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           allocate(LHS%OMPMethod, source=RHS%OMPMethod, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OMPMethod', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%OMPMethod', ProcName=ProcName, stat=StatLoc)
         end if
       class default
-        call Error%Raise( Line='Mismatching object types', ProcName=ProcName )
+        call Error%Raise(Line='Mismatching object types', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(LinSolverOMP_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%OMPMethod) ) deallocate(This%OMPMethod, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OMPMethod', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%OMPMethod)) deallocate(This%OMPMethod, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%OMPMethod', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

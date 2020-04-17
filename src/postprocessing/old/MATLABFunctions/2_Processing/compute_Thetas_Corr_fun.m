@@ -1,4 +1,4 @@
-function i_figure = compute_Thetas_Corr_fun(PlottingFormat, i_figure, save_fig, proc )
+function i_figure = compute_Thetas_Corr_fun(PlottingFormat, i_figure, save_fig, proc)
 
     filename = './theta_name.dat';
     delimiter = '\t';

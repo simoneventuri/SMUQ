@@ -66,13 +66,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(HierCovGExp2L_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'HierCovGExp2L'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -82,7 +82,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(HierCovGExp2L_Type), intent(inout)                          ::    This
 
@@ -98,7 +98,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(HierCovGExp2L_Type), intent(inout)                          ::    This
 
@@ -122,7 +122,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(HierCovGExp2L_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -143,85 +143,85 @@ contains
     logical                                                           ::    MandatoryLoc
     logical                                                           ::    InputRequiredTrip
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     InputRequiredTrip = .false.
 
     MandatoryLoc = .false.
 
     ParameterName = 'l1_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%L1_Dependency=VarC0D
       InputRequiredTrip = .true.
     end if
     MandatoryLoc = .not. Found
 
     ParameterName = 'l1'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%L1=VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%L1=VarR0D
 
     ParameterName = 'l2_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%L2_Dependency=VarC0D
       InputRequiredTrip = .true.
     end if
     MandatoryLoc = .not. Found
 
     ParameterName = 'l2'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%L2=VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%L2=VarR0D
 
     ParameterName = 'lr_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%Lr_Dependency=VarC0D
       InputRequiredTrip = .true.
     end if
     MandatoryLoc = .not. Found
 
     ParameterName = 'lr'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Lr=VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%Lr=VarR0D
 
     ParameterName = 'zs_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%Zs_Dependency=VarC0D
       InputRequiredTrip = .true.
     end if
     MandatoryLoc = .not. Found
 
     ParameterName = 'zs'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Zs=VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%Zs=VarR0D
 
     ParameterName = 'sigma_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%Sigma_Dependency=VarC0D
       InputRequiredTrip = .true.
     end if
     MandatoryLoc = .not. Found
 
     ParameterName = 'sigma'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Sigma=VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%Sigma=VarR0D
 
     ParameterName = 'tolerance'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Tolerance=VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Tolerance=VarR0D
 
     ParameterName = 'coordinate_label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
-    if ( Found ) This%CoordinateLabel=VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+    if (Found) This%CoordinateLabel=VarC0D
 
-    if ( .not. InputRequiredTrip ) This%InputRequired = .false.
+    if (.not. InputRequiredTrip) This%InputRequired = .false.
 
     This%Constructed = .true.
 
@@ -229,12 +229,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(HierCovGExp2L_Type), intent(in)                          ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -251,42 +251,42 @@ contains
     type(SMUQFile_Type)                                               ::    File
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='coordinate_label', Value=This%CoordinateLabel )
+    call GetInput%AddParameter(Name='coordinate_label', Value=This%CoordinateLabel)
 
-    call GetInput%AddParameter( Name='l1', Value=ConvertToString(This%L1) )
-    if ( len_trim(This%L1_Dependency) /= 0 )call GetInput%AddParameter( Name='l1_dependency', Value=This%L1_Dependency )
+    call GetInput%AddParameter(Name='l1', Value=ConvertToString(This%L1))
+    if (len_trim(This%L1_Dependency) /= 0)call GetInput%AddParameter(Name='l1_dependency', Value=This%L1_Dependency)
 
-    call GetInput%AddParameter( Name='l2', Value=ConvertToString(This%L2) )
-    if ( len_trim(This%L2_Dependency) /= 0 )call GetInput%AddParameter( Name='l2_dependency', Value=This%L2_Dependency )
+    call GetInput%AddParameter(Name='l2', Value=ConvertToString(This%L2))
+    if (len_trim(This%L2_Dependency) /= 0)call GetInput%AddParameter(Name='l2_dependency', Value=This%L2_Dependency)
 
-    call GetInput%AddParameter( Name='lr', Value=ConvertToString(This%Lr) )
-    if ( len_trim(This%Lr_Dependency) /= 0 )call GetInput%AddParameter( Name='lr_dependency', Value=This%Lr_Dependency )
+    call GetInput%AddParameter(Name='lr', Value=ConvertToString(This%Lr))
+    if (len_trim(This%Lr_Dependency) /= 0)call GetInput%AddParameter(Name='lr_dependency', Value=This%Lr_Dependency)
 
-    call GetInput%AddParameter( Name='zs', Value=ConvertToString(This%Zs) )
-    if ( len_trim(This%Zs_Dependency) /= 0 )call GetInput%AddParameter( Name='zs_dependency', Value=This%Zs_Dependency )
+    call GetInput%AddParameter(Name='zs', Value=ConvertToString(This%Zs))
+    if (len_trim(This%Zs_Dependency) /= 0)call GetInput%AddParameter(Name='zs_dependency', Value=This%Zs_Dependency)
 
-    call GetInput%AddParameter( Name='sigma', Value=ConvertToString(This%Sigma) )
-    if ( len_trim(This%Sigma_Dependency) /= 0 )call GetInput%AddParameter( Name='sigma_dependency', Value=This%Sigma_Dependency )
+    call GetInput%AddParameter(Name='sigma', Value=ConvertToString(This%Sigma))
+    if (len_trim(This%Sigma_Dependency) /= 0)call GetInput%AddParameter(Name='sigma_dependency', Value=This%Sigma_Dependency)
 
-    call GetInput%AddParameter( Name='tolerance', Value=ConvertToString(This%Tolerance) )
+    call GetInput%AddParameter(Name='tolerance', Value=ConvertToString(This%Tolerance))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate( This, Input, CovFunction )
+  subroutine Generate(This, Input, CovFunction)
 
     class(HierCovGExp2L_Type), intent(in)                             ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -300,38 +300,38 @@ contains
     real(rkp)                                                         ::    Zs
     real(rkp)                                                         ::    Sigma
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     L1 = This%L1
-    if ( len_trim(This%L1_Dependency) /= 0 ) call Input%GetValue( Value=L1, Label=This%L1_Dependency )
+    if (len_trim(This%L1_Dependency) /= 0) call Input%GetValue(Value=L1, Label=This%L1_Dependency)
 
     L2 = This%L2
-    if ( len_trim(This%L2_Dependency) /= 0 ) call Input%GetValue( Value=L2, Label=This%L2_Dependency )
+    if (len_trim(This%L2_Dependency) /= 0) call Input%GetValue(Value=L2, Label=This%L2_Dependency)
 
     Lr = This%Lr
-    if ( len_trim(This%Lr_Dependency) /= 0 ) call Input%GetValue( Value=Lr, Label=This%Lr_Dependency )
+    if (len_trim(This%Lr_Dependency) /= 0) call Input%GetValue(Value=Lr, Label=This%Lr_Dependency)
 
     Zs = This%Zs
-    if ( len_trim(This%Zs_Dependency) /= 0 ) call Input%GetValue( Value=Zs, Label=This%Zs_Dependency )
+    if (len_trim(This%Zs_Dependency) /= 0) call Input%GetValue(Value=Zs, Label=This%Zs_Dependency)
 
     Sigma = This%Sigma
-    if ( len_trim(This%Sigma_Dependency) /= 0 ) call Input%GetValue( Value=Sigma, Label=This%Sigma_Dependency )
+    if (len_trim(This%Sigma_Dependency) /= 0) call Input%GetValue(Value=Sigma, Label=This%Sigma_Dependency)
 
-    allocate( CovGExp2L_Type :: CovFunction )
+    allocate(CovGExp2L_Type :: CovFunction)
 
     select type (CovFunction)
       type is (CovGExp2L_Type)
-        call CovFunction%Construct( Sigma=Sigma, L1=L1, L2=L2, Lr=Lr, Zs=Zs, Coordinate=This%CoordinateLabel,                     &
-                                                                                                        Tolerance=This%Tolerance )
+        call CovFunction%Construct(Sigma=Sigma, L1=L1, L2=L2, Lr=Lr, Zs=Zs, Coordinate=This%CoordinateLabel,                     &
+                                                                                                        Tolerance=This%Tolerance)
       class default
-        call Error%Raise( "Something went wrong", ProcName=ProcName )
+        call Error%Raise("Something went wrong", ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(HierCovGExp2L_Type), intent(out)                            ::    LHS
     class(HierCovFunction_Type), intent(in)                           ::    RHS
@@ -347,7 +347,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%L1_Dependency = RHS%L1_Dependency
           LHS%L1 = RHS%L1
           LHS%L2_Dependency = RHS%L2_Dependency
@@ -363,7 +363,7 @@ contains
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -371,7 +371,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(HierCovGExp2L_Type), intent(inout)                           ::    This
 

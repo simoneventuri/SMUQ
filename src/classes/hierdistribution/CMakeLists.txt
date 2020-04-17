@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   HierDistProb_Factory_Class.f90
   HierDistProb_Class.f90
   HierDistProbContainer_Class.f90

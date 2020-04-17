@@ -59,13 +59,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(LinSolverOLS_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'linsolverols'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -75,7 +75,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(LinSolverOLS_Type), intent(inout)                           ::    This
 
@@ -85,8 +85,8 @@ contains
     This%Initialized = .false.
     This%Constructed = .false.
 
-    if ( allocated(This%CVError) ) deallocate(This%CVError, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CVError', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%CVError)) deallocate(This%CVError, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%CVError', ProcName=ProcName, stat=StatLoc)
 
     call This%Initialize()
 
@@ -94,7 +94,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(LinSolverOLS_Type), intent(inout)                           ::    This
 
@@ -104,7 +104,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(LinSolverOLS_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -120,23 +120,23 @@ contains
     character(:), allocatable                                         ::    VarC0D
     logical                                                           ::    Found
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     SectionName = 'cross_validation'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found )
-    if ( Found ) then
-      call CVErrorMethod_Factory%Construct( Object=This%CVError, Input=InputSection, Prefix=PrefixLoc )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found)
+    if (Found) then
+      call CVErrorMethod_Factory%Construct(Object=This%CVError, Input=InputSection, Prefix=PrefixLoc)
     else
-      allocate( CVErrorLOO_Type :: This%CVError )
+      allocate(CVErrorLOO_Type :: This%CVError)
       select type (CVErrorMethod => This%CVError)
         type is (CVErrorLOO_Type)
-          call CVErrorMethod%Construct( Corrected=.true. )
+          call CVErrorMethod%Construct(Corrected=.true.)
         class default
-          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+          call Error%Raise(Line='Something went wrong', ProcName=ProcName)
       end select
     end if
 
@@ -146,7 +146,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, CVErrorMethod )
+  subroutine ConstructCase1(This, CVErrorMethod)
 
     use String_Library
 
@@ -156,19 +156,19 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if ( present(CVErrorMethod) ) then
+    if (present(CVErrorMethod)) then
       allocate(This%CVError, source=CVErrorMethod, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CVErrorMethod', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%CVErrorMethod', ProcName=ProcName, stat=StatLoc)
     else
-      allocate( CVErrorLOO_Type :: This%CVError )
+      allocate(CVErrorLOO_Type :: This%CVError)
       select type (CVErrorMethod => This%CVError)
         type is (CVErrorLOO_Type)
-          call CVErrorMethod%Construct( Corrected=.true. )
+          call CVErrorMethod%Construct(Corrected=.true.)
         class default
-          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+          call Error%Raise(Line='Something went wrong', ProcName=ProcName)
       end select
     end if
 
@@ -178,12 +178,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(LinSolverOLS_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -195,28 +195,28 @@ contains
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
     SectionName = 'cross_validation'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/cross_validation'
-    call GetInput%AddSection( Section=CVErrorMethod_Factory%GetObjectInput( Object=This%CVError, MainSectionName=SectionName,     &
-                                                                                      Prefix=PrefixLoc, Directory=DirectoryLoc ) )
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/cross_validation'
+    call GetInput%AddSection(Section=CVErrorMethod_Factory%GetObjectInput(Object=This%CVError, Name=SectionName,     &
+                                                                                      Prefix=PrefixLoc, Directory=DirectoryLoc))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSystem( This, System, Goal, Coefficients, CVError )
+  subroutine SolveSystem(This, System, Goal, Coefficients, CVError)
 
     class(LinSolverOLS_Type), intent(in)                              ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -234,44 +234,44 @@ contains
     real(rkp)                                                         ::    VarianceLoc
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     M = size(System,1)
     N = size(System,2)
 
-    GoalMean = ComputeMean( Values=Goal )
-    GoalVariance = ComputeSampleVar( Values=Goal )
+    GoalMean = ComputeMean(Values=Goal)
+    GoalVariance = ComputeSampleVar(Values=Goal)
 
-    if ( dsqrt(abs((GoalVariance*real(M-1,rkp))/real(M,rkp))) / abs(GoalMean) < 1e-10 ) then
+    if (dsqrt(abs((GoalVariance*real(M-1,rkp))/real(M,rkp))) / abs(GoalMean) < 1e-10) then
       i = 1
       do i = 1, N
         MeanLoc = ComputeMean(Values=System(:,i))
         VarianceLoc = ComputePopulationVar(Values=System(:,i))
-        if ( abs(VarianceLoc/MeanLoc) < 1e-10 ) then
+        if (abs(VarianceLoc/MeanLoc) < 1e-10) then
           allocate(Coefficients(N), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
           Coefficients = Zero
           Coefficients(i) = GoalMean / MeanLoc
-          if ( present(CVError) ) CVError = Zero
+          if (present(CVError)) CVError = Zero
           return
         end if
       end do
       GoalVariance = tiny(One)
     end if
 
-    if ( M /= size(Goal,1) ) call Error%Raise( Line='Incorrect system and goal sizes', ProcName=ProcName )
+    if (M /= size(Goal,1)) call Error%Raise(Line='Incorrect system and goal sizes', ProcName=ProcName)
 
-    if ( M < N ) then
-      if ( present(CVError) ) then
-        call This%SolveSystemUD( System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError )
+    if (M < N) then
+      if (present(CVError)) then
+        call This%SolveSystemUD(System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError)
       else
-        call This%SolveSystemUD( System=System, Goal=Goal, Coefficients=Coefficients )
+        call This%SolveSystemUD(System=System, Goal=Goal, Coefficients=Coefficients)
       end if
     else
-      if ( present(CVError) ) then
-        call This%SolveSystemOD( System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError )
+      if (present(CVError)) then
+        call This%SolveSystemOD(System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError)
       else
-        call This%SolveSystemOD( System=System, Goal=Goal, Coefficients=Coefficients )
+        call This%SolveSystemOD(System=System, Goal=Goal, Coefficients=Coefficients)
       end if
     end if
 
@@ -279,7 +279,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSystemUD( This, System, Goal, Coefficients, CVError )
+  subroutine SolveSystemUD(This, System, Goal, Coefficients, CVError)
 
     class(LinSolverOLS_Type), intent(in)                              ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -302,25 +302,25 @@ contains
     real(rkp)                                                         ::    VarianceLoc
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     M = size(System,1)
     N = size(System,2)
 
-    GoalMean = ComputeMean( Values=Goal )
-    GoalVariance = ComputeSampleVar( Values=Goal )
+    GoalMean = ComputeMean(Values=Goal)
+    GoalVariance = ComputeSampleVar(Values=Goal)
 
-    if ( abs((GoalVariance*real(M-1,rkp))/real(M,rkp)) < 1e-10 ) then
+    if (abs((GoalVariance*real(M-1,rkp))/real(M,rkp)) < 1e-10) then
       i = 1
       do i = 1, N
         MeanLoc = ComputeMean(Values=System(:,i))
         VarianceLoc = ComputePopulationVar(Values=System(:,i))
-        if ( abs(VarianceLoc/MeanLoc) < 1e-10 ) then
+        if (abs(VarianceLoc/MeanLoc) < 1e-10) then
           allocate(Coefficients(N), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
           Coefficients = Zero
           Coefficients(i) = GoalMean / MeanLoc
-          if ( present(CVError) ) CVError = Zero
+          if (present(CVError)) CVError = Zero
           return
         end if
       end do
@@ -328,44 +328,44 @@ contains
     end if
 
     allocate(SystemLoc(M,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='SystemLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
     SystemLoc = System
 
     allocate(GoalLoc(max(1,M,N),1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GloalLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='GloalLoc', ProcName=ProcName, stat=StatLoc)
     GoalLoc(1:M,1) = Goal
 
-    call DGELS( 'N', M, N, 1, SystemLoc, M, GoalLoc, size(GoalLoc,1), WORKSIZE, -1, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in dgels when querying for lwork', ProcName=ProcName )
+    call DGELS('N', M, N, 1, SystemLoc, M, GoalLoc, size(GoalLoc,1), WORKSIZE, -1, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in dgels when querying for lwork', ProcName=ProcName)
 
     LWORK = nint(WORKSIZE(1))
 
     allocate(WORK(max(1,LWORK)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
-    call DGELS( 'N', M, N, 1, SystemLoc, M,  GoalLoc, size(GoalLoc,1), WORK, LWORK, StatLoc )
+    call DGELS('N', M, N, 1, SystemLoc, M,  GoalLoc, size(GoalLoc,1), WORK, LWORK, StatLoc)
 
-    if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in dgels', ProcName=ProcName )
+    if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in dgels', ProcName=ProcName)
 
     Coefficients = GoalLoc(1:N,1)
 
     deallocate(SystemLoc, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='SystemLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
     deallocate(GoalLoc, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='GoalLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='GoalLoc', ProcName=ProcName, stat=StatLoc)
 
     deallocate(WORK, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
-    if ( present(CVError) ) CVError = This%CVError%ComputeError( Solver=This, System=System, Goal=Goal, Coefficients=Coefficients)
+    if (present(CVError)) CVError = This%CVError%ComputeError(Solver=This, System=System, Goal=Goal, Coefficients=Coefficients)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSystemOD( This, System, Goal, Coefficients, CVError )
+  subroutine SolveSystemOD(This, System, Goal, Coefficients, CVError)
 
     class(LinSolverOLS_Type), intent(in)                              ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -395,79 +395,79 @@ contains
     real(rkp)                                                         ::    MeanLoc
     real(rkp)                                                         ::    VarianceLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     M = size(System,1)
     N = size(System,2)
 
-    GoalMean = ComputeMean( Values=Goal )
-    GoalVariance = ComputeSampleVar( Values=Goal )
+    GoalMean = ComputeMean(Values=Goal)
+    GoalVariance = ComputeSampleVar(Values=Goal)
 
-    if ( abs((GoalVariance*real(M-1,rkp))/real(M,rkp)) < 1e-10 ) then
+    if (abs((GoalVariance*real(M-1,rkp))/real(M,rkp)) < 1e-10) then
       i = 1
       do i = 1, N
         MeanLoc = ComputeMean(Values=System(:,i))
         VarianceLoc = ComputePopulationVar(Values=System(:,i))
-        if ( abs(VarianceLoc/MeanLoc) < 1e-10 ) then
+        if (abs(VarianceLoc/MeanLoc) < 1e-10) then
           allocate(Coefficients(N), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
           Coefficients = Zero
           Coefficients(i) = GoalMean / MeanLoc
-          if ( present(CVError) ) CVError = Zero
+          if (present(CVError)) CVError = Zero
           return
         end if
       end do
       GoalVariance = tiny(One)
     end if
 
-    allocate(Q1, source=System, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Q', ProcName=ProcName, stat=StatLoc )
+    allocate(Q1, source=System, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Q', ProcName=ProcName, stat=StatLoc)
 
     allocate(R(N,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='R', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
 
-    allocate( TAU(min(M,N)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='TAU', ProcName=ProcName, stat=StatLoc )
+    allocate(TAU(min(M,N)), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
 
-    call DGEQRF( M, N, Q1, M, TAU, WORKSIZE, -1, StatLoc  )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DGEQRF", ProcName=ProcName )
+    call DGEQRF(M, N, Q1, M, TAU, WORKSIZE, -1, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
 
     LWORK = nint(WORKSIZE(1))
 
     allocate(WORK(LWORK), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
-    call DGEQRF( M, N, Q1, M, TAU, WORK, LWORK, StatLoc  )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DGEQRF", ProcName=ProcName )
+    call DGEQRF(M, N, Q1, M, TAU, WORK, LWORK, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
 
     deallocate(WORK, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, N
       R(1:i,i) = Q1(1:i,i)
     end do
 
-    call DORGQR( M, N, N, Q1, M, TAU, WORKSIZE, -1, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DORGQR", ProcName=ProcName )
+    call DORGQR(M, N, N, Q1, M, TAU, WORKSIZE, -1, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORGQR", ProcName=ProcName)
 
     LWORK = nint(WORKSIZE(1))
 
     allocate(WORK(LWORK), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
-    call DORGQR( M, N, N, Q1, M, TAU, WORK, LWORK, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DORGQR", ProcName=ProcName )
+    call DORGQR(M, N, N, Q1, M, TAU, WORK, LWORK, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORGQR", ProcName=ProcName)
 
     deallocate(WORK, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
     allocate(VarR2D(M,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
     VarR2D(:,1) = Goal
 
     ! solving system
-    call DGEMV( 'T', M, N, 1.d0, Q1, M, Goal, 1, 0.d0, VarR2D(1:M,:), 1 )
+    call DGEMV('T', M, N, 1.d0, Q1, M, Goal, 1, 0.d0, VarR2D(1:M,:), 1)
 
     VarR2D(N,1) = VarR2D(N,1) / R(N,N)
     i = 2
@@ -475,39 +475,39 @@ contains
       im1 = i - 1
       ii = N - im1
       iip1 = ii + 1
-      VarR2D(ii,1) = ( VarR2D(ii,1) - dot_product( R(ii,iip1:N), VarR2D(iip1:N,1) ) ) / R(ii,ii)
+      VarR2D(ii,1) = (VarR2D(ii,1) - dot_product(R(ii,iip1:N), VarR2D(iip1:N,1))) / R(ii,ii)
     end do
 
     allocate(Coefficients(N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
     Coefficients = VarR2D(1:N,1)    
 
-    if ( present(CVError) ) then
+    if (present(CVError)) then
       select type (CVErrorMethod => This%CVError)
         type is (CVErrorLOO_Type)
-          CVError = This%ComputeCVLOOErrorQ1R( System=System, Goal=Goal, Coefficients=Coefficients, Q1=Q1, R=R )
+          CVError = This%ComputeCVLOOErrorQ1R(System=System, Goal=Goal, Coefficients=Coefficients, Q1=Q1, R=R)
         class default
-          CVError = This%CVError%ComputeError( Solver=This, System=System, Goal=Goal, Coefficients=Coefficients)
+          CVError = This%CVError%ComputeError(Solver=This, System=System, Goal=Goal, Coefficients=Coefficients)
       end select
     end if
 
     deallocate(TAU, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TAU', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
 
     deallocate(Q1, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Q1', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
 
     deallocate(R, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='R', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='R', ProcName=ProcName, stat=StatLoc)
 
     deallocate(VarR2D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSystemQR( This, System, Goal, Coefficients, QR, TAU, CVError )
+  subroutine SolveSystemQR(This, System, Goal, Coefficients, QR, TAU, CVError)
 
     class(LinSolverOLS_Type), intent(in)                              ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -538,66 +538,66 @@ contains
     real(rkp)                                                         ::    MeanLoc
     real(rkp)                                                         ::    VarianceLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     M = size(System,1)
     N = size(System,2)
 
-    GoalMean = ComputeMean( Values=Goal )
-    GoalVariance = ComputeSampleVar( Values=Goal )
+    GoalMean = ComputeMean(Values=Goal)
+    GoalVariance = ComputeSampleVar(Values=Goal)
 
-    if ( abs((GoalVariance*real(M-1,rkp))/real(M,rkp)) < 1e-10 ) then
+    if (abs((GoalVariance*real(M-1,rkp))/real(M,rkp)) < 1e-10) then
       i = 1
       do i = 1, N
         MeanLoc = ComputeMean(Values=System(:,i))
         VarianceLoc = ComputePopulationVar(Values=System(:,i))
-        if ( abs(VarianceLoc/MeanLoc) < 1e-10 ) then
+        if (abs(VarianceLoc/MeanLoc) < 1e-10) then
           allocate(Coefficients(N), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
           Coefficients = Zero
           Coefficients(i) = GoalMean / MeanLoc
-          if ( present(CVError) ) CVError = Zero
+          if (present(CVError)) CVError = Zero
           return
         end if
       end do
       GoalVariance = tiny(One)
     end if
 
-    if ( M < N ) call Error%Raise( Line='Routine optimized for overdetermined systems', ProcName=ProcName )
+    if (M < N) call Error%Raise(Line='Routine optimized for overdetermined systems', ProcName=ProcName)
 
-    if ( M /= size(Goal,1) ) call Error%Raise( Line='Incorrect system and goal sizes', ProcName=ProcName )
+    if (M /= size(Goal,1)) call Error%Raise(Line='Incorrect system and goal sizes', ProcName=ProcName)
 
     allocate(Q1, source=QR, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Q1', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
 
     allocate(R(N,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='R', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, N
       R(1:i,i) = Q1(1:i,i)
     end do
 
-    call DORGQR( M, N, N, Q1, M, TAU, WORKSIZE, -1, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DORGQR", ProcName=ProcName )
+    call DORGQR(M, N, N, Q1, M, TAU, WORKSIZE, -1, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORGQR", ProcName=ProcName)
 
     LWORK = nint(WORKSIZE(1))
 
     allocate(WORK(LWORK), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
-    call DORGQR( M, N, N, Q1, M, TAU, WORK, LWORK, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DORGQR", ProcName=ProcName )
+    call DORGQR(M, N, N, Q1, M, TAU, WORK, LWORK, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORGQR", ProcName=ProcName)
 
     deallocate(WORK, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
     allocate(VarR2D(M,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
     VarR2D(:,1) = Goal
 
     ! solving system
-    call DGEMV( 'T', M, N, 1.d0, Q1, M, Goal, 1, 0.d0, VarR2D(1:M,:), 1 )
+    call DGEMV('T', M, N, 1.d0, Q1, M, Goal, 1, 0.d0, VarR2D(1:M,:), 1)
 
     VarR2D(N,1) = VarR2D(N,1) / R(N,N)
     i = 2
@@ -605,33 +605,33 @@ contains
       im1 = i - 1
       ii = N - im1
       iip1 = ii + 1
-      VarR2D(ii,1) = ( VarR2D(ii,1) - dot_product( R(ii,iip1:N), VarR2D(iip1:N,1) ) ) / R(ii,ii)
+      VarR2D(ii,1) = (VarR2D(ii,1) - dot_product(R(ii,iip1:N), VarR2D(iip1:N,1))) / R(ii,ii)
     end do
 
     allocate(Coefficients(N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
     Coefficients = VarR2D(1:N,1) 
 
-    if ( present(CVError) ) then
+    if (present(CVError)) then
       select type (CVErrorMethod => This%CVError)
         type is (CVErrorLOO_Type)
-          CVError = This%ComputeCVLOOErrorQ1R( System=System, Goal=Goal, Coefficients=Coefficients, Q1=Q1, R=R )
+          CVError = This%ComputeCVLOOErrorQ1R(System=System, Goal=Goal, Coefficients=Coefficients, Q1=Q1, R=R)
         class default
-          CVError = This%CVError%ComputeError( Solver=This, System=System, Goal=Goal, Coefficients=Coefficients)
+          CVError = This%CVError%ComputeError(Solver=This, System=System, Goal=Goal, Coefficients=Coefficients)
       end select
     end if
 
     deallocate(Q1, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Q1', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
 
     deallocate(R, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='R', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='R', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeCVLOOError( This, System, Goal, Coefficients )
+  function ComputeCVLOOError(This, System, Goal, Coefficients)
 
     real(rkp)                                                         ::    ComputeCVLOOError
 
@@ -662,87 +662,87 @@ contains
     M = size(System,1)
     N = size(System,2)
 
-    if ( M < N ) call Error%Raise( Line='This optimized routine works only with overdetermined systems', ProcName=ProcName )
+    if (M < N) call Error%Raise(Line='This optimized routine works only with overdetermined systems', ProcName=ProcName)
     
     ! Getting Q and then Q1 from QR decomposition
 
-    allocate(Q1, source=System, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Q', ProcName=ProcName, stat=StatLoc )
+    allocate(Q1, source=System, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Q', ProcName=ProcName, stat=StatLoc)
 
     allocate(R(N,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='R', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
 
-    allocate( TAU(min(M,N)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='TAU', ProcName=ProcName, stat=StatLoc )
+    allocate(TAU(min(M,N)), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
 
-    call DGEQRF( M, N, Q1, M, TAU, WORKSIZE, -1, StatLoc  )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DGEQRF", ProcName=ProcName )
+    call DGEQRF(M, N, Q1, M, TAU, WORKSIZE, -1, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
 
     LWORK = nint(WORKSIZE(1))
 
     allocate(WORK(LWORK), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
-    call DGEQRF( M, N, Q1, M, TAU, WORK, LWORK, StatLoc  )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DGEQRF", ProcName=ProcName )
+    call DGEQRF(M, N, Q1, M, TAU, WORK, LWORK, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
 
     deallocate(WORK, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, N
       R(1:i,i) = Q1(1:i,i)
     end do
 
-    call DORGQR( M, N, N, Q1, M, TAU, WORKSIZE, -1, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DORGQR", ProcName=ProcName )
+    call DORGQR(M, N, N, Q1, M, TAU, WORKSIZE, -1, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORGQR", ProcName=ProcName)
 
     LWORK = nint(WORKSIZE(1))
 
     allocate(WORK(LWORK), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
-    call DORGQR( M, N, N, Q1, M, TAU, WORK, LWORK, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DORGQR", ProcName=ProcName )
+    call DORGQR(M, N, N, Q1, M, TAU, WORK, LWORK, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORGQR", ProcName=ProcName)
 
     deallocate(WORK, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
     deallocate(TAU, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TAU', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
 
     ! Getting diagonals of the hat matrix
 
-    allocate( HatDiag(M), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='HatDiag', ProcName=ProcName, stat=StatLoc )
+    allocate(HatDiag(M), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='HatDiag', ProcName=ProcName, stat=StatLoc)
 
     Q1 = Q1*Q1
     HatDiag = sum(Q1,2)
 
     deallocate(Q1, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Q1', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
 
     ComputeCVLOOError = Zero
     i = 1
     do i = 1, M
-      ComputeCVLOOError = ComputeCVLOOError + ( (Goal(i) - dot_product(System(i,:),Coefficients)) / (One - HatDiag(i)) )**2
+      ComputeCVLOOError = ComputeCVLOOError + ((Goal(i) - dot_product(System(i,:),Coefficients)) / (One - HatDiag(i)))**2
     end do
     ComputeCVLOOError = ComputeCVLOOError / real(M,rkp)
 
     deallocate(HatDiag, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='HatDiag', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='HatDiag', ProcName=ProcName, stat=StatLoc)
 
-    if ( This%CVError%IsNormalized() ) then
+    if (This%CVError%IsNormalized()) then
       GoalVariance = ComputeSampleVar(Goal)
-      if ( GoalVariance <= Zero ) GoalVariance = tiny(One)
+      if (GoalVariance <= Zero) GoalVariance = tiny(One)
       ComputeCVLOOError = ComputeCVLOOError / GoalVariance
     end if
     
 
-    if ( This%CVError%IsCorrected() ) then
+    if (This%CVError%IsCorrected()) then
       CorrFactor = Zero
-      allocate( VarR1D(N), stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      allocate(VarR1D(N), stat=StatLoc)
+      if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
       do i = 1, N
         VarR1D = Zero
@@ -750,16 +750,16 @@ contains
         ii = i+1
         do ii = i+1, N
           iim1 = ii - 1
-          VarR1D(ii) = ( - dot_product( R(i:iim1,ii), VarR1D(i:iim1) ) ) / R(ii,ii)
+          VarR1D(ii) = (- dot_product(R(i:iim1,ii), VarR1D(i:iim1))) / R(ii,ii)
         end do
         VarR1D(i:) = VarR1D(i:)*VarR1D(i:)
-        CorrFactor = CorrFactor + sum( VarR1D(i:) )
+        CorrFactor = CorrFactor + sum(VarR1D(i:))
       end do
 
-      CorrFactor = ( real(M,rkp) / ( real(M,rkp) - real(N,rkp) ) ) * ( One + CorrFactor )
+      CorrFactor = (real(M,rkp) / (real(M,rkp) - real(N,rkp))) * (One + CorrFactor)
 
-      deallocate( VarR1D, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      deallocate(VarR1D, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
       ComputeCVLOOError = ComputeCVLOOError * CorrFactor
     end if
@@ -768,7 +768,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeCVLOOErrorQ1R( This, System, Goal, Coefficients, Q1, R )
+  function ComputeCVLOOErrorQ1R(This, System, Goal, Coefficients, Q1, R)
 
     real(rkp)                                                         ::    ComputeCVLOOErrorQ1R
 
@@ -795,36 +795,36 @@ contains
     M = size(System,1)
     N = size(System,2)
 
-    if ( M < N ) call Error%Raise( Line='This optimized routine works only with overdetermined systems', ProcName=ProcName )
+    if (M < N) call Error%Raise(Line='This optimized routine works only with overdetermined systems', ProcName=ProcName)
 
     ! Getting diagonals of the hat matrix
 
-    allocate( HatDiag(M), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='HatDiag', ProcName=ProcName, stat=StatLoc )
+    allocate(HatDiag(M), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='HatDiag', ProcName=ProcName, stat=StatLoc)
 
     HatDiag = sum(Q1**2,2)
 
     ComputeCVLOOErrorQ1R = Zero
     i = 1
     do i = 1, M
-      ComputeCVLOOErrorQ1R = ComputeCVLOOErrorQ1R + ( (Goal(i) - dot_product(System(i,:),Coefficients)) / (One - HatDiag(i)) )**2
+      ComputeCVLOOErrorQ1R = ComputeCVLOOErrorQ1R + ((Goal(i) - dot_product(System(i,:),Coefficients)) / (One - HatDiag(i)))**2
     end do
     ComputeCVLOOErrorQ1R = ComputeCVLOOErrorQ1R / real(M,rkp)
 
     deallocate(HatDiag, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='HatDiag', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='HatDiag', ProcName=ProcName, stat=StatLoc)
 
-    if ( This%CVError%IsNormalized() ) then
+    if (This%CVError%IsNormalized()) then
       GoalVariance = ComputeSampleVar(Goal)
-      if ( GoalVariance <= Zero ) GoalVariance = tiny(One)
+      if (GoalVariance <= Zero) GoalVariance = tiny(One)
       ComputeCVLOOErrorQ1R = ComputeCVLOOErrorQ1R / GoalVariance
     end if
     
 
-    if ( This%CVError%IsCorrected() ) then
+    if (This%CVError%IsCorrected()) then
       CorrFactor = Zero
-      allocate( VarR1D(N), stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      allocate(VarR1D(N), stat=StatLoc)
+      if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
       do i = 1, N
         VarR1D = Zero
@@ -832,16 +832,16 @@ contains
         ii = i+1
         do ii = i+1, N
           iim1 = ii - 1
-          VarR1D(ii) = ( - dot_product( R(i:iim1,ii), VarR1D(i:iim1) ) ) / R(ii,ii)
+          VarR1D(ii) = (- dot_product(R(i:iim1,ii), VarR1D(i:iim1))) / R(ii,ii)
         end do
         VarR1D(i:) = VarR1D(i:)*VarR1D(i:)
-        CorrFactor = CorrFactor + sum( VarR1D(i:) )
+        CorrFactor = CorrFactor + sum(VarR1D(i:))
       end do
 
-      CorrFactor = ( real(M,rkp) / ( real(M,rkp) - real(N,rkp) ) ) * ( One + CorrFactor )
+      CorrFactor = (real(M,rkp) / (real(M,rkp) - real(N,rkp))) * (One + CorrFactor)
 
-      deallocate( VarR1D, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+      deallocate(VarR1D, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
       ComputeCVLOOErrorQ1R = ComputeCVLOOErrorQ1R * CorrFactor
     end if
@@ -850,7 +850,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(LinSolverOLS_Type), intent(out)                             ::    LHS
     class(LinSolverMethod_Type), intent(in)                           ::    RHS
@@ -864,12 +864,12 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           allocate(LHS%CVError, source=RHS%CVError, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CVError', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%CVError', ProcName=ProcName, stat=StatLoc)
         end if
       class default
-        call Error%Raise( Line='Mismatching object types', ProcName=ProcName )
+        call Error%Raise(Line='Mismatching object types', ProcName=ProcName)
     end select
 
   end subroutine

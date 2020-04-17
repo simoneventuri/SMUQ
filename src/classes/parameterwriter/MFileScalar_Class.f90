@@ -60,13 +60,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(MFileScalar_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'mfilescalar'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -76,23 +76,23 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(MFileScalar_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc = 0
 
-    if ( allocated(This%MParam) ) deallocate(This%MParam, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MParam', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%MParam)) deallocate(This%MParam, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%MParam', ProcName=ProcName, stat=StatLoc)
 
     This%NbMParams = 0
 
-    if ( allocated(This%ParamIdentifier) ) deallocate(This%ParamIdentifier, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamIdentifier', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%ParamIdentifier)) deallocate(This%ParamIdentifier, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamIdentifier', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%ParamFormat) ) deallocate(This%ParamFormat, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamFormat', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%ParamFormat)) deallocate(This%ParamFormat, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamFormat', ProcName=ProcName, stat=StatLoc)
 
     This%Initialized = .false.
     This%Constructed = .false.
@@ -103,7 +103,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(MFileScalar_Type), intent(inout)                            ::    This
 
@@ -113,7 +113,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     use StringRoutines_Module
     use ArrayRoutines_Module
@@ -137,28 +137,28 @@ contains
     integer                                                           ::    NbLines=0
     type(SMUQFile_Type)                                               ::    MTemplateFile
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     SectionName = 'parameters'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     This%NbMParams = InputSection%GetNumberofSubSections()
 
     allocate(This%MParam(This%NbMParams), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%MParam', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%MParam', ProcName=ProcName, stat=StatLoc)
 
     allocate(This%ParamFormat(This%NbMParams), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamFormat', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%ParamFormat', ProcName=ProcName, stat=StatLoc)
     
     allocate(This%ParamIdentifier(This%NbMParams), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamIdentifier', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%ParamIdentifier', ProcName=ProcName, stat=StatLoc)
 
     ParameterName = 'format'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( .not. Found ) VarC0D = 'G0'
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (.not. Found) VarC0D = 'G0'
     i = 1
     do i = 1, THis%NbMParams
       call This%ParamFormat(i)%Set_Value(Value=VarC0D)
@@ -169,23 +169,23 @@ contains
       SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
 
       ParameterName = 'format'
-      call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SubSectionName, Mandatory=.false., Found=Found )
-      if ( Found ) call This%ParamFormat(i)%Set_Value(Value=VarC0D)
+      call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SubSectionName, Mandatory=.false., Found=Found)
+      if (Found) call This%ParamFormat(i)%Set_Value(Value=VarC0D)
 
       ParameterName = 'identifier'
-      call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SubSectionName, Mandatory=.true. )
+      call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SubSectionName, Mandatory=.true.)
       call This%ParamIdentifier(i)%Set_Value(Value=VarC0D)
 
       VarC0D = '{' // This%ParamIdentifier(i)%Getvalue() // '}'
 
       SubSectionName = SubSectionName // '>parameter'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call MParamScalar_Factory%Construct( Object=MParam, Input=InputSection, Prefix=PrefixLoc )
-      call This%MParam(i)%Set( Object=MParam )
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+      call MParamScalar_Factory%Construct(Object=MParam, Input=InputSection, Prefix=PrefixLoc)
+      call This%MParam(i)%Set(Object=MParam)
       nullify(InputSection)
 
       deallocate(MParam, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='MParam', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='MParam', ProcName=ProcName, stat=StatLoc)
     end do
 
     This%Constructed = .true.
@@ -194,12 +194,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(MFileScalar_Type), intent(inout)                            ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -214,33 +214,33 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName=trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName=trim(adjustl(Name)))
 
 
 
     SectionName = 'parameters'
-    call GetInput%AddSection( SectionName=SectionName)
+    call GetInput%AddSection(SectionName=SectionName)
 
     i = 1
     do i = 1, This%NbMParams
-      call GetInput%AddSection( SectionName='parameter' // ConvertToString(Value=i), To_SubSection=SectionName )
+      call GetInput%AddSection(SectionName='parameter' // ConvertToString(Value=i), To_SubSection=SectionName)
       SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
-      call GetInput%AddParameter(Name='identifier', Value=This%ParamIdentifier(i)%GetValue(), SectionName=SubSectionName )
-      call GetInput%AddParameter(Name='format', Value=This%ParamFormat(i)%GetValue(), SectionName=SubSectionName )
+      call GetInput%AddParameter(Name='identifier', Value=This%ParamIdentifier(i)%GetValue(), SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='format', Value=This%ParamFormat(i)%GetValue(), SectionName=SubSectionName)
       MParam => This%MParam(i)%GetPointer()
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/parameter' // ConvertToString(Value=i)
-      call GetInput%AddSection( Section=MParamScalar_Factory%GetObjectInput(MainSectionName='parameter', Object=MParam,           &
-                                                         Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SubSectionName )
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/parameter' // ConvertToString(Value=i)
+      call GetInput%AddSection(Section=MParamScalar_Factory%GetObjectInput(Name='parameter', Object=MParam,           &
+                                                         Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SubSectionName)
       nullify(MParam)
     end do
 
@@ -248,7 +248,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInput( This, Input, Template, ProcessedTemplate, File )
+  subroutine WriteInput(This, Input, Template, ProcessedTemplate, File)
 
     class(MFileScalar_Type), intent(inout)                            ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -267,10 +267,10 @@ contains
     type(LinkedList0D_Type), allocatable, dimension(:)                ::    LineLog
     character(:), allocatable                                         ::    CommentChar
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( size(ProcessedTemplate,1) /= size(Template,1) ) call Error%Raise( Line='Mismatch in template and processed template ' // &
-                                                                                                      'sizes', ProcName=ProcName )
+    if (size(ProcessedTemplate,1) /= size(Template,1)) call Error%Raise(Line='Mismatch in template and processed template ' // &
+                                                                                                      'sizes', ProcName=ProcName)
 
     CommentChar = File%GetComment()
 
@@ -279,7 +279,7 @@ contains
     NbLines = size(Template,1)
 
     allocate(LineLog(This%NbMParams), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='LineLog', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='LineLog', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, This%NbMParams
@@ -287,10 +287,10 @@ contains
 
       ii = 1
       do ii = 1, NbLines
-        if ( index(Template(ii)%GetValue(), VarC0D) /= 0 ) call LineLog(i)%Append( Value=ii )
+        if (index(Template(ii)%GetValue(), VarC0D) /= 0) call LineLog(i)%Append(Value=ii)
       end do
 
-      if ( LineLog(i)%GetLength() < 1 ) call Error%Raise( Line='Could not find indicator in template: ' //                        &
+      if (LineLog(i)%GetLength() < 1) call Error%Raise(Line='Could not find indicator in template: ' //                        &
                                                                             This%ParamIdentifier(i)%GetValue(), ProcName=ProcName)
     end do
 
@@ -299,11 +299,11 @@ contains
       MParamPointer => This%MParam(i)%GetPointer()       
       ii = 1
       do ii = 1, LineLog(i)%GetLength()
-        call LineLog(i)%Get( Node=ii, Value=IndexLoc )
-        VarC0D = ReplaceCharacter( String=ProcessedTemplate(IndexLoc)%GetValue(),                                                 &
+        call LineLog(i)%Get(Node=ii, Value=IndexLoc)
+        VarC0D = ReplaceCharacter(String=ProcessedTemplate(IndexLoc)%GetValue(),                                                 &
                  Old='{' // This%ParamIdentifier(i)%GetValue() // '}' ,                                                           &
-                 New=MParamPointer%GetCharValue(Input=Input, Format=This%ParamFormat(i)%GetValue()) )
-        call ProcessedTemplate(IndexLoc)%Set_Value( Value=VarC0D )
+                 New=MParamPointer%GetCharValue(Input=Input, Format=This%ParamFormat(i)%GetValue()))
+        call ProcessedTemplate(IndexLoc)%Set_Value(Value=VarC0D)
       end do
       nullify(MParamPointer)
     end do
@@ -312,7 +312,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(MFileScalar_Type), intent(out)                              ::    LHS
     class(MFileInput_Type), intent(in)                                ::    RHS
@@ -328,18 +328,18 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%NbMParams = RHS%NbMParams
           allocate(LHS%MParam, source=RHS%MParam, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MParam', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%MParam', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%ParamIdentifier, source=RHS%ParamIdentifier, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ParamIdentifier', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%ParamIdentifier', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%ParamFormat, source=RHS%ParamFormat, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%ParamFormat', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%ParamFormat', ProcName=ProcName, stat=StatLoc)
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -347,21 +347,21 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(MFileScalar_Type),intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%MParam) ) deallocate(This%MParam, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MParam', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%MParam)) deallocate(This%MParam, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%MParam', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%ParamIdentifier) ) deallocate(This%ParamIdentifier, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamIdentifier', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%ParamIdentifier)) deallocate(This%ParamIdentifier, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamIdentifier', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%ParamFormat) ) deallocate(This%ParamFormat, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamFormat', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%ParamFormat)) deallocate(This%ParamFormat, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamFormat', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

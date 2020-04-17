@@ -101,7 +101,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteArray_L1D( Array, RowMajor )
+  subroutine WriteArray_L1D(Array, RowMajor)
 
     logical, dimension(:), intent(in)                                 ::    Array
     logical, optional, intent(in)                                     ::    RowMajor
@@ -112,9 +112,9 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
         write(*,*) Array(i)
@@ -127,7 +127,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteArray_I42D( Array, RowMajor )
+  subroutine WriteArray_I42D(Array, RowMajor)
 
     integer(4), dimension(:,:), intent(in)                            ::    Array
     logical, optional, intent(in)                                     ::    RowMajor
@@ -138,9 +138,9 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
         write(*,*) Array(i,:)
@@ -156,7 +156,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteArray_I82D( Array, RowMajor )
+  subroutine WriteArray_I82D(Array, RowMajor)
 
     integer(8), dimension(:,:), intent(in)                            ::    Array
     logical, optional, intent(in)                                     ::    RowMajor
@@ -167,9 +167,9 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
         write(*,*) Array(i,:)
@@ -185,7 +185,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteArray_R42D( Array, RowMajor )
+  subroutine WriteArray_R42D(Array, RowMajor)
 
     real(4), dimension(:,:), intent(in)                               ::    Array
     logical, optional, intent(in)                                     ::    RowMajor
@@ -196,9 +196,9 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
         write(*,*) Array(i,:)
@@ -214,7 +214,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteArray_R82D( Array, RowMajor )
+  subroutine WriteArray_R82D(Array, RowMajor)
 
     real(8), dimension(:,:), intent(in)                               ::    Array
     logical, optional, intent(in)                                     ::    RowMajor
@@ -225,9 +225,9 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
         write(*,*) Array(i,:)
@@ -243,7 +243,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_R41D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_R41D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     real(4), allocatable, dimension(:), intent(out)                   ::    Array
@@ -267,13 +267,13 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -282,32 +282,32 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'values'
-        call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-        allocate(Array, source=ConvertToReal4s( String=VarC0D, Separator=' ' ), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
+        allocate(Array, source=ConvertToReal4s(String=VarC0D, Separator=' '), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_R81D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_R81D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     real(8), allocatable, dimension(:), intent(out)                   ::    Array
@@ -331,13 +331,13 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -346,32 +346,32 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'values'
-        call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-        allocate(Array, source=ConvertToReal8s( String=VarC0D, Separator=' ' ), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
+        allocate(Array, source=ConvertToReal8s(String=VarC0D, Separator=' '), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_I41D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_I41D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     integer(4), allocatable, dimension(:), intent(out)                ::    Array
@@ -395,13 +395,13 @@ contains
     logical                                                           ::    RowMajorLoc
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -410,32 +410,32 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'values'
-        call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-        allocate(Array, source=ConvertToInteger4s( String=VarC0D, Separator=' ' ), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
+        allocate(Array, source=ConvertToInteger4s(String=VarC0D, Separator=' '), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_I81D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_I81D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     integer(8), allocatable, dimension(:), intent(out)                ::    Array
@@ -459,13 +459,13 @@ contains
     logical                                                           ::    RowMajorLoc
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -474,32 +474,32 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'values'
-        call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-        allocate(Array, source=ConvertToInteger8s( String=VarC0D, Separator=' ' ), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
+        allocate(Array, source=ConvertToInteger8s(String=VarC0D, Separator=' '), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_C1D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_C1D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     character(:), allocatable, dimension(:), intent(out)              ::    Array
@@ -523,13 +523,13 @@ contains
     logical                                                           ::    RowMajorLoc
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -538,31 +538,31 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'values'
-        call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-        call Parse( Input=VarC0D, Separator=' ', Output=Array )
+        call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
+        call Parse(Input=VarC0D, Separator=' ', Output=Array)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_L1D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_L1D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     logical, allocatable, dimension(:), intent(out)                   ::    Array
@@ -586,13 +586,13 @@ contains
     logical                                                           ::    RowMajorLoc
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -601,32 +601,32 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'values'
-        call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-        allocate(Array, source=ConvertToLogicals( String=VarC0D, Separator=' ' ), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
+        allocate(Array, source=ConvertToLogicals(String=VarC0D, Separator=' '), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_CX1D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_CX1D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     complex, allocatable, dimension(:), intent(out)                   ::    Array
@@ -650,13 +650,13 @@ contains
     logical                                                           ::    RowMajorLoc
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -665,32 +665,32 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'values'
-        call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-        allocate(Array, source=ConvertToComplexs( String=VarC0D, Separator=' ' ), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
+        allocate(Array, source=ConvertToComplexs(String=VarC0D, Separator=' '), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_String1D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_String1D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     type(String_Type), allocatable, dimension(:), intent(out)         ::    Array
@@ -716,13 +716,13 @@ contains
     logical                                                           ::    RowMajorLoc
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -731,39 +731,39 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'values'
-        call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true. )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
+        call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
+        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
         allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         i = 1
         do i = 1, size(VarC1D)
-          call Array(i)%Set_Value( Value=trim(adjustl(VarC1D(i))) )
+          call Array(i)%Set_Value(Value=trim(adjustl(VarC1D(i))))
         end do
         deallocate(VarC1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_R42D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_R42D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     real(4), allocatable, dimension(:,:), intent(out)                 ::    Array
@@ -792,13 +792,13 @@ contains
     character(:), allocatable                                         ::    ParamPrefix
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -807,66 +807,66 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         SubSectionName = SectionName // '>array'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
         NbLines = InputSection%GetNumberofParameters()
-        if ( NbLines <= 0 ) call Error%Raise( Line='Specified 0 or less columns to be read in', ProcName=ProcName )
+        if (NbLines <= 0) call Error%Raise(Line='Specified 0 or less columns to be read in', ProcName=ProcName)
 
         ParamPrefix = 'column'
-        if ( RowMajorLoc ) ParamPrefix = 'row'
+        if (RowMajorLoc) ParamPrefix = 'row'
 
         i = 1
         do i = 1, NbLines
-          ParameterName = ParamPrefix // ConvertToString( Value=i )
-          call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-          call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-          if ( i == 1 ) then
+          ParameterName = ParamPrefix // ConvertToString(Value=i)
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
+          if (i == 1) then
             NbEntries = size(VarC1D,1)
-            if ( RowMajorLoc ) then
+            if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             else
               allocate(Array(NbEntries,NbLines), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if ( size(VarC1D,1) /= NbEntries ) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName )
+          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
+                                                             ProcName=ProcName)
 
-          if ( RowMajorLoc ) then
-            Array(i,:) = ConvertToReal4s( Strings=VarC1D )
+          if (RowMajorLoc) then
+            Array(i,:) = ConvertToReal4s(Strings=VarC1D)
           else
-            Array(:,i) = ConvertToReal4s( Strings=VarC1D )
+            Array(:,i) = ConvertToReal4s(Strings=VarC1D)
           end if
 
         end do
 
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_R82D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_R82D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     real(8), allocatable, dimension(:,:), intent(out)                 ::    Array
@@ -895,13 +895,13 @@ contains
     character(:), allocatable                                         ::    ParamPrefix
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -910,66 +910,66 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         SubSectionName = SectionName // '>array'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
         NbLines = InputSection%GetNumberofParameters()
-        if ( NbLines <= 0 ) call Error%Raise( Line='Specified 0 or less columns to be read in', ProcName=ProcName )
+        if (NbLines <= 0) call Error%Raise(Line='Specified 0 or less columns to be read in', ProcName=ProcName)
 
         ParamPrefix = 'column'
-        if ( RowMajorLoc ) ParamPrefix = 'row'
+        if (RowMajorLoc) ParamPrefix = 'row'
 
         i = 1
         do i = 1, NbLines
-          ParameterName = ParamPrefix // ConvertToString( Value=i )
-          call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-          call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-          if ( i == 1 ) then
+          ParameterName = ParamPrefix // ConvertToString(Value=i)
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
+          if (i == 1) then
             NbEntries = size(VarC1D,1)
-            if ( RowMajorLoc ) then
+            if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             else
               allocate(Array(NbEntries,NbLines), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if ( size(VarC1D,1) /= NbEntries ) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName )
+          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
+                                                             ProcName=ProcName)
 
-          if ( RowMajorLoc ) then
-            Array(i,:) = ConvertToReal8s( Strings=VarC1D )
+          if (RowMajorLoc) then
+            Array(i,:) = ConvertToReal8s(Strings=VarC1D)
           else
-            Array(:,i) = ConvertToReal8s( Strings=VarC1D )
+            Array(:,i) = ConvertToReal8s(Strings=VarC1D)
           end if
 
         end do
 
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_I42D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_I42D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     integer(4), allocatable, dimension(:,:), intent(out)              ::    Array
@@ -998,13 +998,13 @@ contains
     character(:), allocatable                                         ::    ParamPrefix
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -1013,64 +1013,64 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         SubSectionName = SectionName // '>array'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
         NbLines = InputSection%GetNumberofParameters()
-        if ( NbLines <= 0 ) call Error%Raise( Line='Specified 0 or less columns to be read in', ProcName=ProcName )
+        if (NbLines <= 0) call Error%Raise(Line='Specified 0 or less columns to be read in', ProcName=ProcName)
 
         ParamPrefix = 'column'
-        if ( RowMajorLoc ) ParamPrefix = 'row'
+        if (RowMajorLoc) ParamPrefix = 'row'
 
         i = 1
         do i = 1, NbLines
-          ParameterName = ParamPrefix // ConvertToString( Value=i )
-          call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-          call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-          if ( i == 1 ) then
+          ParameterName = ParamPrefix // ConvertToString(Value=i)
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
+          if (i == 1) then
             NbEntries = size(VarC1D,1)
-            if ( RowMajorLoc ) then
+            if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             else
               allocate(Array(NbEntries,NbLines), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if ( size(VarC1D,1) /= NbEntries ) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName )
-          if ( RowMajorLoc ) then
-            Array(i,:) = ConvertToInteger4s( Strings=VarC1D )
+          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
+                                                             ProcName=ProcName)
+          if (RowMajorLoc) then
+            Array(i,:) = ConvertToInteger4s(Strings=VarC1D)
           else
-            Array(:,i) = ConvertToInteger4s( Strings=VarC1D )
+            Array(:,i) = ConvertToInteger4s(Strings=VarC1D)
           end if
         end do
 
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_I82D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_I82D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     integer(8), allocatable, dimension(:,:), intent(out)              ::    Array
@@ -1099,13 +1099,13 @@ contains
     character(:), allocatable                                         ::    ParamPrefix
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -1114,64 +1114,64 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         SubSectionName = SectionName // '>array'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
         NbLines = InputSection%GetNumberofParameters()
-        if ( NbLines <= 0 ) call Error%Raise( Line='Specified 0 or less columns to be read in', ProcName=ProcName )
+        if (NbLines <= 0) call Error%Raise(Line='Specified 0 or less columns to be read in', ProcName=ProcName)
 
         ParamPrefix = 'column'
-        if ( RowMajorLoc ) ParamPrefix = 'row'
+        if (RowMajorLoc) ParamPrefix = 'row'
 
         i = 1
         do i = 1, NbLines
-          ParameterName = ParamPrefix // ConvertToString( Value=i )
-          call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-          call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-          if ( i == 1 ) then
+          ParameterName = ParamPrefix // ConvertToString(Value=i)
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
+          if (i == 1) then
             NbEntries = size(VarC1D,1)
-            if ( RowMajorLoc ) then
+            if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             else
               allocate(Array(NbEntries,NbLines), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if ( size(VarC1D,1) /= NbEntries ) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName )
-          if ( RowMajorLoc ) then
-            Array(i,:) = ConvertToInteger8s( Strings=VarC1D )
+          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
+                                                             ProcName=ProcName)
+          if (RowMajorLoc) then
+            Array(i,:) = ConvertToInteger8s(Strings=VarC1D)
           else
-            Array(:,i) = ConvertToInteger8s( Strings=VarC1D )
+            Array(:,i) = ConvertToInteger8s(Strings=VarC1D)
           end if
         end do
 
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_C2D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_C2D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     character(:), allocatable, dimension(:,:), intent(out)            ::    Array
@@ -1200,13 +1200,13 @@ contains
     character(:), allocatable                                         ::    ParamPrefix
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -1215,49 +1215,49 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         SubSectionName = SectionName // '>array'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
         NbLines = InputSection%GetNumberofParameters()
-        if ( NbLines <= 0 ) call Error%Raise( Line='Specified 0 or less columns to be read in', ProcName=ProcName )
+        if (NbLines <= 0) call Error%Raise(Line='Specified 0 or less columns to be read in', ProcName=ProcName)
 
         ParamPrefix = 'column'
-        if ( RowMajorLoc ) ParamPrefix = 'row'
+        if (RowMajorLoc) ParamPrefix = 'row'
 
         i = 1
         do i = 1, NbLines
-          ParameterName = ParamPrefix // ConvertToString( Value=i )
-          call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-          call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-          if ( i == 1 ) then
+          ParameterName = ParamPrefix // ConvertToString(Value=i)
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
+          if (i == 1) then
             NbEntries = size(VarC1D,1)
-            if ( RowMajorLoc ) then
+            if (RowMajorLoc) then
               allocate(character(200) :: Array(NbLines,NbEntries), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             else
               allocate(character(200) :: Array(NbEntries,NbLines), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if ( size(VarC1D,1) /= NbEntries ) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName )
-          if ( RowMajorLoc ) then
+          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
+                                                             ProcName=ProcName)
+          if (RowMajorLoc) then
             Array(i,:) = VarC1D
           else
             Array(:,i) = VarC1D
@@ -1265,14 +1265,14 @@ contains
         end do
 
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_L2D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_L2D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     logical, allocatable, dimension(:,:), intent(out)                 ::    Array
@@ -1301,13 +1301,13 @@ contains
     character(:), allocatable                                         ::    ParamPrefix
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -1316,64 +1316,64 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         SubSectionName = SectionName // '>array'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
         NbLines = InputSection%GetNumberofParameters()
-        if ( NbLines <= 0 ) call Error%Raise( Line='Specified 0 or less columns to be read in', ProcName=ProcName )
+        if (NbLines <= 0) call Error%Raise(Line='Specified 0 or less columns to be read in', ProcName=ProcName)
 
         ParamPrefix = 'column'
-        if ( RowMajorLoc ) ParamPrefix = 'row'
+        if (RowMajorLoc) ParamPrefix = 'row'
 
         i = 1
         do i = 1, NbLines
-          ParameterName = ParamPrefix // ConvertToString( Value=i )
-          call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-          call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-          if ( i == 1 ) then
+          ParameterName = ParamPrefix // ConvertToString(Value=i)
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
+          if (i == 1) then
             NbEntries = size(VarC1D,1)
-            if ( RowMajorLoc ) then
+            if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             else
               allocate(Array(NbEntries,NbLines), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if ( size(VarC1D,1) /= NbEntries ) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName )
-          if ( RowMajorLoc ) then
-            Array(i,:) = ConvertToLogicals( Strings=VarC1D )
+          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
+                                                             ProcName=ProcName)
+          if (RowMajorLoc) then
+            Array(i,:) = ConvertToLogicals(Strings=VarC1D)
           else
-            Array(:,i) = ConvertToLogicals( Strings=VarC1D )
+            Array(:,i) = ConvertToLogicals(Strings=VarC1D)
           end if
         end do
 
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_CX2D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_CX2D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     complex, allocatable, dimension(:,:), intent(out)                 ::    Array
@@ -1402,13 +1402,13 @@ contains
     character(:), allocatable                                         ::    ParamPrefix
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -1417,63 +1417,63 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         SubSectionName = SectionName // '>array'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
         NbLines = InputSection%GetNumberofParameters()
-        if ( NbLines <= 0 ) call Error%Raise( Line='Specified 0 or less columns to be read in', ProcName=ProcName )
+        if (NbLines <= 0) call Error%Raise(Line='Specified 0 or less columns to be read in', ProcName=ProcName)
 
         ParamPrefix = 'column'
-        if ( RowMajorLoc ) ParamPrefix = 'row'
+        if (RowMajorLoc) ParamPrefix = 'row'
 
         i = 1
         do i = 1, NbLines
-          ParameterName = ParamPrefix // ConvertToString( Value=i )
-          call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-          call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-          if ( i == 1 ) then
+          ParameterName = ParamPrefix // ConvertToString(Value=i)
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
+          if (i == 1) then
             NbEntries = size(VarC1D,1)
-            if ( RowMajorLoc ) then
+            if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             else
               allocate(Array(NbEntries,NbLines), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if ( size(VarC1D,1) /= NbEntries ) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName )
-          if ( RowMajorLoc ) then
-            Array(i,:) = ConvertToComplexs( Strings=VarC1D )
+          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
+                                                             ProcName=ProcName)
+          if (RowMajorLoc) then
+            Array(i,:) = ConvertToComplexs(Strings=VarC1D)
           else
-            Array(:,i) = ConvertToComplexs( Strings=VarC1D )
+            Array(:,i) = ConvertToComplexs(Strings=VarC1D)
           end if
         end do
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_String2D( Input, Array, Prefix, RowMajor )
+  subroutine ImportArrayInput_String2D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
     type(String_Type), allocatable, dimension(:,:), intent(out)       ::    Array
@@ -1502,13 +1502,13 @@ contains
     character(:), allocatable                                         ::    ParamPrefix
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -1517,49 +1517,49 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ArrayFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        call ImportArray( File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc )
+        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
       case('internal')
         ParameterName = 'row_major'
-        call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) RowMajorLoc = VarL0D
+        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) RowMajorLoc = VarL0D
 
         SubSectionName = SectionName // '>array'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
         NbLines = InputSection%GetNumberofParameters()
-        if ( NbLines <= 0 ) call Error%Raise( Line='Specified 0 or less columns to be read in', ProcName=ProcName )
+        if (NbLines <= 0) call Error%Raise(Line='Specified 0 or less columns to be read in', ProcName=ProcName)
 
         ParamPrefix = 'column'
-        if ( RowMajorLoc ) ParamPrefix = 'row'
+        if (RowMajorLoc) ParamPrefix = 'row'
 
         i = 1
         do i = 1, NbLines
-          ParameterName = ParamPrefix // ConvertToString( Value=i )
-          call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-          call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
-          if ( i == 1 ) then
+          ParameterName = ParamPrefix // ConvertToString(Value=i)
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
+          if (i == 1) then
             NbEntries = size(VarC1D,1)
-            if ( RowMajorLoc ) then
+            if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             else
               allocate(Array(NbEntries,NbLines), stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if ( size(VarC1D,1) /= NbEntries ) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName )
-          if ( RowMajorLoc ) then
+          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
+                                                             ProcName=ProcName)
+          if (RowMajorLoc) then
             ii = 1
             do ii = 1, NbEntries
               Array(i,ii) = trim(adjustl(VarC1D(ii)))
@@ -1574,14 +1574,14 @@ contains
         end do
 
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_R41D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_R41D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     real(4), dimension(:), allocatable, intent(out)                   ::    Array
@@ -1606,62 +1606,62 @@ contains
     character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
       end do
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         Size1 = ii
-        if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+        if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
         call File%Rewind()
         allocate(Array(Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         i = 1
         ii = 0
         do i = 1, NbLines
-          call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-          if ( i <= NbLinesSkipLoc ) cycle
-          if ( VarC0D(1:len(Comment)) == Comment ) cycle
+          call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+          if (i <= NbLinesSkipLoc) cycle
+          if (VarC0D(1:len(Comment)) == Comment) cycle
           ii = ii + 1
-          Array(ii) = ConvertToReal4( String=VarC0D )
+          Array(ii) = ConvertToReal4(String=VarC0D)
         end do
       else
-        if ( ii /= 1 ) call Error%Raise( Line='Only one line can specify the array to be read in column wise', ProcName=ProcName )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
+        if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
+        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
         allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         Array = ConvertToReal4s(Strings=VarC1D)
         deallocate(VarC1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
       end if
 
     end if
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_R81D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_R81D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     real(8), dimension(:), allocatable, intent(out)                   ::    Array
@@ -1686,62 +1686,62 @@ contains
     character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
       end do
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         Size1 = ii
-        if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+        if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
         call File%Rewind()
         allocate(Array(Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         i = 1
         ii = 0
         do i = 1, NbLines
-          call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-          if ( i <= NbLinesSkipLoc ) cycle
-          if ( VarC0D(1:len(Comment)) == Comment ) cycle
+          call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+          if (i <= NbLinesSkipLoc) cycle
+          if (VarC0D(1:len(Comment)) == Comment) cycle
           ii = ii + 1
-          Array(ii) = ConvertToReal8( String=VarC0D )
+          Array(ii) = ConvertToReal8(String=VarC0D)
         end do
       else
-        if ( ii /= 1 ) call Error%Raise( Line='Only one line can specify the array to be read in column wise', ProcName=ProcName )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
+        if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
+        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
         allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         Array = ConvertToReal8s(Strings=VarC1D)
         deallocate(VarC1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
       end if
 
     end if
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_I41D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_I41D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     integer(4), dimension(:), allocatable, intent(out)                ::    Array
@@ -1766,62 +1766,62 @@ contains
     character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
       end do
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         Size1 = ii
-        if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+        if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
         call File%Rewind()
         allocate(Array(Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         i = 1
         ii = 0
         do i = 1, NbLines
-          call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-          if ( i <= NbLinesSkipLoc ) cycle
-          if ( VarC0D(1:len(Comment)) == Comment ) cycle
+          call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+          if (i <= NbLinesSkipLoc) cycle
+          if (VarC0D(1:len(Comment)) == Comment) cycle
           ii = ii + 1
-          Array(ii) = ConvertToInteger4( String=VarC0D )
+          Array(ii) = ConvertToInteger4(String=VarC0D)
         end do
       else
-        if ( ii /= 1 ) call Error%Raise( Line='Only one line can specify the array to be read in column wise', ProcName=ProcName )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
+        if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
+        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
         allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         Array = ConvertToInteger4s(Strings=VarC1D)
         deallocate(VarC1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
       end if
 
     end if
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_I81D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_I81D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     integer(8), dimension(:), allocatable, intent(out)                ::    Array
@@ -1846,62 +1846,62 @@ contains
     character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
       end do
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         Size1 = ii
-        if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+        if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
         call File%Rewind()
         allocate(Array(Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         i = 1
         ii = 0
         do i = 1, NbLines
-          call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-          if ( i <= NbLinesSkipLoc ) cycle
-          if ( VarC0D(1:len(Comment)) == Comment ) cycle
+          call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+          if (i <= NbLinesSkipLoc) cycle
+          if (VarC0D(1:len(Comment)) == Comment) cycle
           ii = ii + 1
-          Array(ii) = ConvertToInteger8( String=VarC0D )
+          Array(ii) = ConvertToInteger8(String=VarC0D)
         end do
       else
-        if ( ii /= 1 ) call Error%Raise( Line='Only one line can specify the array to be read in column wise', ProcName=ProcName )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
+        if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
+        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
         allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         Array = ConvertToInteger8s(Strings=VarC1D)
         deallocate(VarC1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
       end if
 
     end if
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_C1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_C1D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     character(:), dimension(:), allocatable, intent(out)              ::    Array
@@ -1926,62 +1926,62 @@ contains
     character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
       end do
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         Size1 = ii
-        if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+        if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
         call File%Rewind()
         allocate(character(200) :: Array(Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         i = 1
         ii = 0
         do i = 1, NbLines
-          call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-          if ( i <= NbLinesSkipLoc ) cycle
-          if ( VarC0D(1:len(Comment)) == Comment ) cycle
+          call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+          if (i <= NbLinesSkipLoc) cycle
+          if (VarC0D(1:len(Comment)) == Comment) cycle
           ii = ii + 1
           Array(ii) = VarC0D
         end do
       else
-        if ( ii /= 1 ) call Error%Raise( Line='Only one line can specify the array to be read in column wise', ProcName=ProcName )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
+        if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
+        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
         allocate(character(200) :: Array(size(VarC1D,1)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         Array = VarC1D
         deallocate(VarC1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
       end if
 
     end if
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_L1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_L1D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     logical, dimension(:), allocatable, intent(out)                   ::    Array
@@ -2006,62 +2006,62 @@ contains
     character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
       end do
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         Size1 = ii
-        if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+        if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
         call File%Rewind()
         allocate(Array(Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         i = 1
         ii = 0
         do i = 1, NbLines
-          call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-          if ( i <= NbLinesSkipLoc ) cycle
-          if ( VarC0D(1:len(Comment)) == Comment ) cycle
+          call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+          if (i <= NbLinesSkipLoc) cycle
+          if (VarC0D(1:len(Comment)) == Comment) cycle
           ii = ii + 1
-          Array(ii) = ConvertToLogical( String=VarC0D )
+          Array(ii) = ConvertToLogical(String=VarC0D)
         end do
       else
-        if ( ii /= 1 ) call Error%Raise( Line='Only one line can specify the array to be read in column wise', ProcName=ProcName )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
+        if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
+        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
         allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         Array = ConvertToLogicals(Strings=VarC1D)
         deallocate(VarC1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
       end if
 
     end if
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_CX1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_CX1D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     complex, dimension(:), allocatable, intent(out)                   ::    Array
@@ -2086,62 +2086,62 @@ contains
     character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
       end do
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         Size1 = ii
-        if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+        if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
         call File%Rewind()
         allocate(Array(Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         i = 1
         ii = 0
         do i = 1, NbLines
-          call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-          if ( i <= NbLinesSkipLoc ) cycle
-          if ( VarC0D(1:len(Comment)) == Comment ) cycle
+          call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+          if (i <= NbLinesSkipLoc) cycle
+          if (VarC0D(1:len(Comment)) == Comment) cycle
           ii = ii + 1
-          Array(ii) = ConvertToComplex( String=VarC0D )
+          Array(ii) = ConvertToComplex(String=VarC0D)
         end do
       else
-        if ( ii /= 1 ) call Error%Raise( Line='Only one line can specify the array to be read in column wise', ProcName=ProcName )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
+        if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
+        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
         allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         Array = ConvertToComplexs(Strings=VarC1D)
         deallocate(VarC1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
       end if
 
     end if
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_String1D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_String1D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     type(String_Type), dimension(:), allocatable, intent(out)         ::    Array
@@ -2166,62 +2166,62 @@ contains
     character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
       end do
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         Size1 = ii
-        if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+        if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
         call File%Rewind()
         allocate(Array(Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         i = 1
         ii = 0
         do i = 1, NbLines
-          call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-          if ( i <= NbLinesSkipLoc ) cycle
-          if ( VarC0D(1:len(Comment)) == Comment ) cycle
+          call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+          if (i <= NbLinesSkipLoc) cycle
+          if (VarC0D(1:len(Comment)) == Comment) cycle
           ii = ii + 1
           Array(ii) = VarC0D
         end do
       else
-        if ( ii /= 1 ) call Error%Raise( Line='Only one line can specify the array to be read in column wise', ProcName=ProcName )
-        call Parse( Input=VarC0D, Separator=' ', Output=VarC1D )
+        if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
+        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
         allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
         Array = VarC1D
         deallocate(VarC1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarC1D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
       end if
 
     end if
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_R42D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_R42D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     real(4), dimension(:,:), allocatable, intent(out)                 ::    Array
@@ -2249,56 +2249,56 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
       Separator = File%GetSeparator()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        if ( ii == 1 ) then
-          call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
+        if (ii == 1) then
+          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
           Size1 = size(VarC1D,1)
         end if
       end do
       Size2 = ii
-      if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+      if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
 
       call File%Rewind()
       
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         allocate(Array(Size2,Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       else
         allocate(Array(Size1,Size2), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       end if
 
       i = 1
       ii = 0
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
-        if ( size(VarC1D) /= Size1 ) call Error%Raise( Line='Number of entries mismatch in the line', ProcName=ProcName )
-        if ( RowMajorLoc ) then
-          Array(ii,:) = ConvertToReal4s( Strings=VarC1D )
+        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
+        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
+        if (RowMajorLoc) then
+          Array(ii,:) = ConvertToReal4s(Strings=VarC1D)
         else
-          Array(:,ii) = ConvertToReal4s( Strings=VarC1D )
+          Array(:,ii) = ConvertToReal4s(Strings=VarC1D)
         end if
       end do
 
@@ -2306,13 +2306,13 @@ contains
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_R82D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_R82D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     real(8), dimension(:,:), allocatable, intent(out)                 ::    Array
@@ -2340,56 +2340,56 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
       Separator = File%GetSeparator()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        if ( ii == 1 ) then
-          call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
+        if (ii == 1) then
+          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
           Size1 = size(VarC1D,1)
         end if
       end do
       Size2 = ii
-      if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+      if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
 
       call File%Rewind()
       
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         allocate(Array(Size2,Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       else
         allocate(Array(Size1,Size2), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       end if
 
       i = 1
       ii = 0
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
-        if ( size(VarC1D) /= Size1 ) call Error%Raise( Line='Number of entries mismatch in the line', ProcName=ProcName )
-        if ( RowMajorLoc ) then
-          Array(ii,:) = ConvertToReal8s( Strings=VarC1D )
+        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
+        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
+        if (RowMajorLoc) then
+          Array(ii,:) = ConvertToReal8s(Strings=VarC1D)
         else
-          Array(:,ii) = ConvertToReal8s( Strings=VarC1D )
+          Array(:,ii) = ConvertToReal8s(Strings=VarC1D)
         end if
       end do
 
@@ -2397,13 +2397,13 @@ contains
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_I42D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_I42D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     integer(4), dimension(:,:), allocatable, intent(out)              ::    Array
@@ -2431,56 +2431,56 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
       Separator = File%GetSeparator()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        if ( ii == 1 ) then
-          call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
+        if (ii == 1) then
+          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
           Size1 = size(VarC1D,1)
         end if
       end do
       Size2 = ii
-      if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+      if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
 
       call File%Rewind()
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         allocate(Array(Size2,Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       else
         allocate(Array(Size1,Size2), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       end if
 
       i = 1
       ii = 0
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
-        if ( size(VarC1D) /= Size1 ) call Error%Raise( Line='Number of entries mismatch in the line', ProcName=ProcName )
-        if ( RowMajorLoc ) then
-          Array(ii,:) = ConvertToInteger4s( Strings=VarC1D )
+        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
+        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
+        if (RowMajorLoc) then
+          Array(ii,:) = ConvertToInteger4s(Strings=VarC1D)
         else
-          Array(:,ii) = ConvertToInteger4s( Strings=VarC1D )
+          Array(:,ii) = ConvertToInteger4s(Strings=VarC1D)
         end if
       end do
 
@@ -2488,13 +2488,13 @@ contains
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_I82D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_I82D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     integer(8), dimension(:,:), allocatable, intent(out)              ::    Array
@@ -2522,56 +2522,56 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
       Separator = File%GetSeparator()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        if ( ii == 1 ) then
-          call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
+        if (ii == 1) then
+          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
           Size1 = size(VarC1D,1)
         end if
       end do
       Size2 = ii
-      if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+      if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
 
       call File%Rewind()
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         allocate(Array(Size2,Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       else
         allocate(Array(Size1,Size2), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       end if
 
       i = 1
       ii = 0
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
-        if ( size(VarC1D) /= Size1 ) call Error%Raise( Line='Number of entries mismatch in the line', ProcName=ProcName )
-        if ( RowMajorLoc ) then
-          Array(ii,:) = ConvertToInteger8s( Strings=VarC1D )
+        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
+        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
+        if (RowMajorLoc) then
+          Array(ii,:) = ConvertToInteger8s(Strings=VarC1D)
         else
-          Array(:,ii) = ConvertToInteger8s( Strings=VarC1D )
+          Array(:,ii) = ConvertToInteger8s(Strings=VarC1D)
         end if
       end do
 
@@ -2579,13 +2579,13 @@ contains
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_C2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_C2D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     character(:), dimension(:,:), allocatable, intent(out)            ::    Array
@@ -2613,52 +2613,52 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
       Separator = File%GetSeparator()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        if ( ii == 1 ) then
-          call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
+        if (ii == 1) then
+          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
           Size1 = size(VarC1D,1)
         end if
       end do
       Size2 = ii
-      if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+      if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
 
       call File%Rewind()
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         allocate(character(200) :: Array(Size2,Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       else
         allocate(character(200) :: Array(Size1,Size2), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       end if
 
       i = 1
       ii = 0
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
-        if ( RowMajorLoc ) then
+        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
+        if (RowMajorLoc) then
           Array(ii,:) = VarC1D
         else
           Array(:,ii) = VarC1D
@@ -2669,13 +2669,13 @@ contains
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_L2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_L2D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     logical, dimension(:,:), allocatable, intent(out)                 ::    Array
@@ -2703,56 +2703,56 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
       Separator = File%GetSeparator()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        if ( ii == 1 ) then
-          call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
+        if (ii == 1) then
+          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
           Size1 = size(VarC1D,1)
         end if
       end do
       Size2 = ii
-      if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+      if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
 
       call File%Rewind()
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         allocate(Array(Size2,Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       else
         allocate(Array(Size1,Size2), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       end if
 
       i = 1
       ii = 0
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
-        if ( size(VarC1D) /= Size1 ) call Error%Raise( Line='Number of entries mismatch in the line', ProcName=ProcName )
-        if ( RowMajorLoc ) then
-          Array(ii,:) = ConvertToLogicals( Strings=VarC1D )
+        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
+        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
+        if (RowMajorLoc) then
+          Array(ii,:) = ConvertToLogicals(Strings=VarC1D)
         else
-          Array(:,ii) = ConvertToLogicals( Strings=VarC1D )
+          Array(:,ii) = ConvertToLogicals(Strings=VarC1D)
         end if
       end do
 
@@ -2760,13 +2760,13 @@ contains
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_CX2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_CX2D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     complex, dimension(:,:), allocatable, intent(out)                 ::    Array
@@ -2794,56 +2794,56 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
       Separator = File%GetSeparator()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        if ( ii == 1 ) then
-          call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
+        if (ii == 1) then
+          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
           Size1 = size(VarC1D,1)
         end if
       end do
       Size2 = ii
-      if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+      if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
 
       call File%Rewind()
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         allocate(Array(Size2,Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       else
         allocate(Array(Size1,Size2), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       end if
 
       i = 1
       ii = 0
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
-        if ( size(VarC1D) /= Size1 ) call Error%Raise( Line='Number of entries mismatch in the line', ProcName=ProcName )
-        if ( RowMajorLoc ) then
-          Array(ii,:) = ConvertToComplexs( Strings=VarC1D )
+        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
+        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
+        if (RowMajorLoc) then
+          Array(ii,:) = ConvertToComplexs(Strings=VarC1D)
         else
-          Array(:,ii) = ConvertToComplexs( Strings=VarC1D )
+          Array(:,ii) = ConvertToComplexs(Strings=VarC1D)
         end if
       end do
 
@@ -2851,13 +2851,13 @@ contains
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_String2D( File, Array, NbLinesSkip, Mandatory, Found, RowMajor )
+  subroutine ImportArray_String2D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
     type(String_Type), dimension(:,:), allocatable, intent(out)       ::    Array
@@ -2885,53 +2885,53 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call File%Open( Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc )
+    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
 
-    if ( FoundLoc ) then
+    if (FoundLoc) then
       NbLines = File%GetNbLines()
       Comment = File%GetComment()
       Separator = File%GetSeparator()
-      if ( present(NbLinesSkip) ) NbLinesSkipLoc = NbLinesSkip
+      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
 
       ii = 0
       i = 1
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        if ( ii == 1 ) then
-          call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
+        if (ii == 1) then
+          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
           Size1 = size(VarC1D,1)
         end if
       end do
       Size2 = ii
-      if ( Size1 <= 0 ) call Error%Raise( Line='File was found to contain no usable lines', ProcName=ProcName )
+      if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
 
       call File%Rewind()
 
-      if ( RowMajorLoc ) then
+      if (RowMajorLoc) then
         allocate(Array(Size2,Size1), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       else
         allocate(Array(Size1,Size2), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Array', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       end if
 
       i = 1
       ii = 0
       do i = 1, NbLines
-        call File%ReadRecord( Unit=UnitLoc, Record=VarC0D )
-        if ( i <= NbLinesSkipLoc ) cycle
-        if ( VarC0D(1:len(Comment)) == Comment ) cycle
+        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
+        if (i <= NbLinesSkipLoc) cycle
+        if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse( Input=VarC0D, Separator=Separator, Output=VarC1D )
-        if ( size(VarC1D) /= Size1 ) call Error%Raise( Line='Number of entries mismatch in the line', ProcName=ProcName )
-        if ( RowMajorLoc ) then
+        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
+        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
+        if (RowMajorLoc) then
           iii = 1
           do iii = 1, Size1
             Array(ii,iii) = trim(adjustl(VarC1D(iii)))
@@ -2948,13 +2948,13 @@ contains
 
     call File%Close()
 
-    if ( present(Found) ) Found = FoundLoc
+    if (present(Found)) Found = FoundLoc
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_R41D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_R41D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     real(4), dimension(:), intent(in)                                 ::    Array
@@ -2972,35 +2972,35 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
-                                                                                                         SectionName=SectionName )
+        call Input%AddParameter(Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
+                                                                                                         SectionName=SectionName)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_R81D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_R81D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     real(8), dimension(:), intent(in)                                 ::    Array
@@ -3018,35 +3018,35 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
-                                                                                                         SectionName=SectionName )
+        call Input%AddParameter(Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
+                                                                                                         SectionName=SectionName)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_I41D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_I41D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     integer(4), dimension(:), intent(in)                              ::    Array
@@ -3064,35 +3064,35 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
-                                                                                                         SectionName=SectionName )
+        call Input%AddParameter(Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
+                                                                                                         SectionName=SectionName)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_I81D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_I81D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     integer(8), dimension(:), intent(in)                              ::    Array
@@ -3110,35 +3110,35 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
-                                                                                                         SectionName=SectionName )
+        call Input%AddParameter(Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
+                                                                                                         SectionName=SectionName)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_C1D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_C1D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     character(*), dimension(:), intent(in)                            ::    Array
@@ -3156,35 +3156,35 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
-                                                                                                         SectionName=SectionName )
+        call Input%AddParameter(Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
+                                                                                                         SectionName=SectionName)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_L1D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_L1D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     logical, dimension(:), intent(in)                                 ::    Array
@@ -3202,35 +3202,35 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
-                                                                                                         SectionName=SectionName )
+        call Input%AddParameter(Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
+                                                                                                         SectionName=SectionName)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_CX1D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_CX1D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     complex, dimension(:), intent(in)                                 ::    Array
@@ -3248,35 +3248,35 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
-                                                                                                         SectionName=SectionName )
+        call Input%AddParameter(Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
+                                                                                                         SectionName=SectionName)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_String1D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_String1D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     type(String_Type), dimension(:), intent(in)                       ::    Array
@@ -3294,35 +3294,35 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .true.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
-                                                                                                         SectionName=SectionName )
+        call Input%AddParameter(Name='values', Value=ConvertToString(Values=Array,Format=FormatLoc, Separator=' '),              &
+                                                                                                         SectionName=SectionName)
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_R42D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_R42D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     real(4), dimension(:,:), intent(in)                               ::    Array
@@ -3343,51 +3343,51 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
         NbLines = size(Array,2)
         SubSectionName = 'array'
-        call Input%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+        call Input%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         SubSectionName = SectionName // '>' // SubSectionName
-        if ( RowMajorLoc ) then
+        if (RowMajorLoc) then
           i = 1
           do i = 1, NbLines
             ParameterName = 'row' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName)
           end do
         else
           i = 1
           do i = 1, NbLines
             ParameterName = 'column' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName)
           end do
         end if
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_R82D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_R82D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     real(8), dimension(:,:), intent(in)                               ::    Array
@@ -3408,51 +3408,51 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
         NbLines = size(Array,2)
         SubSectionName = 'array'
-        call Input%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+        call Input%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         SubSectionName = SectionName // '>' // SubSectionName
-        if ( RowMajorLoc ) then
+        if (RowMajorLoc) then
           i = 1
           do i = 1, NbLines
             ParameterName = 'row' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName)
           end do
         else
           i = 1
           do i = 1, NbLines
             ParameterName = 'column' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName)
           end do
         end if
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_I42D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_I42D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     integer(4), dimension(:,:), intent(in)                            ::    Array
@@ -3473,51 +3473,51 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
         NbLines = size(Array,2)
         SubSectionName = 'array'
-        call Input%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+        call Input%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         SubSectionName = SectionName // '>' // SubSectionName
-        if ( RowMajorLoc ) then
+        if (RowMajorLoc) then
           i = 1
           do i = 1, NbLines
             ParameterName = 'row' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName)
           end do
         else
           i = 1
           do i = 1, NbLines
             ParameterName = 'column' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName)
           end do
         end if
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_I82D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_I82D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     integer(8), dimension(:,:), intent(in)                            ::    Array
@@ -3538,51 +3538,51 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
         NbLines = size(Array,2)
         SubSectionName = 'array'
-        call Input%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+        call Input%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         SubSectionName = SectionName // '>' // SubSectionName
-        if ( RowMajorLoc ) then
+        if (RowMajorLoc) then
           i = 1
           do i = 1, NbLines
             ParameterName = 'row' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName)
           end do
         else
           i = 1
           do i = 1, NbLines
             ParameterName = 'column' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName)
           end do
         end if
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_C2D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_C2D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     character(*), dimension(:,:), intent(in)                          ::    Array
@@ -3603,51 +3603,51 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
         NbLines = size(Array,2)
         SubSectionName = 'array'
-        call Input%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+        call Input%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         SubSectionName = SectionName // '>' // SubSectionName
-        if ( RowMajorLoc ) then
+        if (RowMajorLoc) then
           i = 1
           do i = 1, NbLines
             ParameterName = 'row' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName)
           end do
         else
           i = 1
           do i = 1, NbLines
             ParameterName = 'column' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName)
           end do
         end if
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_L2D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_L2D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     logical, dimension(:,:), intent(in)                               ::    Array
@@ -3668,51 +3668,51 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
         NbLines = size(Array,2)
         SubSectionName = 'array'
-        call Input%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+        call Input%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         SubSectionName = SectionName // '>' // SubSectionName
-        if ( RowMajorLoc ) then
+        if (RowMajorLoc) then
           i = 1
           do i = 1, NbLines
             ParameterName = 'row' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName)
           end do
         else
           i = 1
           do i = 1, NbLines
             ParameterName = 'column' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName)
           end do
         end if
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_CX2D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_CX2D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     complex, dimension(:,:), intent(in)                               ::    Array
@@ -3733,51 +3733,51 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
         NbLines = size(Array,2)
         SubSectionName = 'array'
-        call Input%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+        call Input%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         SubSectionName = SectionName // '>' // SubSectionName
-        if ( RowMajorLoc ) then
+        if (RowMajorLoc) then
           i = 1
           do i = 1, NbLines
             ParameterName = 'row' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName)
           end do
         else
           i = 1
           do i = 1, NbLines
             ParameterName = 'column' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName)
           end do
         end if
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArrayInput_String2D( Input, Array, File, Format, RowMajor )
+  subroutine ExportArrayInput_String2D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     type(String_Type), dimension(:,:), intent(in)                     ::    Array
@@ -3798,50 +3798,50 @@ contains
     logical                                                           ::    RowMajorLoc
 
     RowMajorLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
+    if (present(RowMajor)) RowMajorLoc = RowMajor
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc )
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Array, File=File, Format=FormatLoc, RowMajor=RowMajorLoc)
       case('internal')
-        call Input%AddParameter( Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName )
+        call Input%AddParameter(Name='row_major', Value=ConvertToString(Value=RowMajorLoc), SectionName=SectionName)
         NbLines = size(Array,2)
         SubSectionName = 'array'
-        call Input%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+        call Input%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         SubSectionName = SectionName // '>' // SubSectionName
-        if ( RowMajorLoc ) then
+        if (RowMajorLoc) then
           i = 1
           do i = 1, NbLines
             ParameterName = 'row' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(i,:)), SectionName=SubSectionName)
           end do
         else
           i = 1
           do i = 1, NbLines
             ParameterName = 'column' // ConvertToString(Value=i)
-            call Input%AddParameter( Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName )
+            call Input%AddParameter(Name=Parametername, Value=ConvertToString(Values=Array(:,i)), SectionName=SubSectionName)
           end do
         end if
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_R41D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_R41D(Array, File, Header, Format, RowMajor, Append)
 
     real(4), dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -3861,39 +3861,39 @@ contains
 
     RowMajorLoc = .true.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Value=Array(i), Format=FormatLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Value=Array(i), Format=FormatLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       SeparatorLoc = File%GetSeparator()
-      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array, Format=FormatLoc, Separator=SeparatorLoc )
+      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array, Format=FormatLoc, Separator=SeparatorLoc)
     end if
 
     call File%Close()
@@ -3902,7 +3902,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_R81D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_R81D(Array, File, Header, Format, RowMajor, Append)
 
     real(8), dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -3922,39 +3922,39 @@ contains
 
     RowMajorLoc = .true.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Value=Array(i), Format=FormatLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Value=Array(i), Format=FormatLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       SeparatorLoc = File%GetSeparator()
-      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array, Format=FormatLoc, Separator=SeparatorLoc )
+      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array, Format=FormatLoc, Separator=SeparatorLoc)
     end if
 
     call File%Close()
@@ -3963,7 +3963,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_I41D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_I41D(Array, File, Header, Format, RowMajor, Append)
 
     integer(4), dimension(:), intent(in)                              ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -3983,39 +3983,39 @@ contains
 
     RowMajorLoc = .true.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Value=Array(i), Format=FormatLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Value=Array(i), Format=FormatLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       SeparatorLoc = File%GetSeparator()
-      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array, Format=FormatLoc, Separator=SeparatorLoc )
+      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array, Format=FormatLoc, Separator=SeparatorLoc)
     end if
 
     call File%Close()
@@ -4024,7 +4024,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_I81D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_I81D(Array, File, Header, Format, RowMajor, Append)
 
     integer(8), dimension(:), intent(in)                              ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4044,39 +4044,39 @@ contains
 
     RowMajorLoc = .true.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Value=Array(i), Format=FormatLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Value=Array(i), Format=FormatLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       SeparatorLoc = File%GetSeparator()
-      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array, Format=FormatLoc, Separator=SeparatorLoc )
+      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array, Format=FormatLoc, Separator=SeparatorLoc)
     end if
 
     call File%Close()
@@ -4085,7 +4085,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_C1D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_C1D(Array, File, Header, Format, RowMajor, Append)
 
     character(*), dimension(:), intent(in)                            ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4105,39 +4105,39 @@ contains
 
     RowMajorLoc = .true.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Value=Array(i), Format=FormatLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Value=Array(i), Format=FormatLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       SeparatorLoc = File%GetSeparator()
-      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array, Format=FormatLoc, Separator=SeparatorLoc )
+      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array, Format=FormatLoc, Separator=SeparatorLoc)
     end if
 
     call File%Close()
@@ -4146,7 +4146,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_L1D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_L1D(Array, File, Header, Format, RowMajor, Append)
 
     logical, dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4166,39 +4166,39 @@ contains
 
     RowMajorLoc = .true.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Value=Array(i), Format=FormatLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Value=Array(i), Format=FormatLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       SeparatorLoc = File%GetSeparator()
-      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array, Format=FormatLoc, Separator=SeparatorLoc )
+      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array, Format=FormatLoc, Separator=SeparatorLoc)
     end if
 
     call File%Close()
@@ -4207,7 +4207,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_CX1D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_CX1D(Array, File, Header, Format, RowMajor, Append)
 
     complex, dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4227,39 +4227,39 @@ contains
 
     RowMajorLoc = .true.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Value=Array(i), Format=FormatLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Value=Array(i), Format=FormatLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       SeparatorLoc = File%GetSeparator()
-      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array, Format=FormatLoc, Separator=SeparatorLoc )
+      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array, Format=FormatLoc, Separator=SeparatorLoc)
     end if
 
     call File%Close()
@@ -4268,7 +4268,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_String1D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_String1D(Array, File, Header, Format, RowMajor, Append)
 
     type(String_Type), dimension(:), intent(in)                       ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4288,39 +4288,39 @@ contains
 
     RowMajorLoc = .true.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Value=Array(i), Format=FormatLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Value=Array(i), Format=FormatLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       SeparatorLoc = File%GetSeparator()
-      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array, Format=FormatLoc, Separator=SeparatorLoc )
+      write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array, Format=FormatLoc, Separator=SeparatorLoc)
     end if
 
     call File%Close()
@@ -4329,7 +4329,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_R42D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_R42D(Array, File, Header, Format, RowMajor, Append)
 
     real(4), dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4349,42 +4349,42 @@ contains
 
     RowMajorLoc = .false.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
     SeparatorLoc = File%GetSeparator()
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       i = 1
       do i = 1, size(Array,2)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
@@ -4394,7 +4394,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_R82D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_R82D(Array, File, Header, Format, RowMajor, Append)
 
     real(8), dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4414,42 +4414,42 @@ contains
 
     RowMajorLoc = .false.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
     SeparatorLoc = File%GetSeparator()
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       i = 1
       do i = 1, size(Array,2)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
@@ -4459,7 +4459,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_I42D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_I42D(Array, File, Header, Format, RowMajor, Append)
 
     integer(4), dimension(:,:), intent(in)                            ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4479,43 +4479,43 @@ contains
 
     RowMajorLoc = .false.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
     SeparatorLoc = File%GetSeparator()
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       i = 1
       do i = 1, size(Array,2)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
     call File%Close()
@@ -4524,7 +4524,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_I82D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_I82D(Array, File, Header, Format, RowMajor, Append)
 
     integer(8), dimension(:,:), intent(in)                            ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4544,43 +4544,43 @@ contains
 
     RowMajorLoc = .false.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
     SeparatorLoc = File%GetSeparator()
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       i = 1
       do i = 1, size(Array,2)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
@@ -4590,7 +4590,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_C2D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_C2D(Array, File, Header, Format, RowMajor, Append)
 
     character(*), dimension(:,:), intent(in)                          ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4610,43 +4610,43 @@ contains
 
     RowMajorLoc = .false.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
     SeparatorLoc = File%GetSeparator()
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       i = 1
       do i = 1, size(Array,2)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
@@ -4656,7 +4656,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_L2D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_L2D(Array, File, Header, Format, RowMajor, Append)
 
     logical, dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4676,43 +4676,43 @@ contains
 
     RowMajorLoc = .false.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
     SeparatorLoc = File%GetSeparator()
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       i = 1
       do i = 1, size(Array,2)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
@@ -4722,7 +4722,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_CX2D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_CX2D(Array, File, Header, Format, RowMajor, Append)
 
     complex, dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4742,43 +4742,43 @@ contains
 
     RowMajorLoc = .false.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
     SeparatorLoc = File%GetSeparator()
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       i = 1
       do i = 1, size(Array,2)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
@@ -4788,7 +4788,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportArray_String2D( Array, File, Header, Format, RowMajor, Append )
+  subroutine ExportArray_String2D(Array, File, Header, Format, RowMajor, Append)
 
     type(String_Type), dimension(:,:), intent(in)                     ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -4808,43 +4808,43 @@ contains
 
     RowMajorLoc = .false.
     AppendLoc = .false.
-    if ( present(RowMajor) ) RowMajorLoc = RowMajor
-    if ( present(Append) ) AppendLoc = Append
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+    if (present(Append)) AppendLoc = Append
 
-    if ( File%Exists() ) then
-      if ( AppendLoc ) then
-        call File%Open( Unit=UnitLoc, Action='write', Status='old', Position='append' )
+    if (File%Exists()) then
+      if (AppendLoc) then
+        call File%Open(Unit=UnitLoc, Action='write', Status='old', Position='append')
       else
-        call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
       end if
     else
-      call File%Open( Unit=UnitLoc, Action='write', Status='replace', Position='rewind' )
+      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     end if
 
     SeparatorLoc = File%GetSeparator()
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
-    if ( present(Header) ) then
+    if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc ) Header(i)%GetValue()
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
-    if ( RowMajorLoc ) then
+    if (RowMajorLoc) then
       i = 1
       do i = 1, size(Array,1)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(i,:), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     else
       i = 1
       do i = 1, size(Array,2)
-        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString( Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc )
-        if ( StatLoc /= 0 ) call Error%Write( ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc )
+        write(UnitLoc, '(A)', iostat=StatLoc) ConvertToString(Values=Array(:,i), Format=FormatLoc, Separator=SeparatorLoc)
+        if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
 
@@ -4854,7 +4854,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportFile( Input, Strings, Prefix, Comment, Separator )
+  subroutine ImportFile(Input, Strings, Prefix, Comment, Separator)
 
     class(InputSection_Type), intent(in)                              ::    Input
     type(String_Type), allocatable, dimension(:), intent(out)         ::    Strings
@@ -4880,10 +4880,10 @@ contains
     integer                                                           ::    i
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     Source = VarC0D
 
     SectionName = 'source'
@@ -4891,60 +4891,60 @@ contains
     select case (Source)
       case('external')
         ParameterName = 'nb_lines_skip'
-        call Input%GetValue( Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( Found ) NbLinesSkip = VarI0D
+        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
+        if (Found) NbLinesSkip = VarI0D
 
         SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call File%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call File%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
-        if ( NbLinesSkip == 0 ) then
-          call File%Import( Strings=Strings, Mandatory=.true. )
+        if (NbLinesSkip == 0) then
+          call File%Import(Strings=Strings, Mandatory=.true.)
         else
-          call File%Import( Strings=VarString1D, Mandatory=.true. )
-          if ( NbLinesSkip >= size(VarString1D,1) ) call Error%Raise( Line='Specified too many lines to skip', ProcName=ProcName )
+          call File%Import(Strings=VarString1D, Mandatory=.true.)
+          if (NbLinesSkip >= size(VarString1D,1)) call Error%Raise(Line='Specified too many lines to skip', ProcName=ProcName)
           allocate(Strings, source=VarString1D(NbLinesSkip+1:size(VarString1D,1)), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
           deallocate(VarString1D, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarString1D', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Deallocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
         end if
-        if ( present(Comment) ) Comment = File%GetComment()
-        if ( present(Separator) ) Separator = File%GetSeparator()
+        if (present(Comment)) Comment = File%GetComment()
+        if (present(Separator)) Separator = File%GetSeparator()
       case('internal')
 
         ParameterName = 'comment'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( present( Comment ) ) Comment = '#'
-        if ( Found .and. present(Comment) ) Comment = VarC0D
+        if (present(Comment)) Comment = '#'
+        if (Found .and. present(Comment)) Comment = VarC0D
 
         ParameterName = 'separator'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if ( present( Separator ) ) Separator = ' '
-        if ( Found .and. present(Separator) ) Separator = VarC0D
+        if (present(Separator)) Separator = ' '
+        if (Found .and. present(Separator)) Separator = VarC0D
 
         ParameterName = 'nb_lines'
         call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.true., SectionName=SectionName)
         NbLines = VarI0D
 
         allocate(Strings(NbLines), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
 
         SubSectionName = SectionName // '>lines'
         i = 1
         do i = 1, Nblines
           ParameterName = 'line' // ConvertToString(Value=i)
-          call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-          call Strings(i)%Set_Value( Value=VarC0D )
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call Strings(i)%Set_Value(Value=VarC0D)
         end do
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ExportFile( Input, Strings, File, Format )
+  subroutine ExportFile(Input, Strings, File, Format)
 
     class(InputSection_Type), intent(inout)                           ::    Input
     type(String_Type), dimension(:), intent(in)                       ::    Strings
@@ -4962,30 +4962,30 @@ contains
     integer                                                           ::    i
 
     FormatLoc = 'G0'
-    if ( present(Format) ) FormatLoc = Format
+    if (present(Format)) FormatLoc = Format
 
     Source = 'internal'
-    if ( present(File) ) Source = 'external'
-    call Input%AddParameter( Name='source', Value=Source )
+    if (present(File)) Source = 'external'
+    call Input%AddParameter(Name='source', Value=Source)
 
     SectionName = 'source'
-    call Input%AddSection( SectionName=SectionName )
+    call Input%AddSection(SectionName=SectionName)
 
     select case (Source)
       case('external')
-        call Input%AddSection( Section=File%GetInput(MainSectionName='file'), To_SubSection=SectionName )
-        call ExportArray( Array=Strings, File=File, Format=FormatLoc )
+        call Input%AddSection(Section=File%GetInput(Name='file'), To_SubSection=SectionName)
+        call ExportArray(Array=Strings, File=File, Format=FormatLoc)
       case('internal')
-        call Input%AddParameter( Name='nb_lines', Value=ConvertToString(Value=size(Strings,1)),&
-                                                                                                         SectionName=SectionName )
+        call Input%AddParameter(Name='nb_lines', Value=ConvertToString(Value=size(Strings,1)),&
+                                                                                                         SectionName=SectionName)
         SubSectionName = 'lines'        
-        call Input%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+        call Input%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         i = 1
         do i = 1, size(Strings,1)
-          call Input%AddParameter( Name='line' // ConvertToString(Value=i), Value=Strings(i)%GetValue() )
+          call Input%AddParameter(Name='line' // ConvertToString(Value=i), Value=Strings(i)%GetValue())
         end do
       case default
-        call Error%Raise( Line='Unrecognized source format', ProcName=ProcName )
+        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
 
   end subroutine

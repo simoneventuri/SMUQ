@@ -58,13 +58,13 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(DistLog10Norm_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'log10normal'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -74,7 +74,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(DistLog10Norm_Type), intent(inout)                          ::    This
 
@@ -92,19 +92,19 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AdditionalConstruction( This )
+  subroutine AdditionalConstruction(This)
     
     class(DistLog10Norm_Type), intent(inout)                          ::    This 
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
 
-    if ( This%A > -huge(One) ) This%DoubleTruncatedLeft = .true.
+    if (This%A > -huge(One)) This%DoubleTruncatedLeft = .true.
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetA( This )
+  function GetA(This)
 
     real(rkp)                                                         ::    GetA
 
@@ -112,9 +112,9 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetA'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( This%DoubleTruncatedLeft ) then
+    if (This%DoubleTruncatedLeft) then
       GetA = Ten**(This%A)
     else
       GetA = Zero
@@ -124,7 +124,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetB( This )
+  function GetB(This)
 
     real(rkp)                                                         ::    GetB
 
@@ -132,9 +132,9 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetB'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( .not. This%TruncatedRight ) call Error%Raise( Line='Distribution was never right truncated', ProcName=ProcName )
+    if (.not. This%TruncatedRight) call Error%Raise(Line='Distribution was never right truncated', ProcName=ProcName)
 
     GetB = Ten**(This%B)
 
@@ -142,7 +142,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X )
+  function PDF_R0D(This, X)
 
     real(rkp)                                                         ::    PDF_R0D
 
@@ -152,24 +152,24 @@ contains
     character(*), parameter                                           ::    ProcName='PDF_R0D'
     logical                                                           ::    TripFlag
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     TripFlag = .false.
 
-    if ( X <= Zero ) then
+    if (X <= Zero) then
       PDF_R0D = Zero
       TripFlag = .true.
     end if
 
-    if ( .not. TripFlag ) then
-      if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
-        PDF_R0D = This%ComputeNormalPDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
-      else if ( This%DoubleTruncatedLeft ) then
-        PDF_R0D = This%ComputeNormalPDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A )
-      else if ( This%TruncatedRight ) then
-        PDF_R0D = This%ComputeNormalPDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+    if (.not. TripFlag) then
+      if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
+        PDF_R0D = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+      else if (This%DoubleTruncatedLeft) then
+        PDF_R0D = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+      else if (This%TruncatedRight) then
+        PDF_R0D = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B)
       else
-        PDF_R0D = This%ComputeNormalPDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma )
+        PDF_R0D = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma)
       end if
       PDF_R0D = One/(X*dlogof10) * PDF_R0D
     end if
@@ -178,7 +178,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X )
+  function CDF_R0D(This, X)
 
     real(rkp)                                                         ::    CDF_R0D
 
@@ -188,24 +188,24 @@ contains
     character(*), parameter                                           ::    ProcName='CDF_R0D'
     logical                                                           ::    TripFlag
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     TripFlag = .false.
 
-    if ( X <= Zero ) then
+    if (X <= Zero) then
       CDF_R0D = Zero
       TripFlag = .true.
     end if
   
-    if ( .not. TripFlag ) then
-      if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
-        CDF_R0D = This%ComputeNormalCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
-      else if ( This%DoubleTruncatedLeft ) then
-        CDF_R0D = This%ComputeNormalCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A )
-      else if ( This%TruncatedRight ) then
-        CDF_R0D = This%ComputeNormalCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+    if (.not. TripFlag) then
+      if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
+        CDF_R0D = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+      else if (This%DoubleTruncatedLeft) then
+        CDF_R0D = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+      else if (This%TruncatedRight) then
+        CDF_R0D = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B)
       else
-        CDF_R0D = This%ComputeNormalCDF( X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma )
+        CDF_R0D = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma)
       end if
     end if
 
@@ -213,7 +213,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P )
+  function InvCDF_R0D(This, P)
 
     real(rkp)                                                         ::    InvCDF_R0D
 
@@ -223,26 +223,26 @@ contains
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
     logical                                                           ::    TripFlag
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     TripFlag = .false.
 
-    if ( P == Zero ) then
-      if ( .not. This%DoubleTruncatedLeft ) then
+    if (P == Zero) then
+      if (.not. This%DoubleTruncatedLeft) then
         InvCDF_R0D = tiny(One)
         TripFlag = .true.
       end if
     end if
 
-    if ( .not. TripFlag ) then
-      if ( This%TruncatedRight .and. This%DoubleTruncatedLeft ) then
-        InvCDF_R0D = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B )
-      else if ( This%DoubleTruncatedLeft ) then
-        InvCDF_R0D = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A )
-      else if ( This%TruncatedRight ) then
-        InvCDF_R0D = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B )
+    if (.not. TripFlag) then
+      if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
+        InvCDF_R0D = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+      else if (This%DoubleTruncatedLeft) then
+        InvCDF_R0D = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+      else if (This%TruncatedRight) then
+        InvCDF_R0D = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
       else
-        InvCDF_R0D = This%ComputeNormalInvCDF( P=P, Mu=This%Mu, Sigma=This%Sigma )
+        InvCDF_R0D = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma)
       end if
       InvCDF_R0D = Ten**InvCDF_R0D
     end if
@@ -251,7 +251,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment( This, Moment )
+  function GetMoment(This, Moment)
 
     real(rkp)                                                         ::    GetMoment
 
@@ -260,12 +260,12 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetMoment'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
+    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-    if ( Moment > 0 ) then
-      GetMoment = This%ComputeMomentNumerical( Moment=Moment )
+    if (Moment > 0) then
+      GetMoment = This%ComputeMomentNumerical(Moment=Moment)
     else
       GetMoment = One
     end if
@@ -274,7 +274,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo( This, File )
+  subroutine WriteInfo(This, File)
 
     class(DistLog10Norm_Type), intent(in)                             ::    This
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -283,23 +283,23 @@ contains
     integer                                                           ::    i
     type(String_Type), dimension(5)                                   ::    Strings
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     Strings(1) = 'log10normal'
     Strings(2) = ConvertToString(Value=This%Mu)
     Strings(3) = ConvertToString(Value=This%Sigma)
     Strings(4) = '-Inf'
-    if ( This%DoubleTruncatedLeft ) Strings(4) = ConvertToString(Value=This%A)
+    if (This%DoubleTruncatedLeft) Strings(4) = ConvertToString(Value=This%A)
     Strings(5) = 'Inf'
-    if ( This%TruncatedRight ) Strings(5) = ConvertToString(Value=This%B)
+    if (This%TruncatedRight) Strings(5) = ConvertToString(Value=This%B)
 
-    call File%Append( Strings=Strings )
+    call File%Append(Strings=Strings)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(DistLog10Norm_Type), intent(out)                            ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
@@ -314,7 +314,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%A = RHS%A
           LHS%B = RHS%B
           LHS%Mu = RHS%Mu
@@ -325,7 +325,7 @@ contains
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 

@@ -45,7 +45,7 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Set( This, Object )
+  subroutine Set(This, Object)
 
     class(DistProbContainer_Type), intent(inout)                      ::    This
     class(DistProb_Type), intent(in)                                  ::    Object
@@ -53,17 +53,17 @@ contains
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Object', ProcName=ProcName, stat=StatLoc)
+    if (allocated(This%Object)) deallocate(This%Object, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Object', ProcName=ProcName, stat=StatLoc)
     
     allocate(This%Object, source=Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Object', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Object', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Get( This )
+  function Get(This)
 
     class(DistProb_Type), allocatable                                 ::    Get
 
@@ -72,16 +72,16 @@ contains
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
+    if (.not. allocated(This%Object)) call Error%Raise(Line='Probability distribution never defined', ProcName=ProcName)
 
     allocate(Get, source=This%Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Get', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Get', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPointer( This )
+  function GetPointer(This)
 
     class(DistProb_Type), pointer                                     ::    GetPointer
 
@@ -89,7 +89,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetPointer'
 
-    if ( .not. allocated(This%Object) ) call Error%Raise( Line='Probability distribution never defined', ProcName=ProcName)
+    if (.not. allocated(This%Object)) call Error%Raise(Line='Probability distribution never defined', ProcName=ProcName)
 
     GetPointer => This%Object
 
@@ -97,7 +97,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(DistProbContainer_Type), intent(out)                        ::    LHS
     type(DistProbContainer_Type), intent(in)                          ::    RHS
@@ -105,26 +105,26 @@ contains
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(RHS%Object) ) then
-      if ( allocated(LHS%Object) ) deallocate( LHS%Object, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='LHS%Object', Procname=ProcName, stat=StatLoc )
+    if (allocated(RHS%Object)) then
+      if (allocated(LHS%Object)) deallocate(LHS%Object, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='LHS%Object', Procname=ProcName, stat=StatLoc)
       allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Object', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='LHS%Object', ProcName=ProcName, stat=StatLoc)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(DistProbContainer_Type), intent(inout)                       ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc
 
-    if ( allocated(This%Object) ) deallocate(This%Object, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( name='This%Object', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Object)) deallocate(This%Object, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(name='This%Object', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   TFUN_Class.f90
   TestFunction_Class.f90
   TestFunction_Factory_Class.f90
@@ -7,4 +7,4 @@ add_target_sources ( smuqApp
   TestBorehole_Class.f90
   TestSpill_Class.f90
   TestFunctionContainer_Class.f90
- )
+)

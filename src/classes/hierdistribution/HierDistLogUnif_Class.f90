@@ -44,13 +44,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(HierDistLogUnif_Type), intent(inout)                        ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'hierarchical_loguniform'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -60,7 +60,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateDistribution( This, A, B, Distribution )
+  subroutine GenerateDistribution(This, A, B, Distribution)
 
     class(HierDistLogUnif_Type), intent(in)                           ::    This
     real(rkp), intent(in)                                             ::    A
@@ -70,15 +70,15 @@ contains
     character(*), parameter                                           ::    ProcName='GenerateDistribution'
     integer                                                           ::    StatLoc=0  
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    allocate( DistLogUnif_Type :: Distribution )
+    allocate(DistLogUnif_Type :: Distribution)
 
-    select type ( Distribution )
-      type is ( DistLogUnif_Type ) 
-        call Distribution%Construct( A=A, B=B )
+    select type (Distribution)
+      type is (DistLogUnif_Type) 
+        call Distribution%Construct(A=A, B=B)
       class default
-        call Error%Raise( "Something went wrong", ProcName=ProcName )
+        call Error%Raise("Something went wrong", ProcName=ProcName)
     end select
 
   end subroutine

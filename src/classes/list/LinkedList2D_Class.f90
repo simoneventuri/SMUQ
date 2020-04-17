@@ -83,7 +83,7 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListAppend2D( This, Values )
+  subroutine ListAppend2D(This, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     class(*), dimension(:,:), intent(in)                              ::    Values
@@ -92,21 +92,21 @@ contains
     type(ListNode2D_Type), pointer                                    ::    TempNext
     integer                                                           ::    StatLoc 
 
-    if ( associated(This%Tail) ) then
-      allocate( This%Tail%Next )
+    if (associated(This%Tail)) then
+      allocate(This%Tail%Next)
       TempNext => This%Tail%Next
       TempNext%Back => This%Tail
       This%Tail => TempNext
       nullify(TempNext)
     else
-      allocate( This%Head )
+      allocate(This%Head)
       This%Tail => This%Head
       This%Browser => This%Head
       This%BrowserLoc = 1
     end if
 
-    allocate( This%Tail%Values, source=Values, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Tail%Values', stat=StatLoc)
+    allocate(This%Tail%Values, source=Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Tail%Values', stat=StatLoc)
 
     This%NbNodes = This%NbNodes + 1
 
@@ -114,7 +114,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListAppend3D( This, Values )
+  subroutine ListAppend3D(This, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     class(*), dimension(:,:,:), intent(in)                            ::    Values
@@ -128,14 +128,14 @@ contains
 
     i = 1
     do i = 1, Length
-      call This%Append( Values=Values(:,:,i) )
+      call This%Append(Values=Values(:,:,i))
     end do
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetR2D( This, Node, Values )
+  subroutine ListGetR2D(This, Node, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     real(rkp), dimension(:,:), allocatable, intent(out)               ::    Values
@@ -145,12 +145,12 @@ contains
     type(ListNode2D_Type), pointer                                    ::    NodePointerLoc
     integer                                                           ::    StatLoc=0 
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (Value => NodePointerLoc%Values)
       type is (real(rkp))
-        allocate( Values, source=Value, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='VarR2D', stat=StatLoc)
+        allocate(Values, source=Value, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarR2D', stat=StatLoc)
       class default
         call Error%Raise("Requested node contains a value that does not match the requested type")
     end select
@@ -161,7 +161,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetI2D( This, Node, Values )
+  subroutine ListGetI2D(This, Node, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     integer, dimension(:,:), allocatable, intent(out)                 ::    Values
@@ -171,12 +171,12 @@ contains
     type(ListNode2D_Type), pointer                                    ::    NodePointerLoc
     integer                                                           ::    StatLoc=0 
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (Value => NodePointerLoc%Values)
       type is (integer)
-        allocate( Values, source=Value, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='VarI2D', stat=StatLoc)
+        allocate(Values, source=Value, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI2D', stat=StatLoc)
       class default
         call Error%Raise("Requested node contains a value that does not match the requested type")
     end select
@@ -187,7 +187,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetC2D( This, Node, Values )
+  subroutine ListGetC2D(This, Node, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     character(:), dimension(:,:), allocatable, intent(out)            ::    Values
@@ -197,12 +197,12 @@ contains
     type(ListNode2D_Type), pointer                                    ::    NodePointerLoc
     integer                                                           ::    StatLoc=0 
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (Value => NodePointerLoc%Values)
       type is (character(*))
-        allocate( Values, source=Value, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='VarC2D', stat=StatLoc)
+        allocate(Values, source=Value, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarC2D', stat=StatLoc)
       class default
         call Error%Raise("Requested node contains a value that does not match the requested type")
     end select
@@ -213,7 +213,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetL2D( This, Node, Values )
+  subroutine ListGetL2D(This, Node, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     logical, dimension(:,:), allocatable, intent(out)                 ::    Values
@@ -223,12 +223,12 @@ contains
     type(ListNode2D_Type), pointer                                    ::    NodePointerLoc
     integer                                                           ::    StatLoc=0 
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (Value => NodePointerLoc%Values)
       type is (logical)
-        allocate( Values, source=Value, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='VarL2D', stat=StatLoc)
+        allocate(Values, source=Value, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarL2D', stat=StatLoc)
       class default
         call Error%Raise("Requested node contains a value that does not match the requested type")
     end select
@@ -239,7 +239,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetCX2D( This, Node, Values )
+  subroutine ListGetCX2D(This, Node, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     complex, dimension(:,:), allocatable, intent(out)                 ::    Values
@@ -249,12 +249,12 @@ contains
     type(ListNode2D_Type), pointer                                    ::    NodePointerLoc
     integer                                                           ::    StatLoc=0 
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (Value => NodePointerLoc%Values)
       type is (complex)
-        allocate( Values, source=Value, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='VarCX2D', stat=StatLoc)
+        allocate(Values, source=Value, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarCX2D', stat=StatLoc)
       class default
         call Error%Raise("Requested node contains a value that does not match the requested type")
     end select
@@ -265,7 +265,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetR2DPointer( This, Node, Values )
+  subroutine ListGetR2DPointer(This, Node, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     real(rkp), dimension(:,:), pointer, intent(inout)                 ::    Values
@@ -275,9 +275,9 @@ contains
     type(ListNode2D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0 
 
-    if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (Value => NodePointerLoc%Values)
       type is (real(rkp))
@@ -292,7 +292,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetI2DPointer( This, Node, Values )
+  subroutine ListGetI2DPointer(This, Node, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     integer, dimension(:,:), pointer, intent(inout)                   ::    Values
@@ -302,9 +302,9 @@ contains
     type(ListNode2D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0 
 
-    if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (Value => NodePointerLoc%Values)
       type is (integer)
@@ -319,7 +319,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetC2DPointer( This, Node, Values )
+  subroutine ListGetC2DPointer(This, Node, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     character(:), dimension(:,:), pointer, intent(inout)              ::    Values
@@ -329,9 +329,9 @@ contains
     type(ListNode2D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0 
 
-    if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (Value => NodePointerLoc%Values)
       type is (character(*))
@@ -346,7 +346,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetL2DPointer( This, Node, Values )
+  subroutine ListGetL2DPointer(This, Node, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     logical, dimension(:,:), pointer, intent(inout)                   ::    Values
@@ -356,9 +356,9 @@ contains
     type(ListNode2D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0 
 
-    if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (Value => NodePointerLoc%Values)
       type is (logical)
@@ -373,7 +373,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetCX2DPointer( This, Node, Values )
+  subroutine ListGetCX2DPointer(This, Node, Values)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     complex, dimension(:,:), pointer, intent(inout)                   ::    Values
@@ -383,9 +383,9 @@ contains
     type(ListNode2D_Type), pointer                                    ::    NodePointerLoc=>null()
     integer                                                           ::    StatLoc=0 
 
-    if ( associated(Values) ) call Error%Raise( "Passed down pointer already associated with another target" )
+    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-    call This%GetNode( Node, NodePointerLoc )
+    call This%GetNode(Node, NodePointerLoc)
 
     select type (Value => NodePointerLoc%Values)
       type is (complex)
@@ -400,7 +400,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ListGetNode2D( This, Node, NodePointer )
+  subroutine ListGetNode2D(This, Node, NodePointer)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    Node
@@ -408,10 +408,10 @@ contains
 
     character(*), parameter                                           ::    ProcName='ListGetNode2D' 
     
-    if ( Node < 1 ) call Error%Raise("Requested node index is below 0")
-    if ( Node > This%NbNodes ) call Error%Raise("Requested node index is above the maximum")
+    if (Node < 1) call Error%Raise("Requested node index is below 0")
+    if (Node > This%NbNodes) call Error%Raise("Requested node index is above the maximum")
     
-    call This%MoveBrowser( Node )
+    call This%MoveBrowser(Node)
 
     NodePointer => This%Browser
 
@@ -419,7 +419,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine MoveBrowser( This, Node )
+  subroutine MoveBrowser(This, Node)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    Node
@@ -427,7 +427,7 @@ contains
     character(*), parameter                                           ::    ProcName='MoveBrowser'
     integer                                                           ::    i, i_Max 
 
-    if ( Node > This%BrowserLoc ) then
+    if (Node > This%BrowserLoc) then
       i = 1
       i_Max = Node - This%BrowserLoc
       do i = 1, i_Max
@@ -447,7 +447,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ListLength( This )
+  function ListLength(This)
 
     integer                                                           ::    ListLength
     class(LinkedList2D_Type), intent(in)                              ::    This
@@ -460,7 +460,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine PurgeList( This )
+  subroutine PurgeList(This)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
 
@@ -470,7 +470,7 @@ contains
     integer                                                           ::    i
     integer                                                           ::    NbNodesLoc 
 
-    if ( .not. associated(This%Head) ) return
+    if (.not. associated(This%Head)) return
 
     TempCurrent => This%Head
     nullify(This%Head)
@@ -481,12 +481,12 @@ contains
 
     i = 1
     do i = 1, NbNodesLoc
-      if ( associated(TempCurrent%Next) ) TempNext => TempCurrent%Next
+      if (associated(TempCurrent%Next)) TempNext => TempCurrent%Next
       deallocate(TempCurrent%Values)
-      if ( associated(TempCurrent%Back) ) nullify(TempCurrent%Back)
-      if ( associated(TempCurrent%Next) ) nullify(TempCurrent%Next)
-      deallocate( TempCurrent )
-      if ( associated(TempNext) ) TempCurrent => Tempnext
+      if (associated(TempCurrent%Back)) nullify(TempCurrent%Back)
+      if (associated(TempCurrent%Next)) nullify(TempCurrent%Next)
+      deallocate(TempCurrent)
+      if (associated(TempNext)) TempCurrent => Tempnext
     end do
 
     This%BrowserLoc=0
@@ -496,7 +496,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RemoveNode( This, Node )
+  subroutine RemoveNode(This, Node)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    Node
@@ -507,23 +507,23 @@ contains
     type(ListNode2D_Type), pointer                                    ::    TempCurrent => null()
     integer                                                           ::    StatLoc=0
 
-    if ( This%NbNodes == 0 ) call Error%Raise( Line='Linked list contains 0 nodes', ProcName=ProcName )
+    if (This%NbNodes == 0) call Error%Raise(Line='Linked list contains 0 nodes', ProcName=ProcName)
 
-    if ( Node > This%NbNodes .or. Node < 1 ) call Error%Raise( Line='Invalid node number removal spec', ProcName=ProcName )
+    if (Node > This%NbNodes .or. Node < 1) call Error%Raise(Line='Invalid node number removal spec', ProcName=ProcName)
     
-    if ( This%NbNodes == 1 ) then
+    if (This%NbNodes == 1) then
       call This%Purge()
     else
-      call This%GetNode( Node=Node, NodePointer=TempCurrent )
+      call This%GetNode(Node=Node, NodePointer=TempCurrent)
       deallocate(TempCurrent%Values, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='Node%Values', ProcName=ProcName, stat=StatLoc )
-      if ( Node == 1 ) then    
+      if (StatLoc /= 0) call Error%Deallocate(Name='Node%Values', ProcName=ProcName, stat=StatLoc)
+      if (Node == 1) then    
           TempNext => TempCurrent%Next
           This%Head => TempNext
           nullify(TempCurrent%Next)
           nullify(TempNext%Back)
           nullify(TempNext)
-      elseif ( Node == This%NbNodes ) then
+      elseif (Node == This%NbNodes) then
           TempBack => TempCurrent%Back
           This%Tail => TempBack
           nullify(TempCurrent%Back)
@@ -542,7 +542,7 @@ contains
           nullify(TempBack)
       end if
       deallocate(TempCurrent, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='TempCurrent', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='TempCurrent', ProcName=ProcName, stat=StatLoc)
     end if
 
     This%NbNodes = This%NbNodes - 1
@@ -551,7 +551,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RemoveNodeRange( This, NodeMin, NodeMax )
+  subroutine RemoveNodeRange(This, NodeMin, NodeMax)
 
     class(LinkedList2D_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    NodeMin
@@ -560,14 +560,14 @@ contains
     character(*), parameter                                           ::    ProcName='RemoveNodeRange'
     integer                                                           ::    i
 
-    if ( NodeMax > This%NbNodes .or. NodeMin < 1 ) call Error%Raise( Line='Invalid node number removal spec', ProcName=ProcName )
+    if (NodeMax > This%NbNodes .or. NodeMin < 1) call Error%Raise(Line='Invalid node number removal spec', ProcName=ProcName)
 
-    if ( (NodeMax - NodeMin + 1) == This%NbNodes ) then
+    if ((NodeMax - NodeMin + 1) == This%NbNodes) then
       call This%Purge()
     else
       i = 1
       do i = NodeMin, NodeMax
-        call This%Remove( Node=i )
+        call This%Remove(Node=i)
       end do
     end if
 
@@ -575,7 +575,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(LinkedList2D_Type), intent(out)                             ::    LHS
     class(LinkedList2D_Type), intent(in)                              ::    RHS
@@ -586,25 +586,25 @@ contains
 
     call LHS%Purge()
 
-    if ( RHS%NbNodes > 0 ) then
+    if (RHS%NbNodes > 0) then
       NodePointer => RHS%Head
 
       i = 1
       do i = 1, RHS%NbNodes-1
-        call LHS%Append( Values=NodePointer%Values )
-        nullify( NodePointer )
+        call LHS%Append(Values=NodePointer%Values)
+        nullify(NodePointer)
         NodePointer => NodePointer%Next
       end do
 
-      call LHS%Append( Values=NodePointer%Values )
-      nullify( NodePointer )
+      call LHS%Append(Values=NodePointer%Values)
+      nullify(NodePointer)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine FinalizerList( This )
+  impure elemental subroutine FinalizerList(This)
 
     type(LinkedList2D_Type), intent(inout)                            ::    This
 
@@ -615,7 +615,7 @@ contains
     integer                                                           ::    NbNodesLoc
     integer                                                           ::    StatLoc=0
 
-    if ( .not. associated(This%Head) ) return
+    if (.not. associated(This%Head)) return
 
     TempCurrent => This%Head
     nullify(This%Head)
@@ -626,14 +626,14 @@ contains
 
     i = 1
     do i = 1, NbNodesLoc
-      if ( associated(TempCurrent%Next) ) TempNext => TempCurrent%Next
+      if (associated(TempCurrent%Next)) TempNext => TempCurrent%Next
       deallocate(TempCurrent%Values, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='TempCurrent%Values', ProcName=ProcName, stat=StatLoc )
-      if ( associated(TempCurrent%Back) ) nullify(TempCurrent%Back)
-      if ( associated(TempCurrent%Next) ) nullify(TempCurrent%Next)
-      deallocate( TempCurrent, stat=StatLoc )
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='TempCurrent', ProcName=ProcName, stat=StatLoc )
-      if ( associated(TempNext) ) TempCurrent => Tempnext
+      if (StatLoc /= 0) call Error%Deallocate(Name='TempCurrent%Values', ProcName=ProcName, stat=StatLoc)
+      if (associated(TempCurrent%Back)) nullify(TempCurrent%Back)
+      if (associated(TempCurrent%Next)) nullify(TempCurrent%Next)
+      deallocate(TempCurrent, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='TempCurrent', ProcName=ProcName, stat=StatLoc)
+      if (associated(TempNext)) TempCurrent => Tempnext
     end do
 
   end subroutine

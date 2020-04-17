@@ -70,8 +70,8 @@ contains
   procedure, public                                                   ::    AddFixedInput           =>    AddFixedInput_IF
   procedure, public                                                   ::    GetTargets              =>    GetTargets_IF
   generic, public                                                     ::    assignment(=)           =>    Copy_IF
-  procedure, public                                                   ::    Copy_IT
-  final                                                               ::    Finalizer_IT
+  procedure, public                                                   ::    Copy_IF
+  final                                                               ::    Finalizer_IF
 end type 
 
 type                                                                  ::    InputOperation_Type
@@ -100,7 +100,7 @@ type                                                                  ::    Inpu
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Constructed=.false.
   logical                                                             ::    Initialized=.false.
-  integer                                                             ::    NbFix
+  integer                                                             ::    NbFixs
   integer                                                             ::    NbOperations
   integer                                                             ::    NbTransforms
   type(InputOperation_Type), allocatable, dimension(:)                ::    Operation
@@ -238,9 +238,9 @@ subroutine ConstructInput(This, Input, Prefix)
       do ii = i + 1 , This%NbFixs
         Targets2 = This%Fix(ii)%GetTargets()
         do iii = 1, size(Targets1,1)
-          VarC0D = Targets1%GetValue()
+          VarC0D = Targets1(iii)%GetValue()
           do iv = 1, size(Targets2,1)
-            if (VarC0D == Targets2%GetValue()) call Error%Raise('Duplicate fixed value labels', ProcName=ProcName)
+            if (VarC0D == Targets2(iv)%GetValue()) call Error%Raise('Duplicate fixed value labels', ProcName=ProcName)
           end do
         end do
       end do
@@ -268,12 +268,12 @@ subroutine ConstructInput(This, Input, Prefix)
     do i = 1, This%NbTransforms
       Targets1 = This%Transform(i)%GetTargets()
       ii = 1
-      do ii = i + 1 , This%Transforms
+      do ii = i + 1 , This%NbTransforms
         Targets2 = This%Transform(ii)%GetTargets()
         do iii = 1, size(Targets1,1)
-          VarC0D = Targets1%GetValue()
+          VarC0D = Targets1(iii)%GetValue()
           do iv = 1, size(Targets2,1)
-            if (VarC0D == Targets2%GetValue()) call Error%Raise('Duplicate fixed value labels : ' // VarC0D, ProcName=ProcName)
+            if (VarC0D == Targets2(iv)%GetValue()) call Error%Raise('Duplicate fixed value labels : ' // VarC0D, ProcName=ProcName)
           end do
         end do
       end do
@@ -287,9 +287,9 @@ subroutine ConstructInput(This, Input, Prefix)
         do ii = i + 1 , This%NbFixs
           Targets2 = This%Fix(ii)%GetTargets()
           do iii = 1, size(Targets1,1)
-            VarC0D = Targets1%GetValue()
+            VarC0D = Targets1(iii)%GetValue()
             do iv = 1, size(Targets2,1)
-              if (VarC0D == Targets2%GetValue()) call Error%Raise('Transformation of a fixed parameter not allowed : '          &
+              if (VarC0D == Targets2(iv)%GetValue()) call Error%Raise('Transformation of a fixed parameter not allowed : '          &
                                                                     // VarC0D, ProcName=ProcName)
             end do
           end do
@@ -319,12 +319,12 @@ subroutine ConstructInput(This, Input, Prefix)
     do i = 1, This%NbOperations
       Targets1 = This%Operation(i)%GetTargets()
       ii = 1
-      do ii = i + 1 , This%Operations
+      do ii = i + 1 , This%NbOperations
         Targets2 = This%Operation(ii)%GetTargets()
         do iii = 1, size(Targets1,1)
-          VarC0D = Targets1%GetValue()
+          VarC0D = Targets1(iii)%GetValue()
           do iv = 1, size(Targets2,1)
-            if (VarC0D == Targets2%GetValue()) call Error%Raise('Duplicate fixed value labels', ProcName=ProcName)
+            if (VarC0D == Targets2(iv)%GetValue()) call Error%Raise('Duplicate fixed value labels', ProcName=ProcName)
           end do
         end do
       end do
@@ -426,7 +426,7 @@ subroutine ProcessInput_0D(This, Input, ProcessedInput)
   ProcessedInput = Input
 
   i = 1
-  do i = 1, ThisNbFixs
+  do i = 1, This%NbFixs
     call This%Fix(i)%AddFixedInput(Input=ProcessedInput)
   end do
 
@@ -521,13 +521,13 @@ impure elemental subroutine Finalizer(This)
   character(*), parameter                                             ::    ProcName='Finalizer'
   integer                                                             ::    StatLoc=0
 
-  deallocate(This%Fix, stat=StatLoc)
+  if (allocated(This%Fix)) deallocate(This%Fix, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Fix', ProcName=ProcName, stat=StatLoc)
 
-  deallocate(This%Transform, stat=StatLoc)
+  if (allocated(This%Transform)) deallocate(This%Transform, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Transform', ProcName=ProcName, stat=StatLoc)
 
-  deallocate(This%Operation, stat=StatLoc)
+  if (allocated(This%Operation)) deallocate(This%Operation, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Operation', ProcName=ProcName, stat=StatLoc)
 
 end subroutine
@@ -565,8 +565,8 @@ subroutine Reset_IF(This)
   This%Initialized=.false.
   This%Constructed=.false.
 
-  if (allocated(This%Targets)) deallocate(This%Targets, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Targets', ProcName=ProcName, stat=StatLoc)
+  if (allocated(This%Target)) deallocate(This%Target, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
   This%NbTargets = 0
 
   call This%Initialize()
@@ -617,7 +617,7 @@ subroutine ConstructInput_IF(This, Input, Prefix)
   This%NbTargets = size(This%Target,1)
 
   allocate(This%Value(This%NbTargets), stat=StatLoc)
-  if ( StatLoc /= 0 ) call Error%Allocate(Name='This%Value', ProcName=ProcName, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%Value', ProcName=ProcName, stat=StatLoc)
   call Input%GetValue(Value=VarR0D, ParameterName='value', Mandatory=.true.)
   This%Value = VarR0D
 
@@ -664,12 +664,12 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine AddFixedInput(This, Input)
+subroutine AddFixedInput_IF(This, Input)
 
-  type(InputFixed_Type), intent(in)                                   ::    This
+  class(InputFixed_Type), intent(in)                                  ::    This
   type(Input_Type), intent(inout)                                     ::    Input
 
-  character(*), parameter                                             ::    ProcName='Copy_IF'
+  character(*), parameter                                             ::    ProcName='AddFixedInput_IF'
   integer                                                             ::    StatLoc=0
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
@@ -677,6 +677,24 @@ subroutine AddFixedInput(This, Input)
   call Input%Append(Values=This%Value, Labels=This%Target)
 
 end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetTargets_IF(This)
+
+  type(String_Type), allocatable, dimension(:)                        ::    GetTargets_IF
+
+  class(InputFixed_Type), intent(in)                                  ::    This
+
+  character(*), parameter                                             ::    ProcName='GetTargets_IF'
+  integer                                                             ::    StatLoc=0
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  allocate(GetTargets_IF, source=This%Target, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='GetTargets_IF', ProcName=ProcName, stat=StatLoc)
+
+end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -698,7 +716,7 @@ impure elemental subroutine Copy_IF(LHS, RHS)
     allocate(LHS%Target, source=RHS%Target, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='LHS%Target', ProcName=ProcName, stat=StatLoc)
     allocate(LHS%Value, source=RHS%Value, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate(Name='LHS%Value', ProcName=ProcName, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='LHS%Value', ProcName=ProcName, stat=StatLoc)
   end if
 
 end subroutine
@@ -715,8 +733,8 @@ impure elemental subroutine Finalizer_IF(This)
   if (allocated(This%Target)) deallocate(This%Target, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
 
-  if ( allocated(This%Value) ) deallocate(This%Value, stat=StatLoc)
-  if ( StatLoc /= 0 ) call Error%Deallocate(Name='This%Value', ProcName=ProcName, stat=StatLoc)
+  if (allocated(This%Value)) deallocate(This%Value, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Value', ProcName=ProcName, stat=StatLoc)
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -753,12 +771,12 @@ subroutine Reset_IT(This)
   This%Initialized=.false.
   This%Constructed=.false.
 
-  if (allocated(This%Targets)) deallocate(This%Targets, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Targets', ProcName=ProcName, stat=StatLoc)
+  if (allocated(This%Target)) deallocate(This%Target, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
   This%NbTargets = 0
 
-  if ( allocated(This%Transformation) ) deallocate(This%Transformation, stat=StatLoc)
-  if ( StatLoc /= 0 ) call Error%Deallocate(Name='This%Transformation', ProcName=ProcName, stat=StatLoc)
+  if (allocated(This%Transformation)) deallocate(This%Transformation, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Transformation', ProcName=ProcName, stat=StatLoc)
 
   call This%Initialize()
 
@@ -805,7 +823,7 @@ subroutine ConstructInput_IT(This, Input, Prefix)
   This%NbTargets = size(This%Target,1)
 
   allocate(This%Transformation(This%NbTargets), stat=StatLoc)
-  if ( StatLoc /= 0 ) call Error%Allocate(Name='This%Transformation', ProcName=ProcName, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%Transformation', ProcName=ProcName, stat=StatLoc)
   call Input%GetValue(Value=VarC0D, ParameterName='transformation', Mandatory=.true.)
   i = 1
   do i = 1, This%NbTargets
@@ -822,7 +840,7 @@ function GetInput_IT(This, Name, Prefix, Directory)
 
   type(InputSection_Type)                                             ::    GetInput_IT
 
-  class(InputProcessor_Type), intent(in)                              ::    This
+  class(InputTransform_Type), intent(in)                              ::    This
   character(*), intent(in)                                            ::    Name
   character(*), optional, intent(in)                                  ::    Prefix
   character(*), optional, intent(in)                                  ::    Directory
@@ -855,9 +873,9 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine TransformInput(This, Input)
+subroutine TransformInput_IT(This, Input)
 
-  type(InputTransform_Type), intent(in)                               ::    This
+  class(InputTransform_Type), intent(in)                              ::    This
   type(Input_Type), intent(inout)                                     ::    Input
 
   character(*), parameter                                             ::    ProcName='TransformInput_IT'
@@ -868,6 +886,24 @@ subroutine TransformInput(This, Input)
   call Input%Transform(Transformations=This%Transformation, Labels=This%Target)
 
 end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetTargets_IT(This)
+
+  type(String_Type), allocatable, dimension(:)                        ::    GetTargets_IT
+
+  class(InputTransform_Type), intent(in)                              ::    This
+
+  character(*), parameter                                             ::    ProcName='GetTargets_IT'
+  integer                                                             ::    StatLoc=0
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  allocate(GetTargets_IT, source=This%Target, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='GetTargets_IT', ProcName=ProcName, stat=StatLoc)
+
+end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -889,7 +925,7 @@ impure elemental subroutine Copy_IT(LHS, RHS)
     allocate(LHS%Target, source=RHS%Target, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='LHS%Target', ProcName=ProcName, stat=StatLoc)
     allocate(LHS%Transformation, source=RHS%Transformation, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate(Name='LHS%Transformation', ProcName=ProcName, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='LHS%Transformation', ProcName=ProcName, stat=StatLoc)
   end if
 
 end subroutine
@@ -906,8 +942,8 @@ impure elemental subroutine Finalizer_IT(This)
   if (allocated(This%Target)) deallocate(This%Target, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
 
-  if ( allocated(This%Transformations) ) deallocate(This%Transformations, stat=StatLoc)
-  if ( StatLoc /= 0 ) call Error%Deallocate(Name='This%Transformations', ProcName=ProcName, stat=StatLoc)
+  if (allocated(This%Transformation)) deallocate(This%Transformation, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Transformation', ProcName=ProcName, stat=StatLoc)
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -944,8 +980,8 @@ subroutine Reset_IO(This)
   This%Initialized=.false.
   This%Constructed=.false.
 
-  if (allocated(This%Targets)) deallocate(This%Targets, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Targets', ProcName=ProcName, stat=StatLoc)
+  if (allocated(This%Target)) deallocate(This%Target, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
   This%NbTargets = 0
 
   if (allocated(This%Operation)) deallocate(This%Operation, stat=StatLoc)
@@ -1008,7 +1044,7 @@ function GetInput_IO(This, Name, Prefix, Directory)
 
   type(InputSection_Type)                                             ::    GetInput_IO
 
-  class(InputProcessor_Type), intent(in)                              ::    This
+  class(InputOperation_Type), intent(in)                              ::    This
   character(*), intent(in)                                            ::    Name
   character(*), optional, intent(in)                                  ::    Prefix
   character(*), optional, intent(in)                                  ::    Directory
@@ -1041,12 +1077,12 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine OperateInput_IT(This, Input)
+subroutine OperateInput_IO(This, Input)
 
-  type(InputTransform_Type), intent(in)                               ::    This
+  class(InputOperation_Type), intent(in)                              ::    This
   type(Input_Type), intent(inout)                                     ::    Input
 
-  character(*), parameter                                             ::    ProcName='OperateInput_IT'
+  character(*), parameter                                             ::    ProcName='OperateInput_IO'
   integer                                                             ::    StatLoc=0
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
@@ -1062,12 +1098,12 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine OpNormalize_IT(This, Input)
+subroutine OpNormalize_IO(This, Input)
 
-  type(InputTransform_Type), intent(in)                               ::    This
+  class(InputOperation_Type), intent(in)                              ::    This
   type(Input_Type), intent(inout)                                     ::    Input
 
-  character(*), parameter                                             ::    ProcName='OpNormalize_IT'
+  character(*), parameter                                             ::    ProcName='OpNormalize_IO'
   integer                                                             ::    StatLoc=0
   real(rkp), allocatable, dimension(:)                                ::    Values
 
@@ -1080,6 +1116,24 @@ subroutine OpNormalize_IT(This, Input)
   call Input%Replace(Values=Values, Labels=This%Target)
 
 end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetTargets_IO(This)
+
+  type(String_Type), allocatable, dimension(:)                        ::    GetTargets_IO
+
+  class(InputOperation_Type), intent(in)                              ::    This
+
+  character(*), parameter                                             ::    ProcName='GetTargets_IO'
+  integer                                                             ::    StatLoc=0
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  allocate(GetTargets_IO, source=This%Target, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='GetTargets_IO', ProcName=ProcName, stat=StatLoc)
+
+end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------

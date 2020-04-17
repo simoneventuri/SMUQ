@@ -58,28 +58,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_MCMCMethod( This )
+  subroutine Initialize_MCMCMethod(This)
     import                                                            ::    MCMCMethod_Type
     class(MCMCMethod_Type), intent(inout)                             ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_MCMCMethod( This )
+  subroutine Reset_MCMCMethod(This)
     import                                                            ::    MCMCMethod_Type
     class(MCMCMethod_Type), intent(inout)                             ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_MCMCMethod( This )
+  subroutine SetDefaults_MCMCMethod(This)
     import                                                            ::    MCMCMethod_Type
     class(MCMCMethod_Type), intent(inout)                             ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_MCMCMethod( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput_MCMCMethod(This, Input, SectionChain, Prefix)
     import                                                            ::    MCMCMethod_Type
     import                                                            ::    InputSection_Type
     class(MCMCMethod_Type), intent(inout)                             ::    This
@@ -90,19 +90,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_MCMCMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_MCMCMethod(This, Name, Prefix, Directory)
     import                                                            ::    MCMCMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_MCMCMethod
     class(MCMCMethod_Type), intent(in)                                ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateChain_MCMCMethod( This, SamplingTarget, SampleSpace, ParameterChain, TargetChain, MiscChain, OutputDirectory)
+  subroutine GenerateChain_MCMCMethod(This, SamplingTarget, SampleSpace, ParameterChain, TargetChain, MiscChain, OutputDirectory)
     use                                                               ::    Parameters_Library
     import                                                            ::    MCMCMethod_Type
     import                                                            ::    SampleSpace_Type
@@ -118,7 +118,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_MCMCMethod( LHS, RHS )
+  impure elemental subroutine Copy_MCMCMethod(LHS, RHS)
     import                                                            ::    MCMCMethod_Type
     class(MCMCMethod_Type), intent(out)                               ::    LHS
     class(MCMCMethod_Type), intent(in)                                ::    RHS
@@ -126,7 +126,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine MCMCSamplingTarget( Input, Value, MiscValues )
+  subroutine MCMCSamplingTarget(Input, Value, MiscValues)
     use Parameters_Library
     import                                                            ::    Input_Type
     real(rkp), intent(out)                                            ::    Value
@@ -140,7 +140,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(MCMCMethod_Type), intent(inout)                             ::    This
@@ -153,14 +153,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsInitialized( This )
+  function IsInitialized(This)
 
     logical                                                           ::    IsInitialized
     class(MCMCMethod_Type), intent(in)                                ::    This
 
     character(*), parameter                                           ::    ProcName='IsInitialized'
 
-    if ( This%Initialized ) then
+    if (This%Initialized) then
       IsInitialized = .true.
     else
       IsInitialized = .false.
@@ -170,14 +170,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This )
+  function IsConstructed(This)
 
     logical                                                           ::    IsConstructed
     class(MCMCMethod_Type), intent(in)                                ::    This
 
     character(*), parameter                                           ::    ProcName='IsConstructed'
 
-    if ( This%Constructed ) then
+    if (This%Constructed) then
       IsConstructed = .true.
     else
       IsConstructed = .false.

@@ -55,28 +55,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_AnalysisMethod( This )
+  subroutine Initialize_AnalysisMethod(This)
     import                                                            ::    AnalysisMethod_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_AnalysisMethod( This )
+  subroutine Reset_AnalysisMethod(This)
     import                                                            ::    AnalysisMethod_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_AnalysisMethod( This )
+  subroutine SetDefaults_AnalysisMethod(This)
     import                                                            ::    AnalysisMethod_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_AnalysisMethod( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput_AnalysisMethod(This, Input, SectionChain, Prefix)
     import                                                            ::    AnalysisMethod_Type
     import                                                            ::    InputSection_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
@@ -87,19 +87,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_AnalysisMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_AnalysisMethod(This, Name, Prefix, Directory)
     import                                                            ::    AnalysisMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_AnalysisMethod
     class(AnalysisMethod_Type), intent(inout)                         ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_AnalysisMethod( This, SampleSpace, Responses, Model, OutputDirectory )
+  subroutine Run_AnalysisMethod(This, SampleSpace, Responses, Model, OutputDirectory)
     import                                                            ::    SampleSpace_Type
     import                                                            ::    Response_Type
     import                                                            ::    Model_Type
@@ -113,7 +113,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_AnalysisMethod( LHS, RHS )
+  impure elemental subroutine Copy_AnalysisMethod(LHS, RHS)
     import                                                            ::    AnalysisMethod_Type
     class(AnalysisMethod_Type), intent(out)                           ::    LHS
     class(AnalysisMethod_Type), intent(in)                            ::    RHS
@@ -125,7 +125,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(AnalysisMethod_Type), intent(inout)                         ::    This

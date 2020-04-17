@@ -60,14 +60,14 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer(8)                                                        ::    SysTimeCount
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Initialized = .true.
       This%Name = 'calibrationbayesian'
       call This%SetDefaults()
@@ -77,7 +77,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
 
@@ -87,8 +87,8 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%BayesInvMethod) ) deallocate(This%BayesInvMethod, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%BayesInvMethod)) deallocate(This%BayesInvMethod, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc)
 
     call This%Likelihood%Reset()
 
@@ -110,7 +110,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput ( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput (This, Input, SectionChain, Prefix)
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -130,28 +130,28 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     This%SectionChain = SectionChain
 
     ParameterName= 'silent'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Silent=VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Silent=VarL0D
 
     SectionName = 'likelihood'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call This%Likelihood%Construct( Input=InputSection, Prefix=PrefixLoc )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call This%Likelihood%Construct(Input=InputSection, Prefix=PrefixLoc)
 
     VarC0D = SectionChain // '>method'
     SectionName = 'method'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call BayesInvMethod_Factory%Construct( Object=This%BayesInvMethod, Input=InputSection,                                        &
-                                                                                           SectionChain=VarC0D, Prefix=PrefixLoc )
-    nullify( InputSection )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call BayesInvMethod_Factory%Construct(Object=This%BayesInvMethod, Input=InputSection,                                        &
+                                                                                           SectionChain=VarC0D, Prefix=PrefixLoc)
+    nullify(InputSection)
 
     This%Constructed = .true.
 
@@ -159,12 +159,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
     
     type(InputSection_Type)                                           ::    GetInput
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -177,35 +177,35 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='silent', Value=ConvertToString( Value=This%Silent ) )
+    call GetInput%AddParameter(Name='silent', Value=ConvertToString(Value=This%Silent))
 
     SectionName = 'likelihood'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/likelihood'
-    call GetInput%AddSection( Section=This%Likelihood%GetInput( MainSectionName=SectioNName, Prefix=PrefixLoc,                    &
-                                                                                                        Directory=DirectorySub ) )
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/likelihood'
+    call GetInput%AddSection(Section=This%Likelihood%GetInput(Name=SectioNName, Prefix=PrefixLoc,                    &
+                                                                                                        Directory=DirectorySub))
 
     SectionName = 'method'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/method'
-    call GetInput%AddSection( Section=BayesInvMethod_Factory%GetObjectInput( Object=This%BayesInvMethod,                          &
-                                                         MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ) )
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/method'
+    call GetInput%AddSection(Section=BayesInvMethod_Factory%GetObjectInput(Object=This%BayesInvMethod,                          &
+                                                         Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory )
+  subroutine Run(This, SampleSpace, Responses, Model, OutputDirectory)
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
@@ -216,19 +216,19 @@ contains
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
 
-    if ( present(OutputDirectory) ) then
-      call This%BayesInvMethod%Calibrate( Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
-                                                             LikelihoodFunction=This%Likelihood, OutputDirectory=OutputDirectory )
+    if (present(OutputDirectory)) then
+      call This%BayesInvMethod%Calibrate(Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
+                                                             LikelihoodFunction=This%Likelihood, OutputDirectory=OutputDirectory)
     else
-      call This%BayesInvMethod%Calibrate( Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
-                                                                                              LikelihoodFunction=This%Likelihood )
+      call This%BayesInvMethod%Calibrate(Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
+                                                                                              LikelihoodFunction=This%Likelihood)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, Posterior, Directory )
+  subroutine WriteOutput(This, Posterior, Directory)
 
     class(CalibrationBayesian_Type), intent(inout)                    ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Posterior
@@ -246,9 +246,9 @@ contains
     type(SMUQFile_Type)                                               ::    File
     integer                                                           ::    i, ii
 
-    if ( len_trim(Directory) /= 0 ) then
+    if (len_trim(Directory) /= 0) then
 
-      call MakeDirectory( Path=Directory, Options='-p' )
+      call MakeDirectory(Path=Directory, Options='-p')
 
     end if
 
@@ -256,7 +256,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(CalibrationBayesian_Type), intent(out)                      ::    LHS
     class(CalibrationMethod_Type), intent(in)                         ::    RHS
@@ -271,15 +271,15 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           allocate(LHS%BayesInvMethod, source=RHS%BayesInvMethod, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%BayesInvMethod', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%BayesInvMethod', ProcName=ProcName, stat=StatLoc)
           LHS%Likelihood = RHS%Likelihood
           LHS%Silent = RHS%Silent
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -287,15 +287,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(CalibrationBayesian_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%BayesInvMethod) ) deallocate(This%BayesInvMethod, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%BayesInvMethod)) deallocate(This%BayesInvMethod, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 function i_figure = plot_Output_Posterior_sets_fun(PlottingFormat, i_figure, save_fig, nb_of_sigma, plot_y_interval, ...
-                                                    plot_Max_Like, plot_Max_Post, check_Output_Posterior, proc, x_check )      
+                                                    plot_Max_Like, plot_Max_Post, check_Output_Posterior, proc, x_check)      
     
     filename = './problem_parameters.dat';
     delimiter = ' ';
@@ -89,7 +89,7 @@ function i_figure = plot_Output_Posterior_sets_fun(PlottingFormat, i_figure, sav
     data_scale = char(dataArray{:, 1});
     clearvars filename delimiter formatSpec fileID dataArray ans;
     
-    if ( data_scale == 'log' )
+    if (data_scale == 'log')
         y_data = 10.^y_data;
     end
 
@@ -133,7 +133,7 @@ function i_figure = plot_Output_Posterior_sets_fun(PlottingFormat, i_figure, sav
 
     end
      
-    if ( data_scale == 'log' )
+    if (data_scale == 'log')
         y_Max_Post = 10.^y_Max_Post;
         y_Max_Like = 10.^y_Max_Like;
     end  

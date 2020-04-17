@@ -1,4 +1,4 @@
-function i_figure = plot_Priors_fun(PlottingFormat, i_figure, save_fig, proc, nb_bins_hist, plot_Props )
+function i_figure = plot_Priors_fun(PlottingFormat, i_figure, save_fig, proc, nb_bins_hist, plot_Props)
 
     filename = './theta_name.dat';
     delimiter = '\t';

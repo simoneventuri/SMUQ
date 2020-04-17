@@ -1,4 +1,4 @@
-function [i_figure, T_auto] = plot_Autocorrelations_fun(PlottingFormat, i_figure, save_fig, proc, max_lag, clean_flag )
+function [i_figure, T_auto] = plot_Autocorrelations_fun(PlottingFormat, i_figure, save_fig, proc, max_lag, clean_flag)
 
     filename = './problem_parameters.dat';
     delimiter = ' ';
@@ -90,7 +90,7 @@ function [i_figure, T_auto] = plot_Autocorrelations_fun(PlottingFormat, i_figure
             
             for ii=proc
                 theta_temp = [];
-                if ( clean_flag == 0 )
+                if (clean_flag == 0)
 
                     filename = strcat('./dirty_chain_',num2str(ii),'.dat');
                     startRow = 2;
@@ -106,7 +106,7 @@ function [i_figure, T_auto] = plot_Autocorrelations_fun(PlottingFormat, i_figure
                     theta_temp = [dataArray{1:end-1}];
                     clearvars filename startRow formatSpec fileID dataArray ans;
 
-                elseif ( clean_flag == 1 )
+                elseif (clean_flag == 1)
                     
                     filename = strcat('./clean_chain_',num2str(ii),'.dat');
                     startRow = 2;
@@ -150,9 +150,9 @@ function [i_figure, T_auto] = plot_Autocorrelations_fun(PlottingFormat, i_figure
             end
         
             str_theta_i = strtrim(theta_names(i,:));
-            if ( clean_flag == 0 )
+            if (clean_flag == 0)
                 str_title = ['Dirty Chain Autocorrelation for ', str_theta_i];
-            elseif( clean_flag == 1 )
+            elseif(clean_flag == 1)
                 str_title = ['Clean Chain Autocorrelation for ', str_theta_i];
             end
             if PlottingFormat(1,:) == 'Visual'

@@ -44,7 +44,7 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_1D( This, Input, Output, Stat )
+  subroutine Run_1D(This, Input, Output, Stat)
 
     class(ModelInternal_Type), intent(inout)                          ::    This
     type(Input_Type), dimension(:), intent(in)                        ::    Input
@@ -61,12 +61,12 @@ contains
     NbInputs = size(Input,1)
     NbSubModels = 1
 
-    if ( size(Output,1) /= This%NbOutputs .or. size(Output,2) /= NbInputs )                                                       &
-                                       call Error%Raise( 'Passed an output array of incorrect dimensionality', ProcName=ProcName )
+    if (size(Output,1) /= This%NbOutputs .or. size(Output,2) /= NbInputs)                                                       &
+                                       call Error%Raise('Passed an output array of incorrect dimensionality', ProcName=ProcName)
 
-    if ( size(Stat,1) /= NbInputs ) call Error%Raise( 'Passed a stat array of incorrect length', ProcName=ProcName )
+    if (size(Stat,1) /= NbInputs) call Error%Raise('Passed a stat array of incorrect length', ProcName=ProcName)
 
-    if ( .not. This%Silent ) then
+    if (.not. This%Silent) then
       write(*,*)
       Line = 'Scheduling ' // ConvertToString(Value=NbInputs) // ' inputs with ' // ConvertToString(Value=NbSubModels) //         &
                                      ' submodels for a total of ' // ConvertToString(Value=NbInputs*NbSubModels) // ' evaluations'
@@ -79,18 +79,18 @@ contains
 
     i = 1
     do i = 1, NbInputs
-      if ( .not. This%Silent ) then
+      if (.not. This%Silent) then
         Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Input ' // ConvertToString(Value=i) // ' Submodel 1'
         write(*,'(A)') Line
         Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Initializing'
         write(*,'(A)') Line
       end if
-      call This%Run(Input=Input(i), Output=Output(:,i), Stat=StatLoc )
-      if ( .not. This%Silent ) then
+      call This%Run(Input=Input(i), Output=Output(:,i), Stat=StatLoc)
+      if (.not. This%Silent) then
         Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Complete'
         write(*,'(A)') Line
       end if
-      if ( present(Stat) ) Stat(i) = StatLoc
+      if (present(Stat)) Stat(i) = StatLoc
     end do
 
   end subroutine

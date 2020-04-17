@@ -76,14 +76,14 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(Histogram_Type), intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Initialized = .true.
       This%Name = 'response'
       call This%SetDefaults()
@@ -93,7 +93,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(Histogram_Type), intent(inout)                              ::    This
 
@@ -103,11 +103,11 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%BinEdges) ) deallocate(This%BinEdges, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinEdges', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%BinEdges)) deallocate(This%BinEdges, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%BinEdges', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%BinCounts)) deallocate(This%BinCounts, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%BinCounts', ProcName=ProcName, stat=StatLoc)
 
     This%NbBins = 0
 
@@ -117,7 +117,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(Histogram_Type), intent(inout)                              ::    This
 
@@ -128,7 +128,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(Histogram_Type), intent(inout)                              ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -146,50 +146,50 @@ contains
     integer, allocatable, dimension(:)                                ::    VarI1D
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
     
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
     
     ParameterName = 'name'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
-    if ( Found ) This%Name = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.false., Found=Found)
+    if (Found) This%Name = VarC0D
 
     SectionName = 'bin_edges'
     ParameterName = 'source'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     SubSectionName = SectionName // '>source'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     select case (VarC0D)
       case('computed')
-        allocate(This%BinEdges, source=LinSpaceVec( Input=InputSection ), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='This%BinEdges', ProcName=ProcName, stat=StatLoc )
+        allocate(This%BinEdges, source=LinSpaceVec(Input=InputSection), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='This%BinEdges', ProcName=ProcName, stat=StatLoc)
       case('imported')
-        call ImportArray( Input=InputSection, Array=VarR1D, Prefix=PrefixLoc )
+        call ImportArray(Input=InputSection, Array=VarR1D, Prefix=PrefixLoc)
         allocate(This%BinEdges, source=VarR1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='This%BinEdges', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='This%BinEdges', ProcName=ProcName, stat=StatLoc)
         deallocate(VarR1D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
       case default
-        call Error%Raise( Line='Source not recognized', ProcName=ProcName )
+        call Error%Raise(Line='Source not recognized', ProcName=ProcName)
     end select
 
     This%NbBins = size(This%BinEdges,1)-1
 
     SectionName = 'bin_counts'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=VarI1D, Prefix=PrefixLoc )
+    if (Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+      call ImportArray(Input=InputSection, Array=VarI1D, Prefix=PrefixLoc)
       allocate(This%BinCounts, source=VarI1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%BinCounts', ProcName=ProcName, stat=StatLoc)
       deallocate(VarI1D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarI1D', ProcName=ProcName, stat=StatLoc )
-      if ( size(This%BinCounts,1) /= This%NbBins ) call Error%Raise( 'Mismatch between size of bincounts and number of bins',     &
-                                                                                                               ProcName=ProcName )
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)
+      if (size(This%BinCounts,1) /= This%NbBins) call Error%Raise('Mismatch between size of bincounts and number of bins',     &
+                                                                                                               ProcName=ProcName)
     else
       allocate(This%BinCounts(This%NbBins), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%BinCounts', ProcName=ProcName, stat=StatLoc)
       This%BinCounts = 0
     end if
 
@@ -199,12 +199,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(Histogram_Type), intent(in)                                 ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -220,47 +220,47 @@ contains
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    if ( len_trim(This%Name) /= 0 ) call GetInput%AddParameter( Name='name', Value=This%Name )
+    if (len_trim(This%Name) /= 0) call GetInput%AddParameter(Name='name', Value=This%Name)
 
     SectionName = 'bin_edges'
-    call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%AddParameter( Name='source', Value='imported', SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
+    call GetInput%AddParameter(Name='source', Value='imported', SectionName=SectionName)
     SubSectionName = 'source'
-    call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-    call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
-                                                                                                              Mandatory=.true. )
-    if ( ExternalFlag ) then
+    call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
+                                                                                                              Mandatory=.true.)
+    if (ExternalFlag) then
       FileName = DirectoryLoc // '/bin_edges.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%BinEdges, File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Input=InputSection, Array=This%BinEdges, File=File)
     else
-      call ExportArray( Input=InputSection, Array=This%BinEdges )
+      call ExportArray(Input=InputSection, Array=This%BinEdges)
     end if
     nullify(InputSection)
 
     SectionName = 'bin_counts'
-    call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    if ( ExternalFlag ) then
+    call GetInput%AddSection(SectionName=SectionName)
+    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    if (ExternalFlag) then
       FileName = DirectoryLoc // '/bin_counts.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%BinCounts, File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Input=InputSection, Array=This%BinCounts, File=File)
     else
-      call ExportArray( Input=InputSection, Array=This%BinCounts )
+      call ExportArray(Input=InputSection, Array=This%BinCounts)
     end if
     nullify(InputSection)
 
@@ -268,7 +268,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Bin_R0D( This, Value )
+  subroutine Bin_R0D(This, Value)
 
     class(Histogram_Type), intent(inout)                              ::    This
     real(rkp), intent(in)                                             ::    Value
@@ -276,17 +276,17 @@ contains
     character(*), parameter                                           ::    ProcName='BinR0D'
     integer                                                           ::    StatLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     This%BinCounts = 0
 
-    call BinValues( Value=Value, BinEdges=This%BinEdges, BinCounts=This%BinCounts )
+    call BinValues(Value=Value, BinEdges=This%BinEdges, BinCounts=This%BinCounts)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Bin_R1D( This, Values )
+  subroutine Bin_R1D(This, Values)
 
     class(Histogram_Type), intent(inout)                              ::    This
     real(rkp), dimension(:), intent(in)                               ::    Values
@@ -294,17 +294,17 @@ contains
     character(*), parameter                                           ::    ProcName='BinR1D'
     integer                                                           ::    StatLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     This%BinCounts = 0
 
-    call BinValues( Values=Values, BinEdges=This%BinEdges, BinCounts=This%BinCounts )
+    call BinValues(Values=Values, BinEdges=This%BinEdges, BinCounts=This%BinCounts)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine BinValues_R0D( Value, BinEdges, BinCounts )
+  subroutine BinValues_R0D(Value, BinEdges, BinCounts)
 
     real(rkp), intent(in)                                             ::    Value
     real(rkp), dimension(:), intent(in)                               ::    BinEdges
@@ -315,19 +315,19 @@ contains
     integer                                                           ::    NbBins
     integer                                                           ::    i
 
-    if ( size(BinCounts) /= size(BinEdges)-1 ) call Error%Raise( 'Mismatch between bin counts and number of bins',                &
-                                                                                                               ProcName=ProcName )
+    if (size(BinCounts) /= size(BinEdges)-1) call Error%Raise('Mismatch between bin counts and number of bins',                &
+                                                                                                               ProcName=ProcName)
 
     NbBins = size(BinCounts)
 
-    if ( Value < BinEdges(1) ) then
+    if (Value < BinEdges(1)) then
       BinCounts(1) = BinCounts(1) + 1
     elseif (Value > BinEdges(NbBins+1)) then
       BinCounts(NbBins) = BinCounts(NbBins) + 1
     else
       i = 1
       do i = 1, NbBins
-        if ( Value < BinEdges(i+1) .and. Value >= BinEdges(i) ) then
+        if (Value < BinEdges(i+1) .and. Value >= BinEdges(i)) then
           BinCounts(i) = BinCounts(i) + 1
           exit
         end if
@@ -338,7 +338,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine BinValues_R1D( Values, BinEdges, BinCounts )
+  subroutine BinValues_R1D(Values, BinEdges, BinCounts)
 
     real(rkp), dimension(:), intent(in)                               ::    Values
     real(rkp), dimension(:), intent(in)                               ::    BinEdges
@@ -351,22 +351,22 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
 
-    if ( size(BinCounts) /= size(BinEdges)-1 ) call Error%Raise( 'Mismatch between bin counts and number of bins',                &
-                                                                                                               ProcName=ProcName )
+    if (size(BinCounts) /= size(BinEdges)-1) call Error%Raise('Mismatch between bin counts and number of bins',                &
+                                                                                                               ProcName=ProcName)
 
     NbBins = size(BinCounts)
     NbValues = size(Values)
 
     ii = 1
     do ii = 1, NbValues
-      if ( Values(ii) < BinEdges(1) ) then
+      if (Values(ii) < BinEdges(1)) then
         BinCounts(1) = BinCounts(1) + 1
-      elseif ( Values(ii) > BinEdges(NbBins+1)) then
+      elseif (Values(ii) > BinEdges(NbBins+1)) then
         BinCounts(NbBins) = BinCounts(NbBins) + 1
       else
         i = 1
         do i = 1, NbBins
-          if ( Values(ii) < BinEdges(i+1) .and. Values(ii) >= BinEdges(i) ) then
+          if (Values(ii) < BinEdges(i+1) .and. Values(ii) >= BinEdges(i)) then
             BinCounts(i) = BinCounts(i) + 1
             exit
           end if
@@ -378,7 +378,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetBinEdges( This )
+  function GetBinEdges(This)
 
     real(rkp), allocatable, dimension(:)                              ::    GetBinEdges
 
@@ -387,16 +387,16 @@ contains
     character(*), parameter                                           ::    ProcName='GetBinEdges'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     allocate(GetBinEdges, source=This%BinEdges, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetBinEdges', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='GetBinEdges', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetBinEdgesPointer( This )
+  function GetBinEdgesPointer(This)
 
     real(rkp), pointer, dimension(:)                                  ::    GetBinEdgesPointer
 
@@ -405,7 +405,7 @@ contains
     character(*), parameter                                           ::    ProcName='GetBinEdgesPointer'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     GetBinEdgesPointer => This%BinEdges
 
@@ -413,7 +413,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetBinCounts( This )
+  function GetBinCounts(This)
 
     integer, allocatable, dimension(:)                                ::    GetBinCounts
 
@@ -422,16 +422,16 @@ contains
     character(*), parameter                                           ::    ProcName='GetBinCounts'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     allocate(GetBinCounts, source=This%BinCounts, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetBinCounts', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='GetBinCounts', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetBinCountsPointer( This )
+  function GetBinCountsPointer(This)
 
     integer, pointer, dimension(:)                                    ::    GetBinCountsPointer
 
@@ -440,7 +440,7 @@ contains
     character(*), parameter                                           ::    ProcName='GetBinCountsPointer'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     GetBinCountsPointer => This%BinCounts
 
@@ -448,7 +448,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
 
@@ -457,7 +457,7 @@ contains
     character(*), parameter                                           ::    ProcName='GetName'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     GetName = This%Name
 
@@ -465,7 +465,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbBins( This )
+  function GetNbBins(This)
 
     integer                                                           ::    GetNbBins
 
@@ -474,7 +474,7 @@ contains
     character(*), parameter                                           ::    ProcName='GetNbBins'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     GetNbBins = This%NbBins
 
@@ -482,7 +482,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(Histogram_Type), intent(out)                                ::    LHS
     class(Histogram_Type), intent(in)                                 ::    RHS
@@ -497,17 +497,17 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Name = RHS%Name
           LHS%NbBins = RHS%NbBins
           allocate(LHS%BinEdges, source=RHS%BinEdges, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%BinEdges', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%BinEdges', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%BinCounts, source=RHS%BinCounts, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%BinCounts', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%BinCounts', ProcName=ProcName, stat=StatLoc)
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -515,18 +515,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(Histogram_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%BinEdges) ) deallocate(This%BinEdges, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinEdges', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%BinEdges)) deallocate(This%BinEdges, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%BinEdges', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%BinCounts) ) deallocate(This%BinCounts, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%BinCounts', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%BinCounts)) deallocate(This%BinCounts, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%BinCounts', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -67,13 +67,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(TestSpill_Type), intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'spill'
       This%Initialized = .true.
     end if
@@ -84,7 +84,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(TestSpill_Type), intent(inout)                              ::    This
 
@@ -94,11 +94,11 @@ contains
     This%Initialized = .false.
     This%Constructed = .false.
 
-    if ( allocated(This%Time) ) deallocate(This%Time, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Time', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Time)) deallocate(This%Time, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Time', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Location) ) deallocate(This%Location, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Location', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Location)) deallocate(This%Location, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Location', ProcName=ProcName, stat=StatLoc)
 
     This%NbTimes = 0
     This%NbLocations = 0
@@ -109,7 +109,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(TestSpill_Type), intent(inout)                              ::    This
 
@@ -130,7 +130,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(TestSpill_Type), intent(inout)                              ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -150,71 +150,71 @@ contains
     real(rkp), dimension(2)                                           ::    TimeRange
     logical                                                           ::    MandatoryLoc
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     Found = .false.
 
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found, SectionName=SectionName )
-    if ( Found ) This%Label = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found, SectionName=SectionName)
+    if (Found) This%Label = VarC0D
 
     ParameterName = 'time_range'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     TimeRange = ConvertToReals(String=VarC0D)
-    if ( TimeRange(1) <= 0 ) call Error%Raise( Line='Minimum time range at or below zero', ProcName=ProcName )
-    if ( TimeRange(2) < TimeRange(1) ) call Error%Raise( Line='Minimum time larger than maximum', ProcName=ProcName )
+    if (TimeRange(1) <= 0) call Error%Raise(Line='Minimum time range at or below zero', ProcName=ProcName)
+    if (TimeRange(2) < TimeRange(1)) call Error%Raise(Line='Minimum time larger than maximum', ProcName=ProcName)
         
     ParameterName = 'nb_times'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     This%NbTimes = VarI0D
 
     This%Time = LinSpace(TimeRange(1), TimeRange(2), This%NbTimes)
 
     ParameterName = 'location'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
-    This%Location = ConvertToReals( String=VarC0D )
-    if ( any(This%Location > 3.0) .or. any(This%Location < 0.0) ) call Error%Raise( Line='Location must be in between 0 and 3',   &
-                                                                                                               ProcName=ProcName ) 
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+    This%Location = ConvertToReals(String=VarC0D)
+    if (any(This%Location > 3.0) .or. any(This%Location < 0.0)) call Error%Raise(Line='Location must be in between 0 and 3',   &
+                                                                                                               ProcName=ProcName) 
     This%NbLocations = size(This%Location)
-    if ( THis%NbLocations <= 0 ) call Error%Raise( 'Must specify at least one location', ProcName=ProcName )
+    if (THis%NbLocations <= 0) call Error%Raise('Must specify at least one location', ProcName=ProcName)
 
     SectionName = 'parameters'
 
     ParameterName = 'm_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) This%M_Dependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) This%M_Dependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'm'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%M = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%M = VarR0D
 
     ParameterName = 'd_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) This%D_Dependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) This%D_Dependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'd'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%D = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%D = VarR0D
 
     ParameterName = 'l_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) This%L_Dependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) This%L_Dependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'l'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%L = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%L = VarR0D
 
     ParameterName = 'tau_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Tau_Dependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) This%Tau_Dependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'tau'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Tau = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%Tau = VarR0D
 
     This%Constructed = .true.
 
@@ -222,13 +222,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
     class(TestSpill_Type), intent(in)                                 ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -243,45 +243,45 @@ contains
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='label', Value=This%Label )
+    call GetInput%AddParameter(Name='label', Value=This%Label)
     VarC0D = ConvertToString(This%Time(1)) // ' ' // ConvertToString(This%Time(2))
-    call GetInput%AddParameter( Name='time_range', Value=VarC0D )
-    call GetInput%AddParameter( Name='nb_times', Value=ConvertToString(Value=This%NbTimes ) )
+    call GetInput%AddParameter(Name='time_range', Value=VarC0D)
+    call GetInput%AddParameter(Name='nb_times', Value=ConvertToString(Value=This%NbTimes))
 
-    call GetInput%AddParameter( Name='location', Value=ConvertToString(Values=This%Location) )
+    call GetInput%AddParameter(Name='location', Value=ConvertToString(Values=This%Location))
 
     SectionName='parameters'
-    call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%AddParameter( Name='m', Value=ConvertToString(Value=This%M), SectionName=SectionName )
-    call GetInput%AddParameter( Name='d', Value=ConvertToString(Value=This%D), SectionName=SectionName )
-    call GetInput%AddParameter( Name='l', Value=ConvertToString(Value=This%L), SectionName=SectionName )
-    call GetInput%AddParameter( Name='tau', Value=ConvertToString(Value=This%Tau), SectionName=SectionName )
-    if ( len_trim(This%M_Dependency) /= 0 ) call GetInput%AddParameter( Name='m_dependency', Value=This%M_Dependency,             &
-                                                                                                         SectionName=SectionName )
-    if ( len_trim(This%D_Dependency) /= 0 ) call GetInput%AddParameter( Name='d_dependency', Value=This%D_Dependency,             &
-                                                                                                         SectionName=SectionName )
-    if ( len_trim(This%L_Dependency) /= 0 ) call GetInput%AddParameter( Name='l_dependency', Value=This%L_Dependency,             &
-                                                                                                         SectionName=SectionName )
-    if ( len_trim(This%Tau_Dependency) /= 0 ) call GetInput%AddParameter( Name='tau_dependency', Value=This%Tau_Dependency,       &
-                                                                                                         SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
+    call GetInput%AddParameter(Name='m', Value=ConvertToString(Value=This%M), SectionName=SectionName)
+    call GetInput%AddParameter(Name='d', Value=ConvertToString(Value=This%D), SectionName=SectionName)
+    call GetInput%AddParameter(Name='l', Value=ConvertToString(Value=This%L), SectionName=SectionName)
+    call GetInput%AddParameter(Name='tau', Value=ConvertToString(Value=This%Tau), SectionName=SectionName)
+    if (len_trim(This%M_Dependency) /= 0) call GetInput%AddParameter(Name='m_dependency', Value=This%M_Dependency,             &
+                                                                                                         SectionName=SectionName)
+    if (len_trim(This%D_Dependency) /= 0) call GetInput%AddParameter(Name='d_dependency', Value=This%D_Dependency,             &
+                                                                                                         SectionName=SectionName)
+    if (len_trim(This%L_Dependency) /= 0) call GetInput%AddParameter(Name='l_dependency', Value=This%L_Dependency,             &
+                                                                                                         SectionName=SectionName)
+    if (len_trim(This%Tau_Dependency) /= 0) call GetInput%AddParameter(Name='tau_dependency', Value=This%Tau_Dependency,       &
+                                                                                                         SectionName=SectionName)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, Input, Output )
+  subroutine Run(This, Input, Output)
 
     class(TestSpill_Type), intent(inout)                              ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -299,45 +299,45 @@ contains
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    NbTimes
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     allocate(Ordinate(This%NbTimes*This%NbLocations,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-    if ( len_trim(This%M_Dependency) /= 0 ) then
-      call Input%GetValue( Value=M, Label=This%M_Dependency )
+    if (StatLoc /= 0) call Error%Allocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
+    if (len_trim(This%M_Dependency) /= 0) then
+      call Input%GetValue(Value=M, Label=This%M_Dependency)
     else
       M = This%M
     end if
-    if ( len_trim(This%D_Dependency) /= 0 ) then
-      call Input%GetValue( Value=D, Label=This%D_Dependency )
+    if (len_trim(This%D_Dependency) /= 0) then
+      call Input%GetValue(Value=D, Label=This%D_Dependency)
     else
       D = This%D
     end if
-    if ( len_trim(This%L_Dependency) /= 0 ) then
-      call Input%GetValue( Value=L, Label=This%L_Dependency )
+    if (len_trim(This%L_Dependency) /= 0) then
+      call Input%GetValue(Value=L, Label=This%L_Dependency)
     else
       L = This%L
     end if
-    if ( len_trim(This%Tau_Dependency) /= 0 ) then
-      call Input%GetValue( Value=Tau, Label=This%Tau_Dependency )
+    if (len_trim(This%Tau_Dependency) /= 0) then
+      call Input%GetValue(Value=Tau, Label=This%Tau_Dependency)
     else
       Tau = This%Tau
     end if
     i = 1
     do i = 1, This%NbLocations
-      call This%ComputeSpill( M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time,                              &
-                                                               Concentration=Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,1) )
+      call This%ComputeSpill(M=M, D=D, L=L, Tau=Tau, Location=This%Location(i), Time=This%Time,                              &
+                                                               Concentration=Ordinate((i-1)*This%NbTimes+1:i*This%NbTimes,1))
     end do
-    call Output%Construct( Values=Ordinate, Label=This%Label )
+    call Output%Construct(Values=Ordinate, Label=This%Label)
 
     deallocate(Ordinate, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeSpill( M, D, L, Tau, Location, Time, Concentration )
+  subroutine ComputeSpill(M, D, L, Tau, Location, Time, Concentration)
 
     real(rkp), intent(in)                                             ::    M
     real(rkp), intent(in)                                             ::    D
@@ -351,12 +351,12 @@ contains
     real(rkp)                                                         ::    VarR0D
     integer                                                           ::    i
 
-    if ( size(Concentration) /= size(Time) ) call Error%Raise( Line='Incompatible time and concentration arrays',                 &
-                                                                                                               ProcName=ProcName )   
+    if (size(Concentration) /= size(Time)) call Error%Raise(Line='Incompatible time and concentration arrays',                 &
+                                                                                                               ProcName=ProcName)   
 
     i = 1
     do i = 1, size(Time)
-      if ( Tau < Time(i) ) then
+      if (Tau < Time(i)) then
         VarR0D = M/dsqrt(Four*pi*D*(Time(i)-Tau))*dexp(-(Location-L)**2/(Four*D*(Time(i)-Tau))) 
       else
         VarR0D = Zero
@@ -369,7 +369,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(TestSpill_Type), intent(out)                                ::    LHS
     class(TestFunction_Type), intent(in)                              ::    RHS
@@ -382,13 +382,13 @@ contains
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
-        if( RHS%Constructed ) then
+        if(RHS%Constructed) then
           LHS%NbLocations = RHS%NbLocations
           LHS%NbTimes = RHS%NbTimes
           allocate(LHS%Location, source=RHS%Location, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Location', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Location', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%Time, source=RHS%Time, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Time', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Time', ProcName=ProcName, stat=StatLoc)
           LHS%M = RHS%M
           LHS%D = RHS%D
           LHS%L = RHS%L
@@ -399,25 +399,25 @@ contains
           LHS%Tau_Dependency = RHS%Tau_Dependency
         end if
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(TestSpill_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%Time) ) deallocate(This%Time, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Time', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Time)) deallocate(This%Time, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Time', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Location) ) deallocate(This%Location, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Location', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Location)) deallocate(This%Location, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Location', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

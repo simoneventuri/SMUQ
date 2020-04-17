@@ -67,13 +67,13 @@ logical, parameter                                                    ::    Debu
 contains
 
  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name         =   'multivariate'
       This%Initialized  =   .true.
       call This%SetDefaults()
@@ -83,7 +83,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
 
@@ -93,8 +93,8 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%OrthoPoly) ) deallocate(This%OrthoPoly, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%OrthoPoly)) deallocate(This%OrthoPoly, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc)
     This%NbDim = 0
 
     call This%Initialize()
@@ -103,7 +103,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
 
@@ -113,7 +113,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     use StringRoutines_Module
 
@@ -134,27 +134,27 @@ contains
     integer                                                           ::    StatLoc=0
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     This%NbDim = Input%GetNumberofSubSections()
 
     allocate(This%OrthoPoly(This%NbDim), stat=StatLoc)
-    if ( statLoc /= 0 ) call Error%Allocate( Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
+    if (statLoc /= 0) call Error%Allocate(Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc)
     
     i = 1
     do i = 1, This%NbDim
       SectionName = 'orthopoly' // ConvertToString(Value=i)
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call OrthoPoly_Factory%Construct( Object=OrthoPoly, Input=InputSection, Prefix=PrefixLoc )
-      nullify( InputSection )
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call OrthoPoly_Factory%Construct(Object=OrthoPoly, Input=InputSection, Prefix=PrefixLoc)
+      nullify(InputSection)
 
-      call This%OrthoPoly(i)%Set( Object=OrthoPoly )
+      call This%OrthoPoly(i)%Set(Object=OrthoPoly)
       deallocate(OrthoPoly, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrthoPoly', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
     end do
 
     This%Constructed = .true.
@@ -163,7 +163,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Polynomials )
+  subroutine ConstructCase1(This, Polynomials)
     
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
     type(OrthoPolyContainer_Type), dimension(:), intent(in)           ::    Polynomials
@@ -172,13 +172,13 @@ contains
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     This%NbDim = size(Polynomials,1)
 
     allocate(This%OrthoPoly, source=Polynomials, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc)
 
     This%Constructed = .true.
 
@@ -186,14 +186,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(OrthoMultiVar_Type), intent(in)                             ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -207,25 +207,25 @@ contains
     class(OrthoPoly_Type), pointer                                    ::    OrthoPolyPointer=>null()
 
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
     i = 1
     do i = 1, This%NbDim
       OrthoPolyPointer => This%OrthoPoly(i)%GetPointer()
       SectionName = 'orthopoly' // ConvertToString(Value=i)
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/orthopoly' // ConvertToString(Value=i)
-      call GetInput%AddSection( Section=OrthoPoly_Factory%GetObjectInput( Object=OrthoPolyPointer, MainSectionName=SectionName,   &
-                                                                                      Prefix=PrefixLoc, Directory=DirectorySub ) )
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/orthopoly' // ConvertToString(Value=i)
+      call GetInput%AddSection(Section=OrthoPoly_Factory%GetObjectInput(Object=OrthoPolyPointer, Name=SectionName,   &
+                                                                                      Prefix=PrefixLoc, Directory=DirectorySub))
       nullify(OrthoPolyPointer)
     end do
 
@@ -233,7 +233,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Precompute( This, X, MaxOrder, Values )
+  subroutine Precompute(This, X, MaxOrder, Values)
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
@@ -245,25 +245,25 @@ contains
     integer                                                           ::    StatLoc=0
     class(OrthoPoly_Type), pointer                                    ::    OrthoPolyPointer=>null()
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The OrthoMultiVar object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The OrthoMultiVar object was never constructed', ProcName=ProcName)
 
-    if ( size(X,1) /= This%NbDim ) call Error%Raise( Line='Size of the X vector does not match dimension of multivariate ' //     &
-                                                                                      'orthogonal polynomial', ProcName=ProcName )
+    if (size(X,1) /= This%NbDim) call Error%Raise(Line='Size of the X vector does not match dimension of multivariate ' //     &
+                                                                                      'orthogonal polynomial', ProcName=ProcName)
 
-    if ( size(X,1) /= This%NbDim ) call Error%Raise( Line='Size of the MaxOrder vector does not match dimension of  ' //          &
-                                                                         'multivariate orthogonal polynomial', ProcName=ProcName )
+    if (size(X,1) /= This%NbDim) call Error%Raise(Line='Size of the MaxOrder vector does not match dimension of  ' //          &
+                                                                         'multivariate orthogonal polynomial', ProcName=ProcName)
 
-    if ( allocated(Values) ) deallocate(Values, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+    if (allocated(Values)) deallocate(Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
 
     allocate(Values(maxval(MaxOrder)+1,This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
     Values = Zero
 
     i = 1
     do i = 1, This%NbDim
       OrthoPolyPointer => This%OrthoPoly(i)%GetPointer()
-      Values(1:MaxOrder(i)+1,i) = OrthoPolyPointer%Eval( MinOrder=0, MaxOrder=MaxOrder(i) , X=X(i) )
+      Values(1:MaxOrder(i)+1,i) = OrthoPolyPointer%Eval(MinOrder=0, MaxOrder=MaxOrder(i) , X=X(i))
       nullify(OrthoPolyPointer)
     end do
 
@@ -271,7 +271,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvalObject0D( This, X, Indices )
+  function EvalObject0D(This, X, Indices)
 
     real(rkp)                                                         ::    EvalObject0D
 
@@ -283,16 +283,16 @@ contains
     integer                                                           ::    i
     class(OrthoPoly_Type), pointer                                    ::    OrthoPolyPointer=>null()
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( size(Indices,1) /= This%NbDim ) call Error%Raise( Line='Indices length does not match the dimension of the' //           & 
-                                                                        ' multivariate orthogonal polynomial', ProcName=ProcName )
+    if (size(Indices,1) /= This%NbDim) call Error%Raise(Line='Indices length does not match the dimension of the' //           & 
+                                                                        ' multivariate orthogonal polynomial', ProcName=ProcName)
 
     EvalObject0D = One
     i = 1
     do i = 1, This%NbDim
       OrthoPolyPointer => This%OrthoPoly(i)%GetPointer()
-      EvalObject0D = EvalObject0D * OrthoPolyPointer%Eval( Order=Indices(i), X=X(i) )
+      EvalObject0D = EvalObject0D * OrthoPolyPointer%Eval(Order=Indices(i), X=X(i))
       nullify(OrthoPolyPointer)
     end do
 
@@ -300,7 +300,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvalObject1D( This, X, Indices )
+  function EvalObject1D(This, X, Indices)
 
     real(rkp), allocatable, dimension(:)                              ::    EvalObject1D
 
@@ -315,21 +315,21 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    Values0D
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( size(Indices,1) /= This%NbDim ) call Error%Raise( Line='Indices length does not match the dimension of the' //           & 
-                                                                        ' multivariate orthogonal polynomial', ProcName=ProcName )
+    if (size(Indices,1) /= This%NbDim) call Error%Raise(Line='Indices length does not match the dimension of the' //           & 
+                                                                        ' multivariate orthogonal polynomial', ProcName=ProcName)
 
     NbTuples = size(Indices,2)
 
     allocate(EvalObject1D(NbTuples), stat=StatLoc)  
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='EvalObject1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='EvalObject1D', ProcName=ProcName, stat=StatLoc)
 
     allocate(MaxOrder(This%NbDim), stat=StatLoc)  
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='MaxOrder', ProcName=ProcName, stat=StatLoc )
-    MaxOrder = maxval( Indices, 2 )
+    if (StatLoc /= 0) call Error%Allocate(Name='MaxOrder', ProcName=ProcName, stat=StatLoc)
+    MaxOrder = maxval(Indices, 2)
 
-    call This%Precompute( X=X, MaxOrder=MaxOrder, Values=Values0D )
+    call This%Precompute(X=X, MaxOrder=MaxOrder, Values=Values0D)
 
     EvalObject1D = One
 
@@ -342,16 +342,16 @@ contains
     end do
 
     deallocate(MaxOrder, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='MaxOrder', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='MaxOrder', ProcName=ProcName, stat=StatLoc)
 
     deallocate(Values0D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Values0D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Values0D', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOrthoPoly0D( This, Num )
+  function GetOrthoPoly0D(This, Num)
 
     class(OrthoPoly_Type), allocatable                                ::    GetOrthoPoly0D
 
@@ -361,19 +361,19 @@ contains
     character(*), parameter                                           ::    ProcName='GetOrthoPoly0D'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( Num > This%NbDim ) call Error%Raise( Line='Num specifier above dimension of the multivariate poly', ProcName=ProcName )
-    if ( Num < 1 ) call Error%Raise( Line='Num specifier below minimum of 1', ProcName=ProcName )
+    if (Num > This%NbDim) call Error%Raise(Line='Num specifier above dimension of the multivariate poly', ProcName=ProcName)
+    if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
 
     allocate(GetOrthoPoly0D, source=This%OrthoPoly(Num)%GetPointer(), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetOrthoPoly0D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='GetOrthoPoly0D', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOrthoPoly1D( This )
+  function GetOrthoPoly1D(This)
 
     class(OrthoPolyContainer_Type), allocatable, dimension(:)         ::    GetOrthoPoly1D
 
@@ -383,16 +383,16 @@ contains
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     allocate(GetOrthoPoly1D, source=This%OrthoPoly, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetOrthoPoly1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='GetOrthoPoly1D', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDim( This )
+  function GetNbDim(This)
 
     integer                                                           ::    GetNbDim
 
@@ -400,7 +400,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetNbDim'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetNbDim = This%NbDim
 
@@ -408,7 +408,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(OrthoMultiVar_Type), intent(out)                            ::    LHS
     class(OrthoMultiVar_Type), intent(in)                             ::    RHS
@@ -422,25 +422,25 @@ contains
     LHS%Initialized = RHS%Initialized
     LHS%Constructed = RHS%Constructed
 
-    if ( RHS%Constructed ) then
+    if (RHS%Constructed) then
       LHS%NbDim = RHS%NbDim
       allocate(LHS%OrthoPoly, source=RHS%OrthoPoly, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OrthoPolyVec', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='LHS%OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(OrthoMultiVar_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if( allocated(This%OrthoPoly) ) deallocate( This%OrthoPoly, stat=StatLoc )
-    if( StatLoc /= 0 ) call Error%Deallocate( Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc )
+    if(allocated(This%OrthoPoly)) deallocate(This%OrthoPoly, stat=StatLoc)
+    if(StatLoc /= 0) call Error%Deallocate(Name='This%OrthoPoly', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -56,28 +56,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_BayesInvMethod( This )
+  subroutine Initialize_BayesInvMethod(This)
     import                                                            ::    BayesInvMethod_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_BayesInvMethod( This )
+  subroutine Reset_BayesInvMethod(This)
     import                                                            ::    BayesInvMethod_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_BayesInvMethod( This )
+  subroutine SetDefaults_BayesInvMethod(This)
     import                                                            ::    BayesInvMethod_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_BayesInvMethod( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput_BayesInvMethod(This, Input, SectionChain, Prefix)
     import                                                            ::    BayesInvMethod_Type
     import                                                            ::    InputSection_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
@@ -88,19 +88,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_BayesInvMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_BayesInvMethod(This, Name, Prefix, Directory)
     import                                                            ::    BayesInvMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_BayesInvMethod
     class(BayesInvMethod_Type), intent(inout)                         ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Calibrate_BayesInvMethod( This, Model, SampleSpace, Responses, LikelihoodFunction, OutputDirectory)
+  subroutine Calibrate_BayesInvMethod(This, Model, SampleSpace, Responses, LikelihoodFunction, OutputDirectory)
     import                                                            ::    BayesInvMethod_Type
     import                                                            ::    Response_Type
     import                                                            ::    SampleSpace_Type
@@ -116,7 +116,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_BayesInvMethod( LHS, RHS )
+  impure elemental subroutine Copy_BayesInvMethod(LHS, RHS)
     import                                                            ::    BayesInvMethod_Type
     class(BayesInvMethod_Type), intent(out)                           ::    LHS
     class(BayesInvMethod_Type), intent(in)                            ::    RHS
@@ -128,7 +128,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(BayesInvMethod_Type), intent(inout)                         ::    This

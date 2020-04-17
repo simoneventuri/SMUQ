@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   LinSolverOLS_Class.f90
   LinSolverLAR_Class.f90
 #  LinSolverLASSO_Class.f90
@@ -20,4 +20,4 @@ add_target_sources ( smuqApp
   LinSolverSparse_Class.f90
   LinSolverSparse_Factory_Class.f90
   LinSolverMethod_Factory_Class.f90
-  )
+)

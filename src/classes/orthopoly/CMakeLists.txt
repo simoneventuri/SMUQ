@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   OrthoPoly_Factory_Class.f90
   OrthoPoly_Class.f90
   OrthoPolyContainer_Class.f90

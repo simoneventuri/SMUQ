@@ -59,13 +59,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(PCESM_Type), intent(inout)                                  ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'pcesmmodel'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -75,15 +75,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(PCESM_Type), intent(inout)                                  ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%PCEModels) ) deallocate(This%PCEModels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PCEModels', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%PCEModels)) deallocate(This%PCEModels, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%PCEModels', ProcName=ProcName, stat=StatLoc)
 
     This%NbModels = 0
 
@@ -93,7 +93,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(PCESM_Type), intent(inout)                                  ::    This
 
@@ -107,7 +107,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     use String_Library
 
@@ -132,25 +132,25 @@ contains
     character(:), allocatable, dimension(:)                           ::    LabelMap
     logical                                                           ::    Found
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Label = VarC0D
 
     ParameterName = 'silent'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Silent = VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Silent = VarL0D
 
     SectionName = 'models'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     This%NbModels = InputSection%GetNumberOfSubSections()
     allocate(This%PCEModels(This%NbModels), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cell', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Cell', ProcName=ProcName, stat=StatLoc)
 
     This%NbOutputs = This%NbModels
 
@@ -160,37 +160,37 @@ contains
     do i = 1, This%NbModels
       SubSectionName = SectionName // '>model' // ConvertToString(Value=i)
       ParameterName = 'directory'
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found, SectionName=SubSectionName )
-      if ( Found ) then
-        call This%PCEModels(i)%Construct( Prefix=PrefixLoc // VarC0D )
+      call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found, SectionName=SubSectionName)
+      if (Found) then
+        call This%PCEModels(i)%Construct(Prefix=PrefixLoc // VarC0D)
 
         ParameterName = 'output_label'
-        call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-        call This%PCEModels(i)%ReplaceOutputLabel( NewLabel=VarC0D )
+        call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+        call This%PCEModels(i)%ReplaceOutputLabel(NewLabel=VarC0D)
 
         SubSectionName = SectionName // '>model' // ConvertToString(Value=i) // '>input_label_map'
-        if ( Input%HasSection( SubSectionName=SubSectionName ) ) then
+        if (Input%HasSection(SubSectionName=SubSectionName)) then
           ii = 1
           do ii = 1, Input%GetNumberofParameters(FromSubSection=SubSectionName)
             ParameterName = 'map' // ConvertToString(Value=ii)
-            call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-            call Parse( Input=VarC0D, Separator=' ', Output=LabelMap )
-            if ( size(LabelMap,1) /= 2 ) call Error%Raise( Line='Incorrect input label map format', ProcName=ProcName )
-            call This%PCEModels(i)%ReplaceInputLabel( OldLabel=trim(adjustl(LabelMap(1))),  NewLabel=trim(adjustl(LabelMap(2))) )
+            call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+            call Parse(Input=VarC0D, Separator=' ', Output=LabelMap)
+            if (size(LabelMap,1) /= 2) call Error%Raise(Line='Incorrect input label map format', ProcName=ProcName)
+            call This%PCEModels(i)%ReplaceInputLabel(OldLabel=trim(adjustl(LabelMap(1))),  NewLabel=trim(adjustl(LabelMap(2))))
           end do
         end if
       else
         SubSectionName = SubSectionName // '>pce_input'
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call This%PCEModels(i)%Construct( Input=InputSection, Prefix=PrefixLoc )
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call This%PCEModels(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
         nullify(InputSection)
       end if
     end do
 
     SectionName = 'input_preprocessor'
-    if ( Input%HasSection(SubSectionName=SectionName) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%InputProcessor%Construct( Input=InputSection, Prefix=PrefixLoc )
+    if (Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call This%InputProcessor%Construct(Input=InputSection, Prefix=PrefixLoc)
       nullify(InputSection)
     end if
 
@@ -200,12 +200,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(PCESM_Type), intent(in)                                     ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -222,45 +222,45 @@ contains
     character(:), allocatable                                         ::    VarC0D
     real(rkp)                                                         ::    VarR0D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = '<undefined>'
     PrefixLoc = ''
     DirectorySub = DirectoryLoc
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
 
-    if ( DirectoryLoc /= '<undefined>' ) ExternalFlag = .true.
+    if (DirectoryLoc /= '<undefined>') ExternalFlag = .true.
 
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%AddParameter( Name='label', Value=This%Label )
+    call GetInput%AddParameter(Name='label', Value=This%Label)
 
     SectionName = 'models'
-    call GetInput%AddSection( SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
 
     i = 1
     do i = 1, This%NbModels
       SubSectionName = 'model' // ConvertToString(Value=i)
-      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
+      call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
       SubSectionName = SectionName // '>' // SubSectionName
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/model' // ConvertToString(Value=i)
-      call GetInput%AddSection( Section=This%PCEModels(i)%GetInput(MainSectionName='pce_input', Prefix=PrefixLoc,                 &
-                                                                          Directory=DirectorySub ), To_SubSection=SubSectionName )
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/model' // ConvertToString(Value=i)
+      call GetInput%AddSection(Section=This%PCEModels(i)%GetInput(Name='pce_input', Prefix=PrefixLoc,                 &
+                                                                          Directory=DirectorySub), To_SubSection=SubSectionName)
     end do
 
-    if ( This%InputProcessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputProcessor%GetInput(                    &
-                                                 MainSectionName='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub) )
+    if (This%InputProcessor%IsConstructed()) call GetInput%AddSection(Section=This%InputProcessor%GetInput(                  &
+                                                 Name='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_0D( This, Input, Output, Stat )
+  subroutine Run_0D(This, Input, Output, Stat)
 
     class(PCESM_Type), intent(inout)                                  ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -271,21 +271,21 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
-    if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( 'Passed down an output array of incorrect length',                  &
-                                                                                                               ProcName=ProcName )
+    if (size(Output,1) /= This%NbOutputs) call Error%Raise('Passed down an output array of incorrect length',                  &
+                                                                                                               ProcName=ProcName)
 
     i = 1
     do i = 1, This%NbModels
-      call This%PCEModels(i)%Run( Input=Input, Output=Output(i) )
+      call This%PCEModels(i)%Run(Input=Input, Output=Output(i))
     end do
 
-    if ( present(Stat) ) Stat = 0
+    if (present(Stat)) Stat = 0
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(PCESM_Type), intent(out)                                    ::    LHS
     class(Model_Type), intent(in)                                     ::    RHS
@@ -301,17 +301,17 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%NbOutputs = RHS%NbOutputs
           LHS%Label = RHS%Label
           LHS%NbModels = RHS%NbModels
           allocate(LHS%PCEModels, source=RHS%PCEModels, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PCEModels', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%PCEModels', ProcName=ProcName, stat=StatLoc)
           LHS%InputProcessor = RHS%InputProcessor
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -319,15 +319,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(PCESM_Type), intent(inout)                                   ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
   
-    if ( allocated(This%PCEModels) ) deallocate(This%PCEModels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PCEModels', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%PCEModels)) deallocate(This%PCEModels, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%PCEModels', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

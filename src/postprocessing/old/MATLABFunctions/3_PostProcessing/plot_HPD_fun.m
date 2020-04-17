@@ -76,7 +76,7 @@ function i_figure = plot_HPD_fun(PlottingFormat, i_figure, save_fig, nb_pcolor, 
           pre_int=0;
           if nodes_interval(1) > 1
 
-              pre_abscissa = (y_Space_provv(nodes_interval(1))-y_Space_provv(nodes_interval(1)-1)) * ( 1 - (pdf_data-pdf_vec(nodes_interval(1)-1)) / (pdf_vec(nodes_interval(1))-pdf_vec(nodes_interval(1)-1)) );
+              pre_abscissa = (y_Space_provv(nodes_interval(1))-y_Space_provv(nodes_interval(1)-1)) * (1 - (pdf_data-pdf_vec(nodes_interval(1)-1)) / (pdf_vec(nodes_interval(1))-pdf_vec(nodes_interval(1)-1)));
               pre_int = pre_abscissa*(pdf_data+pdf_vec(nodes_interval(1)))/2;
 
           end

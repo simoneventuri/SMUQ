@@ -59,13 +59,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(LARBasic_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'LARBasic'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -75,7 +75,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(LARBasic_Type), intent(inout)                               ::    This
 
@@ -85,8 +85,8 @@ contains
     This%Initialized = .false.
     This%Constructed = .false.
 
-    if ( allocated(This%CVError) ) deallocate(This%CVError, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CVError', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%CVError)) deallocate(This%CVError, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%CVError', ProcName=ProcName, stat=StatLoc)
 
     call This%Initialize()
 
@@ -94,7 +94,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(LARBasic_Type), intent(inout)                               ::    This
 
@@ -108,7 +108,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     use String_Library
 
@@ -127,35 +127,35 @@ contains
     real(rkp)                                                         ::    varR0D
     logical                                                           ::    Found
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'hybrid'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Hybrid = VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Hybrid = VarL0D
 
     ParameterName = 'lasso'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%LASSO = VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%LASSO = VarL0D
 
     ParameterName = 'tolerance'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Tolerance = VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Tolerance = VarR0D
 
     SectionName = 'cross_validation'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found )
-    if ( Found ) then
-      call CVErrorMethod_Factory%Construct( Object=This%CVError, Input=InputSection, Prefix=PrefixLoc )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found)
+    if (Found) then
+      call CVErrorMethod_Factory%Construct(Object=This%CVError, Input=InputSection, Prefix=PrefixLoc)
     else
-      allocate( CVErrorLOO_Type :: This%CVError )
+      allocate(CVErrorLOO_Type :: This%CVError)
       select type (CVErrorMethod => This%CVError)
         type is (CVErrorLOO_Type)
-          call CVErrorMethod%Construct( Corrected=.true. )
+          call CVErrorMethod%Construct(Corrected=.true.)
         class default
-          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+          call Error%Raise(Line='Something went wrong', ProcName=ProcName)
       end select
     end if
 
@@ -165,7 +165,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Hybrid, LASSO, Tolerance, CVErrorMethod )
+  subroutine ConstructCase1(This, Hybrid, LASSO, Tolerance, CVErrorMethod)
 
     use String_Library
 
@@ -178,25 +178,25 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if ( present(Hybrid) ) This%Hybrid = Hybrid
+    if (present(Hybrid)) This%Hybrid = Hybrid
 
-    if ( present(LASSO) ) This%LASSO = LASSO
+    if (present(LASSO)) This%LASSO = LASSO
 
-    if ( present(Tolerance) ) This%Tolerance = Tolerance
+    if (present(Tolerance)) This%Tolerance = Tolerance
 
-    if ( present(CVErrorMethod) ) then
+    if (present(CVErrorMethod)) then
       allocate(This%CVError, source=CVErrorMethod, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CVErrorMethod', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%CVErrorMethod', ProcName=ProcName, stat=StatLoc)
     else
-      allocate( CVErrorLOO_Type :: This%CVError )
+      allocate(CVErrorLOO_Type :: This%CVError)
       select type (CVErrorMethod => This%CVError)
         type is (CVErrorLOO_Type)
-          call CVErrorMethod%Construct( Corrected=.true. )
+          call CVErrorMethod%Construct(Corrected=.true.)
         class default
-          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+          call Error%Raise(Line='Something went wrong', ProcName=ProcName)
       end select
     end if
 
@@ -206,12 +206,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(LARBasic_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -223,32 +223,32 @@ contains
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='hybrid', Value=ConvertToString(This%Hybrid) )
-    call GetInput%AddParameter( Name='tolerance', Value=ConvertToString(This%Tolerance) )
-    call GetInput%AddParameter( Name='lasso', Value=ConvertToString(This%LASSO) )
+    call GetInput%AddParameter(Name='hybrid', Value=ConvertToString(This%Hybrid))
+    call GetInput%AddParameter(Name='tolerance', Value=ConvertToString(This%Tolerance))
+    call GetInput%AddParameter(Name='lasso', Value=ConvertToString(This%LASSO))
 
     SectionName = 'cross_validation'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/cross_validation'
-    call GetInput%AddSection( Section=CVErrorMethod_Factory%GetObjectInput( Object=This%CVError, MainSectionName=SectionName,     &
-                                                                                      Prefix=PrefixLoc, Directory=DirectoryLoc ) )
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/cross_validation'
+    call GetInput%AddSection(Section=CVErrorMethod_Factory%GetObjectInput(Object=This%CVError, Name=SectionName,     &
+                                                                                      Prefix=PrefixLoc, Directory=DirectoryLoc))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSparse( This, System, Goal, ModelSet, CoefficientsSet, CVError )
+  subroutine SolveSparse(This, System, Goal, ModelSet, CoefficientsSet, CVError)
 
     class(LARBasic_Type), intent(in)                                  ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -272,29 +272,29 @@ contains
     integer                                                           ::    M
     integer                                                           ::    N
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     M = size(System,1)
     N = size(System,2)
 
-    if ( size(System,1) >= size(System,2) ) then
+    if (size(System,1) >= size(System,2)) then
 
-      GoalMean = ComputeMean( Values=Goal )
-      GoalVariance = ComputeSampleVar( Values=Goal )
+      GoalMean = ComputeMean(Values=Goal)
+      GoalVariance = ComputeSampleVar(Values=Goal)
 
-      if ( dsqrt(abs((GoalVariance*real(M-1,rkp))/real(M,rkp)))/abs(GoalMean) < 1e-10 ) then
+      if (dsqrt(abs((GoalVariance*real(M-1,rkp))/real(M,rkp)))/abs(GoalMean) < 1e-10) then
         i = 1
         do i = 1, N
           MeanLoc = ComputeMean(Values=System(:,i))
           VarianceLoc = ComputePopulationVar(Values=System(:,i))
-          if ( abs(dsqrt(VarianceLoc)/MeanLoc) < 1e-10 ) then
+          if (abs(dsqrt(VarianceLoc)/MeanLoc) < 1e-10) then
             allocate(ModelSet(1), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='ModelSet', ProcName=ProcName, stat=StatLoc )
+            if (StatLoc /= 0) call Error%Allocate(Name='ModelSet', ProcName=ProcName, stat=StatLoc)
             ModelSet = i
             allocate(CoefficientsSet(1), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc )
+            if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
             CoefficientsSet = GoalMean / MeanLoc
-            if ( present(CVError) ) CVError = Zero
+            if (present(CVError)) CVError = Zero
             return
           end if
         end do
@@ -302,48 +302,48 @@ contains
       end if
 
       call OLS%Construct(CVErrorMethod=This%CVError)
-      if ( present(CVError) ) then
-        call OLS%SolveSystem( System=System, Goal=Goal, Coefficients=CoefficientsSet, CVError=CVError )
+      if (present(CVError)) then
+        call OLS%SolveSystem(System=System, Goal=Goal, Coefficients=CoefficientsSet, CVError=CVError)
       else
-        call OLS%SolveSystem( System=System, Goal=Goal, Coefficients=CoefficientsSet )
+        call OLS%SolveSystem(System=System, Goal=Goal, Coefficients=CoefficientsSet)
       end if
 
-      ModelSet = LinSequence( SeqStart=1, SeqEnd=size(System,2) )
+      ModelSet = LinSequence(SeqStart=1, SeqEnd=size(System,2))
 
     else
-      call This%BuildMetaModels( System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet,                    &
-                                                                           Tolerance=This%Tolerance, ConstantModel=ConstantModel )
+      call This%BuildMetaModels(System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet,                    &
+                                                                           Tolerance=This%Tolerance, ConstantModel=ConstantModel)
 
-      if ( ConstantModel ) then
-          if ( present(CVError) ) CVError = Zero
+      if (ConstantModel) then
+          if (present(CVError)) CVError = Zero
           return
       end if
 
       ModelSize = size(ModelSet,1)
 
-      if ( This%Hybrid ) then
+      if (This%Hybrid) then
         allocate(SystemLoc(size(System,1),ModelSize), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='SystemLoc', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
         SystemLoc = System(:,ModelSet)
 
         call OLS%Construct(CVErrorMethod=This%CVError)
-        call OLS%SolveSystem( System=SystemLoc, Goal=Goal, Coefficients=CoefficientsSet )
+        call OLS%SolveSystem(System=SystemLoc, Goal=Goal, Coefficients=CoefficientsSet)
 
         deallocate(SystemLoc, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='SystemLoc', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
       end if
 
-      if ( present(CVError) ) then
+      if (present(CVError)) then
         allocate(CoefficientsLoc(size(System,2)), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
         CoefficientsLoc = Zero
 
         CoefficientsLoc(ModelSet) = CoefficientsSet
-        CVError = This%CVError%ComputeError( Solver=This, System=System, Goal=Goal, Coefficients=CoefficientsLoc )
+        CVError = This%CVError%ComputeError(Solver=This, System=System, Goal=Goal, Coefficients=CoefficientsLoc)
 
         deallocate(CoefficientsLoc, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
       end if
     end if
 
@@ -351,7 +351,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveFull( This, System, Goal, Coefficients, CVError )
+  subroutine SolveFull(This, System, Goal, Coefficients, CVError)
 
     class(LARBasic_Type), intent(in)                                  ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -364,16 +364,16 @@ contains
     integer, allocatable, dimension(:)                                ::    ModelSet
     real(rkp), allocatable, dimension(:)                              ::    CoefficientsSet
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if ( present(CVError) ) then
-      call This%Solve( System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet, CVError=CVError )
+    if (present(CVError)) then
+      call This%Solve(System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet, CVError=CVError)
     else
-      call This%Solve( System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet )
+      call This%Solve(System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet)
     end if
 
     allocate(Coefficients(size(System,2)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Coefficients', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Coefficients', ProcName=ProcName, stat=StatLoc)
     Coefficients = Zero
 
     Coefficients(ModelSet) = CoefficientsSet
@@ -382,7 +382,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(LARBasic_Type), intent(out)                                 ::    LHS
     class(LinSolverMethod_Type), intent(in)                           ::    RHS
@@ -396,15 +396,15 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Tolerance = RHS%Tolerance
           LHS%Hybrid = RHS%Hybrid
           LHS%LASSO = RHS%LASSO
           allocate(LHS%CVError, source=RHS%CVError, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CVError', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%CVError', ProcName=ProcName, stat=StatLoc)
         end if
       class default
-        call Error%Raise( Line='Mismatching object types', ProcName=ProcName )
+        call Error%Raise(Line='Mismatching object types', ProcName=ProcName)
     end select
 
   end subroutine

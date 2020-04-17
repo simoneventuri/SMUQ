@@ -56,13 +56,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(CovIID_Type), intent(inout)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'CovIID'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -72,7 +72,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(CovIID_Type), intent(inout)                                 ::    This
 
@@ -88,7 +88,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(CovIID_Type), intent(inout)                                 ::    This
 
@@ -100,7 +100,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(CovIID_Type), intent(inout)                                 ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -119,17 +119,17 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'sigma'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Sigma=VarR0D
 
-    if ( This%Sigma < Zero ) call Error%Raise( Line='Sigma value below 0', ProcName=ProcName )
+    if (This%Sigma < Zero) call Error%Raise(Line='Sigma value below 0', ProcName=ProcName)
 
     This%Constructed = .true.
 
@@ -137,7 +137,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Sigma )
+  subroutine ConstructCase1(This, Sigma)
 
     class(CovIID_Type), intent(inout)                                 ::    This
     real(rkp), intent(in)                                             ::    Sigma
@@ -145,11 +145,11 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     This%Sigma = Sigma
-    if ( This%Sigma < Zero ) call Error%Raise( Line='Sigma value below 0', ProcName=ProcName )
+    if (This%Sigma < Zero) call Error%Raise(Line='Sigma value below 0', ProcName=ProcName)
 
     This%Constructed = .true.
 
@@ -157,12 +157,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(CovIID_Type), intent(in)                      ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -179,26 +179,26 @@ contains
     type(SMUQFile_Type)                                               ::    File
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='sigma', Value=ConvertToString(This%Sigma) )
+    call GetInput%AddParameter(Name='sigma', Value=ConvertToString(This%Sigma))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Evaluate_1D( This, Coordinates, CoordinateLabels, Covariance )
+  subroutine Evaluate_1D(This, Coordinates, CoordinateLabels, Covariance)
 
     class(CovIID_Type), intent(in)                                    ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
@@ -209,15 +209,15 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbNodes
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     NbNodes = size(Coordinates,1)
 
-    if ( size(Covariance,1) /= size(Covariance,2) ) call Error%Raise( 'Passed non-square array', ProcName=ProcName )
-    if ( size(Covariance,1) /= NbNodes ) call Error%Raise( 'Covariance array dimensions and number of coordinates mismatch',      &
-                                                                                                               ProcName=ProcName )
+    if (size(Covariance,1) /= size(Covariance,2)) call Error%Raise('Passed non-square array', ProcName=ProcName)
+    if (size(Covariance,1) /= NbNodes) call Error%Raise('Covariance array dimensions and number of coordinates mismatch',      &
+                                                                                                               ProcName=ProcName)
 
-    call Eye( Array=Covariance )
+    call Eye(Array=Covariance)
 
     Covariance = Covariance * This%Sigma**2
 
@@ -225,7 +225,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(CovIID_Type), intent(out)                                   ::    LHS
     class(CovFunction_Type), intent(in)                               ::    RHS
@@ -241,12 +241,12 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Sigma = RHS%Sigma
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -254,7 +254,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(CovIID_Type), intent(inout)                                  ::    This
 

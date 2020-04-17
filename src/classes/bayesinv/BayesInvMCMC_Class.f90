@@ -83,13 +83,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'BayesInvMCMC'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -99,7 +99,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
 
@@ -109,11 +109,11 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%MCMC) ) deallocate(This%MCMC, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MCMC', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%MCMC)) deallocate(This%MCMC, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%MCMC', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%HierarchicalSampler) ) deallocate(This%HierarchicalSampler, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%HierarchicalSampler', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%HierarchicalSampler)) deallocate(This%HierarchicalSampler, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%HierarchicalSampler', ProcName=ProcName, stat=StatLoc)
 
     call This%HierarchicalSpace%Reset()
 
@@ -123,7 +123,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
 
@@ -138,7 +138,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput(This, Input, SectionChain, Prefix)
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -160,63 +160,63 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     class(HierDistProb_Type), pointer                                 ::    HierDistProbPointer=>null()
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     This%SectionChain = SectionChain
 
     ParameterName = 'debug_stop'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%DebugStop = VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%DebugStop = VarL0D
 
     ParameterName = 'transform_bounded_distributions'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%TransformBounded = VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%TransformBounded = VarL0D
 
     SectionName = 'mcmc'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call MCMCMethod_Factory%Construct( Object=This%MCMC, Input=InputSection, SectionChain=SectionChain // '>mcmc',                &
-                                                                                                                Prefix=PrefixLoc )
-    nullify( InputSection )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call MCMCMethod_Factory%Construct(Object=This%MCMC, Input=InputSection, SectionChain=SectionChain // '>mcmc',                &
+                                                                                                                Prefix=PrefixLoc)
+    nullify(InputSection)
 
     SectionName = 'hierarchical'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
+    if (Input%HasSection(SubSectionName=SectionName)) then
 
       ParameterName = 'nb_samples'
-      call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
+      call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
       This%HierarchicalNbSamples = VarI0D
 
-      if ( This%HierarchicalNbSamples <= 0 ) call Error%Raise( 'Must specify number of hierarchical samples above 0',             &
-                                                                                                               ProcName=ProcName )
+      if (This%HierarchicalNbSamples <= 0) call Error%Raise('Must specify number of hierarchical samples above 0',             &
+                                                                                                               ProcName=ProcName)
 
       SubSectionName = SectionName // '>sampler'
-      if ( Input%HasSection( SubSectionName=SubSectionName ) ) then
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call SampleMethod_Factory%Construct( Object=This%HierarchicalSampler, Input=InputSection, Prefix=PrefixLoc )
+      if (Input%HasSection(SubSectionName=SubSectionName)) then
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call SampleMethod_Factory%Construct(Object=This%HierarchicalSampler, Input=InputSection, Prefix=PrefixLoc)
       else
-        allocate( SampleLHS_Type :: This%HierarchicalSampler )
+        allocate(SampleLHS_Type :: This%HierarchicalSampler)
         select type (Object => This%HierarchicalSampler)
           type is (SampleLHS_Type)
             call Object%Construct()
           class default
-            call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
         end select
       end if
 
       SubSectionName = SectionName // '>parameter_space'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call This%HierarchicalSpace%Construct( Input=InputSection, Prefix=PrefixLoc )
-      nullify( InputSection )
-      if ( This%HierarchicalSpace%IsCorrelated() ) call Error%Raise( Line='Correlated spaces not supported', ProcName=ProcName )
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+      call This%HierarchicalSpace%Construct(Input=InputSection, Prefix=PrefixLoc)
+      nullify(InputSection)
+      if (This%HierarchicalSpace%IsCorrelated()) call Error%Raise(Line='Correlated spaces not supported', ProcName=ProcName)
 
       i = 1
       do i = 1, This%HierarchicalSpace%GetNbDim()
-        HierDistProbPointer => This%HierarchicalSpace%GetDistributionPointer( Num=i )
-        if ( .not. (HierDistProbPointer%IsTruncatedLeft() .and. HierDistProbPointer%IsTruncatedRight()) ) then
-          call Error%Raise( 'Can only treat hierarchical spaces with truncated marginal distributions', ProcName=ProcName )
+        HierDistProbPointer => This%HierarchicalSpace%GetDistributionPointer(Num=i)
+        if (.not. (HierDistProbPointer%IsTruncatedLeft() .and. HierDistProbPointer%IsTruncatedRight())) then
+          call Error%Raise('Can only treat hierarchical spaces with truncated marginal distributions', ProcName=ProcName)
         end if
         nullify(HierDistProbPointer)
       end do
@@ -229,12 +229,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -250,47 +250,47 @@ contains
     integer                                                           ::    i
     class(LikelihoodFunction_Type), pointer                           ::    LikelihoodPtr=>null()
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='debug_stop', Value=ConvertToString(Value=This%DebugStop) )
-    call GetInput%AddParameter( Name='transform_bounded_distributions', Value=ConvertToString(Value=This%TransformBounded) )
+    call GetInput%AddParameter(Name='debug_stop', Value=ConvertToString(Value=This%DebugStop))
+    call GetInput%AddParameter(Name='transform_bounded_distributions', Value=ConvertToString(Value=This%TransformBounded))
 
     SectionName = 'mcmc'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/mcmc'
-    call GetInput%AddSection( Section=MCMCMethod_Factory%GetObjectInput(Object=This%MCMC, MainSectionName=SectionName,            &
-                                                                                       Prefix=PrefixLoc, Directory=DirectorySub) )
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/mcmc'
+    call GetInput%AddSection(Section=MCMCMethod_Factory%GetObjectInput(Object=This%MCMC, Name=SectionName,            &
+                                                                                       Prefix=PrefixLoc, Directory=DirectorySub))
 
-    if ( This%Hierarchical ) then
-      call GetInput%AddSection( SectionName='hierarchical' )
+    if (This%Hierarchical) then
+      call GetInput%AddSection(SectionName='hierarchical')
 
-      call GetInput%AddParameter( Name='nb_samples', Value=ConvertToString(Value=This%HierarchicalNbSamples),                     &
-                                                                                                         SectionName=SectionName )
+      call GetInput%AddParameter(Name='nb_samples', Value=ConvertToString(Value=This%HierarchicalNbSamples),                     &
+                                                                                                         SectionName=SectionName)
 
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/sampler'
-      call GetInput%AddSection( Section=SampleMethod_Factory%GetObjectInput( Object=This%HierarchicalSampler,                     &
-                                MainSectionName='sampler', Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/sampler'
+      call GetInput%AddSection(Section=SampleMethod_Factory%GetObjectInput(Object=This%HierarchicalSampler,                     &
+                                Name='sampler', Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SectionName)
 
       SubSectionName = 'parameter_space'
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/parameter_space'
-      call GetInput%AddSection( Section=This%HierarchicalSpace%GetInput( MainSectionName=SubSectionName, Prefix=PrefixLoc,        &
-                                                                             Directory=DirectorySub ), To_SubSection=SectionName )
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/parameter_space'
+      call GetInput%AddSection(Section=This%HierarchicalSpace%GetInput(Name=SubSectionName, Prefix=PrefixLoc,        &
+                                                                             Directory=DirectorySub), To_SubSection=SectionName)
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Calibrate( This, Model, SampleSpace, Responses, LikelihoodFunction, OutputDirectory )
+  subroutine Calibrate(This, Model, SampleSpace, Responses, LikelihoodFunction, OutputDirectory)
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
@@ -328,92 +328,92 @@ contains
     TVarR0D = dlog(tiny(VarR0D))
 
     ! transforming target space from bounded to unbounded if specified
-    if ( This%TransformBounded ) then
-      allocate( TransfSampleSpaceUnBound_Type :: TargetSpace )
+    if (This%TransformBounded) then
+      allocate(TransfSampleSpaceUnBound_Type :: TargetSpace)
     else
-      allocate( TransfSampleSpaceNone_Type :: TargetSpace )
+      allocate(TransfSampleSpaceNone_Type :: TargetSpace)
     end if
 
     allocate(OrigInputValues(SampleSpace%GetNbDim()), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='OrigInputValues', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='OrigInputValues', ProcName=ProcName, stat=StatLoc)
     OrigInputValues = Zero
 
-    select type( TargetSpace )
-      type is ( TransfSampleSpaceNone_Type ) 
-        call TargetSpace%Construct( OriginalSampleSpace=SampleSpace )
-      type is ( TransfSampleSpaceUnbound_Type )
-        call TargetSpace%Construct( OriginalSampleSpace=SampleSpace )
+    select type(TargetSpace)
+      type is (TransfSampleSpaceNone_Type) 
+        call TargetSpace%Construct(OriginalSampleSpace=SampleSpace)
+      type is (TransfSampleSpaceUnbound_Type)
+        call TargetSpace%Construct(OriginalSampleSpace=SampleSpace)
       class default
-        call Error%Raise( 'Something went wrong', ProcName=ProcName )
+        call Error%Raise('Something went wrong', ProcName=ProcName)
     end select
 
-    call PriorDistribution%Construct( SampleSpace=TargetSpace )
+    call PriorDistribution%Construct(SampleSpace=TargetSpace)
 
     NbDimOrig = TargetSpace%GetNbDim()
     NbDimHier = 0
 
     ! setting up posterior pointer for either hierarchical or non-hierarchical problem
-    if ( This%Hierarchical ) then
+    if (This%Hierarchical) then
       NbDimHier = This%HierarchicalSpace%GetNbDim()
       allocate(HierSamplesRealization(NbDimOrig + NbDimHier), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='HierSamplesRealization', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='HierSamplesRealization', ProcName=ProcName, stat=StatLoc)
       Posterior => MCMCPosteriorHier
     else
       Posterior => MCMCPosterior
     end if
 
     allocate(Labels(NbDimHier+NbDimOrig), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, size(Labels)
-      if ( i <= NbDimOrig ) then
+      if (i <= NbDimOrig) then
         Labels(i) = TargetSpace%GetLabel(Num=i)
       else
         Labels(i) = This%HierarchicalSpace%GetLabel(Num=i-TargetSpace%GetNbDim())
       end if
     end do
 
-    call ModelInterface%Construct( Model=Model, Responses=Responses )
+    call ModelInterface%Construct(Model=Model, Responses=Responses)
 
     allocate(Output(ModelInterface%GetNbResponses()), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Output', ProcName=ProcName, stat=StatLoc)
 
-    if ( present(OutputDirectory) ) OutputDirectoryLoc = OutputDirectory // '/posterior_sampler'
+    if (present(OutputDirectory)) OutputDirectoryLoc = OutputDirectory // '/posterior_sampler'
 
-    call This%MCMC%GenerateChain( SamplingTarget=Posterior, SampleSpace=TargetSpace, ParameterChain=ParamChain,                   &
-                                             TargetChain=PosteriorChain, MiscChain=MiscChain, OutputDirectory=OutputDirectoryLoc )
+    call This%MCMC%GenerateChain(SamplingTarget=Posterior, SampleSpace=TargetSpace, ParameterChain=ParamChain,                   &
+                                             TargetChain=PosteriorChain, MiscChain=MiscChain, OutputDirectory=OutputDirectoryLoc)
 
-    ParamChain = TargetSpace%InvTransform( Z=ParamChain )
+    ParamChain = TargetSpace%InvTransform(Z=ParamChain)
 
-    if ( allocated(Output) ) deallocate(Output, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Output', ProcName=ProcName, stat=StatLoc )
+    if (allocated(Output)) deallocate(Output, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Output', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(HierOutput) ) deallocate(HierOutput, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierOutput', ProcName=ProcName, stat=StatLoc )
+    if (allocated(HierOutput)) deallocate(HierOutput, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='HierOutput', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(HierSamples) ) deallocate(HierSamples, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierSamples', ProcName=ProcName, stat=StatLoc )
+    if (allocated(HierSamples)) deallocate(HierSamples, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='HierSamples', ProcName=ProcName, stat=StatLoc)
 
-    if ( present(OutputDirectory) ) call This%WriteOutput( SampleSpace=SampleSpace, PosteriorChain=PosteriorChain,                &
-                                                           ParamChain=ParamChain, MiscChain=MiscChain, Directory=OutputDirectory )
+    if (present(OutputDirectory)) call This%WriteOutput(SampleSpace=SampleSpace, PosteriorChain=PosteriorChain,                &
+                                                           ParamChain=ParamChain, MiscChain=MiscChain, Directory=OutputDirectory)
 
     deallocate(PosteriorChain, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='PosteriorChain', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='PosteriorChain', ProcName=ProcName, stat=StatLoc)
 
     deallocate(ParamChain, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='PosteriorParam', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='PosteriorParam', ProcName=ProcName, stat=StatLoc)
 
     deallocate(MiscChain, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='MiscChain', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='MiscChain', ProcName=ProcName, stat=StatLoc)
 
     deallocate(OrigInputValues, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='OrigInputValues', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='OrigInputValues', ProcName=ProcName, stat=StatLoc)
 
     contains
 
       !!--------------------------------------------------------------------------------------------------------------------------
-      subroutine MCMCPosterior( Input, Value, MiscValues )
+      subroutine MCMCPosterior(Input, Value, MiscValues)
 
         type(Input_Type), intent(in)                                      ::    Input
         real(rkp), intent(out)                                            ::    Value
@@ -430,31 +430,31 @@ contains
         Likelihood = Zero
         Prior = Zero
 
-        if ( allocated(MiscValues) ) then
-          if ( size(MiscValues) /= 2 ) then
+        if (allocated(MiscValues)) then
+          if (size(MiscValues) /= 2) then
             deallocate(MiscValues, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Deallocate( Name='MiscValues', ProcName=ProcName, stat=StatLoc )
+            if (StatLoc /= 0) call Error%Deallocate(Name='MiscValues', ProcName=ProcName, stat=StatLoc)
           end if
         end if
-        if ( .not. allocated(MiscValues) ) then
+        if (.not. allocated(MiscValues)) then
           allocate(MiscValues(2), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='MiscValues', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='MiscValues', ProcName=ProcName, stat=StatLoc)
         end if
 
-        call Input%GetValue( Values=OrigInputValues ) 
+        call Input%GetValue(Values=OrigInputValues) 
 
-        Prior = PriorDistribution%PDF( X=OrigInputValues )
+        Prior = PriorDistribution%PDF(X=OrigInputValues)
 
-        OrigInputValues = TargetSpace%InvTransform( Z=OrigInputValues )
+        OrigInputValues = TargetSpace%InvTransform(Z=OrigInputValues)
 
-        call InputLoc%Construct( Input=OrigInputValues, Labels=Labels(1:NbDimOrig) )
+        call InputLoc%Construct(Input=OrigInputValues, Labels=Labels(1:NbDimOrig))
 
         MiscValues(1) = Prior
 
-        if ( Prior > Zero ) then
-          call ModelInterface%Run( Input=InputLoc, Output=Output, Stat=RunStat )
-          if ( RunStat == 0 ) then
-            Likelihood = LikelihoodFunction%Evaluate( Responses=Responses, Input=InputLoc, Output=Output )
+        if (Prior > Zero) then
+          call ModelInterface%Run(Input=InputLoc, Output=Output, Stat=RunStat)
+          if (RunStat == 0) then
+            Likelihood = LikelihoodFunction%Evaluate(Responses=Responses, Input=InputLoc, Output=Output)
             MiscValues(2) = Likelihood
             Value = Likelihood * Prior
           else
@@ -468,13 +468,13 @@ contains
           Value = Zero
         end if
 
-        if ( This%DebugStop ) stop
+        if (This%DebugStop) stop
 
       end subroutine
       !!--------------------------------------------------------------------------------------------------------------------------
 
       !!--------------------------------------------------------------------------------------------------------------------------
-      subroutine MCMCPosteriorHier( Input, Value, MiscValues )
+      subroutine MCMCPosteriorHier(Input, Value, MiscValues)
 
         type(Input_Type), intent(in)                                      ::    Input
         real(rkp), intent(out)                                            ::    Value
@@ -491,76 +491,76 @@ contains
         Likelihood = Zero
         Prior = Zero
 
-        if ( allocated(MiscValues) ) then
-          if ( size(MiscValues) /= 2 ) then
+        if (allocated(MiscValues)) then
+          if (size(MiscValues) /= 2) then
             deallocate(MiscValues, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Deallocate( Name='MiscValues', ProcName=ProcName, stat=StatLoc )
+            if (StatLoc /= 0) call Error%Deallocate(Name='MiscValues', ProcName=ProcName, stat=StatLoc)
           end if
         end if
-        if ( .not. allocated(MiscValues) ) then
+        if (.not. allocated(MiscValues)) then
           allocate(MiscValues(2), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='MiscValues', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='MiscValues', ProcName=ProcName, stat=StatLoc)
         end if
 
-        call Input%GetValue( Values=OrigInputValues ) 
+        call Input%GetValue(Values=OrigInputValues) 
 
-        Prior = PriorDistribution%PDF( X=OrigInputValues )
+        Prior = PriorDistribution%PDF(X=OrigInputValues)
 
-        call InputLoc%Construct( Input=OrigInputValues, Labels=Labels(1:NbDimOrig) )
+        call InputLoc%Construct(Input=OrigInputValues, Labels=Labels(1:NbDimOrig))
 
         MiscValues(1) = Prior
 
-        if ( Prior > Zero ) then
+        if (Prior > Zero) then
 
-          call This%HierarchicalSpace%Generate( Input=InputLoc, ParamSpace=ParamSpaceRealization )
-          HierSamples = ParamSpaceRealization%Draw( Sampler=This%HierarchicalSampler, NbSamples=This%HierarchicalNbSamples )
+          call This%HierarchicalSpace%Generate(Input=InputLoc, ParamSpace=ParamSpaceRealization)
+          HierSamples = ParamSpaceRealization%Draw(Sampler=This%HierarchicalSampler, NbSamples=This%HierarchicalNbSamples)
           NbHierSamples = This%HierarchicalNbSamples
 
-          if ( allocated(HierOutput) ) then
-            if ( size(HierOutput,2) /= NbHierSamples .or. size(HierOutput,1) /= ModelInterface%GetNbResponses() ) then
+          if (allocated(HierOutput)) then
+            if (size(HierOutput,2) /= NbHierSamples .or. size(HierOutput,1) /= ModelInterface%GetNbResponses()) then
               deallocate(HierOutput, stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierOutput', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Deallocate(Name='HierOutput', ProcName=ProcName, stat=StatLoc)
             end if
           end if
 
-          if ( .not. allocated(HierOutput) ) then
+          if (.not. allocated(HierOutput)) then
             allocate(HierOutput(ModelInterface%GetNbResponses(),NbHierSamples), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='HierOutput', ProcName=ProcName, stat=StatLoc )
+            if (StatLoc /= 0) call Error%Allocate(Name='HierOutput', ProcName=ProcName, stat=StatLoc)
           end if
 
-          if ( allocated(HierRunStat) ) then
-            if ( size(HierRunStat,1) /= NbHierSamples ) then
+          if (allocated(HierRunStat)) then
+            if (size(HierRunStat,1) /= NbHierSamples) then
               deallocate(HierRunStat, stat=StatLoc)
-              if ( StatLoc /= 0 ) call Error%Deallocate( Name='HierRunStat', ProcName=ProcName, stat=StatLoc )
+              if (StatLoc /= 0) call Error%Deallocate(Name='HierRunStat', ProcName=ProcName, stat=StatLoc)
             end if
           end if
 
-          if ( .not. allocated(HierRunStat) ) then
+          if (.not. allocated(HierRunStat)) then
             allocate(HierRunStat(NbHierSamples), stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='HierRunStat', ProcName=ProcName, stat=StatLoc )
+            if (StatLoc /= 0) call Error%Allocate(Name='HierRunStat', ProcName=ProcName, stat=StatLoc)
           end if
           HierRunStat = 1
 
           HierSamplesRealization(1:NbDimOrig) = OrigInputValues
 
           allocate(HierInput(NbHierSamples), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='HierInput', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='HierInput', ProcName=ProcName, stat=StatLoc)
 
           iLoc = 1
           do iLoc = 1, NbHierSamples
             HierSamplesRealization(NbDimOrig+1:) = HierSamples(:,iLoc)
-            call HierInput(iLoc)%Construct( Input=HierSamplesRealization, Labels=Labels )
+            call HierInput(iLoc)%Construct(Input=HierSamplesRealization, Labels=Labels)
           end do
 
-          call ModelInterface%Run( Input=HierInput, Output=HierOutput, Stat=HierRunStat )
+          call ModelInterface%Run(Input=HierInput, Output=HierOutput, Stat=HierRunStat)
 
-          if ( count(HierRunStat == 0) >= ceiling(0.75_rkp*real(NbHierSamples,rkp)) ) then
+          if (count(HierRunStat == 0) >= ceiling(0.75_rkp*real(NbHierSamples,rkp))) then
             Likelihood = Zero
             iLoc = 1
             do iLoc = 1, NbHierSamples
-              if ( HierRunStat(i) /= 0 ) cycle
-              Likelihood = Likelihood + LikelihoodFunction%Evaluate( Responses=Responses, Input=HierInput(iLoc),                  &
-                                                                                                       Output=HierOutput(:,iLoc) )
+              if (HierRunStat(i) /= 0) cycle
+              Likelihood = Likelihood + LikelihoodFunction%Evaluate(Responses=Responses, Input=HierInput(iLoc),                  &
+                                                                                                       Output=HierOutput(:,iLoc))
             end do
             Likelihood = Likelihood / real(count(HierRunStat == 0),rkp)
             MiscValues(2) = Likelihood
@@ -577,7 +577,7 @@ contains
           Value = Zero
         end if
 
-        if ( This%DebugStop ) stop
+        if (This%DebugStop) stop
 
       end subroutine
       !!--------------------------------------------------------------------------------------------------------------------------
@@ -586,7 +586,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput( This, SampleSpace, PosteriorChain, ParamChain, MiscChain, Directory )
+  subroutine WriteOutput(This, SampleSpace, PosteriorChain, ParamChain, MiscChain, Directory)
 
     class(BayesInvMCMC_Type), intent(inout)                           ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
@@ -603,13 +603,13 @@ contains
     logical                                                           ::    SilentLoc
     type(SMUQFile_Type)                                               ::    File
 
-    if ( len_trim(Directory) /= 0 ) then
+    if (len_trim(Directory) /= 0) then
 
-      call MakeDirectory( Path=Directory, Options='-p' )
+      call MakeDirectory(Path=Directory, Options='-p')
 
       SilentLoc = This%Silent
 
-      if ( .not. SilentLoc ) then
+      if (.not. SilentLoc) then
         write(*,'(A)') ''
         write(*,'(A)') 'Writing Bayesian inference data to the output folder'
       end if
@@ -617,24 +617,24 @@ contains
       PrefixLoc = Directory
 
       FileName = '/parameter_names.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Array=SampleSpace%GetName(), File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Array=SampleSpace%GetName(), File=File)
 
       FileName = '/prior_chain.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Array=MiscChain(1,:), File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Array=MiscChain(1,:), File=File)
 
       FileName = '/likelihood_chain.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Array=MiscChain(2,:), File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Array=MiscChain(2,:), File=File)
 
       FileName = '/parameter_chain.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Array=ParamChain, File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Array=ParamChain, File=File)
 
       FileName = '/posterior_chain.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Array=PosteriorChain, File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Array=PosteriorChain, File=File)
 
     end if
 
@@ -642,7 +642,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(BayesInvMCMC_Type), intent(out)                             ::    LHS
     class(BayesInvMethod_Type), intent(in)                            ::    RHS
@@ -658,19 +658,19 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%DebugStop = RHS%DebugStop
           LHS%Hierarchical = RHS%Hierarchical
           allocate(LHS%MCMC, source=RHS%MCMC, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%MCMC', ProcName=ProcName, stat=StatLoc )
-          if ( LHS%Hierarchical ) then
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%MCMC', ProcName=ProcName, stat=StatLoc)
+          if (LHS%Hierarchical) then
             LHS%HierarchicalSpace = RHS%HierarchicalSpace
             LHS%HierarchicalSampler = RHS%HierarchicalSampler
           end if
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -678,15 +678,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(BayesInvMCMC_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%MCMC) ) deallocate(This%MCMC, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%MCMC', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%MCMC)) deallocate(This%MCMC, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%MCMC', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

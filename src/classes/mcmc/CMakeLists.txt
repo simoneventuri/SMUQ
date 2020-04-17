@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   MCMCDRAM_Class.f90
   MCMCMethod_Class.f90
   MCMCMethod_Factory_Class.f90
@@ -6,4 +6,4 @@ add_target_sources ( smuqApp
   MHProposalMethod_Factory_Class.f90
   MHProposalStationary_Class.f90
   MHProposalLastReject_Class.f90
- )
+)

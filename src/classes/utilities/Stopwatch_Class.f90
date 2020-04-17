@@ -48,11 +48,11 @@ type(Stopwatch_Type)                                                  ::    Stop
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine StartTimer( This )
+  subroutine StartTimer(This)
 
     class(StopWatch_Type), intent(inout)                              ::    This
 
-    if ( .not. This%On ) then
+    if (.not. This%On) then
       This%On = .true.
       call date_and_time(values=This%StartTime)
       This%LapTime = This%StartTime
@@ -65,11 +65,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine StopTimer( This )
+  subroutine StopTimer(This)
 
     class(StopWatch_Type), intent(inout)                              ::    This
 
-    if ( This%On ) then
+    if (This%On) then
       call date_and_time(values=This%StopTime)
       This%On = .false.
     end if
@@ -78,7 +78,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ResetTimer( This )
+  subroutine ResetTimer(This)
 
     class(StopWatch_Type), intent(inout)                              ::    This
 
@@ -91,7 +91,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RestartTimer( This )
+  subroutine RestartTimer(This)
 
     class(StopWatch_Type), intent(inout)                              ::    This
 
@@ -102,7 +102,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function LapTimer( This )
+  function LapTimer(This)
 
     real(rkp)                                                         ::    LapTimer
 
@@ -110,7 +110,7 @@ contains
     integer(8), dimension(8)                                          ::    CurrentTime
     real(rkp)                                                         ::    OneHundred=100.
 
-    if ( This%On ) then
+    if (This%On) then
       call date_and_time(values=CurrentTime)
       LapTimer = ConvertToSeconds(Time=CurrentTime) - ConvertToSeconds(Time=This%LapTime)
       This%LapTime = CurrentTime
@@ -122,7 +122,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ElapsedTimer( This )
+  function ElapsedTimer(This)
 
     real(rkp)                                                         ::    ElapsedTimer
 
@@ -131,7 +131,7 @@ contains
     integer(8), dimension(8)                                          ::    CurrentTime
     real(rkp)                                                         ::    OneHundred=100.
 
-    if ( This%On ) then
+    if (This%On) then
       call date_and_time(values=CurrentTime)
       ElapsedTimer = ConvertToSeconds(Time=CurrentTime) - ConvertToSeconds(Time=This%StartTime)
     else
@@ -142,7 +142,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ConvertToSeconds( Time )
+  function ConvertToSeconds(Time)
 
     real(rkp)                                                         ::    ConvertToSeconds
 
@@ -155,7 +155,7 @@ contains
     i = 1
     CurrentMonthm1 = int(Time(2)-1,4)
     do i = 1, CurrentMonthm1
-      ConvertToSeconds = ConvertToSeconds + real(SecondsInMonth( Month=i, LeapYear=IsLeapYear(Time(1)) ),rkp)
+      ConvertToSeconds = ConvertToSeconds + real(SecondsInMonth(Month=i, LeapYear=IsLeapYear(Time(1))),rkp)
     end do
 
     ConvertToSeconds = ConvertToSeconds + real(Time(3)*86400 + Time(5)*3600 + Time(6)*60 + Time(7),rkp) +                 &
@@ -165,21 +165,21 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function SecondsInMonth( Month, LeapYear )
+  function SecondsInMonth(Month, LeapYear)
 
     integer(8)                                                        ::    SecondsInMonth
 
     integer, intent(in)                                               ::    Month
     logical, intent(in)                                               ::    LeapYear
 
-    select case ( Month )
+    select case (Month)
 
       case (1,3,5,7,8,10,12) !31 days
         SecondsInMonth = 2678400
       case (4,6,9,11) ! 30 days
         SecondsInMonth = 2592000
       case (2)
-        if ( LeapYear ) then ! 28 or 29 days
+        if (LeapYear) then ! 28 or 29 days
           SecondsInMonth = 2505600
         else
           SecondsInMonth = 2419200
@@ -193,7 +193,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsLeapYear( Year )
+  function IsLeapYear(Year)
 
     logical                                                           ::    IsLeapYear
 
@@ -201,7 +201,7 @@ contains
 
     integer(8)                                                        ::    Four=4
 
-    if ( mod(Year,Four) == 0 ) then
+    if (mod(Year,Four) == 0) then
       IsLeapYear = .true.
     else
       IsLeapYear = .false.

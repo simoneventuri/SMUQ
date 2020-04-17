@@ -395,7 +395,7 @@ if plot_Variation == 1
         
         for j=1:length(hist_x_nodes)
             for i=1:nb_bins_histogram
-                Hist_Matrix(i,j) = Hist_Vector( (j-1)*(nb_bins_histogram)+ i);
+                Hist_Matrix(i,j) = Hist_Vector((j-1)*(nb_bins_histogram)+ i);
             end
         end
     end

@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   KernelDist_Factory_Class.f90
   BaseDistProb_Factory_Class.f90
   DistProb_Factory_Class.f90

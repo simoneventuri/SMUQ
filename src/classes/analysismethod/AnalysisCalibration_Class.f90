@@ -52,14 +52,14 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(AnalysisCalibration_Type), intent(inout)                    ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Initialized = .true.
       This%Name = 'analysiscalibration'
       call This%SetDefaults()
@@ -69,7 +69,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(AnalysisCalibration_Type), intent(inout)                    ::    This
 
@@ -87,7 +87,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(AnalysisCalibration_Type), intent(inout)                    ::    This
 
@@ -100,7 +100,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput(This, Input, SectionChain, Prefix)
 
     class(AnalysisCalibration_Type), intent(inout)                    ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -113,16 +113,16 @@ contains
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     character(:), allocatable                                         ::    SectionName
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     This%SectionChain = SectionChain
 
-    call CalibrationMethod_Factory%Construct( Object=This%CalibrationMethod, Input=Input, SectionChain=This%SectionChain,         &
-                                                                                                                Prefix=PrefixLoc )
+    call CalibrationMethod_Factory%Construct(Object=This%CalibrationMethod, Input=Input, SectionChain=This%SectionChain,         &
+                                                                                                                Prefix=PrefixLoc)
 
     This%Constructed = .true.
 
@@ -130,11 +130,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
     class(AnalysisCalibration_Type), intent(inout)                    ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -144,24 +144,24 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    GetInput = CalibrationMethod_Factory%GetObjectInput(Object=This%CalibrationMethod, MainSectionName=MainSectionName,           &
+    GetInput = CalibrationMethod_Factory%GetObjectInput(Object=This%CalibrationMethod, Name=Name,           &
                                                                                          Prefix=PrefixLoc, Directory=DirectorySub)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, SampleSpace, Responses, Model, OutputDirectory )
+  subroutine Run(This, SampleSpace, Responses, Model, OutputDirectory)
 
     class(AnalysisCalibration_Type), intent(inout)                    ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
@@ -172,17 +172,17 @@ contains
     character(*), parameter                                           ::    ProcName='Run'
     integer                                                           ::    StatLoc=0
 
-    if ( present(OutputDirectory) ) then
-      call This%CalibrationMethod%Run( SampleSpace=SampleSpace, Responses=Responses, Model=Model, OutputDirectory=OutputDirectory)
+    if (present(OutputDirectory)) then
+      call This%CalibrationMethod%Run(SampleSpace=SampleSpace, Responses=Responses, Model=Model, OutputDirectory=OutputDirectory)
     else
-      call This%CalibrationMethod%Run( SampleSpace=SampleSpace, Responses=Responses, Model=Model )
+      call This%CalibrationMethod%Run(SampleSpace=SampleSpace, Responses=Responses, Model=Model)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(AnalysisCalibration_Type), intent(out)                      ::    LHS
     class(AnalysisMethod_Type), intent(in)                            ::    RHS
@@ -197,13 +197,13 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           allocate(LHS%CalibrationMethod, source=RHS%CalibrationMethod, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CalibrationMethod', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%CalibrationMethod', ProcName=ProcName, stat=StatLoc)
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -211,15 +211,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(AnalysisCalibration_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%CalibrationMethod) ) deallocate(This%CalibrationMethod, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CalibrationMethod', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%CalibrationMethod)) deallocate(This%CalibrationMethod, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%CalibrationMethod', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

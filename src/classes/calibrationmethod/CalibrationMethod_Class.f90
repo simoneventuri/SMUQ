@@ -55,28 +55,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_CalibrationMethod( This )
+  subroutine Initialize_CalibrationMethod(This)
     import                                                            ::    CalibrationMethod_Type
     class(CalibrationMethod_Type), intent(inout)                      ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_CalibrationMethod( This )
+  subroutine Reset_CalibrationMethod(This)
     import                                                            ::    CalibrationMethod_Type
     class(CalibrationMethod_Type), intent(inout)                      ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_CalibrationMethod( This )
+  subroutine SetDefaults_CalibrationMethod(This)
     import                                                            ::    CalibrationMethod_Type
     class(CalibrationMethod_Type), intent(inout)                      ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_CalibrationMethod( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput_CalibrationMethod(This, Input, SectionChain, Prefix)
     import                                                            ::    CalibrationMethod_Type
     import                                                            ::    InputSection_Type
     class(CalibrationMethod_Type), intent(inout)                      ::    This
@@ -87,19 +87,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_CalibrationMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_CalibrationMethod(This, Name, Prefix, Directory)
     import                                                            ::    CalibrationMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_CalibrationMethod
     class(CalibrationMethod_Type), intent(inout)                      ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_CalibrationMethod( This, SampleSpace, Responses, Model, OutputDirectory )
+  subroutine Run_CalibrationMethod(This, SampleSpace, Responses, Model, OutputDirectory)
     import                                                            ::    SampleSpace_Type
     import                                                            ::    Response_Type
     import                                                            ::    Model_Type
@@ -113,7 +113,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_CalibrationMethod( LHS, RHS )
+  impure elemental subroutine Copy_CalibrationMethod(LHS, RHS)
     import                                                            ::    CalibrationMethod_Type
     class(CalibrationMethod_Type), intent(out)                        ::    LHS
     class(CalibrationMethod_Type), intent(in)                         ::    RHS
@@ -125,7 +125,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(CalibrationMethod_Type), intent(inout)                      ::    This

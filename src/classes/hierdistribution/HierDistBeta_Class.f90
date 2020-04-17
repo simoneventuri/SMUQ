@@ -57,13 +57,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(HierDistBeta_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'hiererchical_gamma'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -73,7 +73,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(HierDistBeta_Type), intent(inout)                           ::    This
 
@@ -89,7 +89,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(HierDistBeta_Type), intent(inout)                           ::    This
 
@@ -110,7 +110,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(HierDistBeta_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -126,43 +126,43 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     logical                                                           ::    MandatoryLoc
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
     
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     MandatoryLoc = .true.
     ParameterName = 'alpha_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%AlphaDependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%AlphaDependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'alpha'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Alpha = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%Alpha = VarR0D
 
     MandatoryLoc = .true.
     ParameterName = 'beta_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%BetaDependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%BetaDependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'beta'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Beta = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%Beta = VarR0D
 
     ParameterName = 'a_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%ADependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%ADependency = VarC0D
     ParameterName = 'a'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%A = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%A = VarR0D
 
     ParameterName = 'b_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%BDependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%BDependency = VarC0D
     ParameterName = 'b'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%B = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%B = VarR0D
 
     This%Constructed = .true.
 
@@ -170,14 +170,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(HierDistBeta_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -187,31 +187,31 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%Alpha ) )
-    call GetInput%AddParameter( Name='beta', Value=ConvertToString( Value=This%Beta ) )
-    call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
-    call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
-    if ( len_trim(This%AlphaDependency) /= 0 ) call GetInput%AddParameter( Name='alpha_dependency', Value=This%AlphaDependency )
-    if ( len_trim(This%BetaDependency) /= 0 ) call GetInput%AddParameter( Name='beta_dependency', Value=This%BetaDependency )
-    if ( len_trim(This%ADependency) /= 0 ) call GetInput%AddParameter( Name='a_dependency', Value=This%ADependency )
-    if ( len_trim(This%BDependency) /= 0 ) call GetInput%AddParameter( Name='b_dependency', Value=This%BDependency )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+    call GetInput%AddParameter(Name='alpha', Value=ConvertToString(Value=This%Alpha))
+    call GetInput%AddParameter(Name='beta', Value=ConvertToString(Value=This%Beta))
+    call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
+    call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
+    if (len_trim(This%AlphaDependency) /= 0) call GetInput%AddParameter(Name='alpha_dependency', Value=This%AlphaDependency)
+    if (len_trim(This%BetaDependency) /= 0) call GetInput%AddParameter(Name='beta_dependency', Value=This%BetaDependency)
+    if (len_trim(This%ADependency) /= 0) call GetInput%AddParameter(Name='a_dependency', Value=This%ADependency)
+    if (len_trim(This%BDependency) /= 0) call GetInput%AddParameter(Name='b_dependency', Value=This%BDependency)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate( This, Input, Distribution )
+  subroutine Generate(This, Input, Distribution)
 
     class(HierDistBeta_Type), intent(in)                              ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -224,29 +224,29 @@ contains
     real(rkp)                                                         ::    A
     real(rkp)                                                         ::    B
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     B = Zero
 
     Alpha = This%Alpha
-    if ( len_trim(This%AlphaDependency) /= 0 ) call Input%GetValue( Value=Alpha, Label=This%AlphaDependency )
+    if (len_trim(This%AlphaDependency) /= 0) call Input%GetValue(Value=Alpha, Label=This%AlphaDependency)
 
     Beta = This%Beta
-    if ( len_trim(This%BetaDependency) /= 0 ) call Input%GetValue( Value=Beta, Label=This%BetaDependency )
+    if (len_trim(This%BetaDependency) /= 0) call Input%GetValue(Value=Beta, Label=This%BetaDependency)
 
     A = This%A
-    if ( len_trim(This%ADependency) /= 0 ) call Input%GetValue( Value=A, Label=This%ADependency )
+    if (len_trim(This%ADependency) /= 0) call Input%GetValue(Value=A, Label=This%ADependency)
     
     B = This%B
-    if ( len_trim(This%BDependency) /= 0 ) call Input%GetValue( Value=B, Label=This%BDependency )
+    if (len_trim(This%BDependency) /= 0) call Input%GetValue(Value=B, Label=This%BDependency)
 
-    call This%GenerateDistribution( Alpha=Alpha, Beta=Beta, A=A, B=B, Distribution=Distribution )
+    call This%GenerateDistribution(Alpha=Alpha, Beta=Beta, A=A, B=B, Distribution=Distribution)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateDistribution( This, Alpha, Beta, A, B, Distribution )
+  subroutine GenerateDistribution(This, Alpha, Beta, A, B, Distribution)
 
     class(HierDistBeta_Type), intent(in)                              ::    This
     real(rkp), intent(in)                                             ::    Alpha
@@ -258,22 +258,22 @@ contains
     character(*), parameter                                           ::    ProcName='GenerateDistribution'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    allocate( DistBeta_Type :: Distribution )
+    allocate(DistBeta_Type :: Distribution)
 
-    select type ( Distribution )
-      type is ( DistBeta_Type ) 
-        call Distribution%Construct( Alpha=Alpha, Beta=Beta, A=A, B=B )
+    select type (Distribution)
+      type is (DistBeta_Type) 
+        call Distribution%Construct(Alpha=Alpha, Beta=Beta, A=A, B=B)
       class default
-        call Error%Raise( "Something went wrong", ProcName=ProcName )
+        call Error%Raise("Something went wrong", ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(HierDistBeta_Type), intent(out)                            ::    LHS
     class(HierDistProb_Type), intent(in)                              ::    RHS
@@ -288,7 +288,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%A = RHS%A
           LHS%B = RHS%B
           LHS%Alpha = RHS%Alpha
@@ -302,7 +302,7 @@ contains
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -310,7 +310,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(HierDistBeta_Type), intent(inout)                           ::    This
 

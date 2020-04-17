@@ -1,3 +1,3 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   Restart_Class.f90
- )
+)

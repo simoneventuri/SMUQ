@@ -66,7 +66,7 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Test( Input, Prefix )
+  subroutine Test(Input, Prefix)
 
     class(InputSection_Type), intent(in)                              ::    Input
     character(*), optional, intent(in)                                ::    Prefix
@@ -85,15 +85,15 @@ contains
     Response(7,1) = Seven
     Response(8,1) = Eight
 
-    call SMD( M=Two, C=Three, K=Two, X0=Four, Xdot0=-Two, Abscissa=Response(:,1), Response=Response(:,2) )
+    call SMD(M=Two, C=Three, K=Two, X0=Four, Xdot0=-Two, Abscissa=Response(:,1), Response=Response(:,2))
 
     call WriteArray(Array=Response)
 
-    call SMD( M=Two, C=Four, K=Two, X0=Four, Xdot0=-Two, Abscissa=Response(:,1), Response=Response(:,2) )
+    call SMD(M=Two, C=Four, K=Two, X0=Four, Xdot0=-Two, Abscissa=Response(:,1), Response=Response(:,2))
 
     call WriteArray(Array=Response)
 
-    call SMD( M=Two, C=Five, K=Two, X0=Four, Xdot0=-Two, Abscissa=Response(:,1), Response=Response(:,2) )
+    call SMD(M=Two, C=Five, K=Two, X0=Four, Xdot0=-Two, Abscissa=Response(:,1), Response=Response(:,2))
 
     call WriteArray(Array=Response)
 

@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   StatisticsRoutines_Module.f90
   CommandRoutines_Module.f90
   ArrayRoutines_Module.f90

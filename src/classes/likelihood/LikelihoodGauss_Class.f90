@@ -69,13 +69,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(LikelihoodGauss_Type), intent(inout)                        ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'LikelihoodGauss'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -85,7 +85,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(LikelihoodGauss_Type), intent(inout)                        ::    This
 
@@ -95,14 +95,14 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%HierCovFunction) ) deallocate(This%HierCovFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%HierCovFunction', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%HierCovFunction)) deallocate(This%HierCovFunction, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%HierCovFunction', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%XmMean) ) deallocate(This%XmMean, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%XmMean)) deallocate(This%XmMean, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%XmMean', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%L) ) deallocate(This%L, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%L)) deallocate(This%L, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%L', ProcName=ProcName, stat=StatLoc)
 
     This%PredefinedCov = .false.
 
@@ -112,7 +112,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(LikelihoodGauss_Type), intent(inout)                        ::    This
 
@@ -128,7 +128,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(LikelihoodGauss_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -147,63 +147,63 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'multiplicative_error'
-    call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
-    if ( Found ) This%MultiplicativeError = VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., Found=Found)
+    if (Found) This%MultiplicativeError = VarL0D
     
     ParameterName = 'scalar'
-    call Input%GetValue( Value=VarR0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
-    if ( Found ) This%Scalar = VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=Parametername, Mandatory=.false., Found=Found)
+    if (Found) This%Scalar = VarR0D
 
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     This%Label = VarC0D
 
     SectionName = 'multiplier'
 
     ParameterName = 'value'
-    call Input%GetValue( Value=VarR0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Multiplier = VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) This%Multiplier = VarR0D
 
     ParameterName = 'dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) This%MultiplierDependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) This%MultiplierDependency = VarC0D
 
     SectionName = 'predefined_covariance'
-    if( Input%HasSection( SubSectionName=SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=This%L, Prefix=PrefixLoc )
-      nullify( InputSection )
+    if(Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call ImportArray(Input=InputSection, Array=This%L, Prefix=PrefixLoc)
+      nullify(InputSection)
       This%PredefinedCov = .true.
-      if ( size(This%L,1) /= size(This%L,2) ) call Error%Raise( 'Predefined covariance array not square', ProcName=ProcName )
-      if ( .not. IsDiagonal( Array=This%L ) ) then
+      if (size(This%L,1) /= size(This%L,2)) call Error%Raise('Predefined covariance array not square', ProcName=ProcName)
+      if (.not. IsDiagonal(Array=This%L)) then
         i = size(This%L,1)
-        call DPOTRF( 'L', i, This%L, i, StatLoc )
-        if ( StatLoc /= 0 ) call Error%Raise( Line='Predefined covariance not invertible', ProcName=ProcName )
+        call DPOTRF('L', i, This%L, i, StatLoc)
+        if (StatLoc /= 0) call Error%Raise(Line='Predefined covariance not invertible', ProcName=ProcName)
       else
         This%L = dsqrt(This%L)
       end if
       allocate(This%XmMean(i,1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%XmMean', ProcName=ProcName, stat=StatLoc)
       This%XmMean = Zero
     end if
 
     SectionName = 'covariance_function'
-    if( Input%HasSection( SubSectionName=SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      if ( This%PredefinedCov ) call Error%Raise( "Can't specify both predefined covariance and a " //                            &
-                                                                                        "covariance function", ProcName=ProcName )
-      call HierCovFunction_Factory%Construct( Object=This%HierCovFunction, Input=InputSection, Prefix=PrefixLoc )
+    if(Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      if (This%PredefinedCov) call Error%Raise("Can't specify both predefined covariance and a " //                            &
+                                                                                        "covariance function", ProcName=ProcName)
+      call HierCovFunction_Factory%Construct(Object=This%HierCovFunction, Input=InputSection, Prefix=PrefixLoc)
       nullify(InputSection)
     else
-      if ( .not. This%PredefinedCov ) call Error%Raise( 'Must define either a predefined covariance or a ' //                     &
-                                                                                        'covariance function', ProcName=ProcName )
+      if (.not. This%PredefinedCov) call Error%Raise('Must define either a predefined covariance or a ' //                     &
+                                                                                        'covariance function', ProcName=ProcName)
     end if
 
     This%Constructed = .true.
@@ -212,12 +212,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(LikelihoodGauss_Type), intent(inout)                        ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -235,64 +235,64 @@ contains
     type(SMUQFile_Type)                                               ::    File
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='multiplicative_error', Value=ConvertToString(Value=This%MultiplicativeError) )
-    call GetInput%AddParameter( Name='scalar', Value=ConvertToString(Value=This%Scalar) )
-    call GetInput%AddParameter( Name='label', Value=This%Label )
+    call GetInput%AddParameter(Name='multiplicative_error', Value=ConvertToString(Value=This%MultiplicativeError))
+    call GetInput%AddParameter(Name='scalar', Value=ConvertToString(Value=This%Scalar))
+    call GetInput%AddParameter(Name='label', Value=This%Label)
 
     SectionName = 'multiplier'
-    call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%AddParameter( Name='value', Value=ConvertToString(Value=This%Multiplier), SectionName=SectionName )
-    call GetInput%AddParameter( Name='dependency', Value=This%MultiplierDependency, SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
+    call GetInput%AddParameter(Name='value', Value=ConvertToString(Value=This%Multiplier), SectionName=SectionName)
+    call GetInput%AddParameter(Name='dependency', Value=This%MultiplierDependency, SectionName=SectionName)
   
-    if ( This%PredefinedCov ) then
+    if (This%PredefinedCov) then
       i = size(This%L,1)
       allocate(VarR2D(i,i), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
       VarR2D = Zero
-      call DGEMM( 'N', 'T', i, i, i, One, This%L, i, This%L, i, Zero, VarR2D, i )
-      if ( ExternalFlag ) then
+      call DGEMM('N', 'T', i, i, i, One, This%L, i, This%L, i, Zero, VarR2D, i)
+      if (ExternalFlag) then
           SectionName = 'predefined_covariance'
-          call GetInput%AddSection( SectionName=SectionName )
-          call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+          call GetInput%AddSection(SectionName=SectionName)
+          call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
           FileName = DirectoryLoc // '/predefined_covariance.dat'
-          call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-          call ExportArray( Input=InputSection, Array=VarR2D, File=File )
+          call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+          call ExportArray(Input=InputSection, Array=VarR2D, File=File)
           nullify(InputSection)
       else
           SectionName = 'predefined_covariance'
-          call GetInput%AddSection( SectionName=SectionName )
-          call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-          call ExportArray( Input=InputSection, Array=VarR2D )
+          call GetInput%AddSection(SectionName=SectionName)
+          call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+          call ExportArray(Input=InputSection, Array=VarR2D)
           nullify(InputSection)
       end if
       deallocate(VarR2D, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
     end if
 
-    if ( allocated(This%HierCovFunction) ) then
+    if (allocated(This%HierCovFunction)) then
       SectionName = 'covariance_function'
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/covariance_function'
-      call GetInput%AddSection( Section=HierCovFunction_Factory%GetObjectInput( Object=This%HierCovFunction,                      &
-                              MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SectionName )
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/covariance_function'
+      call GetInput%AddSection(Section=HierCovFunction_Factory%GetObjectInput(Object=This%HierCovFunction,                      &
+                              Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SectionName)
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_1D( This, Responses, Input, Output, LogValue )
+  function Evaluate_1D(This, Responses, Input, Output, LogValue)
 
     real(rkp)                                                         ::    Evaluate_1D
 
@@ -318,35 +318,35 @@ contains
 
     i = 1
     do i = 1, NbOutputs
-      if ( Output(i)%GetLabel() == This%Label ) then
+      if (Output(i)%GetLabel() == This%Label) then
         iOutput = i
         exit
       end if
     end do
 
-    if ( iOutput == 0 ) call Error%Raise( Line='Did not find required output : ' // This%Label, ProcName=ProcName )
+    if (iOutput == 0) call Error%Raise(Line='Did not find required output : ' // This%Label, ProcName=ProcName)
 
     i = 1
     do i = 1, NbResponses
-      if ( Responses(i)%GetLabel() == This%Label ) then
+      if (Responses(i)%GetLabel() == This%Label) then
         iResponse = i
         exit
       end if
     end do
 
-    if ( iResponse == 0 ) call Error%Raise( Line='Did not find required response : ' // This%Label, ProcName=ProcName )
+    if (iResponse == 0) call Error%Raise(Line='Did not find required response : ' // This%Label, ProcName=ProcName)
 
-    if ( present(LogValue) ) then
-      Evaluate_1D = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput), Logvalue=LogValue )
+    if (present(LogValue)) then
+      Evaluate_1D = This%Evaluate(Response=Responses(iResponse), Input=Input, Output=Output(iOutput), Logvalue=LogValue)
     else
-      Evaluate_1D = This%Evaluate( Response=Responses(iResponse), Input=Input, Output=Output(iOutput) )
+      Evaluate_1D = This%Evaluate(Response=Responses(iResponse), Input=Input, Output=Output(iOutput))
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_0D( This, Response, Input, Output, LogValue )
+  function Evaluate_0D(This, Response, Input, Output, LogValue)
 
     real(rkp)                                                         ::    Evaluate_0D
 
@@ -379,11 +379,11 @@ contains
     real(rkp)                                                         ::    MultiplierLoc
     class(CovFunction_Type), allocatable                              ::    CovFunction
 
-    if ( Response%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect response', ProcName=ProcName )
-    if ( Output%GetLabel() /= This%Label ) call Error%Raise( 'Passed incorrect output', ProcName=ProcName )
+    if (Response%GetLabel() /= This%Label) call Error%Raise('Passed incorrect response', ProcName=ProcName)
+    if (Output%GetLabel() /= This%Label) call Error%Raise('Passed incorrect output', ProcName=ProcName)
 
     LogValueLoc = .false.
-    if ( present(LogValue) ) LogValueLoc = LogValue
+    if (present(LogValue)) LogValueLoc = LogValue
 
     ln2pi = dlog(Two*pi)
 
@@ -400,27 +400,27 @@ contains
     lnPreExp = Zero
     lnExp = Zero
 
-    if ( .not. Response%IsDataDefined() ) call Error%Raise( Line='Data not defined for the response', ProcName=ProcName )
+    if (.not. Response%IsDataDefined()) call Error%Raise(Line='Data not defined for the response', ProcName=ProcName)
 
     NbNodes = Response%GetNbNodes()
 
-    if ( allocated(This%L) ) then
-      if ( size(This%L,1) /= NbNodes ) then
-        if ( This%PredefinedCov ) call Error%Raise( 'Predefined covariance array dimension mismatch with data',                   &
-                                                                                                               ProcName=ProcName )
+    if (allocated(This%L)) then
+      if (size(This%L,1) /= NbNodes) then
+        if (This%PredefinedCov) call Error%Raise('Predefined covariance array dimension mismatch with data',                   &
+                                                                                                               ProcName=ProcName)
         deallocate(This%L, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='This%L', ProcName=ProcName, stat=StatLoc)
         deallocate(This%XmMean, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='This%XmMean', ProcName=ProcName, stat=StatLoc)
       end if
     end if
 
-    if ( .not. allocated(This%L) ) then
+    if (.not. allocated(This%L)) then
       allocate(This%L(NbNodes,NbNodes), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%L', ProcName=ProcName, stat=StatLoc)
       This%L = Zero
       allocate(This%XmMean(NbNodes,1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%XmMean', ProcName=ProcName, stat=StatLoc)
       This%XmMean = Zero
     end if
 
@@ -430,19 +430,19 @@ contains
     NbDataSets = size(DataPtr,2)
 
     MultiplierLoc = This%Multiplier
-    if ( len_trim(This%MultiplierDependency) > 0 ) call Input%GetValue( Value=MultiplierLoc, Label=This%MultiplierDependency )
+    if (len_trim(This%MultiplierDependency) > 0) call Input%GetValue(Value=MultiplierLoc, Label=This%MultiplierDependency)
 
-    call This%HierCovFunction%Generate( Input=Input, CovFunction=CovFunction )
-    call CovFunction%Evaluate( Coordinates=Response%GetCoordinatesPointer() , CoordinateLabels=Response%GetCoordinateLabels(),    &
-                                                                                                               Covariance=This%L )
+    call This%HierCovFunction%Generate(Input=Input, CovFunction=CovFunction)
+    call CovFunction%Evaluate(Coordinates=Response%GetCoordinatesPointer() , CoordinateLabels=Response%GetCoordinateLabels(),    &
+                                                                                                               Covariance=This%L)
     deallocate(CovFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='CovFunction', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='CovFunction', ProcName=ProcName, stat=StatLoc)
 
-    IsDiagonalFlag = IsDiagonal( Array=This%L )
+    IsDiagonalFlag = IsDiagonal(Array=This%L)
 
-    if ( .not. IsDiagonalFlag ) then
-      call DPOTRF( 'L', NbNodes, This%L, NbNodes, StatLoc )
-      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DPOTRF', ProcName=ProcName )
+    if (.not. IsDiagonalFlag) then
+      call DPOTRF('L', NbNodes, This%L, NbNodes, StatLoc)
+      if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DPOTRF', ProcName=ProcName)
     else
       This%L = dsqrt(This%L)
     end if
@@ -460,15 +460,15 @@ contains
     do ii = 1, NbDataSets
       iii = 1
       do iii = 1, NbDegen
-        if ( This%MultiplicativeError ) then
+        if (This%MultiplicativeError) then
           This%XmMean(:,1) = DataPtr(:,ii) / OutputPtr(:,iii)
           This%XmMean(:,1) = dlog(This%XmMean(:,1))
         else
           This%XmMean(:,1) = DataPtr(:,ii) - OutputPtr(:,iii)
         end if
-        call DTRTRS( 'L', 'N', 'N', NbNodes, 1, This%L, NbNodes, This%XmMean(:,:), NbNodes, StatLoc )
-        if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DTRTRS with code: '// ConvertToString(Value=StatLoc), &
-                                                                                                             ProcName=ProcName )
+        call DTRTRS('L', 'N', 'N', NbNodes, 1, This%L, NbNodes, This%XmMean(:,:), NbNodes, StatLoc)
+        if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DTRTRS with code: '// ConvertToString(Value=StatLoc), &
+                                                                                                             ProcName=ProcName)
         VarR0D = VarR0D - 0.5 * dot_product(This%XmMean(:,1), This%XmMean(:,1))
       end do
     end do
@@ -476,17 +476,17 @@ contains
 
     Evaluate_0D = lnPreExp + lnExp + This%Scalar
 
-    if ( .not. LogValueLoc ) then
-      if ( Evaluate_0D > TVarR0D .and. Evaluate_0D < HVarR0D ) then
+    if (.not. LogValueLoc) then
+      if (Evaluate_0D > TVarR0D .and. Evaluate_0D < HVarR0D) then
         Evaluate_0D = dexp(Evaluate_0D)
-      elseif (Evaluate_0D < TVarR0D ) then
+      elseif (Evaluate_0D < TVarR0D) then
         write(*,'(A)') 'Warning: Likelihood value below machine precision and made 0 where ln(likelihood) is : ' //               &
              ConvertToString(Value=Evaluate_0D)
         Evaluate_0D = Zero
       else
-        call Error%Raise( Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
+        call Error%Raise(Line='Likelihood Value above machine precision where ln(likelihood) is : ' //                           &
              ConvertToString(Value=Evaluate_0D) // '. Consider changing value of the scalar modifier and rerun for response: ' // &
-                                                                                                 This%Label, ProcName=ProcName )
+                                                                                                 This%Label, ProcName=ProcName)
       end if
     end if
 
@@ -497,7 +497,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(LikelihoodGauss_Type), intent(out)                          ::    LHS
     class(LikelihoodFunction_Type), intent(in)                        ::    RHS
@@ -513,18 +513,18 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Scalar = RHS%Scalar
           LHS%MultiplicativeError = RHS%MultiplicativeError
           LHS%Label = RHS%Label
           LHS%Multiplier = RHS%Multiplier
           LHS%MultiplierDependency = LHS%MultiplierDependency
           allocate(LHS%HierCovFunction, source=RHS%HierCovFunction, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CovarianceConstructor', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%CovarianceConstructor', ProcName=ProcName, stat=StatLoc)
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -532,21 +532,21 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(LikelihoodGauss_Type), intent(inout)                         ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%HierCovFunction) ) deallocate(This%HierCovFunction, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%HierCovFunction', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%HierCovFunction)) deallocate(This%HierCovFunction, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%HierCovFunction', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%XmMean) ) deallocate(This%XmMean, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%XmMean', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%XmMean)) deallocate(This%XmMean, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%XmMean', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%L) ) deallocate(This%L, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%L', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%L)) deallocate(This%L, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%L', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

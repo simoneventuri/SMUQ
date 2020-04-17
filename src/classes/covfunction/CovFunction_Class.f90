@@ -56,28 +56,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_CovFunction( This )
+  subroutine Initialize_CovFunction(This)
     import                                                            ::    CovFunction_Type
     class(CovFunction_Type), intent(inout)                            ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_CovFunction( This )
+  subroutine Reset_CovFunction(This)
     import                                                            ::    CovFunction_Type
     class(CovFunction_Type), intent(inout)                            ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_CovFunction( This )
+  subroutine SetDefaults_CovFunction(This)
     import                                                            ::    CovFunction_Type
     class(CovFunction_Type), intent(inout)                            ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_CovFunction( This, Input, Prefix )
+  subroutine ConstructInput_CovFunction(This, Input, Prefix)
     import                                                            ::    CovFunction_Type
     import                                                            ::    InputSection_Type
     class(CovFunction_Type), intent(inout)                            ::    This
@@ -87,19 +87,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_CovFunction( This, MainSectionName, Prefix, Directory )
+  function GetInput_CovFunction(This, Name, Prefix, Directory)
     import                                                            ::    CovFunction_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_CovFunction
     class(CovFunction_Type), intent(in)                               ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Evaluate_1D_CovFunction( This, Coordinates, CoordinateLabels, Covariance )
+  subroutine Evaluate_1D_CovFunction(This, Coordinates, CoordinateLabels, Covariance)
     use                                                               ::    Parameters_Library
     import                                                            ::    CovFunction_Type
     import                                                            ::    String_Type
@@ -111,7 +111,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_CovFunction( LHS, RHS )
+  impure elemental subroutine Copy_CovFunction(LHS, RHS)
     import                                                            ::    CovFunction_Type
     class(CovFunction_Type), intent(out)                              ::    LHS
     class(CovFunction_Type), intent(in)                               ::    RHS
@@ -123,7 +123,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(CovFunction_Type), intent(inout)                            ::    This
@@ -135,7 +135,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This )
+  function IsConstructed(This)
 
     logical                                                           ::    IsConstructed
     class(CovFunction_Type), intent(inout)                            ::    This

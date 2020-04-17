@@ -57,28 +57,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_SampleMethod( This )
+  subroutine Initialize_SampleMethod(This)
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_SampleMethod( This )
+  subroutine Reset_SampleMethod(This)
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_SampleMethod( This )
+  subroutine SetDefaults_SampleMethod(This)
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_SampleMethod ( This, Input, Prefix )
+  subroutine ConstructInput_SampleMethod (This, Input, Prefix)
     import                                                            ::    SampleMethod_Type
     import                                                            ::    InputSection_Type
     class(SampleMethod_Type), intent(inout)                           ::    This
@@ -88,19 +88,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_SampleMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_SampleMethod(This, Name, Prefix, Directory)
     import                                                            ::    SampleMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_SampleMethod
     class(SampleMethod_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function DrawSamples_0D_SampleMethod( This, NbSamples )
+  function DrawSamples_0D_SampleMethod(This, NbSamples)
     use Parameters_Library
     import                                                            ::    SampleMethod_Type
     real(rkp), allocatable, dimension(:)                              ::    DrawSamples_0D_SampleMethod   
@@ -110,7 +110,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function DrawSamples_1D_SampleMethod( This, NbDim, NbSamples )
+  function DrawSamples_1D_SampleMethod(This, NbDim, NbSamples)
     use Parameters_Library
     import                                                            ::    SampleMethod_Type
     real(rkp), allocatable, dimension(:,:)                            ::    DrawSamples_1D_SampleMethod  
@@ -121,7 +121,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_0D_SampleMethod( This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized )
+  subroutine Enrich_0D_SampleMethod(This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized)
     use Parameters_Library
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(inout)                           ::    This
@@ -133,7 +133,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_1D_SampleMethod( This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized )
+  subroutine Enrich_1D_SampleMethod(This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized)
     use Parameters_Library
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(inout)                           ::    This
@@ -145,7 +145,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_SampleMethod( LHS, RHS )
+  impure elemental subroutine Copy_SampleMethod(LHS, RHS)
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(out)                             ::    LHS
     class(SampleMethod_Type), intent(in)                              ::    RHS
@@ -157,7 +157,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
 
@@ -165,7 +165,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetName'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     GetName = This%Name
 

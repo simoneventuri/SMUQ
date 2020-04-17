@@ -51,13 +51,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(DistLogUnif_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'loguniform'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -67,7 +67,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetA( This )
+  function GetA(This)
 
     real(rkp)                                                         ::    GetA
 
@@ -75,7 +75,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetA'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetA = dexp(This%A)
 
@@ -83,7 +83,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetB( This )
+  function GetB(This)
 
     real(rkp)                                                         ::    GetB
 
@@ -91,7 +91,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetB'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetB = dexp(This%B)
 
@@ -99,7 +99,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X )
+  function PDF_R0D(This, X)
 
     real(rkp)                                                         ::    PDF_R0D
 
@@ -109,17 +109,17 @@ contains
     character(*), parameter                                           ::    ProcName='PDF_R0D'
     logical                                                           ::    TripFlag
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     TripFlag = .false.
 
-    if ( X <= Zero ) then
+    if (X <= Zero) then
       PDF_R0D = Zero
       TripFlag = .true.
     end if
 
-    if ( .not. TripFlag ) then
-      PDF_R0D = This%ComputeUnifPDF( dlog(X), This%A, This%B )
+    if (.not. TripFlag) then
+      PDF_R0D = This%ComputeUnifPDF(dlog(X), This%A, This%B)
       PDF_R0D = One/X * PDF_R0D
     end if
 
@@ -127,7 +127,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
 !  !!------------------------------------------------------------------------------------------------------------------------------
-!  function PDF_R2D( This, NbNodes )
+!  function PDF_R2D(This, NbNodes)
 
 !    real(rkp), allocatable, dimension(:,:)                            ::    PDF_R2D
 
@@ -140,30 +140,30 @@ contains
 !    integer                                                           ::    i
 
 
-!    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+!    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-!    if ( NbNodes < 3 ) call Error%Raise( Line='Specified number of points lower than minimum of 3', ProcName=ProcName )
+!    if (NbNodes < 3) call Error%Raise(Line='Specified number of points lower than minimum of 3', ProcName=ProcName)
 
 !    BinMass = One / real(NbNodes-1,rkp)
 
-!    allocate(PDF_R2D(NbNodes,2), stat=StatLoc )
-!    if ( StatLoc /= 0 ) call Error%Allocate( Name='PDF_R2D', ProcName=ProcName, stat=StatLoc )
+!    allocate(PDF_R2D(NbNodes,2), stat=StatLoc)
+!    if (StatLoc /= 0) call Error%Allocate(Name='PDF_R2D', ProcName=ProcName, stat=StatLoc)
 
 !    PDF_R2D(1,1) = dexp(This%A)
-!    PDF_R2D(1,2) = One / ( PDF_R2D(1,1)*(This%B-This%A) )
+!    PDF_R2D(1,2) = One / (PDF_R2D(1,1)*(This%B-This%A))
 !    i = 2
 !    do i = 2, NbNodes-1
-!      PDF_R2D(i,1) = This%InvCDF( real((i-1),rkp)*BinMass )
-!      PDF_R2D(i,2) = This%PDF( PDF_R2D(i,1) )
+!      PDF_R2D(i,1) = This%InvCDF(real((i-1),rkp)*BinMass)
+!      PDF_R2D(i,2) = This%PDF(PDF_R2D(i,1))
 !    end do
 !    PDF_R2D(NbNodes,1) = dexp(This%B)
-!    PDF_R2D(NbNodes,2) = One / ( PDF_R2D(NbNodes,1)*(This%B-This%A) )
+!    PDF_R2D(NbNodes,2) = One / (PDF_R2D(NbNodes,1)*(This%B-This%A))
 
 !  end function
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X )
+  function CDF_R0D(This, X)
 
     real(rkp)                                                         ::    CDF_R0D
 
@@ -173,24 +173,24 @@ contains
     character(*), parameter                                           ::    ProcName='CDF_R0D'
     logical                                                           ::    TripFlag
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     TripFlag = .false.
 
-    if ( X <= Zero ) then
+    if (X <= Zero) then
       CDF_R0D = Zero
       TripFlag = .true.
     end if
 
-    if ( .not. TripFlag ) then
-      CDF_R0D = This%ComputeUnifCDF( dlog(X), This%A, This%B )
+    if (.not. TripFlag) then
+      CDF_R0D = This%ComputeUnifCDF(dlog(X), This%A, This%B)
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P )
+  function InvCDF_R0D(This, P)
 
     real(rkp)                                                         ::    InvCDF_R0D
 
@@ -199,16 +199,16 @@ contains
 
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    InvCDF_R0D = This%ComputeUnifInvCDF( P, This%A, This%B )
+    InvCDF_R0D = This%ComputeUnifInvCDF(P, This%A, This%B)
     InvCDF_R0D = dexp(InvCDF_R0D)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment( This, Moment )
+  function GetMoment(This, Moment)
 
     real(rkp)                                                         ::    GetMoment
 
@@ -219,11 +219,11 @@ contains
     real(rkp)                                                         ::    eA
     real(rkp)                                                         ::    eB
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
+    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-    if ( Moment > 0 ) then
+    if (Moment > 0) then
       eA = dexp(This%A)
       eB = dexp(This%B)
       GetMoment = (eB**Moment - eA**Moment) / (real(Moment,rkp)*(This%B-This%A))
@@ -235,7 +235,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo( This, File )
+  subroutine WriteInfo(This, File)
 
     class(DistLogUnif_Type), intent(in)                               ::    This
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -244,13 +244,13 @@ contains
     integer                                                           ::    i
     type(String_Type), dimension(3)                                   ::    Strings
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     Strings(1) = 'loguniform'
     Strings(2) = ConvertToString(Value=This%A)
     Strings(3) = ConvertToString(Value=This%B)
 
-    call File%Append( Strings=Strings )
+    call File%Append(Strings=Strings)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -55,28 +55,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_UQMethod( This )
+  subroutine Initialize_UQMethod(This)
     import                                                            ::    UQMethod_Type
     class(UQMethod_Type), intent(inout)                               ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_UQMethod( This )
+  subroutine Reset_UQMethod(This)
     import                                                            ::    UQMethod_Type
     class(UQMethod_Type), intent(inout)                               ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_UQMethod( This )
+  subroutine SetDefaults_UQMethod(This)
     import                                                            ::    UQMethod_Type
     class(UQMethod_Type), intent(inout)                               ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_UQMethod( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput_UQMethod(This, Input, SectionChain, Prefix)
     import                                                            ::    UQMethod_Type
     import                                                            ::    InputSection_Type
     class(UQMethod_Type), intent(inout)                               ::    This
@@ -87,19 +87,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_UQMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_UQMethod(This, Name, Prefix, Directory)
     import                                                            ::    UQMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_UQMethod
     class(UQMethod_Type), intent(inout)                               ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_UQMethod( This, SampleSpace, Responses, Model, OutputDirectory )
+  subroutine Run_UQMethod(This, SampleSpace, Responses, Model, OutputDirectory)
     import                                                            ::    Response_Type
     import                                                            ::    SampleSpace_Type
     import                                                            ::    Model_Type
@@ -113,7 +113,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_UQMethod( LHS, RHS )
+  impure elemental subroutine Copy_UQMethod(LHS, RHS)
     import                                                            ::    UQMethod_Type
     class(UQMethod_Type), intent(out)                                 ::    LHS
     class(UQMethod_Type), intent(in)                                  ::    RHS
@@ -125,7 +125,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(UQMethod_Type), intent(inout)                               ::    This

@@ -54,13 +54,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(CVErrorKFold_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'CVErrorKFold'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -70,7 +70,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(CVErrorKFold_Type), intent(inout)                           ::    This
 
@@ -85,7 +85,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(CVErrorKFold_Type), intent(inout)                           ::    This
 
@@ -99,7 +99,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(CVErrorKFold_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -114,22 +114,22 @@ contains
     integer                                                           ::    VarI0D
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     ParameterName = 'nb_folds'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
     This%NbFolds = VarI0D
 
     ParameterName = 'corrected'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if( Found ) This%Corrected=VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if(Found) This%Corrected=VarL0D
 
     ParameterName = 'normalized'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if( Found ) This%Normalized=VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if(Found) This%Normalized=VarL0D
 
     This%Constructed = .true.
 
@@ -137,7 +137,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, NbFolds, Corrected, Normalized )
+  subroutine ConstructCase1(This, NbFolds, Corrected, Normalized)
 
     class(CVErrorKFold_Type), intent(inout)                           ::    This
     integer, intent(in)                                               ::    NbFolds
@@ -150,14 +150,14 @@ contains
     character(:), allocatable                                         ::    ParameterName
     logical                                                           ::    Found
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     This%NbFolds = NbFolds
 
-    if( present(Corrected) ) This%Corrected=Corrected
+    if(present(Corrected)) This%Corrected=Corrected
 
-    if( present(Normalized) ) This%Normalized = Normalized
+    if(present(Normalized)) This%Normalized = Normalized
 
     This%Constructed = .true.
 
@@ -165,12 +165,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(CVErrorKFold_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -180,26 +180,26 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddParameter( Name='nb_folds', Value=ConvertToString(Value=This%NbFolds) )
-    call GetInput%AddParameter( Name='corrected', Value=ConvertToString( Value=This%Corrected ) )
-    call GetInput%AddParameter( Name='normalized', Value=ConvertToString( Value=This%Normalized ) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+    call GetInput%AddParameter(Name='nb_folds', Value=ConvertToString(Value=This%NbFolds))
+    call GetInput%AddParameter(Name='corrected', Value=ConvertToString(Value=This%Corrected))
+    call GetInput%AddParameter(Name='normalized', Value=ConvertToString(Value=This%Normalized))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeError( This, Solver, System, Goal, Coefficients )
+  function ComputeError(This, Solver, System, Goal, Coefficients)
 
     use ieee_arithmetic
 
@@ -229,27 +229,27 @@ contains
     real(rkp)                                                         ::    MSE
     integer, allocatable, dimension(:)                                ::    ScrambledRowIndices
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     M = size(System,1)
     N = size(System,2)
 
-    if ( This%NbFolds > M ) call Error%Raise( Line='System not large enough to perform the requested number of folds',            &
-                                                                                                               ProcName=ProcName )      
+    if (This%NbFolds > M) call Error%Raise(Line='System not large enough to perform the requested number of folds',            &
+                                                                                                               ProcName=ProcName)      
 
     allocate(FoldSize(This%NbFolds), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='FoldSize', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='FoldSize', ProcName=ProcName, stat=StatLoc)
 
-    ScrambledRowIndices = LinSequence( SeqStart=1, SeqEnd=M, SeqSkip=1, Scrambled=.true. )
+    ScrambledRowIndices = LinSequence(SeqStart=1, SeqEnd=M, SeqSkip=1, Scrambled=.true.)
 
     FoldSize = M / This%NbFolds
     Remainder = mod(M,This%NbFolds)
-    if ( Remainder > 0 ) then
+    if (Remainder > 0) then
       FoldSize(1:Remainder) = FoldSize(1:Remainder) + 1
     end if
 
     allocate(FoldEdges(This%NbFolds+1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='FoldEdges', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='FoldEdges', ProcName=ProcName, stat=StatLoc)
     FoldEdges = 0
 
     i = 1
@@ -262,31 +262,31 @@ contains
     i = 1
     do i = 1, This%NbFolds
       TrainingSize = M - FoldSize(i)
-      if ( allocated(SystemLoc) ) then
-        if ( size(SystemLoc,1) /= TrainingSize ) then
+      if (allocated(SystemLoc)) then
+        if (size(SystemLoc,1) /= TrainingSize) then
           deallocate(SystemLoc, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='SystemLoc', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
           deallocate(GoalLoc, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='GoalLoc', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Deallocate(Name='GoalLoc', ProcName=ProcName, stat=StatLoc)
         end if
       end if
-      if ( .not. allocated(SystemLoc) ) then
+      if (.not. allocated(SystemLoc)) then
         allocate(SystemLoc(TrainingSize,N), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='SystemLoc', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
         allocate(GoalLoc(TrainingSize), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='GoalLoc', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='GoalLoc', ProcName=ProcName, stat=StatLoc)
       end if
 
       iii = 0
       ii = 1
       do ii = 1, M
-        if ( ii > FoldEdges(i) .and. ii <= FoldEdges(i+1) ) cycle
+        if (ii > FoldEdges(i) .and. ii <= FoldEdges(i+1)) cycle
         iii = iii + 1
         SystemLoc(iii,:) = System(ScrambledRowIndices(ii),:)
         GoalLoc(iii) = Goal(ScrambledRowIndices(ii))
       end do
 
-      call Solver%SolveSystem( SystemLoc, GoalLoc, CoefficientsLoc )
+      call Solver%SolveSystem(SystemLoc, GoalLoc, CoefficientsLoc)
 
       iii = 0
       MSE = Zero
@@ -301,27 +301,27 @@ contains
     ComputeError = ComputeError / This%NbFolds
     
     deallocate(FoldSize, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='FoldSize', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='FoldSize', ProcName=ProcName, stat=StatLoc)
 
     deallocate(ScrambledRowIndices, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='ScrambledIndices', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='ScrambledIndices', ProcName=ProcName, stat=StatLoc)
 
     deallocate(SystemLoc, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='SystemLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
     deallocate(GoalLoc, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='GoalLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='GoalLoc', ProcName=ProcName, stat=StatLoc)
 
     deallocate(FoldEdges, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='FoldSize', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='FoldSize', ProcName=ProcName, stat=StatLoc)
 
-    if ( This%Normalized ) ComputeError = ComputeError / ComputeSampleVar(Goal)
+    if (This%Normalized) ComputeError = ComputeError / ComputeSampleVar(Goal)
 
-    if ( This%Corrected ) then
-      if ( N >= M - 1 ) then
+    if (This%Corrected) then
+      if (N >= M - 1) then
         ComputeError = ieee_value(ComputeError, ieee_positive_inf)
       else
-        ComputeError = ComputeError * ( M-1 ) / ( M - N - 1 )
+        ComputeError = ComputeError * (M-1) / (M - N - 1)
       end if
     end if
 
@@ -329,7 +329,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbFolds( This )
+  function GetNbFolds(This)
 
     integer                                                           ::    GetNbFolds
 
@@ -338,7 +338,7 @@ contains
     character(*), parameter                                           ::    ProcName='ComputeErrorDefaultQ'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetNbFolds = This%NbFolds
 
@@ -346,7 +346,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(CVErrorKFold_Type), intent(out)                             ::    LHS
     class(CVErrorMethod_Type), intent(in)                             ::    RHS
@@ -359,13 +359,13 @@ contains
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%NbFolds = RHS%NbFolds
           LHS%Corrected = RHS%Corrected
           LHS%Normalized = RHS%Normalized
         end if
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
     end select
 
   end subroutine

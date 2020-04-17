@@ -58,13 +58,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(CovGExp1L_Type), intent(inout)                              ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'CovGExp1L'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -74,7 +74,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(CovGExp1L_Type), intent(inout)                              ::    This
 
@@ -90,7 +90,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(CovGExp1L_Type), intent(inout)                              ::    This
 
@@ -106,7 +106,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(CovGExp1L_Type), intent(inout)                              ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -123,33 +123,33 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'l'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
     This%L=VarR0D
-    if ( This%L < Zero ) call Error%Raise( Line='Characteristic length scale value below 0', ProcName=ProcName )
+    if (This%L < Zero) call Error%Raise(Line='Characteristic length scale value below 0', ProcName=ProcName)
 
     ParameterName = 'sigma'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Sigma=VarR0D
-    if ( This%SIgma < Zero ) call Error%Raise( Line='Sigma value below 0', ProcName=ProcName )
+    if (This%SIgma < Zero) call Error%Raise(Line='Sigma value below 0', ProcName=ProcName)
 
     ParameterName = 'gamma'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Gam=VarR0D
-    if ( This%Gam < Zero ) call Error%Raise( Line='Gamma value below 0', ProcName=ProcName )
+    if (This%Gam < Zero) call Error%Raise(Line='Gamma value below 0', ProcName=ProcName)
 
     ParameterName = 'tolerance'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Tolerance=VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Tolerance=VarR0D
 
     ParameterName = 'coordinate_label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
     This%CoordinateLabel=VarC0D
 
     This%Constructed = .true.
@@ -158,7 +158,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Sigma, L, Gamma, Coordinate, Tolerance )
+  subroutine ConstructCase1(This, Sigma, L, Gamma, Coordinate, Tolerance)
 
     class(CovGExp1L_Type), intent(inout)                              ::    This
     real(rkp), intent(in)                                             ::    Sigma
@@ -170,21 +170,21 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     This%Sigma = Sigma
-    if ( This%Sigma < Zero ) call Error%Raise( Line='Sigma value below 0', ProcName=ProcName )
+    if (This%Sigma < Zero) call Error%Raise(Line='Sigma value below 0', ProcName=ProcName)
 
     This%L = L
-    if ( This%L < Zero ) call Error%Raise( Line='Characteristic length scale value below 0', ProcName=ProcName )
+    if (This%L < Zero) call Error%Raise(Line='Characteristic length scale value below 0', ProcName=ProcName)
 
     This%Gam = Gamma
-    if ( This%Gam < Zero ) call Error%Raise( Line='Gamma value below 0', ProcName=ProcName )
+    if (This%Gam < Zero) call Error%Raise(Line='Gamma value below 0', ProcName=ProcName)
 
     This%CoordinateLabel = trim(adjustl(Coordinate))
 
-    if ( present(Tolerance) ) This%Tolerance = Tolerance
+    if (present(Tolerance)) This%Tolerance = Tolerance
 
     This%Constructed = .true.
 
@@ -192,12 +192,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(CovGExp1L_Type), intent(in)                                 ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -214,30 +214,30 @@ contains
     type(SMUQFile_Type)                                               ::    File
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='coordinate_label', Value=This%CoordinateLabel )
+    call GetInput%AddParameter(Name='coordinate_label', Value=This%CoordinateLabel)
 
-    call GetInput%AddParameter( Name='l', Value=ConvertToString(This%L) )
-    call GetInput%AddParameter( Name='sigma', Value=ConvertToString(This%Sigma) )
-    call GetInput%AddParameter( Name='gamma', Value=ConvertToString(This%Gam) )
-    call GetInput%AddParameter( Name='tolerance', Value=ConvertToString(This%Tolerance) )
+    call GetInput%AddParameter(Name='l', Value=ConvertToString(This%L))
+    call GetInput%AddParameter(Name='sigma', Value=ConvertToString(This%Sigma))
+    call GetInput%AddParameter(Name='gamma', Value=ConvertToString(This%Gam))
+    call GetInput%AddParameter(Name='tolerance', Value=ConvertToString(This%Tolerance))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Evaluate_1D( This, Coordinates, CoordinateLabels, Covariance )
+  subroutine Evaluate_1D(This, Coordinates, CoordinateLabels, Covariance)
 
     class(CovGExp1L_Type), intent(in)                                 ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
@@ -251,24 +251,24 @@ contains
     integer                                                           ::    NbNodes
     integer                                                           ::    iCoordinate
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     NbNodes = size(Coordinates,1)
 
     i = 1
     iCoordinate = 0
     do i = 1, size(Coordinates,2)
-      if ( CoordinateLabels(i)%GetValue() == This%CoordinateLabel ) then
+      if (CoordinateLabels(i)%GetValue() == This%CoordinateLabel) then
         iCoordinate = i
         exit
       end if
     end do
-    if ( iCoordinate == 0 ) call Error%Raise( 'Did not find matching coordinate label: ' // This%CoordinateLabel,                 &
-                                                                                                               ProcName=ProcName )
+    if (iCoordinate == 0) call Error%Raise('Did not find matching coordinate label: ' // This%CoordinateLabel,                 &
+                                                                                                               ProcName=ProcName)
 
-    if ( size(Covariance,1) /= size(Covariance,2) ) call Error%Raise( 'Passed non-square array', ProcName=ProcName )
-    if ( size(Covariance,1) /= NbNodes ) call Error%Raise( 'Cov array dimensions and number of coordinates mismatch',      &
-                                                                                                               ProcName=ProcName )
+    if (size(Covariance,1) /= size(Covariance,2)) call Error%Raise('Passed non-square array', ProcName=ProcName)
+    if (size(Covariance,1) /= NbNodes) call Error%Raise('Cov array dimensions and number of coordinates mismatch',      &
+                                                                                                               ProcName=ProcName)
 
     Covariance = Zero
 
@@ -276,12 +276,12 @@ contains
     do i = 1, NbNodes
       ii = 1
       do ii = i, NbNodes
-        if ( i == ii ) then
+        if (i == ii) then
           Covariance(ii,ii) = This%Sigma**2
           cycle
         end if
         Covariance(i,ii) = This%Sigma**2 * dexp(- (dabs(Coordinates(i,iCoordinate)-Coordinates(ii,iCoordinate))/This%L)**This%Gam)
-        if ( abs(Covariance(i,ii) / This%Sigma**2) < This%Tolerance ) Covariance(i,ii) = Zero
+        if (abs(Covariance(i,ii) / This%Sigma**2) < This%Tolerance) Covariance(i,ii) = Zero
       end do
       Covariance(i:NbNodes,i) = Covariance(i,i:NbNodes)
     end do
@@ -290,7 +290,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(CovGExp1L_Type), intent(out)                                ::    LHS
     class(CovFunction_Type), intent(in)                               ::    RHS
@@ -306,7 +306,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%L = RHS%L
           LHS%Sigma = RHS%Sigma
           LHS%CoordinateLabel = RHS%CoordinateLabel
@@ -315,7 +315,7 @@ contains
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -323,7 +323,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(CovGExp1L_Type), intent(inout)                               ::    This
 

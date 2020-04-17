@@ -53,28 +53,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_MParamScalar( This )
+  subroutine Initialize_MParamScalar(This)
     import                                                            ::    MParamScalar_Type
     class(MParamScalar_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_MParamScalar( This )
+  subroutine Reset_MParamScalar(This)
     import                                                            ::    MParamScalar_Type
     class(MParamScalar_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_MParamScalar( This )
+  subroutine SetDefaults_MParamScalar(This)
     import                                                            ::    MParamScalar_Type
     class(MParamScalar_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_MParamScalar( This, Input, Prefix )
+  subroutine ConstructInput_MParamScalar(This, Input, Prefix)
     import                                                            ::    MParamScalar_Type
     import                                                            ::    InputSection_Type
     class(MParamScalar_Type), intent(inout)                           ::    This
@@ -84,19 +84,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_MParamScalar( This, MainSectionName, Prefix, Directory )
+  function GetInput_MParamScalar(This, Name, Prefix, Directory)
     import                                                            ::    MParamScalar_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_MParamScalar
     class(MParamScalar_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue_MParamScalar( This, Input )
+  function GetValue_MParamScalar(This, Input)
     use Parameters_Library
     import                                                            ::    Input_Type
     import                                                            ::    MParamScalar_Type  
@@ -107,7 +107,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue_MParamScalar( This, Input, Format )
+  function GetCharValue_MParamScalar(This, Input, Format)
     use Parameters_Library
     import                                                            ::    Input_Type
     import                                                            ::    MParamScalar_Type
@@ -119,7 +119,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_MParamScalar( LHS, RHS )
+  impure elemental subroutine Copy_MParamScalar(LHS, RHS)
     import                                                            ::    MParamScalar_Type
     class(MParamScalar_Type), intent(out)                             ::    LHS
     class(MParamScalar_Type), intent(in)                              ::    RHS
@@ -131,7 +131,7 @@ end interface
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(MParamScalar_Type), intent(inout)                           ::    This

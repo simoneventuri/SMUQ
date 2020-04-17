@@ -45,7 +45,7 @@ function i_figure = plot_Theta_Spaces_fun(PlottingFormat, i_figure, proc, i, j, 
     
     clearvars UnifMin UnifMax MuPrior SigmaPrior
     
-    if ( clean_flag == 0 )
+    if (clean_flag == 0)
     
         theta = [];
         like  = [];

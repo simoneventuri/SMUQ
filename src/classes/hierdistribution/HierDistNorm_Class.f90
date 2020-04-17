@@ -56,13 +56,13 @@ real(rkp), parameter                                                  ::    dlog
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(HierDistNorm_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'hierarchical_normal'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -72,7 +72,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(HierDistNorm_Type), intent(inout)                           ::    This
 
@@ -88,7 +88,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(HierDistNorm_Type), intent(inout)                           ::    This
 
@@ -109,7 +109,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(HierDistNorm_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -125,52 +125,52 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     logical                                                           ::    MandatoryLoc
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
     
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     MandatoryLoc = .true.
     ParameterName = 'mu_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%MuDependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%MuDependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'mu'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Mu = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%Mu = VarR0D
 
     MandatoryLoc = .true.
     ParameterName = 'sigma_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%SigmaDependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%SigmaDependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'sigma'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Sigma = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%Sigma = VarR0D
 
     ParameterName = 'a_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%ADependency = VarC0D
       This%TruncatedLeft = .true.
     end if
     ParameterName = 'a'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%A = VarR0D
       This%TruncatedLeft = .true.
     end if
 
     ParameterName = 'b_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%BDependency = VarC0D
       This%TruncatedRight = .true.
     end if
     ParameterName = 'b'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%B = VarR0D
       This%TruncatedRight = .true.
     end if
@@ -181,14 +181,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(HierDistNorm_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -198,31 +198,31 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddParameter( Name='mu', Value=ConvertToString( Value=This%Mu ) )
-    call GetInput%AddParameter( Name='sigma', Value=ConvertToString( Value=This%Sigma ) )
-    if ( This%TruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
-    if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
-    if ( len_trim(This%MuDependency) /= 0 ) call GetInput%AddParameter( Name='mu_dependency', Value=This%MuDependency )
-    if ( len_trim(This%SigmaDependency) /= 0 ) call GetInput%AddParameter( Name='sigma_dependency', Value=This%SigmaDependency )
-    if ( len_trim(This%ADependency) /= 0 ) call GetInput%AddParameter( Name='a_dependency', Value=This%ADependency )
-    if ( len_trim(This%BDependency) /= 0 ) call GetInput%AddParameter( Name='b_dependency', Value=This%BDependency )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+    call GetInput%AddParameter(Name='mu', Value=ConvertToString(Value=This%Mu))
+    call GetInput%AddParameter(Name='sigma', Value=ConvertToString(Value=This%Sigma))
+    if (This%TruncatedLeft) call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
+    if (This%TruncatedRight) call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
+    if (len_trim(This%MuDependency) /= 0) call GetInput%AddParameter(Name='mu_dependency', Value=This%MuDependency)
+    if (len_trim(This%SigmaDependency) /= 0) call GetInput%AddParameter(Name='sigma_dependency', Value=This%SigmaDependency)
+    if (len_trim(This%ADependency) /= 0) call GetInput%AddParameter(Name='a_dependency', Value=This%ADependency)
+    if (len_trim(This%BDependency) /= 0) call GetInput%AddParameter(Name='b_dependency', Value=This%BDependency)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate( This, Input, Distribution )
+  subroutine Generate(This, Input, Distribution)
 
     class(HierDistNorm_Type), intent(in)                              ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -235,40 +235,40 @@ contains
     real(rkp)                                                         ::    A
     real(rkp)                                                         ::    B       
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     A = Zero
     B = Zero
 
     Mu = This%Mu
-    if ( len_trim(This%MuDependency) /= 0 ) call Input%GetValue( Value=Mu, Label=This%MuDependency )
+    if (len_trim(This%MuDependency) /= 0) call Input%GetValue(Value=Mu, Label=This%MuDependency)
 
     Sigma = This%Sigma
-    if ( len_trim(This%SigmaDependency) /= 0 ) call Input%GetValue( Value=Sigma, Label=This%SigmaDependency )
+    if (len_trim(This%SigmaDependency) /= 0) call Input%GetValue(Value=Sigma, Label=This%SigmaDependency)
 
-    if ( This%TruncatedLeft ) then
-      if ( len_trim(This%ADependency) /= 0 ) then
-        call Input%GetValue( Value=A, Label=This%ADependency )
+    if (This%TruncatedLeft) then
+      if (len_trim(This%ADependency) /= 0) then
+        call Input%GetValue(Value=A, Label=This%ADependency)
       else
         A = This%A
       end if
     end if
 
-    if ( This%TruncatedRight ) then
-      if ( len_trim(This%BDependency) /= 0 ) then
-        call Input%GetValue( Value=B, Label=This%BDependency )
+    if (This%TruncatedRight) then
+      if (len_trim(This%BDependency) /= 0) then
+        call Input%GetValue(Value=B, Label=This%BDependency)
       else
         B = This%B
       end if
     end if
 
-    call This%GenerateDistribution( Mu=Mu, Sigma=Sigma, A=A, B=B, Distribution=Distribution )
+    call This%GenerateDistribution(Mu=Mu, Sigma=Sigma, A=A, B=B, Distribution=Distribution)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateDistribution( This, Mu, Sigma, A, B, Distribution )
+  subroutine GenerateDistribution(This, Mu, Sigma, A, B, Distribution)
 
     class(HierDistNorm_Type), intent(in)                              ::    This
     real(rkp), intent(in)                                             ::    Mu
@@ -280,30 +280,30 @@ contains
     character(*), parameter                                           ::    ProcName='GenerateDistribution'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    allocate( DistNorm_Type :: Distribution )
+    allocate(DistNorm_Type :: Distribution)
 
-    select type ( Distribution )
-      type is ( DistNorm_Type ) 
-        if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-          call Distribution%Construct( Mu=Mu, Sigma=Sigma, A=A, B=B )
-        elseif ( This%TruncatedLeft ) then
-          call Distribution%Construct( Mu=Mu, Sigma=Sigma, A=A )
-        elseif ( This%TruncatedRight ) then
-          call Distribution%Construct( Mu=Mu, Sigma=Sigma, B=B )
+    select type (Distribution)
+      type is (DistNorm_Type) 
+        if (This%TruncatedLeft .and. This%TruncatedRight) then
+          call Distribution%Construct(Mu=Mu, Sigma=Sigma, A=A, B=B)
+        elseif (This%TruncatedLeft) then
+          call Distribution%Construct(Mu=Mu, Sigma=Sigma, A=A)
+        elseif (This%TruncatedRight) then
+          call Distribution%Construct(Mu=Mu, Sigma=Sigma, B=B)
         else
-          call Distribution%Construct( Mu=Mu, Sigma=Sigma )
+          call Distribution%Construct(Mu=Mu, Sigma=Sigma)
         end if
       class default
-        call Error%Raise( "Something went wrong", ProcName=ProcName )
+        call Error%Raise("Something went wrong", ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(HierDistNorm_Type), intent(out)                             ::    LHS
     class(HierDistProb_Type), intent(in)                              ::    RHS
@@ -318,7 +318,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%A = RHS%A
           LHS%B = RHS%B
           LHS%Mu = RHS%Mu
@@ -332,7 +332,7 @@ contains
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -340,7 +340,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(HierDistNorm_Type), intent(inout)                            ::    This
 

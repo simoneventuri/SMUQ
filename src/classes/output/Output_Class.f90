@@ -42,13 +42,13 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(Output_Type), intent(inout)                                 ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Initialized = .true.
       This%Name = 'output'
       call This%SetDefaults()
@@ -58,7 +58,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(Output_Type), intent(inout)                                 ::    This
 
@@ -68,8 +68,8 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
 
     This%NbNodes = 0
     This%NbDegen = 0
@@ -80,7 +80,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(Output_Type),intent(inout)                                  ::    This
 
@@ -92,7 +92,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------ 
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Values, Label )
+  subroutine ConstructCase1(This, Values, Label)
 
     class(Output_Type), intent(inout)                                 ::    This
     real(rkp), dimension(:), intent(in)                               ::    Values
@@ -101,25 +101,25 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) then
-      if ( This%NbNodes /= size(Values,1) .or. This%NbDegen /= 1 ) then
+    if (This%Constructed) then
+      if (This%NbNodes /= size(Values,1) .or. This%NbDegen /= 1) then
         call This%Reset()
       else
         This%Values(:,1) = Values
       end if
     end if
 
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if ( .not. This%Constructed ) then
+    if (.not. This%Constructed) then
       allocate(This%Values(size(Values,1),1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
       This%Values(:,1) = Values
       This%NbDegen = 1
       This%NbNodes = size(Values,1)
     end if
 
-    if ( present(Label) ) This%Label = Label
+    if (present(Label)) This%Label = Label
 
     This%Constructed = .true.
 
@@ -127,7 +127,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase2( This, Values, Label )
+  subroutine ConstructCase2(This, Values, Label)
 
     class(Output_Type), intent(inout)                                 ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Values
@@ -136,24 +136,24 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) then
-      if ( This%NbNodes /= size(Values,1) .or. This%NbDegen /= size(Values,2) ) then
+    if (This%Constructed) then
+      if (This%NbNodes /= size(Values,1) .or. This%NbDegen /= size(Values,2)) then
         call This%Reset()
       else
         This%Values = Values
       end if
     end if
 
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if ( .not. This%Constructed ) then
+    if (.not. This%Constructed) then
       allocate(This%Values, source=Values, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
       This%NbDegen = size(Values,2)
       This%NbNodes = size(Values,1)
     end if
 
-    if ( present(Label) ) This%Label = Label
+    if (present(Label)) This%Label = Label
 
     This%Constructed = .true.
 
@@ -161,7 +161,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValues( This )
+  function GetValues(This)
 
     real(rkp), dimension(:,:), allocatable                            ::    GetValues
 
@@ -170,16 +170,16 @@ contains
     character(*), parameter                                           ::    ProcName='GetValues'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )        
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)        
    
-    allocate( GetValues, source=This%Values, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GetValues', ProcName=ProcName, stat=StatLoc )
+    allocate(GetValues, source=This%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='GetValues', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValuesPointer( This )
+  function GetValuesPointer(This)
 
     real(rkp), dimension(:,:), pointer                                ::    GetValuesPointer
 
@@ -188,7 +188,7 @@ contains
     character(*), parameter                                           ::    ProcName='GetValuesPointer'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetValuesPointer => This%Values
 
@@ -196,7 +196,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbNodes( This )
+  function GetNbNodes(This)
 
     integer                                                           ::    GetNbNodes
 
@@ -204,7 +204,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetNbNodes'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
     
     GetNbNodes = This%NbNodes
 
@@ -212,7 +212,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDegen( This )
+  function GetNbDegen(This)
 
     integer                                                           ::    GetNbDegen
 
@@ -220,7 +220,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetNbDegen'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
     
     GetNbDegen = This%NbDegen
 
@@ -228,7 +228,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel( This )
+  function GetLabel(This)
 
     character(:), allocatable                                         ::    GetLabel
 
@@ -236,7 +236,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetName'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetLabel = This%Label
 
@@ -244,7 +244,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This )
+  function IsConstructed(This)
 
     logical, allocatable                                              ::    IsConstructed
 
@@ -258,7 +258,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(Output_Type), intent(inout)                                 ::    LHS
     class(Output_Type), intent(in)                                    ::    RHS
@@ -271,11 +271,11 @@ contains
     LHS%Initialized = LHS%Initialized
     LHS%Constructed = RHS%Constructed
 
-    if ( RHS%Constructed ) then
+    if (RHS%Constructed) then
       LHS%Name = RHS%Name
       LHS%Label = RHS%Label
       allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Values', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='LHS%Values', ProcName=ProcName, stat=StatLoc)
       LHS%NbNodes = RHS%NbNodes
       LHS%NbDegen = RHS%NbDegen
     end if
@@ -284,15 +284,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(Output_Type),intent(inout)                                   ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

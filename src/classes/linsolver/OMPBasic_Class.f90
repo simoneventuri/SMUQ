@@ -61,13 +61,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(OMPBasic_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'OMPBasic'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -77,7 +77,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(OMPBasic_Type), intent(inout)                               ::    This
 
@@ -87,8 +87,8 @@ contains
     This%Initialized = .false.
     This%Constructed = .false.
 
-    if ( allocated(This%CVError) ) deallocate(This%CVError, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CVError', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%CVError)) deallocate(This%CVError, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%CVError', ProcName=ProcName, stat=StatLoc)
 
     call This%Initialize()
 
@@ -96,7 +96,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(OMPBasic_Type), intent(inout)                               ::    This
 
@@ -109,7 +109,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     use String_Library
 
@@ -128,31 +128,31 @@ contains
     character(:), allocatable                                         ::    VarC0D
     logical                                                           ::    Found
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'max_nb_features'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%MaxNbFeatures = VarI0D
+    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%MaxNbFeatures = VarI0D
 
     ParameterName = 'tolerance'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Tolerance = VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Tolerance = VarR0D
 
     SectionName = 'cross_validation'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found )
-    if ( Found ) then
-      call CVErrorMethod_Factory%Construct( Object=This%CVError, Input=InputSection, Prefix=PrefixLoc )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found)
+    if (Found) then
+      call CVErrorMethod_Factory%Construct(Object=This%CVError, Input=InputSection, Prefix=PrefixLoc)
     else
-      allocate( CVErrorLOO_Type :: This%CVError )
+      allocate(CVErrorLOO_Type :: This%CVError)
       select type (CVErrorMethod => This%CVError)
         type is (CVErrorLOO_Type)
-          call CVErrorMethod%Construct( Corrected=.true. )
+          call CVErrorMethod%Construct(Corrected=.true.)
         class default
-          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+          call Error%Raise(Line='Something went wrong', ProcName=ProcName)
       end select
     end if
 
@@ -162,7 +162,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, MaxNbFeatures, Tolerance, CVErrorMethod )
+  subroutine ConstructCase1(This, MaxNbFeatures, Tolerance, CVErrorMethod)
 
     use String_Library
 
@@ -174,23 +174,23 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if ( present(MaxNbFeatures) ) This%MaxNbFeatures = MaxNbFeatures
+    if (present(MaxNbFeatures)) This%MaxNbFeatures = MaxNbFeatures
 
-    if ( present(Tolerance) ) This%Tolerance = Tolerance
+    if (present(Tolerance)) This%Tolerance = Tolerance
 
-    if ( present(CVErrorMethod) ) then
+    if (present(CVErrorMethod)) then
       allocate(This%CVError, source=CVErrorMethod, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CVErrorMethod', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%CVErrorMethod', ProcName=ProcName, stat=StatLoc)
     else
-      allocate( CVErrorLOO_Type :: This%CVError )
+      allocate(CVErrorLOO_Type :: This%CVError)
       select type (CVErrorMethod => This%CVError)
         type is (CVErrorLOO_Type)
-          call CVErrorMethod%Construct( Corrected=.true. )
+          call CVErrorMethod%Construct(Corrected=.true.)
         class default
-          call Error%Raise( Line='Something went wrong', ProcName=ProcName )
+          call Error%Raise(Line='Something went wrong', ProcName=ProcName)
       end select
     end if
 
@@ -200,12 +200,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(OMPBasic_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -217,31 +217,31 @@ contains
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='max_nb_features', Value=ConvertToString(This%MaxNbFeatures) )
-    call GetInput%AddParameter( Name='tolerance', Value=ConvertToString(This%Tolerance) )
+    call GetInput%AddParameter(Name='max_nb_features', Value=ConvertToString(This%MaxNbFeatures))
+    call GetInput%AddParameter(Name='tolerance', Value=ConvertToString(This%Tolerance))
 
     SectionName = 'cross_validation'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/cross_validation'
-    call GetInput%AddSection( Section=CVErrorMethod_Factory%GetObjectInput( Object=This%CVError, MainSectionName=SectionName,     &
-                                                                                      Prefix=PrefixLoc, Directory=DirectoryLoc ) )
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/cross_validation'
+    call GetInput%AddSection(Section=CVErrorMethod_Factory%GetObjectInput(Object=This%CVError, Name=SectionName,     &
+                                                                                      Prefix=PrefixLoc, Directory=DirectoryLoc))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSparse( This, System, Goal, ModelSet, CoefficientsSet, CVError )
+  subroutine SolveSparse(This, System, Goal, ModelSet, CoefficientsSet, CVError)
 
     class(OMPBasic_Type), intent(in)                                  ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -263,73 +263,73 @@ contains
     integer                                                           ::    N
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     M = size(Goal,1)
     N = size(System,2)
-    GoalMean = ComputeMean( Values=Goal )
-    GoalVariance = ComputeSampleVar( Values=Goal )
+    GoalMean = ComputeMean(Values=Goal)
+    GoalVariance = ComputeSampleVar(Values=Goal)
 
-    if ( dsqrt(abs((GoalVariance*real(M-1,rkp))/real(M,rkp)))/abs(GoalMean) < 1e-10 ) then
+    if (dsqrt(abs((GoalVariance*real(M-1,rkp))/real(M,rkp)))/abs(GoalMean) < 1e-10) then
       i = 1
       do i = 1, N
         MeanLoc = ComputeMean(Values=System(:,i))
         VarianceLoc = ComputePopulationVar(Values=System(:,i))
-        if ( abs(dsqrt(VarianceLoc)/MeanLoc) < 1e-10 ) then
+        if (abs(dsqrt(VarianceLoc)/MeanLoc) < 1e-10) then
           allocate(ModelSet(1), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='ModelSet', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='ModelSet', ProcName=ProcName, stat=StatLoc)
           ModelSet = i
           allocate(CoefficientsSet(1), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
           CoefficientsSet = GoalMean / MeanLoc
-          if ( present(CVError) ) CVError = Zero
+          if (present(CVError)) CVError = Zero
           return
         end if
       end do
       GoalVariance = tiny(One)
     end if
 
-    if ( size(System,1) >= size(System,2) .and. This%MaxNbFeatures >= size(System,2) ) then
+    if (size(System,1) >= size(System,2) .and. This%MaxNbFeatures >= size(System,2)) then
       call OLS%Construct(CVErrorMethod=This%CVError)
-      if ( present(CVError) ) then
-        call OLS%SolveSystem( System=System, Goal=Goal, Coefficients=CoefficientsSet, CVError=CVError )
+      if (present(CVError)) then
+        call OLS%SolveSystem(System=System, Goal=Goal, Coefficients=CoefficientsSet, CVError=CVError)
       else
-        call OLS%SolveSystem( System=System, Goal=Goal, Coefficients=CoefficientsSet )
+        call OLS%SolveSystem(System=System, Goal=Goal, Coefficients=CoefficientsSet)
       end if
 
-      ModelSet = LinSequence( SeqStart=1, SeqEnd=size(System,2) )
+      ModelSet = LinSequence(SeqStart=1, SeqEnd=size(System,2))
 
     else
-      if ( present(CVError) ) then
+      if (present(CVError)) then
 
         select type (Object => This%CVError)
-          type is ( CVErrorLOO_Type ) 
+          type is (CVErrorLOO_Type) 
             CVErrorLOOFlag = .true.
           class default
             CVErrorLOOFlag = .false.
         end select
 
-        if ( CVErrorLOOFlag ) then
-          call This%BuildModel( System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet,                     &
-                                                     CVError=CVError, MaxNbFeatures=This%MaxNbFeatures, Tolerance=This%Tolerance )
+        if (CVErrorLOOFlag) then
+          call This%BuildModel(System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet,                     &
+                                                     CVError=CVError, MaxNbFeatures=This%MaxNbFeatures, Tolerance=This%Tolerance)
         else
-          call This%BuildModel( System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet,                     &
-                                                                      MaxNbFeatures=This%MaxNbFeatures, Tolerance=This%Tolerance )
+          call This%BuildModel(System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet,                     &
+                                                                      MaxNbFeatures=This%MaxNbFeatures, Tolerance=This%Tolerance)
 
           allocate(CoefficientsLoc(size(System,2)), stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
           CoefficientsLoc = Zero
 
           CoefficientsLoc(ModelSet) = CoefficientsSet
-          CVError = This%CVError%ComputeError( Solver=This, System=System, Goal=Goal, Coefficients=CoefficientsLoc )
+          CVError = This%CVError%ComputeError(Solver=This, System=System, Goal=Goal, Coefficients=CoefficientsLoc)
 
           deallocate(CoefficientsLoc, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Deallocate( Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Deallocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
         end if
 
       else
-        call This%BuildModel( System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet,                       &
-                                                                                                MaxNbFeatures=This%MaxNbFeatures )
+        call This%BuildModel(System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet,                       &
+                                                                                                MaxNbFeatures=This%MaxNbFeatures)
       end if
 
     end if
@@ -338,7 +338,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveFull( This, System, Goal, Coefficients, CVError )
+  subroutine SolveFull(This, System, Goal, Coefficients, CVError)
 
     class(OMPBasic_Type), intent(in)                                  ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -351,16 +351,16 @@ contains
     integer, allocatable, dimension(:)                                ::    ModelSet
     real(rkp), allocatable, dimension(:)                              ::    CoefficientsSet
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if ( present(CVError) ) then
-      call This%Solve( System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet, CVError=CVError )
+    if (present(CVError)) then
+      call This%Solve(System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet, CVError=CVError)
     else
-      call This%Solve( System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet )
+      call This%Solve(System=System, Goal=Goal, ModelSet=ModelSet, CoefficientsSet=CoefficientsSet)
     end if
 
     allocate(Coefficients(size(System,2)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Coefficients', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Coefficients', ProcName=ProcName, stat=StatLoc)
     Coefficients = Zero
 
     Coefficients(ModelSet) = CoefficientsSet
@@ -370,7 +370,7 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Comparison of orthogonal maching pursuit implementations, Sturm and Christensen 2012
-  subroutine BuildModel( This, System, Goal, ModelSet, CoefficientsSet, CVError, MaxNbFeatures, Tolerance )
+  subroutine BuildModel(This, System, Goal, ModelSet, CoefficientsSet, CVError, MaxNbFeatures, Tolerance)
 
     class(OMPBasic_Type), intent(in)                                  ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -417,47 +417,47 @@ contains
     P = min(M,N)
 
     MaxNbFeaturesLoc = N
-    if ( present(MaxNbFeatures) ) MaxNbFeaturesLoc = MaxNbFeatures
-    if ( MaxNbFeaturesLoc > P ) MaxNbFeaturesLoc = P
+    if (present(MaxNbFeatures)) MaxNbFeaturesLoc = MaxNbFeatures
+    if (MaxNbFeaturesLoc > P) MaxNbFeaturesLoc = P
 
     ToleranceLoc = Zero
-    if ( present(Tolerance) ) ToleranceLoc = Tolerance
+    if (present(Tolerance)) ToleranceLoc = Tolerance
 
     allocate(Norm(N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Norm', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Norm', ProcName=ProcName, stat=StatLoc)
     Norm = Zero
 
     allocate(ResCorr(N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Corr', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Corr', ProcName=ProcName, stat=StatLoc)
     ResCorr = Zero
 
     allocate(Q1(M,P), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Q1', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
     Q1 = Zero
   
     allocate(R(P,P), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='R', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
     R = Zero
 
     allocate(ActiveSet(MaxNbFeaturesLoc), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='ActiveSet', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='ActiveSet', ProcName=ProcName, stat=StatLoc)
     ActiveSet = 0
 
     allocate(VarR1D_2(P), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D_2', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR1D_2', ProcName=ProcName, stat=StatLoc)
     VarR1D_2 = Zero
 
     allocate(VarR1D_1(P), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VarR1D_1', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR1D_1', ProcName=ProcName, stat=StatLoc)
     VarR1D_1 = Zero
 
-    GoalMean = ComputeMean( Values=Goal )
+    GoalMean = ComputeMean(Values=Goal)
     GoalVar = ComputeSampleVar(Values=Goal, Mean=GoalMean)
 
     i = 1
     do i = 1, N
-      Norm(i) = ComputeNorm( Vector=System(:,i), Norm=2 )
-      ResCorr(i) = dot_product( Goal, System(:,i) ) / Norm(i)
+      Norm(i) = ComputeNorm(Vector=System(:,i), Norm=2)
+      ResCorr(i) = dot_product(Goal, System(:,i)) / Norm(i)
     end do
 
     P = 0
@@ -471,8 +471,8 @@ contains
       ActiveSet(i) = NewIndex
 
       ! updating QR
-      if ( i > 1 ) then
-        call DGEMV( 'T', M, PM1, 1.d0, Q1(:,1:PM1), M, System(:,NewIndex), 1, 0.d0, VarR1D_2(1:PM1), 1 )
+      if (i > 1) then
+        call DGEMV('T', M, PM1, 1.d0, Q1(:,1:PM1), M, System(:,NewIndex), 1, 0.d0, VarR1D_2(1:PM1), 1)
 
         WNorm = ComputeNorm(Vector=VarR1D_2(1:PM1), Norm=2)
         VarR0D = dsqrt(ComputeNorm(Vector=System(:,NewIndex), Norm=2)**2 - WNorm**2)
@@ -492,22 +492,22 @@ contains
 
       uqk = dot_product(Goal, Q1(:,i))
 
-      if ( i == MaxNbFeaturesLoc ) exit
- !     if ( abs(uqk)**2 / GoalVar < ToleranceLoc ) exit
+      if (i == MaxNbFeaturesLoc) exit
+ !     if (abs(uqk)**2 / GoalVar < ToleranceLoc) exit
 
       ResCorr = ResCorr - uqk * dot_product(Q1(:,i),System(:,NewIndex)) / Norm(i)
     end do
 
     allocate(CoefficientsSet(P), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
     CoefficientsSet = Zero
 
     allocate(ModelSet(P), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='ModelSet', ProcName=ProcName, stat=StatLoc )  
+    if (StatLoc /= 0) call Error%Allocate(Name='ModelSet', ProcName=ProcName, stat=StatLoc)  
     ModelSet = 0
 
     ! solving system
-    call DGEMV( 'T', M, P, 1.d0, Q1(:,1:P), M, Goal, 1, 0.d0, VarR1D_2(1:M), 1 )
+    call DGEMV('T', M, P, 1.d0, Q1(:,1:P), M, Goal, 1, 0.d0, VarR1D_2(1:M), 1)
 
     VarR1D_2(P) = VarR1D_2(P) / R(P,P)
     ii = 2
@@ -515,16 +515,16 @@ contains
       iim1 = ii - 1
       iii = P - iim1
       iiip1 = iii + 1
-      VarR1D_2(iii) = ( VarR1D_2(iii) - dot_product( R(iii,iiip1:P), VarR1D_2(iiip1:P) ) ) / R(iii,iii)
+      VarR1D_2(iii) = (VarR1D_2(iii) - dot_product(R(iii,iiip1:P), VarR1D_2(iiip1:P))) / R(iii,iii)
     end do
 
     ModelSet = ActiveSet(1:P)
     CoefficientsSet = VarR1D_2(1:P)
 
-    if ( present(CVError) ) then
+    if (present(CVError)) then
 
       allocate(HatDiag(M), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='HatDiag', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='HatDiag', ProcName=ProcName, stat=StatLoc)
       HatDiag = Zero
 
       ! computing hat diagonals
@@ -536,13 +536,13 @@ contains
       do ii = 1, M
         iii = 1
         VarR1D_1(1:P) = System(ii, ActiveSet(1:P))
-        CVError = CVError + ( (Goal(ii)-dot_product(VarR1D_2(1:P), VarR1D_1(1:P))) / (One-HatDiag(ii)) )**2
+        CVError = CVError + ((Goal(ii)-dot_product(VarR1D_2(1:P), VarR1D_1(1:P))) / (One-HatDiag(ii)))**2
       end do
       CVError = CVError / real(M,rkp)
   
-      if ( This%CVError%IsNormalized() ) CVError = CVError / GoalVar
+      if (This%CVError%IsNormalized()) CVError = CVError / GoalVar
 
-      if( This%CVError%IsCorrected() ) then
+      if(This%CVError%IsCorrected()) then
         ! computing correction factor
         CorrFactor = Zero
 
@@ -553,48 +553,48 @@ contains
           iii = ii+1
           do iii = ii+1, P
             iiim1 = iii - 1
-            VarR1D_1(iii) = ( - dot_product( R(ii:iiim1,iii), VarR1D_1(ii:iiim1) ) ) / R(iii,iii)
+            VarR1D_1(iii) = (- dot_product(R(ii:iiim1,iii), VarR1D_1(ii:iiim1))) / R(iii,iii)
           end do
 
           VarR1D_1(ii:P) = VarR1D_1(ii:i)*VarR1D_1(ii:P)
-          CorrFactor = CorrFactor + sum( VarR1D_1(ii:P) )
+          CorrFactor = CorrFactor + sum(VarR1D_1(ii:P))
         end do
 
-        CorrFactor = ( real(M,rkp) / ( real(M,rkp) - real(P,rkp) ) ) * ( One + CorrFactor )
+        CorrFactor = (real(M,rkp) / (real(M,rkp) - real(P,rkp))) * (One + CorrFactor)
         CVError = CVError * CorrFactor
       end if
 
       deallocate(HatDiag, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='HatDiag', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='HatDiag', ProcName=ProcName, stat=StatLoc)
 
     end if
 
     deallocate(VarR1D_1, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D_1', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D_1', ProcName=ProcName, stat=StatLoc)
 
     deallocate(VarR1D_2, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D_2', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D_2', ProcName=ProcName, stat=StatLoc)
 
     deallocate(Q1, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Q1', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
 
     deallocate(R, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='R', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='R', ProcName=ProcName, stat=StatLoc)
 
     deallocate(ResCorr, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='ResCorr', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='ResCorr', ProcName=ProcName, stat=StatLoc)
 
     deallocate(Norm, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Norm', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Norm', ProcName=ProcName, stat=StatLoc)
 
     deallocate(ActiveSet, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='ActiveSet', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='ActiveSet', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(OMPBasic_Type), intent(out)                                 ::    LHS
     class(LinSolverMethod_Type), intent(in)                           ::    RHS
@@ -608,14 +608,14 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%MaxNbFeatures = RHS%MaxNbFeatures
           LHS%Tolerance = RHS%Tolerance
           allocate(LHS%CVError, source=RHS%CVError, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%CVError', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%CVError', ProcName=ProcName, stat=StatLoc)
         end if
       class default
-        call Error%Raise( Line='Mismatching object types', ProcName=ProcName )
+        call Error%Raise(Line='Mismatching object types', ProcName=ProcName)
     end select
 
   end subroutine

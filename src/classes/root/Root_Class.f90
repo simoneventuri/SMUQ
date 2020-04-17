@@ -170,7 +170,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   This%SectionChain = SectionChain
 
   call Input%GetValue(Value=VarI0D, ParameterName='nb_repetitions', Mandatory=.false., Found=Found)
-  if ( Found ) This%NbRepetitions = VarI0D
+  if (Found) This%NbRepetitions = VarI0D
 
   SectionName = 'model'
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
@@ -220,13 +220,13 @@ end subroutine
 !!-----------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function GetInput( This, MainSectionName, Prefix, Directory )
+function GetInput(This, Name, Prefix, Directory)
 
   use StringRoutines_Module
 
   type(InputSection_Type)                                           ::    GetInput
   class(Root_Type), intent(inout)                                   ::    This
-  character(*), intent(in)                                          ::    MainSectionName
+  character(*), intent(in)                                          ::    Name
   character(*), optional, intent(in)                                ::    Prefix
   character(*), optional, intent(in)                                ::    Directory
 
@@ -239,43 +239,43 @@ function GetInput( This, MainSectionName, Prefix, Directory )
   character(:), allocatable                                         ::    SubSectionName
   integer                                                           ::    i
 
-  if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
   DirectoryLoc = ''
   PrefixLoc = ''
-  if ( present(Directory) ) DirectoryLoc = Directory
-  if ( present(Prefix) ) PrefixLoc = Prefix
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
   DirectorySub = DirectoryLoc
 
-  if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-  call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-  call GetInput%AddParameter( Name='nb_repetitions', Value=ConvertToString(Value=This%NbRepetitions) )
+  call GetInput%AddParameter(Name='nb_repetitions', Value=ConvertToString(Value=This%NbRepetitions))
 
   SectionName = 'model'
-  if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/model'
-  call GetInput%AddSection( Section=Model_Factory%GetObjectInput(Object=This%Model, MainSectionName=SectionName,                &
-                                                                                     Prefix=PrefixLoc, Directory=DirectorySub) )
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/model'
+  call GetInput%AddSection(Section=Model_Factory%GetObjectInput(Object=This%Model, Name=SectionName,                &
+                                                                                     Prefix=PrefixLoc, Directory=DirectorySub))
 
   SectionName = 'parameter_space'
-  if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/parameter_space'
-  call GetInput%AddSection( Section=This%ParameterSpace%GetInput(MainSectionName=SectionName, Prefix=PrefixLoc,                 &
-                                                                                                       Directory=DirectorySub) )
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/parameter_space'
+  call GetInput%AddSection(Section=This%ParameterSpace%GetInput(Name=SectionName, Prefix=PrefixLoc,                 &
+                                                                                                       Directory=DirectorySub))
 
   SectionName = 'responses'
-  call GetInput%AddSection( SectionName=SectionName )
+  call GetInput%AddSection(SectionName=SectionName)
   do i = 1, size(This%Responses,1)
     SubSectionName = 'response' // ConvertToString(Value=i)
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/response' // ConvertToString(i)
-    call GetInput%AddSection( Section=This%Responses(i)%GetInput(MainSectionName=SubSectionName, Prefix=PrefixLoc,              &
-                                                                            Directory=DirectorySub), To_SubSection=SectionName )
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/response' // ConvertToString(i)
+    call GetInput%AddSection(Section=This%Responses(i)%GetInput(Name=SubSectionName, Prefix=PrefixLoc,              &
+                                                                            Directory=DirectorySub), To_SubSection=SectionName)
   end do
 
   SectionName = 'analysis'
-  if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/analysis'
-  call GetInput%AddSection( Section=AnalysisMethod_Factory%GetObjectInput(Object=This%AnalysisMethod,                             &
-                                                        MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub) )
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/analysis'
+  call GetInput%AddSection(Section=AnalysisMethod_Factory%GetObjectInput(Object=This%AnalysisMethod,                             &
+                                                        Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -302,16 +302,16 @@ subroutine Run(This)
 
   i = 1
   do i = 1, THis%NbRepetitions
-    if ( This%NbRepetitions > 1 .and. len_trim(OutputDirectory) > 0 ) OutputDirectoryLoc = OutputDirectory // '_' //              &
+    if (This%NbRepetitions > 1 .and. len_trim(OutputDirectory) > 0) OutputDirectoryLoc = OutputDirectory // '_' //              &
                                                                                            ConvertToString(Value=i)
-    if ( This%NbRepetitions > 1 ) LineLoc = Line // ' ' // ConvertToString(Value=i)
+    if (This%NbRepetitions > 1) LineLoc = Line // ' ' // ConvertToString(Value=i)
     write(*,*)
     write(*,'(A)') LineLoc
     call This%AnalysisMethod%Run(SampleSpace=This%ParameterSpace, Responses=This%Responses, Model=This%Model,                     &                                            
                                  OutputDirectory=OutputDirectoryLoc)
   end do
 
-  call This%WriteOutput( Directory=ProgramDefs%GetOutputDir() )
+  call This%WriteOutput(Directory=ProgramDefs%GetOutputDir())
 
 end subroutine
 !!-----------------------------------------------------------------------------
@@ -332,34 +332,34 @@ subroutine WriteOutput(This, Directory)
   type(SMUQFile_Type)                                               ::    File
   character(:), allocatable                                         ::    FileName
 
-  if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  if ( len_trim(Directory) /= 0 ) then
+  if (len_trim(Directory) /= 0) then
 
-    call MakeDirectory( Path=Directory, Options='-p' )
+    call MakeDirectory(Path=Directory, Options='-p')
 
     PrefixLoc = Directory // '/sample_space'
-    call This%ParameterSpace%WriteInfo( Directory=PrefixLoc )
+    call This%ParameterSpace%WriteInfo(Directory=PrefixLoc)
 
     NbResponses = size(This%Responses,1)
     allocate(ResponseLabels(NbResponses), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='ResponseLabels(size(This%Responses,1))', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='ResponseLabels(size(This%Responses,1))', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, NbResponses
       Label = This%Responses(i)%GetLabel()
       PrefixLoc = Directory // '/responses/' // Label
-      call This%Responses(i)%WriteInfo( Directory=PrefixLoc )
+      call This%Responses(i)%WriteInfo(Directory=PrefixLoc)
       ResponseLabels(i) = Label
     end do
 
     PrefixLoc = Directory // '/responses'
     FileName = '/responses.dat'
-    call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-    call File%Export( Strings=ResponseLabels )
+    call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+    call File%Export(Strings=ResponseLabels)
 
     deallocate(ResponseLabels, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='ResponseLabels', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='ResponseLabels', ProcName=ProcName, stat=StatLoc)
 
   end if
 

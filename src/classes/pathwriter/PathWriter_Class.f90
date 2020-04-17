@@ -81,13 +81,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(PathWriter_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'PathWriter'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -97,15 +97,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(PathWriter_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%FileProcessors) ) deallocate(This%FileProcessors, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FileProcessors', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%FileProcessors)) deallocate(This%FileProcessors, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%FileProcessors', ProcName=ProcName, stat=StatLoc)
 
     This%NbFiles = 0
 
@@ -118,7 +118,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(PathWriter_Type), intent(inout)                             ::    This
 
@@ -128,7 +128,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     use String_Library
     use StringRoutines_Module
@@ -148,23 +148,23 @@ contains
     integer                                                           ::    i
     
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
     
     SectionName = 'files'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     This%NbFiles = InputSection%GetNumberofSubSections()
 
     allocate(This%FileProcessors(This%NbFiles), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%FileProcessors', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%FileProcessors', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, This%NbFiles
       SubSectionName = SectionName // '>file' // ConvertToString(Value=i)
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
       call This%FileProcessors(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
       nullify(InputSection)
     end do
@@ -175,14 +175,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(PathWriter_Type), intent(in)                           ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -196,34 +196,34 @@ contains
     integer                                                           ::    i                        
 
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
     
     SectionName = 'files'
-    call GetInput%AddSection( SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
 
     i = 1
     do i = 1, This%NbFiles
       SubSectionName = 'file' // ConvertToString(Value=i)
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file' // ConvertToString(Value=i)
-      call GetInput%AddSection( Section=This%FileProcessors(i)%GetInput(MainSectionName=SubSectionName, Prefix=PrefixLoc,         &
-                                                                              Directory=DirectorySub), To_SubSection=SectionName )
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/file' // ConvertToString(Value=i)
+      call GetInput%AddSection(Section=This%FileProcessors(i)%GetInput(Name=SubSectionName, Prefix=PrefixLoc,         &
+                                                                              Directory=DirectorySub), To_SubSection=SectionName)
     end do
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WritePaths( This )
+  subroutine WritePaths(This)
 
     class(PathWriter_Type), intent(inout)                             ::    This
 
@@ -231,7 +231,7 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     i = 1
     do i = 1, This%NbFiles
@@ -242,7 +242,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(PathWriter_Type), intent(out)                          ::    LHS
     class(PathWriter_Type), intent(in)                           ::    RHS
@@ -258,14 +258,14 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%NbFiles = RHS%NbFiles
           allocate(LHS%FileProcessors, source=RHS%FileProcessors, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%FileProcessors', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%FileProcessors', ProcName=ProcName, stat=StatLoc)
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -273,15 +273,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(PathWriter_Type),intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%FileProcessors) ) deallocate(This%FileProcessors, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%FileProcessors', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%FileProcessors)) deallocate(This%FileProcessors, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%FileProcessors', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -291,13 +291,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_FP( This )
+  subroutine Initialize_FP(This)
 
     class(FileProcessor_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize_FP'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'FileProcessor'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -307,21 +307,21 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_FP( This )
+  subroutine Reset_FP(This)
 
     class(FileProcessor_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Reset_FP'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%PrependAbsolute) ) deallocate(This%PrependAbsolute, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PrependAbsolute', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%PrependAbsolute)) deallocate(This%PrependAbsolute, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%PrependAbsolute', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Path) ) deallocate(This%Path, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Path', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Path)) deallocate(This%Path, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Path', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Identifier) ) deallocate(This%Identifier, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Identifier', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Identifier)) deallocate(This%Identifier, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Identifier', ProcName=ProcName, stat=StatLoc)
 
     This%NbPaths = 0
 
@@ -336,7 +336,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_FP( This )
+  subroutine SetDefaults_FP(This)
 
     class(FileProcessor_Type), intent(inout)                          ::    This
 
@@ -348,7 +348,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_FP( This, Input, Prefix )
+  subroutine ConstructInput_FP(This, Input, Prefix)
 
     class(FileProcessor_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -367,33 +367,33 @@ contains
     logical                                                           ::    Found
     integer                                                           ::    i
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     SectionName = 'file'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call This%PathFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call This%PathFile%Construct(Input=InputSection, Prefix=PrefixLoc)
 
     This%AbsolutePrefix = PrefixLoc
 
     SectionName = 'paths'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     This%NbPaths = InputSection%GetNumberofSubSections()
     nullify(InputSection)
 
     allocate(This%PrependAbsolute(This%NbPaths), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%PrependAbsolute', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%PrependAbsolute', ProcName=ProcName, stat=StatLoc)
     This%PrependAbsolute = .true.
 
     allocate(This%Identifier(This%NbPaths), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Identifier', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Identifier', ProcName=ProcName, stat=StatLoc)
     This%Identifier = ''
 
     allocate(This%Path(This%NbPaths), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Path', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Path', ProcName=ProcName, stat=StatLoc)
     This%Path = ''
 
     i = 1
@@ -401,16 +401,16 @@ contains
       SubSectionName = SectionName // '>path' // ConvertToString(Value=i)
   
       ParameterName = 'path'
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
+      call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
       This%Path(i) = VarC0D
 
       ParameterName = 'identifier'
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
+      call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
       This%Identifier(i) = VarC0D
 
       ParameterName = 'prepend_absolute'
-      call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.false., Found=Found )
-      if ( Found ) This%PrependAbsolute(i) = VarL0D
+      call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.false., Found=Found)
+      if (Found) This%PrependAbsolute(i) = VarL0D
     end do
 
     This%Constructed = .true.
@@ -419,12 +419,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_FP( This, MainSectionName, Prefix, Directory )
+  function GetInput_FP(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput_FP
 
     class(FileProcessor_Type), intent(in)                             ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -439,43 +439,43 @@ contains
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput_FP%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput_FP%SetName(SectionName = trim(adjustl(Name)))
     
     SectionName = 'file'
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file'
-    call GetInput_FP%AddSection( Section=This%PathFile%GetInput(MainSectionName=SectionName, Prefix=PrefixLoc,                    &
-                                                                                                         Directory=DirectorySub) )
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/file'
+    call GetInput_FP%AddSection(Section=This%PathFile%GetInput(Name=SectionName, Prefix=PrefixLoc,                    &
+                                                                                                         Directory=DirectorySub))
 
     SectionName = 'paths'
-    call GetInput_FP%AddSection( SectionName=SectionName )
+    call GetInput_FP%AddSection(SectionName=SectionName)
 
     i = 1
     do i = 1, This%NbPaths
       SubSectionName = 'path' // ConvertToString(Value=i)
-      call GetInput_FP%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-      call GetInput_FP%AddParameter( Name='path', Value=This%Path(i)%GetValue(), SectionName=SectionName // '>' //                &
-                                                                                                                  SubSectionName )
-      call GetInput_FP%AddParameter( Name='identifier', Value=This%Identifier(i)%GetValue(), SectionName=SectionName // '>' //    &
-                                                                                                                  SubSectionName )
-      call GetInput_FP%AddParameter( Name='prepend_absolute', Value=ConvertToString(Value=This%PrependAbsolute(i)),               &
-                                                                                SectionName=SectionName // '>' // SubSectionName )
+      call GetInput_FP%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+      call GetInput_FP%AddParameter(Name='path', Value=This%Path(i)%GetValue(), SectionName=SectionName // '>' //                &
+                                                                                                                  SubSectionName)
+      call GetInput_FP%AddParameter(Name='identifier', Value=This%Identifier(i)%GetValue(), SectionName=SectionName // '>' //    &
+                                                                                                                  SubSectionName)
+      call GetInput_FP%AddParameter(Name='prepend_absolute', Value=ConvertToString(Value=This%PrependAbsolute(i)),               &
+                                                                                SectionName=SectionName // '>' // SubSectionName)
     end do
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WritePaths_FP( This )
+  subroutine WritePaths_FP(This)
 
     class(FileProcessor_Type), intent(inout)                          ::    This
 
@@ -490,12 +490,12 @@ contains
     integer                                                           ::    IndexLoc
     character(:), allocatable                                         ::    Line
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     allocate(LineLog(This%NbPaths), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='LineLog', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='LineLog', ProcName=ProcName, stat=StatLoc)
 
-    call This%PathFile%Import( Strings=Transcript, Mandatory=.true. )
+    call This%PathFile%Import(Strings=Transcript, Mandatory=.true.)
 
     NbLines = size(Transcript,1)
 
@@ -505,10 +505,10 @@ contains
 
       ii = 1
       do ii = 1, NbLines
-        if ( index(Transcript(ii)%GetValue(), VarC0D) /= 0 ) call LineLog(i)%Append( Value=ii )
+        if (index(Transcript(ii)%GetValue(), VarC0D) /= 0) call LineLog(i)%Append(Value=ii)
       end do
 
-      if ( LineLog(i)%GetLength() < 1 ) call Error%Raise( Line='Could not find path indicator : ' //                              &
+      if (LineLog(i)%GetLength() < 1) call Error%Raise(Line='Could not find path indicator : ' //                              &
                                                                                  This%Identifier(i)%GetValue(), ProcName=ProcName)
     end do
 
@@ -517,28 +517,28 @@ contains
     do i = 1, This%NbPaths
       ii = 1
       do ii = 1, LineLog(i)%GetLength()
-        call LineLog(i)%Get( Node=ii, Value=IndexLoc )
+        call LineLog(i)%Get(Node=ii, Value=IndexLoc)
         Line = This%Path(i)%GetValue()
-        if ( This%PrependAbsolute(i) ) Line = This%AbsolutePrefix // Line
-        VarC0D = ReplaceCharacter( String=Transcript(IndexLoc)%GetValue(), Old='{' // This%Identifier(i)%GetValue() // '}' , &
-                 New=Line )
+        if (This%PrependAbsolute(i)) Line = This%AbsolutePrefix // Line
+        VarC0D = ReplaceCharacter(String=Transcript(IndexLoc)%GetValue(), Old='{' // This%Identifier(i)%GetValue() // '}' , &
+                 New=Line)
         Transcript(IndexLoc) = VarC0D
       end do
     end do
 
-    call This%PathFile%Export( Strings=Transcript )
+    call This%PathFile%Export(Strings=Transcript)
 
     deallocate(Transcript, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Transcript', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Transcript', ProcName=ProcName, stat=StatLoc)
 
     deallocate(LineLog, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='LineLog', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='LineLog', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_FP( LHS, RHS )
+  impure elemental subroutine Copy_FP(LHS, RHS)
 
     class(FileProcessor_Type), intent(out)                            ::    LHS
     class(FileProcessor_Type), intent(in)                             ::    RHS
@@ -554,20 +554,20 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%PathFile = RHS%PathFile
           LHS%NbPaths = RHS%NbPaths
           LHS%AbsolutePrefix = RHS%AbsolutePrefix
           allocate(LHS%Path, source=RHS%Path, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Path', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Path', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%Identifier, source=RHS%Identifier, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Identifier', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Identifier', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%PrependAbsolute, source=RHS%PrependAbsolute, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%PrependAbsolute', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%PrependAbsolute', ProcName=ProcName, stat=StatLoc)
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -575,21 +575,21 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer_FP( This )
+  impure elemental subroutine Finalizer_FP(This)
 
     type(FileProcessor_Type),intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer_FP'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%PrependAbsolute) ) deallocate(This%PrependAbsolute, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%PrependAbsolute', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%PrependAbsolute)) deallocate(This%PrependAbsolute, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%PrependAbsolute', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Path) ) deallocate(This%Path, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Path', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Path)) deallocate(This%Path, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Path', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Identifier) ) deallocate(This%Identifier, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Identifier', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Identifier)) deallocate(This%Identifier, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Identifier', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

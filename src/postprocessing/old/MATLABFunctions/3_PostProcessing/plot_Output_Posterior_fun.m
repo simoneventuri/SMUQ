@@ -16,7 +16,7 @@ function i_figure = plot_Output_Posterior_fun(PlottingFormat, i_figure, save_fig
     if plot_y_interval == 1
                 
         y_mean=y_sum./(i_def);
-        y_st_deviation = sqrt( y_sq_sum ./ (i_def) - y_mean.^2 );
+        y_st_deviation = sqrt(y_sq_sum ./ (i_def) - y_mean.^2);
         y_max = y_mean + nb_of_sigma*y_st_deviation;
         y_min = y_mean - nb_of_sigma*y_st_deviation;
 

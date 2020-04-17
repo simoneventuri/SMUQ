@@ -1,4 +1,4 @@
-function i_figure = check_Output_Posterior_sets_fun(PlottingFormat, i_figure, save_fig, proc, nb_pcolor, x_check )
+function i_figure = check_Output_Posterior_sets_fun(PlottingFormat, i_figure, save_fig, proc, nb_pcolor, x_check)
                                
     filename = './problem_parameters.dat';
     delimiter = ' ';
@@ -69,7 +69,7 @@ function i_figure = check_Output_Posterior_sets_fun(PlottingFormat, i_figure, sa
     data_scale = char(dataArray{:, 1});
     clearvars filename delimiter formatSpec fileID dataArray ans;
     
-    if ( data_scale == 'log' )
+    if (data_scale == 'log')
         y_data = 10.^y_data;
         y_data_orig = 10.^y_data_orig;
     end                                                 
@@ -154,7 +154,7 @@ function i_figure = check_Output_Posterior_sets_fun(PlottingFormat, i_figure, sa
 
     for j=1:length(hist_x_nodes)
         for i=1:nb_bins_histogram
-            Hist_Matrix(i,j) = Hist_Vector( (j-1)*(nb_bins_histogram)+ i);
+            Hist_Matrix(i,j) = Hist_Vector((j-1)*(nb_bins_histogram)+ i);
         end 
     end
     

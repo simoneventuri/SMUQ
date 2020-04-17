@@ -57,28 +57,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_OrthoPoly( This )
+  subroutine Initialize_OrthoPoly(This)
     import                                                            ::    OrthoPoly_Type
     class(OrthoPoly_Type), intent(inout)                              ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_OrthoPoly( This )
+  subroutine Reset_OrthoPoly(This)
     import                                                            ::    OrthoPoly_Type
     class(OrthoPoly_Type), intent(inout)                              ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_OrthoPoly( This )
+  subroutine SetDefaults_OrthoPoly(This)
     import                                                            ::    OrthoPoly_Type
     class(OrthoPoly_Type), intent(inout)                              ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_OrthoPoly( This, Input, Prefix )
+  subroutine ConstructInput_OrthoPoly(This, Input, Prefix)
     import                                                            ::    OrthoPoly_Type
     import                                                            ::    InputSection_Type
     class(OrthoPoly_Type), intent(inout)                              ::    This
@@ -88,19 +88,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_OrthoPoly( This, MainSectionName, Prefix, Directory )
+  function GetInput_OrthoPoly(This, Name, Prefix, Directory)
     import                                                            ::    OrthoPoly_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_OrthoPoly
     class(OrthoPoly_Type), intent(in)                                 ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Eval_N_OrthoPoly(This, Order, X, Normalized )
+  function Eval_N_OrthoPoly(This, Order, X, Normalized)
     use Parameters_Library
     import                                                            ::    OrthoPoly_Type
     real(rkp)                                                         ::    Eval_N_OrthoPoly
@@ -112,7 +112,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Eval_MN_OrthoPoly(This, MinOrder, MaxOrder, X, Normalized )
+  function Eval_MN_OrthoPoly(This, MinOrder, MaxOrder, X, Normalized)
     use Parameters_Library
     import                                                            ::    OrthoPoly_Type
     real(rkp), dimension(:), allocatable                              ::    Eval_MN_OrthoPoly
@@ -125,7 +125,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_OrthoPoly( LHS, RHS )
+  impure elemental subroutine Copy_OrthoPoly(LHS, RHS)
     import                                                            ::    OrthoPoly_Type
     class(OrthoPoly_Type), intent(out)                                ::    LHS
     class(OrthoPoly_Type), intent(in)                                 ::    RHS
@@ -137,7 +137,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(OrthoPoly_Type), intent(inout)                              ::    This

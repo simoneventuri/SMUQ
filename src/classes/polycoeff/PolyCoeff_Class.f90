@@ -53,28 +53,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_PolyCoeff( This )
+  subroutine Initialize_PolyCoeff(This)
     import                                                            ::    PolyCoeff_Type
     class(PolyCoeff_Type), intent(inout)                              ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_PolyCoeff( This )
+  subroutine Reset_PolyCoeff(This)
     import                                                            ::    PolyCoeff_Type
     class(PolyCoeff_Type), intent(inout)                              ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_PolyCoeff( This )
+  subroutine SetDefaults_PolyCoeff(This)
     import                                                            ::    PolyCoeff_Type
     class(PolyCoeff_Type), intent(inout)                              ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_PolyCoeff( This, Input, Prefix )
+  subroutine ConstructInput_PolyCoeff(This, Input, Prefix)
     import                                                            ::    PolyCoeff_Type
     import                                                            ::    InputSection_Type
     class(PolyCoeff_Type), intent(inout)                              ::    This
@@ -84,19 +84,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_PolyCoeff( This, MainSectionName, Prefix, Directory )
+  function GetInput_PolyCoeff(This, Name, Prefix, Directory)
     import                                                            ::    PolyCoeff_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_PolyCoeff
     class(PolyCoeff_Type), intent(in)                                 ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue_PolyCoeff( This, Input )
+  function GetValue_PolyCoeff(This, Input)
     use Parameters_Library
     import                                                            ::    Input_Type
     import                                                            ::    PolyCoeff_Type  
@@ -107,7 +107,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue_PolyCoeff( This, Input )
+  function GetCharValue_PolyCoeff(This, Input)
     use Parameters_Library
     import                                                            ::    Input_Type
     import                                                            ::    PolyCoeff_Type
@@ -118,7 +118,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_PolyCoeff( LHS, RHS )
+  impure elemental subroutine Copy_PolyCoeff(LHS, RHS)
     import                                                            ::    PolyCoeff_Type
     class(PolyCoeff_Type), intent(out)                                ::    LHS
     class(PolyCoeff_Type), intent(in)                                 ::    RHS
@@ -130,7 +130,7 @@ end interface
 contains
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(PolyCoeff_Type), intent(inout)                              ::    This

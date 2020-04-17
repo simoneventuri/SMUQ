@@ -66,13 +66,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(DistLogistic_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'normal'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -82,7 +82,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(DistLogistic_Type), intent(inout)                           ::    This
 
@@ -98,7 +98,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(DistLogistic_Type), intent(inout)                           ::    This
 
@@ -115,7 +115,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(DistLogistic_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -130,38 +130,38 @@ contains
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    PrefixLoc
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
     
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'mu'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Mu = VarR0D
 
     ParameterName = 's'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true.)
     This%S = VarR0D
 
     ParameterName = 'a'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%A = VarR0D
       This%TruncatedLeft = .true.
     end if
 
     ParameterName = 'b'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%B = VarR0D
       This%TruncatedRight = .true.
     end if
 
-    if ( This%S < Zero ) call Error%Raise( Line='Standard deviation specified to be below minimum of 0', ProcName=ProcName )
+    if (This%S < Zero) call Error%Raise(Line='Standard deviation specified to be below minimum of 0', ProcName=ProcName)
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    if (This%TruncatedLeft .and. This%TruncatedRight) then
+      if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
     end if
 
     This%Constructed = .true.
@@ -170,7 +170,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Mu, S, A, B )
+  subroutine ConstructCase1(This, Mu, S, A, B)
     
     class(DistLogistic_Type), intent(inout)                           ::    This
     real(rkp), intent(in)                                             ::    Mu
@@ -181,27 +181,27 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
 
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     This%Mu = Mu
 
     This%S = S
 
-    if ( present(A) ) then
+    if (present(A)) then
       This%A = A
       This%TruncatedLeft = .true.
     end if
 
-    if ( present(B) ) then
+    if (present(B)) then
       This%B = B
       This%TruncatedRight = .true.
     end if
 
-    if ( This%S < Zero ) call Error%Raise( Line='Standard deviation specified to be below minimum of 0', ProcName=ProcName )
+    if (This%S < Zero) call Error%Raise(Line='Standard deviation specified to be below minimum of 0', ProcName=ProcName)
 
-    if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-      if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    if (This%TruncatedLeft .and. This%TruncatedRight) then
+      if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
     end if
 
     This%Constructed = .true.
@@ -210,14 +210,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(DistLogistic_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -227,27 +227,27 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddParameter( Name='mu', Value=ConvertToString( Value=This%Mu ) )
-    call GetInput%AddParameter( Name='s', Value=ConvertToString( Value=This%S ) )
-    if ( This%TruncatedLeft ) call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
-    if ( This%TruncatedRight ) call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+    call GetInput%AddParameter(Name='mu', Value=ConvertToString(Value=This%Mu))
+    call GetInput%AddParameter(Name='s', Value=ConvertToString(Value=This%S))
+    if (This%TruncatedLeft) call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
+    if (This%TruncatedRight) call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X )
+  function PDF_R0D(This, X)
 
     real(rkp)                                                         ::    PDF_R0D
 
@@ -256,23 +256,23 @@ contains
 
     character(*), parameter                                           ::    ProcName='PDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
-      PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, S=This%S, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft  ) then
-      PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, S=This%S, A=This%A )
-    else if ( This%TruncatedRight  ) then
-      PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, S=This%S, B=This%B )
+    if (This%TruncatedRight .and. This%TruncatedLeft) then
+      PDF_R0D = This%ComputePDF(X=X, Mu=This%Mu, S=This%S, A=This%A, B=This%B)
+    else if (This%TruncatedLeft) then
+      PDF_R0D = This%ComputePDF(X=X, Mu=This%Mu, S=This%S, A=This%A)
+    else if (This%TruncatedRight) then
+      PDF_R0D = This%ComputePDF(X=X, Mu=This%Mu, S=This%S, B=This%B)
     else
-      PDF_R0D = This%ComputePDF( X=X, Mu=This%Mu, S=This%S )
+      PDF_R0D = This%ComputePDF(X=X, Mu=This%Mu, S=This%S)
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF( This, X, Mu, S, A, B )
+  function ComputePDF(This, X, Mu, S, A, B)
 
     real(rkp)                                                         ::    ComputePDF
 
@@ -290,34 +290,34 @@ contains
 
     TripFlag = .false.
 
-    if ( present(A) ) then
+    if (present(A)) then
       if (X < A) then
         ComputePDF = Zero
         TripFlag=.true.
       end if
     end if
 
-    if ( present(B) ) then
+    if (present(B)) then
       if (X > B) then
         ComputePDF = Zero
         TripFlag=.true.
       end if
     end if
 
-    if ( .not. TripFlag ) then
+    if (.not. TripFlag) then
       CDFLeft = Zero
-      if ( present(A) ) CDFLeft = This%ComputeCDF( X=A, Mu=Mu, S=S )
+      if (present(A)) CDFLeft = This%ComputeCDF(X=A, Mu=Mu, S=S)
       CDFRight = One
-      if ( present(B) ) CDFRight = This%ComputeCDF( X=B, Mu=Mu, S=S )
-      ComputePDF = dexp(-(X-Mu)/S) / (S*( One + dexp(-(X-Mu)/S) )**2)
-      if ( present(A) .or. present(B) ) ComputePDF = ComputePDF / ( CDFRight - CDFLeft )
+      if (present(B)) CDFRight = This%ComputeCDF(X=B, Mu=Mu, S=S)
+      ComputePDF = dexp(-(X-Mu)/S) / (S*(One + dexp(-(X-Mu)/S))**2)
+      if (present(A) .or. present(B)) ComputePDF = ComputePDF / (CDFRight - CDFLeft)
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X )
+  function CDF_R0D(This, X)
 
     real(rkp)                                                         ::    CDF_R0D
 
@@ -326,23 +326,23 @@ contains
 
     character(*), parameter                                           ::    ProcName='CDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
-      CDF_R0D = This%ComputeCDF( X=X, Mu=This%Mu, S=This%S, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft ) then
-      CDF_R0D = This%ComputeCDF( X=X, Mu=This%Mu, S=This%S, A=This%A )
-    else if ( This%TruncatedRight ) then
-      CDF_R0D = This%ComputeCDF( X=X, Mu=This%Mu, S=This%S, B=This%B )
+    if (This%TruncatedRight .and. This%TruncatedLeft) then
+      CDF_R0D = This%ComputeCDF(X=X, Mu=This%Mu, S=This%S, A=This%A, B=This%B)
+    else if (This%TruncatedLeft) then
+      CDF_R0D = This%ComputeCDF(X=X, Mu=This%Mu, S=This%S, A=This%A)
+    else if (This%TruncatedRight) then
+      CDF_R0D = This%ComputeCDF(X=X, Mu=This%Mu, S=This%S, B=This%B)
     else
-      CDF_R0D = This%ComputeCDF( X=X, Mu=This%Mu, S=This%S )
+      CDF_R0D = This%ComputeCDF(X=X, Mu=This%Mu, S=This%S)
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeCDF( This, X, Mu, S, A, B )
+  function ComputeCDF(This, X, Mu, S, A, B)
 
     real(rkp)                                                         ::    ComputeCDF
 
@@ -360,34 +360,34 @@ contains
 
     TripFlag = .false.
 
-    if ( present(A) ) then
+    if (present(A)) then
       if (X < A) then
         ComputeCDF = Zero
         TripFlag=.true.
       end if
     end if
 
-    if ( present(B) ) then
+    if (present(B)) then
       if (X > B) then
         ComputeCDF = One
         TripFlag=.true.
       end if
     end if
 
-    if ( .not. TripFlag ) then
+    if (.not. TripFlag) then
       CDFLeft = 0.
-      if ( present(A) ) CDFLeft = This%ComputeCDF( X=A, Mu=Mu, S=S )
+      if (present(A)) CDFLeft = This%ComputeCDF(X=A, Mu=Mu, S=S)
       CDFRight = 1.
-      if ( present(B) ) CDFRight = This%ComputeCDF( X=B, Mu=Mu, S=S )
-      ComputeCDF = One / ( One + dexp(-(X-Mu)/S) )
-      ComputeCDF = ( ComputeCDF - CDFLeft ) / ( CDFRight - CDFLeft )
+      if (present(B)) CDFRight = This%ComputeCDF(X=B, Mu=Mu, S=S)
+      ComputeCDF = One / (One + dexp(-(X-Mu)/S))
+      ComputeCDF = (ComputeCDF - CDFLeft) / (CDFRight - CDFLeft)
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P )
+  function InvCDF_R0D(This, P)
 
     real(rkp)                                                         ::    InvCDF_R0D
 
@@ -396,23 +396,23 @@ contains
 
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( This%TruncatedRight .and. This%TruncatedLeft ) then
-      InvCDF_R0D = This%ComputeInvCDF( P=P, Mu=This%Mu, S=This%S, A=This%A, B=This%B )
-    else if ( This%TruncatedLeft ) then
-      InvCDF_R0D = This%ComputeInvCDF( P=P, Mu=This%Mu, S=This%S, A=This%A )
-    else if ( This%TruncatedRight ) then
-      InvCDF_R0D = This%ComputeInvCDF( P=P, Mu=This%Mu, S=This%S, B=This%B )
+    if (This%TruncatedRight .and. This%TruncatedLeft) then
+      InvCDF_R0D = This%ComputeInvCDF(P=P, Mu=This%Mu, S=This%S, A=This%A, B=This%B)
+    else if (This%TruncatedLeft) then
+      InvCDF_R0D = This%ComputeInvCDF(P=P, Mu=This%Mu, S=This%S, A=This%A)
+    else if (This%TruncatedRight) then
+      InvCDF_R0D = This%ComputeInvCDF(P=P, Mu=This%Mu, S=This%S, B=This%B)
     else
-      InvCDF_R0D = This%ComputeInvCDF( P=P, Mu=This%Mu, S=This%S )
+      InvCDF_R0D = This%ComputeInvCDF(P=P, Mu=This%Mu, S=This%S)
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeInvCDF( This, P, Mu, S, A, B )
+  function ComputeInvCDF(This, P, Mu, S, A, B)
 
     real(rkp)                                                         ::    ComputeInvCDF
 
@@ -429,13 +429,13 @@ contains
     real(rkp)                                                         ::    PLoc
     logical                                                           ::    TripFlag
 
-    if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
-    if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
+    if (P < Zero) call Error%Raise(Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName)
+    if (P > One) call Error%Raise(Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName)
 
     TripFlag = .false.
 
-    if ( P == Zero ) then
-      if ( present(A) ) then
+    if (P == Zero) then
+      if (present(A)) then
         ComputeInvCDF = A
       else
         ComputeInvCDF = -huge(One)
@@ -443,8 +443,8 @@ contains
       TripFlag=.true.
     end if
 
-    if ( P == One ) then
-      if ( present(B) ) then
+    if (P == One) then
+      if (present(B)) then
         ComputeInvCDF = B
       else
         ComputeInvCDF = huge(One)
@@ -452,11 +452,11 @@ contains
       TripFlag=.true.
     end if
 
-    if ( .not. TripFlag ) then
+    if (.not. TripFlag) then
       CDFLeft = 0.
-      if ( present(A) ) CDFLeft = This%ComputeCDF ( X=A, Mu=Mu, S=S )
+      if (present(A)) CDFLeft = This%ComputeCDF (X=A, Mu=Mu, S=S)
       CDFRight = 1.
-      if ( present(B) ) CDFRight = This%ComputeCDF ( X=B, Mu=Mu, S=S )
+      if (present(B)) CDFRight = This%ComputeCDF (X=B, Mu=Mu, S=S)
 
       PLoc = CDFLeft+P*(CDFRight-CDFLeft)
 
@@ -467,7 +467,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMu( This )
+  function GetMu(This)
 
     real(rkp)                                                         ::    GetMu
 
@@ -475,7 +475,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetMu'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetMu = This%Mu
 
@@ -483,7 +483,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetS( This )
+  function GetS(This)
 
     real(rkp)                                                         ::    GetS
 
@@ -491,7 +491,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetS'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetS = This%S
 
@@ -499,7 +499,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment( This, Moment )
+  function GetMoment(This, Moment)
 
     real(rkp)                                                         ::    GetMoment
 
@@ -513,21 +513,21 @@ contains
     real(rkp)                                                         ::    ZMoment
 
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
+    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-    if ( Moment > 0 ) then
-      if ( This%TruncatedRight .and. .not. This%TruncatedLeft ) call Error%Raise( "DistLogistic module currently cant compute" // &
-                                                  " moments where lower bound is infinite while upper is not", ProcName=ProcName )
-      if ( .not. ( THis%TruncatedLeft .or. This%TruncatedRight ) ) then
-        BNumbers = BernoulliNumbers( P=Moment )
+    if (Moment > 0) then
+      if (This%TruncatedRight .and. .not. This%TruncatedLeft) call Error%Raise("DistLogistic module currently cant compute" // &
+                                                  " moments where lower bound is infinite while upper is not", ProcName=ProcName)
+      if (.not. (THis%TruncatedLeft .or. This%TruncatedRight)) then
+        BNumbers = BernoulliNumbers(P=Moment)
         GetMoment = Zero
         i = 0
         do i = 0, Moment
-          if ( i == 0 ) then
+          if (i == 0) then
             ZMoment = One
-          elseif ( mod(i,2) /= 0 ) then
+          elseif (mod(i,2) /= 0) then
             ZMoment = Zero
           else
             ZMoment = (Two**i-Two)*Pi**i*abs(BNumbers(i+1))
@@ -535,9 +535,9 @@ contains
           GetMoment = GetMoment + real(BinomialCoeff(Top=Moment, Bottom=i),rkp) * This%Mu**(Moment-i) * This%S**i*ZMoment
         end do
         deallocate(BNumbers, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='BNumbers', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='BNumbers', ProcName=ProcName, stat=StatLoc)
       else
-        GetMoment = This%ComputeMomentNumerical( Moment=Moment )
+        GetMoment = This%ComputeMomentNumerical(Moment=Moment)
       end if
     else
       GetMoment = One
@@ -547,7 +547,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo( This, File )
+  subroutine WriteInfo(This, File)
 
     class(DistLogistic_Type), intent(in)                              ::    This
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -556,23 +556,23 @@ contains
     integer                                                           ::    i
     type(String_Type), dimension(5)                                   ::    Strings
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     Strings(1) = 'logistic'
     Strings(2) = ConvertToString(Value=This%Mu)
     Strings(3) = ConvertToString(Value=This%S)
     Strings(4) = '-Inf'
-    if ( This%TruncatedLeft ) Strings(4) = ConvertToString(Value=This%A)
+    if (This%TruncatedLeft) Strings(4) = ConvertToString(Value=This%A)
     Strings(5) = 'Inf'
-    if ( This%TruncatedRight ) Strings(5) = ConvertToString(Value=This%B)
+    if (This%TruncatedRight) Strings(5) = ConvertToString(Value=This%B)
 
-    call File%Append( Strings=Strings )
+    call File%Append(Strings=Strings)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(DistLogistic_Type), intent(out)                             ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
@@ -587,7 +587,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%A = RHS%A
           LHS%B = RHS%B
           LHS%Mu = RHS%Mu
@@ -597,7 +597,7 @@ contains
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -605,7 +605,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(DistLogistic_Type), intent(inout)                            ::    This
 

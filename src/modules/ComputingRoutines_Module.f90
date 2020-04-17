@@ -125,7 +125,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function LinSequence( SeqStart, SeqEnd, SeqSkip, Scrambled)
+  function LinSequence(SeqStart, SeqEnd, SeqSkip, Scrambled)
   
     integer, allocatable, dimension(:)                                ::    LinSequence
 
@@ -142,26 +142,26 @@ contains
     integer                                                           ::    StatLoc=0
 
     SeqSkipLoc = 1
-    if ( present(SeqSkip) ) SeqSkipLoc = SeqSkip
+    if (present(SeqSkip)) SeqSkipLoc = SeqSkip
     ScrambledLoc = .false.
-    if ( present(Scrambled) ) ScrambledLoc = Scrambled
+    if (present(Scrambled)) ScrambledLoc = Scrambled
 
-    if ( SeqSkipLoc == 0 ) call Error%Raise( Line='Skip value of 0 is not allowed', ProcName=ProcName )
+    if (SeqSkipLoc == 0) call Error%Raise(Line='Skip value of 0 is not allowed', ProcName=ProcName)
 
-    if ( (SeqStart < SeqEnd .and. SeqSkipLoc>0) .or. (SeqStart > SeqEnd .and. SeqSkipLoc < 0 ) ) then
+    if ((SeqStart < SeqEnd .and. SeqSkipLoc>0) .or. (SeqStart > SeqEnd .and. SeqSkipLoc < 0)) then
       NbNodes = (SeqEnd - SeqStart + 1) / SeqSkipLoc
-      if ( mod(SeqEnd - SeqStart + 1,SeqSkipLoc) /= 0 ) NbNodes = NbNodes + 1
+      if (mod(SeqEnd - SeqStart + 1,SeqSkipLoc) /= 0) NbNodes = NbNodes + 1
       allocate(LinSequence(NbNodes), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LinSequence', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='LinSequence', ProcName=ProcName, stat=StatLoc)
       i = 1
       do i = 1, NbNodes-1
         LinSequence(i) = SeqStart + SeqSkipLoc*(i-1)
       end do
       LinSequence(NbNodes) = SeqEnd
-      if ( ScrambledLoc ) call ScrambleArray( Array=LinSequence )
+      if (ScrambledLoc) call ScrambleArray(Array=LinSequence)
     else
       allocate(LinSequence(1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LinSequence', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='LinSequence', ProcName=ProcName, stat=StatLoc)
       LinSequence(1) = SeqStart
     end if
      
@@ -183,11 +183,11 @@ contains
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
 
-    if ( InterMax < InterMin ) call Error%Raise( Line='Interval max is lower than min', ProcName=ProcName )
-    if ( NbNodes < 1 ) call Error%Raise( Line='Specified number of nodes below minimum of 1', ProcName=ProcName )
+    if (InterMax < InterMin) call Error%Raise(Line='Interval max is lower than min', ProcName=ProcName)
+    if (NbNodes < 1) call Error%Raise(Line='Specified number of nodes below minimum of 1', ProcName=ProcName)
 
-    allocate( LinSpace(NbNodes), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( name='LinSpace', stat=StatLoc)
+    allocate(LinSpace(NbNodes), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(name='LinSpace', stat=StatLoc)
 
     d = real(NbNodes - 1) 
     h = (InterMax - InterMin) / d
@@ -217,13 +217,13 @@ contains
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
 
-    if ( InterMax < InterMin ) call Error%Raise( Line='Interval max is lower than min', ProcName=ProcName )
-    if ( NbNodes < 1 ) call Error%Raise( Line='Specified number of nodes below minimum of 1', ProcName=ProcName )
+    if (InterMax < InterMin) call Error%Raise(Line='Interval max is lower than min', ProcName=ProcName)
+    if (NbNodes < 1) call Error%Raise(Line='Specified number of nodes below minimum of 1', ProcName=ProcName)
 
-    allocate( Log10Space(NbNodes), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( name='Log10Space', stat=StatLoc)
+    allocate(Log10Space(NbNodes), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(name='Log10Space', stat=StatLoc)
 
-    Log10Space = Ten**Linspace( InterMin=InterMin, InterMax=InterMax, NbNodes=NbNodes )
+    Log10Space = Ten**Linspace(InterMin=InterMin, InterMax=InterMax, NbNodes=NbNodes)
      
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -243,19 +243,19 @@ contains
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
 
-    if ( InterMax < InterMin ) call Error%Raise( Line='Interval max is lower than min', ProcName=ProcName )
-    if ( NbNodes < 1 ) call Error%Raise( Line='Specified number of nodes below minimum of 1', ProcName=ProcName )
+    if (InterMax < InterMin) call Error%Raise(Line='Interval max is lower than min', ProcName=ProcName)
+    if (NbNodes < 1) call Error%Raise(Line='Specified number of nodes below minimum of 1', ProcName=ProcName)
 
-    allocate( LogSpace(NbNodes), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( name='Log10Space', stat=StatLoc)
+    allocate(LogSpace(NbNodes), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(name='Log10Space', stat=StatLoc)
 
-    LogSpace = dexp( Linspace( InterMin=InterMin, InterMax=InterMax, NbNodes=NbNodes) )
+    LogSpace = dexp(Linspace(InterMin=InterMin, InterMax=InterMax, NbNodes=NbNodes))
      
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Interpolate_R1D_R1D( Abscissa, Ordinate, Nodes )
+  function Interpolate_R1D_R1D(Abscissa, Ordinate, Nodes)
   
     real(rkp), allocatable, dimension(:)                              ::    Interpolate_R1D_R1D
 
@@ -271,27 +271,27 @@ contains
 
     Size1 = size(Abscissa,1)
 
-    if ( Size1 /= size(Ordinate,1) ) call Error%Raise( Line='Supplied abscissa and ordinate not the same length',      &
+    if (Size1 /= size(Ordinate,1)) call Error%Raise(Line='Supplied abscissa and ordinate not the same length',      &
                                                                                                                 ProcName=ProcName)
 
     NbNodes = size(Nodes,1)
-    if ( NbNodes < 1 ) call Error%Raise( Line='Supplied abscissa length below minimum of 1', ProcName=ProcName)
+    if (NbNodes < 1) call Error%Raise(Line='Supplied abscissa length below minimum of 1', ProcName=ProcName)
 
     allocate(Interpolate_R1D_R1D(NbNodes), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Interpolate_R1D_R1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Interpolate_R1D_R1D', ProcName=ProcName, stat=StatLoc)
 
-    if ( Size1 == 1 ) then
+    if (Size1 == 1) then
       Interpolate_R1D_R1D = Ordinate(1)
     else
       ii = 1
       i = 1      
       do i = 1, NbNodes
         do 
-          if ( ii >= Size1 ) exit
-          if ( Abscissa(ii) >= Nodes(i) ) exit
+          if (ii >= Size1) exit
+          if (Abscissa(ii) >= Nodes(i)) exit
           ii=ii+1
         end do
-        if ( ii > 1 ) then
+        if (ii > 1) then
           Interpolate_R1D_R1D(i) = (Ordinate(ii)-Ordinate(ii-1))/(Abscissa(ii)-Abscissa(ii-1)) *                                  &
                                                                                         (Nodes(i)-Abscissa(ii-1)) + Ordinate(ii-1)
         else
@@ -319,18 +319,18 @@ contains
     integer                                                           ::    Size2
     integer                                                           ::    StatLoc=0
 
-    if ( size(Abscissa,1) /= size(Ordinate,1) ) call Error%Raise( Line='Supplied abscissa and ordinate not the same length',      &
+    if (size(Abscissa,1) /= size(Ordinate,1)) call Error%Raise(Line='Supplied abscissa and ordinate not the same length',      &
                                                                                                                 ProcName=ProcName)
 
     NbNodes = size(Nodes,1)
-    if ( NbNodes < 1 ) call Error%Raise( Line='Supplied abscissa length below minimum of 1', ProcName=ProcName)
+    if (NbNodes < 1) call Error%Raise(Line='Supplied abscissa length below minimum of 1', ProcName=ProcName)
 
     Size2 = size(Ordinate,2)
 
     allocate(Interpolate_R2D_R1D(NbNodes,Size2), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Interpolate_R2D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Interpolate_R2D', ProcName=ProcName, stat=StatLoc)
 
-    if ( size(Abscissa,1) == 1 ) then
+    if (size(Abscissa,1) == 1) then
       i = 1
       do i = 1, Size2
         Interpolate_R2D_R1D(i,:) = Ordinate(1,:)
@@ -338,7 +338,7 @@ contains
     else
       i = 1      
       do i = 1, Size2
-        Interpolate_R2D_R1D(:,i) = Interpolate( Abscissa, Ordinate(:,i), Nodes )
+        Interpolate_R2D_R1D(:,i) = Interpolate(Abscissa, Ordinate(:,i), Nodes)
       end do
     end if
   
@@ -346,7 +346,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Interpolate_R1D_R0D( Abscissa, Ordinate, Node )
+  function Interpolate_R1D_R0D(Abscissa, Ordinate, Node)
   
     real(rkp)                                                         ::    Interpolate_R1D_R0D
 
@@ -361,19 +361,19 @@ contains
 
     Size1 = size(Abscissa,1)
 
-    if ( Size1 /= size(Ordinate,1) ) call Error%Raise( Line='Supplied abscissa and ordinate not the same length',      &
+    if (Size1 /= size(Ordinate,1)) call Error%Raise(Line='Supplied abscissa and ordinate not the same length',      &
                                                                                                                 ProcName=ProcName)
 
-    if ( Size1 == 1 ) then
+    if (Size1 == 1) then
       Interpolate_R1D_R0D = Ordinate(1)
     else
       i = 1
       do 
-        if ( i >= Size1 ) exit
-        if ( Abscissa(i) >= Node ) exit
+        if (i >= Size1) exit
+        if (Abscissa(i) >= Node) exit
         i=i+1
       end do
-      if ( i > 1 ) then
+      if (i > 1) then
         Interpolate_R1D_R0D = (Ordinate(i)-Ordinate(i-1))/(Abscissa(i)-Abscissa(i-1)) * (Node-Abscissa(i-1)) + Ordinate(i-1)
       else
         Interpolate_R1D_R0D = (Ordinate(i+1)-Ordinate(i))/(Abscissa(i+1)-Abscissa(i)) * (Node-Abscissa(i)) + Ordinate(i)
@@ -397,21 +397,21 @@ contains
     integer                                                           ::    Size2
     integer                                                           ::    StatLoc=0
 
-    if ( size(Abscissa,1) /= size(Ordinate,1) ) call Error%Raise( Line='Supplied abscissa and ordinate not the same length',      &
+    if (size(Abscissa,1) /= size(Ordinate,1)) call Error%Raise(Line='Supplied abscissa and ordinate not the same length',      &
                                                                                                                 ProcName=ProcName)
 
     Size2 = size(Ordinate,2)
 
     allocate(Interpolate_R2D_R0D(Size2), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Interpolate_R2D_R0D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Interpolate_R2D_R0D', ProcName=ProcName, stat=StatLoc)
     Interpolate_R2D_R0D = Zero
 
-    if ( size(Abscissa,1) == 1 ) then
+    if (size(Abscissa,1) == 1) then
       Interpolate_R2D_R0D = Ordinate(1,:)
     else
       i = 1      
       do i = 1, Size2
-        Interpolate_R2D_R0D(i) = Interpolate( Abscissa, Ordinate(:,i), Node )
+        Interpolate_R2D_R0D(i) = Interpolate(Abscissa, Ordinate(:,i), Node)
       end do
     end if
   
@@ -419,7 +419,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Factorial_I( N )
+  function Factorial_I(N)
 
     integer                                                           ::    Factorial_I
     integer, intent(in)                                               ::    N
@@ -427,7 +427,7 @@ contains
     character(*), parameter                                           ::    ProcName='Factorial_I'
     integer                                                           ::    i
 
-    if ( N < 0 ) call Error%Raise( Line="Unable to compute the factorial given an integer less than 0" )
+    if (N < 0) call Error%Raise(Line="Unable to compute the factorial given an integer less than 0")
 
     Factorial_I = 1
 
@@ -439,7 +439,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Factorial_I8( N )
+  function Factorial_I8(N)
 
     integer(8)                                                        ::    Factorial_I8
     integer(8), intent(in)                                            ::    N
@@ -447,7 +447,7 @@ contains
     character(*), parameter                                           ::    ProcName='Factorial_I8'
     integer(8)                                                        ::    i
 
-    if ( N < 0 ) call Error%Raise( Line="Unable to compute the factorial given an integer less than 0" )
+    if (N < 0) call Error%Raise(Line="Unable to compute the factorial given an integer less than 0")
 
     Factorial_I8 = 1
 
@@ -459,14 +459,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Factorial_R( N )
+  function Factorial_R(N)
 
     real(rkp)                                                         ::    Factorial_R
     real(rkp), intent(in)                                             ::    N
 
     character(*), parameter                                           ::    ProcName='Factorial_R'
 
-    if ( N < Zero ) call Error%Raise( Line="Unable to compute the factorial given an integer less than 0" )
+    if (N < Zero) call Error%Raise(Line="Unable to compute the factorial given an integer less than 0")
 
     Factorial_R = gamma(N + One)
 
@@ -474,7 +474,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function DoubleFactorial_I( N )
+  function DoubleFactorial_I(N)
 
     integer                                                           ::    DoubleFactorial_I
     integer, intent(in)                                               ::    N
@@ -482,16 +482,16 @@ contains
     character(*), parameter                                           ::    ProcName='DoubleFactorial_I'
     integer                                                           ::    Ni
 
-    if ( N < -1 ) call Error%Raise( Line="Unable to compute the double factorial given an integer less than -1" )
+    if (N < -1) call Error%Raise(Line="Unable to compute the double factorial given an integer less than -1")
 
     DoubleFactorial_I = 1
 
-    if ( N >= 1 ) then
+    if (N >= 1) then
       Ni = N
       do
         DoubleFactorial_I = DoubleFactorial_I * Ni
         Ni = Ni - 2
-        if ( Ni <= 0 ) exit
+        if (Ni <= 0) exit
       end do
     end if
 
@@ -499,7 +499,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function SQRTFactorial_I( N )
+  function SQRTFactorial_I(N)
 
     real(rkp)                                                         ::    SQRTFactorial_I
     integer, intent(in)                                               ::    N
@@ -507,7 +507,7 @@ contains
     character(*), parameter                                           ::    ProcName='SQRTFactorial_I'
     integer                                                           ::    i
 
-    if ( N < 0 ) call Error%Raise( Line="Unable to compute the factorial given an integer less than 0" )
+    if (N < 0) call Error%Raise(Line="Unable to compute the factorial given an integer less than 0")
 
     SQRTFactorial_I = 1
 
@@ -519,7 +519,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function SQRTFactorial_I8( N )
+  function SQRTFactorial_I8(N)
 
     real(rkp)                                                         ::    SQRTFactorial_I8
     integer(8), intent(in)                                            ::    N
@@ -527,7 +527,7 @@ contains
     character(*), parameter                                           ::    ProcName='SQRTFactorial_I8'
     integer(8)                                                        ::    i
 
-    if ( N < 0 ) call Error%Raise( Line="Unable to compute the factorial given an integer less than 0" )
+    if (N < 0) call Error%Raise(Line="Unable to compute the factorial given an integer less than 0")
 
     SQRTFactorial_I8 = 1
 
@@ -539,7 +539,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function BinomialCoeff_I_I( Top, Bottom )
+  function BinomialCoeff_I_I(Top, Bottom)
 
     integer                                                           ::    BinomialCoeff_I_I
     integer, intent(in)                                               ::    Top
@@ -548,7 +548,7 @@ contains
     character(*), parameter                                           ::    ProcName='BinomialCoeff_I_I'
     integer                                                           ::    i
 
-    if ( Bottom < 0 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
+    if (Bottom < 0) call Error%Raise(Line='Invalid Bottom option specification', ProcName=ProcName)
 
     BinomialCoeff_I_I = 1
 
@@ -561,7 +561,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function BinomialCoeff_I8_I8( Top, Bottom )
+  function BinomialCoeff_I8_I8(Top, Bottom)
 
     integer(8)                                                        ::    BinomialCoeff_I8_I8
     integer(8), intent(in)                                            ::    Top
@@ -570,7 +570,7 @@ contains
     character(*), parameter                                           ::    ProcName='BinomialCoeff_I8_I8'
     integer(8)                                                        ::    i
 
-    if ( Bottom < 0 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
+    if (Bottom < 0) call Error%Raise(Line='Invalid Bottom option specification', ProcName=ProcName)
 
     BinomialCoeff_I8_I8 = 1
 
@@ -583,7 +583,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function BinomialCoeff_R_rkp_I_ikp( Top, Bottom )
+  function BinomialCoeff_R_rkp_I_ikp(Top, Bottom)
 
     real(rkp)                                                         ::    BinomialCoeff_R_rkp_I_ikp
     real(rkp), intent(in)                                             ::    Top
@@ -593,7 +593,7 @@ contains
     integer(ikp)                                                      ::    i
     real(rkp)                                                         ::    i_rkp
 
-    if ( Bottom < 0 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
+    if (Bottom < 0) call Error%Raise(Line='Invalid Bottom option specification', ProcName=ProcName)
 
     BinomialCoeff_R_rkp_I_ikp = One
 
@@ -607,7 +607,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function BinomialCoeff_R_rkp_I( Top, Bottom )
+  function BinomialCoeff_R_rkp_I(Top, Bottom)
 
     real(rkp)                                                         ::    BinomialCoeff_R_rkp_I
     real(rkp), intent(in)                                             ::    Top
@@ -617,7 +617,7 @@ contains
     integer(ikp)                                                      ::    i
     real(rkp)                                                         ::    i_rkp
 
-    if ( Bottom < 0 ) call Error%Raise( Line='Invalid Bottom option specification', ProcName=ProcName )
+    if (Bottom < 0) call Error%Raise(Line='Invalid Bottom option specification', ProcName=ProcName)
 
     BinomialCoeff_R_rkp_I = One
 
@@ -631,7 +631,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeEigenvalues_CMPLX( Matrix, EigenValues, EigenVectors )
+  subroutine ComputeEigenvalues_CMPLX(Matrix, EigenValues, EigenVectors)
 
     real(rkp), dimension(:,:), intent(inout)                          ::    Matrix
     complex, allocatable, dimension(:), intent(out)                   ::    EigenValues
@@ -649,59 +649,59 @@ contains
 
     N = size(Matrix,2)
 
-    allocate( WR(N), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WR', ProcName=ProcName, stat=StatLoc )
+    allocate(WR(N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='WR', ProcName=ProcName, stat=StatLoc)
 
-    allocate( WI(N), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WI', ProcName=ProcName, stat=StatLoc )
+    allocate(WI(N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='WI', ProcName=ProcName, stat=StatLoc)
 
     allocate(EigenValues(N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='EigenValues', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='EigenValues', ProcName=ProcName, stat=StatLoc)
 
     allocate(VR(1,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VR', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VR', ProcName=ProcName, stat=StatLoc)
 
-    if ( present(EigenVectors) ) then
+    if (present(EigenVectors)) then
       allocate(EigenVectors(N,N), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='EigenVectors', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='EigenVectors', ProcName=ProcName, stat=StatLoc)
       allocate(WORK(1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
       EigenVectors = Zero
-      call DGEEV( 'V', 'N', N, Matrix, N, WR, WI, EigenVectors, N, VR, 1, WORK, -1, StatLoc  )
-      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DGEEV getting LWORK', ProcName=ProcName )
+      call DGEEV('V', 'N', N, Matrix, N, WR, WI, EigenVectors, N, VR, 1, WORK, -1, StatLoc)
+      if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DGEEV getting LWORK', ProcName=ProcName)
       LWORK = nint(WORK(1))
       deallocate(WORK, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
       allocate(WORK(LWORK), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
-      call DGEEV( 'V', 'N', N, Matrix, N, WR, WI, EigenVectors, N, VR, 1, WORK, LWORK, StatLoc  )
-      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DGEEV', ProcName=ProcName )
+      if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+      call DGEEV('V', 'N', N, Matrix, N, WR, WI, EigenVectors, N, VR, 1, WORK, LWORK, StatLoc)
+      if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DGEEV', ProcName=ProcName)
       deallocate(WORK, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
-      EigenValues = CMPLX( WR,WI )
+      if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+      EigenValues = CMPLX(WR,WI)
     else
       allocate(WORK(1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
       EigenVectors = Zero
-      call DGEEV( 'N', 'N', N, Matrix, N, WR, WI, VL, N, VR, 1, WORK, -1, StatLoc  )
-      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DGEEV getting LWORK', ProcName=ProcName )
+      call DGEEV('N', 'N', N, Matrix, N, WR, WI, VL, N, VR, 1, WORK, -1, StatLoc)
+      if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DGEEV getting LWORK', ProcName=ProcName)
       LWORK = nint(WORK(1))
       deallocate(WORK, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
       allocate(WORK(LWORK), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
-      call DGEEV( 'N', 'N', N, Matrix, N, WR, WI, VL, N, VR, 1, WORK, LWORK, StatLoc  )
-      if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DGEEV', ProcName=ProcName )
+      if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+      call DGEEV('N', 'N', N, Matrix, N, WR, WI, VL, N, VR, 1, WORK, LWORK, StatLoc)
+      if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DGEEV', ProcName=ProcName)
       deallocate(WORK, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
-      EigenValues = CMPLX( WR,WI )
+      if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+      EigenValues = CMPLX(WR,WI)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeEigenvalues_REAL( Matrix, EigenValues, EigenVectors )
+  subroutine ComputeEigenvalues_REAL(Matrix, EigenValues, EigenVectors)
 
     real(rkp), dimension(:,:), intent(inout)                          ::    Matrix
     real(rkp), allocatable, dimension(:), intent(out)                 ::    EigenValues
@@ -721,63 +721,63 @@ contains
 
     N = size(Matrix,2)
     
-    if ( N /= size(Matrix,1) ) call Error%Raise( Line='Matrix is not square', ProcName=ProcName )
+    if (N /= size(Matrix,1)) call Error%Raise(Line='Matrix is not square', ProcName=ProcName)
 
-    allocate( WR(N), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WR', ProcName=ProcName, stat=StatLoc )
+    allocate(WR(N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='WR', ProcName=ProcName, stat=StatLoc)
 
-    allocate( WI(N), stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WI', ProcName=ProcName, stat=StatLoc )
+    allocate(WI(N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='WI', ProcName=ProcName, stat=StatLoc)
 
     allocate(EigenValues(N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='EigenValues', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='EigenValues', ProcName=ProcName, stat=StatLoc)
 
     allocate(VL(1,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VL', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VL', ProcName=ProcName, stat=StatLoc)
 
     allocate(VR(1,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='VR', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='VR', ProcName=ProcName, stat=StatLoc)
 
-    if ( present(EigenVectors) ) then
+    if (present(EigenVectors)) then
       allocate(EigenVectors(N,N), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='EigenVectors', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='EigenVectors', ProcName=ProcName, stat=StatLoc)
       allocate(WORK(1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
       EigenVectors = Zero
-      call DGEEV( 'V', 'N', N, Matrix, N, WR, WI, EigenVectors, N, VR, 1, WORK, -1, INFO  )
-      if ( INFO /= 0 ) call Error%Raise( Line='Something went wrong in DGEEV getting LWORK', ProcName=ProcName )
+      call DGEEV('V', 'N', N, Matrix, N, WR, WI, EigenVectors, N, VR, 1, WORK, -1, INFO)
+      if (INFO /= 0) call Error%Raise(Line='Something went wrong in DGEEV getting LWORK', ProcName=ProcName)
       LWORK = nint(WORK(1))
       deallocate(WORK, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
       allocate(WORK(LWORK), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
-      call DGEEV( 'V', 'N', N, Matrix, N, WR, WI, EigenVectors, N, VR, 1, WORK, LWORK, INFO  )
-      if ( INFO /= 0 ) call Error%Raise( Line='Something went wrong in DGEEV', ProcName=ProcName )
+      if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+      call DGEEV('V', 'N', N, Matrix, N, WR, WI, EigenVectors, N, VR, 1, WORK, LWORK, INFO)
+      if (INFO /= 0) call Error%Raise(Line='Something went wrong in DGEEV', ProcName=ProcName)
       deallocate(WORK, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
       i = 1
       do i = 1, N
-        if ( WI(i) > 1E-8 ) call Error%Raise( Line='Imaginary eigenvalues detected', ProcName=ProcName )
+        if (WI(i) > 1E-8) call Error%Raise(Line='Imaginary eigenvalues detected', ProcName=ProcName)
       end do
       EigenValues = WR
     else
 
       allocate(WORK(1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
-      call DGEEV( 'N', 'N', N, Matrix, N, WR, WI, VL, 1, VR, 1, WORK, -1, INFO  )
-      if ( INFO /= 0 ) call Error%Raise( Line='Something went wrong in DGEEV getting LWORK', ProcName=ProcName )
+      if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+      call DGEEV('N', 'N', N, Matrix, N, WR, WI, VL, 1, VR, 1, WORK, -1, INFO)
+      if (INFO /= 0) call Error%Raise(Line='Something went wrong in DGEEV getting LWORK', ProcName=ProcName)
       LWORK = nint(WORK(1))
       deallocate(WORK, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
       allocate(WORK(LWORK), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
-      call DGEEV( 'N', 'N', N, Matrix, N, WR, WI, VL, 1, VR, 1, WORK, LWORK, INFO  )
-      if ( INFO /= 0 ) call Error%Raise( Line='Something went wrong in DGEEV', ProcName=ProcName )
+      if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+      call DGEEV('N', 'N', N, Matrix, N, WR, WI, VL, 1, VR, 1, WORK, LWORK, INFO)
+      if (INFO /= 0) call Error%Raise(Line='Something went wrong in DGEEV', ProcName=ProcName)
       deallocate(WORK, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
       i = 1
       do i = 1, N
-        if ( WI(i) > 1E-8 ) call Error%Raise( Line='Imaginary eigenvalues detected', ProcName=ProcName )
+        if (WI(i) > 1E-8) call Error%Raise(Line='Imaginary eigenvalues detected', ProcName=ProcName)
       end do
       EigenValues = WR
     end if
@@ -786,7 +786,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeQR( Matrix, Q, R )
+  subroutine ComputeQR(Matrix, Q, R)
 
     real(rkp), dimension(:,:), intent(in)                             ::    Matrix
     real(rkp), allocatable, dimension(:,:), intent(out)               ::    Q
@@ -805,57 +805,57 @@ contains
     M = size(Matrix,1)
     N = size(Matrix,2)
 
-    if ( M < N ) call Error%Raise( Line='This routine works only with tall matrices', ProcName=ProcName )
+    if (M < N) call Error%Raise(Line='This routine works only with tall matrices', ProcName=ProcName)
 
     allocate(Q(M,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Q', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Q', ProcName=ProcName, stat=StatLoc)
     Q = Matrix
 
     allocate(R(N,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='R', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
     R = Zero
 
-    allocate( TAU(min(M,N)), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='TAU', ProcName=ProcName, stat=StatLoc )
+    allocate(TAU(min(M,N)), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
 
-    call DGEQRF( M, N, Q, M, TAU, WORKSIZE, -1, StatLoc  )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DGEQRF", ProcName=ProcName )
+    call DGEQRF(M, N, Q, M, TAU, WORKSIZE, -1, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
 
     LWORK = nint(WORKSIZE(1))
 
     allocate(WORK(LWORK), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
-    call DGEQRF( M, N, Q, M, TAU, WORK, LWORK, StatLoc  )
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DGEQRF", ProcName=ProcName )
+    call DGEQRF(M, N, Q, M, TAU, WORK, LWORK, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
 
     deallocate(WORK, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, N
       R(1:i,i) = Q(1:i,i)
     end do
 
-    call DORGQR( M, N, N, Q, M, TAU, WORKSIZE, -1, StatLoc) 
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DORMQR", ProcName=ProcName )
+    call DORGQR(M, N, N, Q, M, TAU, WORKSIZE, -1, StatLoc) 
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORMQR", ProcName=ProcName)
 
     LWORK = nint(WORKSIZE(1))
 
     allocate(WORK(LWORK), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='WORK', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
-    call DORGQR( M, N, N, Q, M, TAU, WORK, LWORK, StatLoc) 
-    if ( StatLoc /= 0 ) call Error%Raise( Line="Something went wrong in DORMQR", ProcName=ProcName )
+    call DORGQR(M, N, N, Q, M, TAU, WORK, LWORK, StatLoc) 
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORMQR", ProcName=ProcName)
 
     deallocate(WORK, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='WORK', ProcName=ProcName, stat=StatLoc ) 
+    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc) 
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeNorm_R1D_8( Vector, Norm )
+  function ComputeNorm_R1D_8(Vector, Norm)
 
     use ieee_arithmetic
 
@@ -868,7 +868,7 @@ contains
     integer                                                           ::    StatLoc=0
     real(8), external                                                 ::    DNRM2
 
-    if ( Norm < 0 ) call Error%Raise( Line='Cannot take a negative norm', ProcName=ProcName )
+    if (Norm < 0) call Error%Raise(Line='Cannot take a negative norm', ProcName=ProcName)
 
     select case (Norm)
       case (0)
@@ -887,7 +887,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Knuth shuffle
   ! https://rosettacode.org/wiki/Knuth_shuffle#Fortran
-  subroutine ScrambleArray_I1D( Array, RNG )
+  subroutine ScrambleArray_I1D(Array, RNG)
 
     integer, dimension(:), intent(inout)                              ::    Array
     type(RandPseudo_Type), optional, intent(inout)                    ::    RNG
@@ -903,8 +903,8 @@ contains
     NbEntries = size(Array,1)
 
     do i = NbEntries, 2, -1
-      if ( present(RNG) ) then
-        RandNum = RNG%Draw( DrawType=2 )
+      if (present(RNG)) then
+        RandNum = RNG%Draw(DrawType=2)
       else
         call random_number(RandNum)
       end if
@@ -920,7 +920,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Knuth shuffle
   ! https://rosettacode.org/wiki/Knuth_shuffle#Fortran
-  subroutine ScrambleArray_R1D( Array, RNG )
+  subroutine ScrambleArray_R1D(Array, RNG)
 
     real(rkp), dimension(:), intent(inout)                            ::    Array
     type(RandPseudo_Type), optional, intent(inout)                    ::    RNG
@@ -936,8 +936,8 @@ contains
     NbEntries = size(Array,1)
 
     do i = NbEntries, 2, -1
-      if ( present(RNG) ) then
-        RandNum = RNG%Draw( DrawType=2 )
+      if (present(RNG)) then
+        RandNum = RNG%Draw(DrawType=2)
       else
         call random_number(RandNum)
       end if
@@ -951,7 +951,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_VarR0D( Transformation, Value )
+  subroutine Transform_VarR0D(Transformation, Value)
 
     character(*), intent(in)                                          ::    Transformation
     real(rkp), intent(inout)                                          ::    Value
@@ -961,7 +961,7 @@ contains
     character(:), allocatable, dimension(:)                           ::    TransformationsLoc
     integer                                                           ::    i
 
-    call Parse( Input=Transformation, Separator=' ', Output=TransformationsLoc )
+    call Parse(Input=Transformation, Separator=' ', Output=TransformationsLoc)
 
     i = 1
     do i = 1, size(TransformationsLoc)
@@ -969,31 +969,31 @@ contains
         case ('^2')
           Value = Value**2
         case('sqrt')
-          if ( Value < Zero ) call Error%Raise( Line='Tried to take square root of a negative number', ProcName=ProcName )
+          if (Value < Zero) call Error%Raise(Line='Tried to take square root of a negative number', ProcName=ProcName)
           Value = dsqrt(Value)
         case('log')
-          if ( Value <= Zero ) call Error%Raise( Line='Tried to take log of a number at or below zero', ProcName=ProcName )
+          if (Value <= Zero) call Error%Raise(Line='Tried to take log of a number at or below zero', ProcName=ProcName)
           Value = dlog(Value)
         case('log10')
-          if ( Value <= Zero ) call Error%Raise( Line='Tried to take log10 of a number at or below zero', ProcName=ProcName )
+          if (Value <= Zero) call Error%Raise(Line='Tried to take log10 of a number at or below zero', ProcName=ProcName)
           Value = dlog10(Value)
         case('exp')
           Value = dexp(Value)
         case('10^')
           Value = Ten**Value
         case default
-          call Error%Raise( Line='Did not recognize the transformation option', ProcName=ProcName )
+          call Error%Raise(Line='Did not recognize the transformation option', ProcName=ProcName)
       end select
     end do
 
     deallocate(TransformationsLoc, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_VarR1D( Transformation, Values )
+  subroutine Transform_VarR1D(Transformation, Values)
 
     character(*), intent(in)                                          ::    Transformation
     real(rkp), dimension(:), intent(inout)                            ::    Values
@@ -1003,7 +1003,7 @@ contains
     character(:), allocatable, dimension(:)                           ::    TransformationsLoc
     integer                                                           ::    i
 
-    call Parse( Input=Transformation, Separator=' ', Output=TransformationsLoc )
+    call Parse(Input=Transformation, Separator=' ', Output=TransformationsLoc)
 
     i = 1
     do i = 1, size(TransformationsLoc)
@@ -1011,31 +1011,31 @@ contains
         case ('^2')
           Values = Values**2
         case('sqrt')
-          if ( any(Values < Zero) ) call Error%Raise( Line='Tried to take square root of a negative number', ProcName=ProcName )
+          if (any(Values < Zero)) call Error%Raise(Line='Tried to take square root of a negative number', ProcName=ProcName)
           Values = dsqrt(Values)
         case('log')
-          if ( any(Values <= Zero) ) call Error%Raise( Line='Tried to take log of a number at or below zero', ProcName=ProcName )
+          if (any(Values <= Zero)) call Error%Raise(Line='Tried to take log of a number at or below zero', ProcName=ProcName)
           Values = dlog(Values)
         case('log10')
-          if ( any(Values <= Zero) ) call Error%Raise( Line='Tried to take log10 of a number at or below zero', ProcName=ProcName )
+          if (any(Values <= Zero)) call Error%Raise(Line='Tried to take log10 of a number at or below zero', ProcName=ProcName)
           Values = dlog10(Values)
         case('exp')
           Values = dexp(Values)
         case('10^')
           Values = Ten**Values
         case default
-          call Error%Raise( Line='Did not recognize the transformation option', ProcName=ProcName )
+          call Error%Raise(Line='Did not recognize the transformation option', ProcName=ProcName)
       end select
     end do
 
     deallocate(TransformationsLoc, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function BernoulliNumbers( P )
+  function BernoulliNumbers(P)
 
     real(rkp), allocatable, dimension(:)                              ::    BernoulliNumbers
     
@@ -1046,25 +1046,25 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
 
-    if ( P < 1 ) call Error%Raise( "Requested less than 1 Bernoulli number", ProcName=ProcName )
+    if (P < 1) call Error%Raise("Requested less than 1 Bernoulli number", ProcName=ProcName)
 
     allocate(BernoulliNumbers(P+1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='BernoulliNumbers', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='BernoulliNumbers', ProcName=ProcName, stat=StatLoc)
 
     BernoulliNumbers = Zero
     BernoulliNumbers(1) = One
-    if ( P > 1 ) BernoulliNumbers(2) = - One/Two
+    if (P > 1) BernoulliNumbers(2) = - One/Two
 
     i = 2
     do i = 2, P
-      if ( mod(i,2) /= 0 ) then
+      if (mod(i,2) /= 0) then
         BernoulliNumbers(i+1) = Zero
       else
         ii = 0
         do ii = 0, i-1
           BernoulliNumbers(i+1) = BernoulliNumbers(i+1) + real(BinomialCoeff(Top=i+1,Bottom=ii),rkp)*BernoulliNumbers(ii+1)
         end do   
-        BernoulliNumbers(i+1) = -One / ( real(i,rkp) + One ) * BernoulliNumbers(i+1)
+        BernoulliNumbers(i+1) = -One / (real(i,rkp) + One) * BernoulliNumbers(i+1)
       end if
     end do
 
@@ -1072,7 +1072,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Pochhammer_R0D_8( A, N )
+  function Pochhammer_R0D_8(A, N)
 
     real(rkp)                                                         ::    Pochhammer_R0D_8
     
@@ -1088,7 +1088,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Pochhammer_R0D_4( A, N )
+  function Pochhammer_R0D_4(A, N)
 
     real(rkp)                                                         ::    Pochhammer_R0D_4
     
@@ -1104,7 +1104,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Pochhammer_I0D_8( A, N )
+  function Pochhammer_I0D_8(A, N)
 
     real(rkp)                                                         ::    Pochhammer_I0D_8
     
@@ -1120,7 +1120,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Pochhammer_I0D_4( A, N )
+  function Pochhammer_I0D_4(A, N)
 
     real(rkp)                                                         ::    Pochhammer_I0D_4
     
@@ -1136,7 +1136,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I0D_4_RNG( Min, Max, RNG )
+  function RandomInteger_I0D_4_RNG(Min, Max, RNG)
 
     integer(4)                                                        ::    RandomInteger_I0D_4_RNG
     
@@ -1148,15 +1148,15 @@ contains
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    VarR0D
 
-    VarR0D = RNG%Draw( DrawType=2 )
+    VarR0D = RNG%Draw(DrawType=2)
 
-    RandomInteger_I0D_4_RNG = Min + floor(VarR0D * real(Max-Min+1,rkp) )
+    RandomInteger_I0D_4_RNG = Min + floor(VarR0D * real(Max-Min+1,rkp))
     
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I0D_4_Intrinsic( Min, Max )
+  function RandomInteger_I0D_4_Intrinsic(Min, Max)
 
     integer(4)                                                        ::    RandomInteger_I0D_4_Intrinsic
     
@@ -1167,15 +1167,15 @@ contains
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    VarR0D
 
-    call random_number( VarR0D )
+    call random_number(VarR0D)
 
-    RandomInteger_I0D_4_Intrinsic = Min + floor(VarR0D * real(Max-Min+1,rkp) )
+    RandomInteger_I0D_4_Intrinsic = Min + floor(VarR0D * real(Max-Min+1,rkp))
     
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I0D_8_RNG( Min, Max, RNG )
+  function RandomInteger_I0D_8_RNG(Min, Max, RNG)
 
     integer(8)                                                        ::    RandomInteger_I0D_8_RNG
     
@@ -1187,15 +1187,15 @@ contains
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    VarR0D
 
-    VarR0D = RNG%Draw( DrawType=2 )
+    VarR0D = RNG%Draw(DrawType=2)
 
-    RandomInteger_I0D_8_RNG = Min + floor(VarR0D * real(Max-Min+1,rkp) )
+    RandomInteger_I0D_8_RNG = Min + floor(VarR0D * real(Max-Min+1,rkp))
     
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I0D_8_Intrinsic( Min, Max )
+  function RandomInteger_I0D_8_Intrinsic(Min, Max)
 
     integer(8)                                                        ::    RandomInteger_I0D_8_Intrinsic
     
@@ -1206,15 +1206,15 @@ contains
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    VarR0D
 
-    call random_number( VarR0D )
+    call random_number(VarR0D)
 
-    RandomInteger_I0D_8_Intrinsic = Min + floor(VarR0D * real(Max-Min+1,rkp) )
+    RandomInteger_I0D_8_Intrinsic = Min + floor(VarR0D * real(Max-Min+1,rkp))
     
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I1D_4_RNG( Min, Max, M, RNG )
+  function RandomInteger_I1D_4_RNG(Min, Max, M, RNG)
 
     integer(4), allocatable, dimension(:)                             ::    RandomInteger_I1D_4_RNG
     
@@ -1228,18 +1228,18 @@ contains
     integer(4)                                                        ::    i
 
     allocate(RandomInteger_I1D_4_RNG(M), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I1D_4', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='RandomInteger_I1D_4', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, M
-      RandomInteger_I1D_4_RNG(i) = RandomInteger( Min=Min, Max=Max, RNG=RNG )
+      RandomInteger_I1D_4_RNG(i) = RandomInteger(Min=Min, Max=Max, RNG=RNG)
     end do
     
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I1D_4_Intrinsic( Min, Max, M)
+  function RandomInteger_I1D_4_Intrinsic(Min, Max, M)
 
     integer(4), allocatable, dimension(:)                             ::    RandomInteger_I1D_4_Intrinsic
     
@@ -1252,18 +1252,18 @@ contains
     integer(4)                                                        ::    i
 
     allocate(RandomInteger_I1D_4_Intrinsic(M), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I1D_4_Intrinsic', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='RandomInteger_I1D_4_Intrinsic', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, M
-      RandomInteger_I1D_4_Intrinsic(i) = RandomInteger( Min=Min, Max=Max )
+      RandomInteger_I1D_4_Intrinsic(i) = RandomInteger(Min=Min, Max=Max)
     end do
     
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I1D_8_RNG( Min, Max, M, RNG )
+  function RandomInteger_I1D_8_RNG(Min, Max, M, RNG)
 
     integer(8), allocatable, dimension(:)                             ::    RandomInteger_I1D_8_RNG
     
@@ -1277,18 +1277,18 @@ contains
     integer(8)                                                        ::    i
 
     allocate(RandomInteger_I1D_8_RNG(M), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I1D_8_RNG', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='RandomInteger_I1D_8_RNG', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, M
-      RandomInteger_I1D_8_RNG(i) = RandomInteger( Min=Min, Max=Max, RNG=RNG )
+      RandomInteger_I1D_8_RNG(i) = RandomInteger(Min=Min, Max=Max, RNG=RNG)
     end do
   
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I1D_8_Intrinsic( Min, Max, M )
+  function RandomInteger_I1D_8_Intrinsic(Min, Max, M)
 
     integer(8), allocatable, dimension(:)                             ::    RandomInteger_I1D_8_Intrinsic
     
@@ -1301,18 +1301,18 @@ contains
     integer(8)                                                        ::    i
 
     allocate(RandomInteger_I1D_8_Intrinsic(M), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I1D_8_Intrinsic', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='RandomInteger_I1D_8_Intrinsic', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, M
-      RandomInteger_I1D_8_Intrinsic(i) = RandomInteger( Min=Min, Max=Max )
+      RandomInteger_I1D_8_Intrinsic(i) = RandomInteger(Min=Min, Max=Max)
     end do
     
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I2D_4_RNG( Min, Max, M, N, RNG )
+  function RandomInteger_I2D_4_RNG(Min, Max, M, N, RNG)
 
     integer(4), allocatable, dimension(:,:)                           ::    RandomInteger_I2D_4_RNG
     
@@ -1328,13 +1328,13 @@ contains
     integer(4)                                                        ::    j
 
     allocate(RandomInteger_I2D_4_RNG(M,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I2D_4_RNG', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='RandomInteger_I2D_4_RNG', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     j = 1
     do i = 1, M
       do j = 1, N
-        RandomInteger_I2D_4_RNG(i,j) = RandomInteger( Min=Min, Max=Max, RNG=RNG )
+        RandomInteger_I2D_4_RNG(i,j) = RandomInteger(Min=Min, Max=Max, RNG=RNG)
       end do
     end do
     
@@ -1342,7 +1342,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I2D_4_Intrinsic( Min, Max, M, N )
+  function RandomInteger_I2D_4_Intrinsic(Min, Max, M, N)
 
     integer(4), allocatable, dimension(:,:)                           ::    RandomInteger_I2D_4_Intrinsic
     
@@ -1357,11 +1357,11 @@ contains
     integer(4)                                                        ::    j
 
     allocate(RandomInteger_I2D_4_Intrinsic(M,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I2D_4_Intrinsic', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='RandomInteger_I2D_4_Intrinsic', ProcName=ProcName, stat=StatLoc)
 
     do i = 1, M
       do j = 1, N
-        RandomInteger_I2D_4_Intrinsic(i,j) = RandomInteger( Min=Min, Max=Max )
+        RandomInteger_I2D_4_Intrinsic(i,j) = RandomInteger(Min=Min, Max=Max)
       end do
     end do
     
@@ -1369,7 +1369,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I2D_8_RNG( Min, Max, M, N, RNG )
+  function RandomInteger_I2D_8_RNG(Min, Max, M, N, RNG)
 
     integer(8), allocatable, dimension(:,:)                           ::    RandomInteger_I2D_8_RNG
     
@@ -1385,13 +1385,13 @@ contains
     integer(8)                                                        ::    j
 
     allocate(RandomInteger_I2D_8_RNG(M,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I2D_8_RNG', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='RandomInteger_I2D_8_RNG', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     j = 1
     do i = 1, M
       do j = 1, N
-        RandomInteger_I2D_8_RNG(i,j) = RandomInteger( Min=Min, Max=Max, RNG=RNG )
+        RandomInteger_I2D_8_RNG(i,j) = RandomInteger(Min=Min, Max=Max, RNG=RNG)
       end do
     end do
     
@@ -1399,7 +1399,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function RandomInteger_I2D_8_Intrinsic( Min, Max, M, N )
+  function RandomInteger_I2D_8_Intrinsic(Min, Max, M, N)
 
     integer(8), allocatable, dimension(:,:)                           ::    RandomInteger_I2D_8_Intrinsic
     
@@ -1414,11 +1414,11 @@ contains
     integer(8)                                                        ::    j
 
     allocate(RandomInteger_I2D_8_Intrinsic(M,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='RandomInteger_I2D_8_Intrinsic', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='RandomInteger_I2D_8_Intrinsic', ProcName=ProcName, stat=StatLoc)
 
     do i = 1, M
       do j = 1, N
-        RandomInteger_I2D_8_Intrinsic(i,j) = RandomInteger( Min=Min, Max=Max )
+        RandomInteger_I2D_8_Intrinsic(i,j) = RandomInteger(Min=Min, Max=Max)
       end do
     end do
     

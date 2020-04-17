@@ -52,13 +52,13 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(DistLog10Unif_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'log10uniform'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -68,7 +68,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetA( This )
+  function GetA(This)
 
     real(rkp)                                                         ::    GetA
 
@@ -76,7 +76,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetA'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetA = Ten**(This%A)
 
@@ -84,7 +84,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetB( This )
+  function GetB(This)
 
     real(rkp)                                                         ::    GetB
 
@@ -92,7 +92,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetB'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetB = Ten**(This%B)
 
@@ -100,7 +100,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X )
+  function PDF_R0D(This, X)
 
     real(rkp)                                                         ::    PDF_R0D
 
@@ -110,17 +110,17 @@ contains
     character(*), parameter                                           ::    ProcName='PDF'
     logical                                                           ::    TripFlag
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     TripFlag = .false.
 
-    if ( X <= Zero ) then
+    if (X <= Zero) then
       PDF_R0D = Zero
       TripFlag = .true.
     end if
 
-    if ( .not. TripFlag ) then
-      PDF_R0D = This%ComputeUnifPDF( dlog10(X), This%A, This%B )
+    if (.not. TripFlag) then
+      PDF_R0D = This%ComputeUnifPDF(dlog10(X), This%A, This%B)
       PDF_R0D = One/(X*dlogof10) * PDF_R0D
     end if
 
@@ -128,7 +128,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X )
+  function CDF_R0D(This, X)
 
     real(rkp)                                                         ::    CDF_R0D
 
@@ -138,24 +138,24 @@ contains
     character(*), parameter                                           ::    ProcName='CDF_R0D'
     logical                                                           ::    TripFlag
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     TripFlag = .false.
 
-    if ( X <= Zero ) then
+    if (X <= Zero) then
       CDF_R0D = Zero
       TripFlag = .true.
     end if
   
-    if ( .not. TripFlag ) then
-      CDF_R0D = This%ComputeUnifCDF( dlog10(X), This%A, This%B )
+    if (.not. TripFlag) then
+      CDF_R0D = This%ComputeUnifCDF(dlog10(X), This%A, This%B)
     end if
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P )
+  function InvCDF_R0D(This, P)
 
     real(rkp)                                                         ::    InvCDF_R0D
 
@@ -164,16 +164,16 @@ contains
 
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    InvCDF_R0D = This%ComputeUnifInvCDF( P, This%A, This%B )
+    InvCDF_R0D = This%ComputeUnifInvCDF(P, This%A, This%B)
     InvCDF_R0D = Ten**InvCDF_R0D
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment( This, Moment )
+  function GetMoment(This, Moment)
 
     real(rkp)                                                         ::    GetMoment
 
@@ -184,11 +184,11 @@ contains
     real(rkp)                                                         ::    eA
     real(rkp)                                                         ::    eB
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
+    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-    if ( Moment > 0 ) then
+    if (Moment > 0) then
       eA = Ten**(This%A)
       eB = Ten**(This%B)
       GetMoment = (eB**Moment - eA**Moment) / (real(Moment,rkp)*(This%B-This%A)) * One/dlogof10
@@ -200,7 +200,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo( This, File )
+  subroutine WriteInfo(This, File)
 
     class(DistLog10Unif_Type), intent(in)                             ::    This
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -209,13 +209,13 @@ contains
     integer                                                           ::    i
     type(String_Type), dimension(3)                                   ::    Strings
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     Strings(1) = 'log10uniform'
     Strings(2) = ConvertToString(Value=This%A)
     Strings(3) = ConvertToString(Value=This%B)
 
-    call File%Append( Strings=Strings )
+    call File%Append(Strings=Strings)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

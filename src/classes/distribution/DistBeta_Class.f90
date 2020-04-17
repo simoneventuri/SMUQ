@@ -67,13 +67,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(DistBeta_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'gamma'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -83,7 +83,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(DistBeta_Type), intent(inout)                               ::    This
 
@@ -99,7 +99,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(DistBeta_Type), intent(inout)                               ::    This
 
@@ -116,7 +116,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(DistBeta_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -131,31 +131,31 @@ contains
     logical                                                           ::    VarL0D
     character(:), allocatable                                         ::    PrefixLoc
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
     
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'alpha'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Alpha = VarR0D
 
     ParameterName = 'beta'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Beta = VarR0D
 
     ParameterName = 'a'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%A = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%A = VarR0D
 
     ParameterName = 'b'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%B = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%B = VarR0D
 
-    if ( This%Alpha <= Zero ) call Error%Raise( "Alpha parameter at or below zero" )
-    if ( This%Beta <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
-    if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    if (This%Alpha <= Zero) call Error%Raise("Alpha parameter at or below zero")
+    if (This%Beta <= Zero) call Error%Raise("Beta parameter at or below zero")
+    if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
 
     This%Constructed = .true.
 
@@ -163,7 +163,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Alpha, Beta, A, B )
+  subroutine ConstructCase1(This, Alpha, Beta, A, B)
     
     class(DistBeta_Type), intent(inout)                               ::    This
     real(rkp), intent(in)                                             ::    Alpha
@@ -173,20 +173,20 @@ contains
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     This%Alpha = Alpha
 
     This%Beta = Beta
 
-    if ( present(A) ) This%A = A
+    if (present(A)) This%A = A
 
-    if ( present(B) ) This%B = B
+    if (present(B)) This%B = B
 
-    if ( Alpha <= Zero ) call Error%Raise( "Alpha parameter at or below zero" )
-    if ( Beta <= Zero ) call Error%Raise( "Beta parameter at or below zero" )
-    if ( This%B < This%A ) call Error%Raise( Line='Upper limit < lower limit', ProcName=ProcName )
+    if (Alpha <= Zero) call Error%Raise("Alpha parameter at or below zero")
+    if (Beta <= Zero) call Error%Raise("Beta parameter at or below zero")
+    if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
 
     This%Constructed = .true.
 
@@ -194,14 +194,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(DistBeta_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -211,27 +211,27 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddParameter( Name='alpha', Value=ConvertToString( Value=This%Alpha ) )
-    call GetInput%AddParameter( Name='beta', Value=ConvertToString( Value=This%Beta ) )
-    call GetInput%AddParameter( Name='a', Value=ConvertToString( Value=This%A ) )
-    call GetInput%AddParameter( Name='b', Value=ConvertToString( Value=This%B ) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+    call GetInput%AddParameter(Name='alpha', Value=ConvertToString(Value=This%Alpha))
+    call GetInput%AddParameter(Name='beta', Value=ConvertToString(Value=This%Beta))
+    call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
+    call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X )
+  function PDF_R0D(This, X)
 
     real(rkp)                                                         ::    PDF_R0D
 
@@ -240,16 +240,16 @@ contains
 
     character(*), parameter                                           ::    ProcName='PDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    PDF_R0D = This%ComputePDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
+    PDF_R0D = This%ComputePDF(X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Assumes that A will not be passed unless it is above 0.0 and that all parameters are valid
-  function ComputePDF( X, Alpha, Beta, A, B )
+  function ComputePDF(X, Alpha, Beta, A, B)
 
     real(rkp)                                                         ::    ComputePDF
 
@@ -271,12 +271,12 @@ contains
     TripFlag = .false.
 
     ALoc = Zero
-    if ( present(A) ) ALoc = A
+    if (present(A)) ALoc = A
 
     BLoc = One
-    if ( present(B) ) BLoc = B
+    if (present(B)) BLoc = B
 
-    if (X < ALoc ) then
+    if (X < ALoc) then
       ComputePDF = Zero
       TripFlag=.true.
     end if
@@ -286,11 +286,11 @@ contains
       TripFlag=.true.
     end if
 
-    if ( .not. TripFlag ) then
+    if (.not. TripFlag) then
       XLoc = (X-ALoc)/(BLoc-ALoc)
       AlphaLoc = real(Alpha,8)
       BetaLoc = real(Beta,8)
-      call beta_pdf( XLoc, AlphaLoc, BetaLoc, VarR0D )
+      call beta_pdf(XLoc, AlphaLoc, BetaLoc, VarR0D)
       ComputePDF = real(VarR0D,rkp)/(BLoc-ALoc)
     end if
 
@@ -298,7 +298,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X )
+  function CDF_R0D(This, X)
 
     real(rkp)                                                         ::    CDF_R0D
 
@@ -307,15 +307,15 @@ contains
 
     character(*), parameter                                           ::    ProcName='CDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    CDF_R0D = This%ComputeCDF( X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
+    CDF_R0D = This%ComputeCDF(X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeCDF( X, Alpha, Beta, A, B )
+  function ComputeCDF(X, Alpha, Beta, A, B)
 
     real(rkp)                                                         ::    ComputeCDF
 
@@ -337,12 +337,12 @@ contains
     TripFlag = .false.
 
     ALoc = Zero
-    if ( present(A) ) ALoc = A
+    if (present(A)) ALoc = A
 
     BLoc = One
-    if ( present(B) ) BLoc = B
+    if (present(B)) BLoc = B
 
-    if (X < ALoc ) then
+    if (X < ALoc) then
       ComputeCDF = Zero
       TripFlag=.true.
     end if
@@ -352,11 +352,11 @@ contains
       TripFlag=.true.
     end if
 
-    if ( .not. TripFlag ) then
+    if (.not. TripFlag) then
       XLoc = (X-ALoc)/(BLoc-ALoc)
       AlphaLoc = real(Alpha,8)
       BetaLoc = real(Beta,8)
-      call beta_cdf( XLoc, AlphaLoc, BetaLoc, VarR0D )
+      call beta_cdf(XLoc, AlphaLoc, BetaLoc, VarR0D)
       ComputeCDF = real(VarR0D,rkp)
     end if 
 
@@ -364,7 +364,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P )
+  function InvCDF_R0D(This, P)
 
     real(rkp)                                                         ::    InvCDF_R0D
 
@@ -373,16 +373,16 @@ contains
 
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    InvCDF_R0D = This%ComputeInvCDF( P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B )
+    InvCDF_R0D = This%ComputeInvCDF(P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Assumes that A will not be passed unless it is above 0.0 and that all parameters are valid
-  function ComputeInvCDF( P, Alpha, Beta, A, B )
+  function ComputeInvCDF(P, Alpha, Beta, A, B)
 
     real(rkp)                                                         ::    ComputeInvCDF
 
@@ -402,32 +402,32 @@ contains
     integer                                                           ::    StatLoc=0
     logical                                                           ::    TripFlag
 
-    if ( P < Zero ) call Error%Raise( Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName )
-    if ( P > One ) call Error%Raise( Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName )
+    if (P < Zero) call Error%Raise(Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName)
+    if (P > One) call Error%Raise(Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName)
 
     TripFlag = .false.
 
     ALoc = Zero
-    if ( present(A) ) ALoc = A
+    if (present(A)) ALoc = A
 
     BLoc = One
-    if ( present(B) ) BLoc = B
+    if (present(B)) BLoc = B
 
-    if ( P == Zero ) then
+    if (P == Zero) then
       ComputeInvCDF = ALoc
       TripFlag=.true.
     end if
 
-    if ( P == One ) then
+    if (P == One) then
       ComputeInvCDF = BLoc
       TripFlag=.true.
     end if
 
-    if ( .not. TripFlag ) then
+    if (.not. TripFlag) then
       PLoc = real(P,8)
       AlphaLoc = real(Alpha,8)
       BetaLoc = real(Beta,8)
-      call beta_cdf_inv( P, AlphaLoc, BetaLoc, XLoc )
+      call beta_cdf_inv(P, AlphaLoc, BetaLoc, XLoc)
       ComputeInvCDF = real(XLoc,rkp)*(BLoc-ALoc) + ALoc
     end if
 
@@ -435,7 +435,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetAlpha( This )
+  function GetAlpha(This)
 
     real(rkp)                                                         ::    GetAlpha
 
@@ -443,7 +443,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetAlpha'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetAlpha = This%Alpha
 
@@ -451,7 +451,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetBeta( This )
+  function GetBeta(This)
 
     real(rkp)                                                         ::    GetBeta
 
@@ -459,7 +459,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetBeta'
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetBeta = This%Beta
 
@@ -467,7 +467,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment( This, Moment )
+  function GetMoment(This, Moment)
 
     real(rkp)                                                         ::    GetMoment
 
@@ -477,17 +477,17 @@ contains
     character(*), parameter                                           ::    ProcName='GetMoment'
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( Moment < 0 ) call Error%Raise( "Requested a distribution moment below 0", ProcName=ProcName )
+    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-    if ( Moment > 2 ) then
-      GetMoment = This%ComputeMomentNumerical( Moment=Moment )
-    elseif ( Moment == 1 ) then
+    if (Moment > 2) then
+      GetMoment = This%ComputeMomentNumerical(Moment=Moment)
+    elseif (Moment == 1) then
       GetMoment = (This%Alpha*This%B+This%Beta*This%A) / (This%Alpha+This%Beta)
-    elseif(Moment == 2 ) then
-      GetMoment = (This%Alpha*This%Beta*(This%B-This%A)**2) /( (This%Alpha+This%Beta)**2*(This%Alpha+This%Beta+One) )
-      GetMoment = GetMoment + ( (This%Alpha*This%B+This%Beta*This%A) / (This%Alpha+This%Beta) )**2
+    elseif(Moment == 2) then
+      GetMoment = (This%Alpha*This%Beta*(This%B-This%A)**2) /((This%Alpha+This%Beta)**2*(This%Alpha+This%Beta+One))
+      GetMoment = GetMoment + ((This%Alpha*This%B+This%Beta*This%A) / (This%Alpha+This%Beta))**2
     else
       GetMoment = One
     end if
@@ -496,7 +496,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo( This, File )
+  subroutine WriteInfo(This, File)
 
     class(DistBeta_Type), intent(in)                                  ::    This
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -505,7 +505,7 @@ contains
     integer                                                           ::    i
     type(String_Type), dimension(5)                                   ::    Strings
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     Strings(1) = 'beta'
     Strings(2) = ConvertToString(Value=This%Alpha)
@@ -513,13 +513,13 @@ contains
     Strings(4) = ConvertToString(Value=This%A)
     Strings(5) = ConvertToString(Value=This%B)
 
-    call File%Append( Strings=Strings )
+    call File%Append(Strings=Strings)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(DistBeta_Type), intent(out)                                 ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
@@ -534,7 +534,7 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%A = RHS%A
           LHS%B = RHS%B
           LHS%Alpha = RHS%Alpha
@@ -544,7 +544,7 @@ contains
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -552,7 +552,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(DistBeta_Type), intent(inout)                                ::    This
 

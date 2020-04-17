@@ -62,13 +62,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(TestIshigami_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'ishigami'
       This%Initialized = .true.
     end if
@@ -79,7 +79,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(TestIshigami_Type), intent(inout)                           ::    This
 
@@ -95,7 +95,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(TestIshigami_Type), intent(inout)                           ::    This
 
@@ -117,7 +117,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(TestIshigami_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -135,53 +135,53 @@ contains
     integer                                                           ::    i
     logical                                                           ::    MandatoryLoc
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Label = VarC0D
 
     ParameterName = 'a'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%A = VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%A = VarR0D
 
     ParameterName = 'b'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%B = VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%B = VarR0D
 
     ParameterName = 'c'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%C = VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%C = VarR0D
 
     SectionName = 'parameters'
 
     ParameterName = 'x1_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) This%X1_Dependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) This%X1_Dependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'x1'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%X1 = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%X1 = VarR0D
 
     ParameterName = 'x2_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) This%X2_Dependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) This%X2_Dependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'x2'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%X2 = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%X2 = VarR0D
 
     ParameterName = 'x3_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found )
-    if ( Found ) This%X3_Dependency = VarC0D
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
+    if (Found) This%X3_Dependency = VarC0D
     MandatoryLoc = .not. Found
     ParameterName = 'x3'
-    call Input%GetValue( VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%X3 = VarR0D
+    call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%X3 = VarR0D
 
     This%Constructed = .true.
 
@@ -189,13 +189,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
     class(TestIshigami_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -208,40 +208,40 @@ contains
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='a', Value=ConvertToString(Value=This%A) )
-    call GetInput%AddParameter( Name='b', Value=ConvertToString(Value=This%B) )
-    call GetInput%AddParameter( Name='c', Value=ConvertToString(Value=This%C) )
-    call GetInput%AddParameter( Name='label', Value=This%Label )
+    call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
+    call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
+    call GetInput%AddParameter(Name='c', Value=ConvertToString(Value=This%C))
+    call GetInput%AddParameter(Name='label', Value=This%Label)
 
     SectionName='parameters'
-    call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%AddParameter( Name='x1', Value=ConvertToString(Value=This%X1), SectionName=SectionName )
-    call GetInput%AddParameter( Name='x2', Value=ConvertToString(This%X2), SectionName=SectionName )
-    call GetInput%AddParameter( Name='x3', Value=ConvertToString(This%X3), SectionName=SectionName )
-    if ( len_trim(This%X1_Dependency) /= 0 ) call GetInput%AddParameter( Name='x1_dependency', Value=This%X1_Dependency,          &
-                                                                                                         SectionName=SectionName )
-    if ( len_trim(This%X2_Dependency) /= 0 ) call GetInput%AddParameter( Name='x2_dependency', Value=This%X2_Dependency,          &
-                                                                                                         SectionName=SectionName )
-    if ( len_trim(This%X3_Dependency) /= 0 ) call GetInput%AddParameter( Name='x3_dependency', Value=This%X3_Dependency,          &
-                                                                                                         SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
+    call GetInput%AddParameter(Name='x1', Value=ConvertToString(Value=This%X1), SectionName=SectionName)
+    call GetInput%AddParameter(Name='x2', Value=ConvertToString(This%X2), SectionName=SectionName)
+    call GetInput%AddParameter(Name='x3', Value=ConvertToString(This%X3), SectionName=SectionName)
+    if (len_trim(This%X1_Dependency) /= 0) call GetInput%AddParameter(Name='x1_dependency', Value=This%X1_Dependency,          &
+                                                                                                         SectionName=SectionName)
+    if (len_trim(This%X2_Dependency) /= 0) call GetInput%AddParameter(Name='x2_dependency', Value=This%X2_Dependency,          &
+                                                                                                         SectionName=SectionName)
+    if (len_trim(This%X3_Dependency) /= 0) call GetInput%AddParameter(Name='x3_dependency', Value=This%X3_Dependency,          &
+                                                                                                         SectionName=SectionName)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run( This, Input, Output )
+  subroutine Run(This, Input, Output)
 
     class(TestIshigami_Type), intent(inout)                           ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -258,37 +258,37 @@ contains
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    VarC0D
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     allocate(Ordinate(1,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
-    if ( len_trim(This%X1_Dependency) /= 0 ) then
-      call Input%GetValue( Value=X1, Label=This%X1_Dependency )
+    if (StatLoc /= 0) call Error%Allocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
+    if (len_trim(This%X1_Dependency) /= 0) then
+      call Input%GetValue(Value=X1, Label=This%X1_Dependency)
     else
       X1 = This%X1
     end if
-    if ( len_trim(This%X2_Dependency) /= 0 ) then
-      call Input%GetValue( Value=X2, Label=This%X2_Dependency )
+    if (len_trim(This%X2_Dependency) /= 0) then
+      call Input%GetValue(Value=X2, Label=This%X2_Dependency)
     else
       X2 = This%X2
     end if
-    if ( len_trim(This%X3_Dependency) /= 0 ) then
-      call Input%GetValue( Value=X3, Label=This%X3_Dependency )
+    if (len_trim(This%X3_Dependency) /= 0) then
+      call Input%GetValue(Value=X3, Label=This%X3_Dependency)
     else
       X3 = This%X3
     end if
-    Ordinate(1,1) = This%ComputeIshigami( This%A, This%B, This%C, X1, X2, X3 )
+    Ordinate(1,1) = This%ComputeIshigami(This%A, This%B, This%C, X1, X2, X3)
 
-    call Output%Construct( Values=Ordinate, Label=This%Label)
+    call Output%Construct(Values=Ordinate, Label=This%Label)
 
     deallocate(Ordinate, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Ordinate', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeIshigami( A, B, C, X1, X2, X3 )
+  function ComputeIshigami(A, B, C, X1, X2, X3)
 
     real(rkp)                                                         ::    ComputeIshigami
 
@@ -307,7 +307,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(TestIshigami_Type), intent(out)                             ::    LHS
     class(TestFunction_Type), intent(in)                              ::    RHS
@@ -320,7 +320,7 @@ contains
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Label = RHS%Label
           LHS%A = RHS%A
           LHS%B = RHS%B
@@ -333,14 +333,14 @@ contains
           LHS%X3_Dependency = RHS%X3_Dependency
         end if
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(TestIshigami_Type), intent(inout)                            ::    This
 

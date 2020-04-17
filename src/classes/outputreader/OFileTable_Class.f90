@@ -62,12 +62,12 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(OFileTable_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'ofiletable'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -77,7 +77,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(OFileTable_Type), intent(inout)                             ::    This
 
@@ -85,11 +85,11 @@ contains
     integer                                                           ::    StatLoc=0
     call This%OutputFile%Reset()
 
-    if ( allocated(This%InterpolationNodes) ) deallocate(This%InterpolationNodes, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%InterpolationNodes)) deallocate(This%InterpolationNodes, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%OutputColumn) ) deallocate(This%OutputColumn, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OutputColumn', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%OutputColumn)) deallocate(This%OutputColumn, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%OutputColumn', ProcName=ProcName, stat=StatLoc)
     This%NbColumns = 0
 
     call This%SetDefaults()
@@ -98,7 +98,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(OFileTable_Type), intent(inout)                             ::    This
 
@@ -112,7 +112,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     use String_Library
 
@@ -133,48 +133,48 @@ contains
     logical                                                           ::    VarL0D
     integer                                                           ::    i
     character(:), allocatable                                         ::    InterpNodesSource
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'debug'
-    call Input%GetValue( Value=VarL0D, ParameterName=Parametername, Mandatory=.false., Found=Found )
-    if ( Found ) This%DebugFlag = VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., Found=Found)
+    if (Found) This%DebugFlag = VarL0D
 
     ParameterName = 'abscissa_column'
-    call Input%GetValue( Value=VarI0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
     This%AbscissaColumn = VarI0D
 
     ParameterName = 'output_column'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
     This%OutputColumn = ConvertToIntegers(VarC0D)
 
     This%NbColumns = size(This%OutputColumn,1)
 
     SectionName = 'file'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call This%OutputFile%Construct( Input=InputSection, Prefix=PrefixLoc )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call This%OutputFile%Construct(Input=InputSection, Prefix=PrefixLoc)
     nullify(InputSection)
 
     SectionName = 'interpolation_nodes'
 
-    if ( Input%HasSection( SubSectionName = SectionName ) ) then
+    if (Input%HasSection(SubSectionName = SectionName)) then
       This%Interpolated = .true.
       ParameterName = 'source' 
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+      call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
       InterpNodesSource = VarC0D
       SubSectionName = SectionName // '>source'
-      select case ( InterpNodesSource )
-        case ( 'values' )
-          call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-          call ImportArray( Input=InputSection, Array=This%InterpolationNodes, Prefix=PrefixLoc )
-        case ( 'computed' )
-          call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-          This%InterpolationNodes = LinSpaceVec( Input=InputSection )
+      select case (InterpNodesSource)
+        case ('values')
+          call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+          call ImportArray(Input=InputSection, Array=This%InterpolationNodes, Prefix=PrefixLoc)
+        case ('computed')
+          call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+          This%InterpolationNodes = LinSpaceVec(Input=InputSection)
         case default
-          call Error%Raise( Line='Interpolation nodes source not recognized', ProcName=ProcName )
+          call Error%Raise(Line='Interpolation nodes source not recognized', ProcName=ProcName)
       end select
     end if
 
@@ -184,12 +184,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(OFileTable_Type), intent(in)                                ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -205,43 +205,43 @@ contains
     integer                                                           ::    i
     character(:), allocatable                                         ::    FileName
     type(SMUQFile_Type)                                               ::    File
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/file'
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/file'
 
-    call GetInput%AddSection( Section=This%OutputFile%GetInput( MainSectionName='file', Prefix=PrefixLoc, Directory=DirectorySub))
+    call GetInput%AddSection(Section=This%OutputFile%GetInput(Name='file', Prefix=PrefixLoc, Directory=DirectorySub))
 
-    call GetInput%AddParameter( Name='debug', Value=Convert_To_String(This%DebugFlag) )
-    call GetInput%AddParameter( Name='abscissa_column', Value=Convert_To_String(This%AbscissaColumn) )
-    call GetInput%AddParameter( Name='output_column', Value=ConvertToString(Values=This%OutputColumn) )
+    call GetInput%AddParameter(Name='debug', Value=Convert_To_String(This%DebugFlag))
+    call GetInput%AddParameter(Name='abscissa_column', Value=Convert_To_String(This%AbscissaColumn))
+    call GetInput%AddParameter(Name='output_column', Value=ConvertToString(Values=This%OutputColumn))
 
-    if ( This%Interpolated ) then
+    if (This%Interpolated) then
       SectionName = 'interpolation_nodes'
-      call GetInput%AddParameter( Name='source', Value='values', SectionName=SectionName )
+      call GetInput%AddParameter(Name='source', Value='values', SectionName=SectionName)
 
-      call GetInput%AddSection( SectionName=SectionName )
+      call GetInput%AddSection(SectionName=SectionName)
       SubSectionName = 'source'
-      call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-      call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
-                                                                                                                Mandatory=.true. )
-      if ( ExternalFlag ) then
+      call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+      call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
+                                                                                                                Mandatory=.true.)
+      if (ExternalFlag) then
         FileName = DirectoryLoc // '/interpolation_nodes.dat'
-        call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-        call ExportArray( Input=InputSection, Array=This%InterpolationNodes, File=File )
+        call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+        call ExportArray(Input=InputSection, Array=This%InterpolationNodes, File=File)
       else
-        call ExportArray( Input=InputSection, Array=This%InterpolationNodes )
+        call ExportArray(Input=InputSection, Array=This%InterpolationNodes)
       end if
       nullify(InputSection)
     end if
@@ -250,7 +250,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReadOutput( This, Values )
+  subroutine ReadOutput(This, Values)
 
     class(OFileTable_Type), intent(in)                                ::    This
     real(rkp), allocatable, dimension(:,:), intent(out)               ::    Values
@@ -267,9 +267,9 @@ contains
     integer                                                           ::    ii
     type(SMUQFile_Type)                                               ::    FileLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( This%DebugFlag ) then
+    if (This%DebugFlag) then
       write(*,*) '*****************************************************************************'
       write(*,*) 'Debug information for reading of output file  ' // This%OutputFile%GetFullFile()
       write(*,*) '*****************************************************************************'
@@ -277,39 +277,39 @@ contains
 
     FileLoc = This%OutputFile
 
-    call ImportArray( Array=Strings, File=FileLoc, RowMajor=.true. )
+    call ImportArray(Array=Strings, File=FileLoc, RowMajor=.true.)
 
     NbLines = size(Strings,1)
 
-    if ( This%Interpolated ) then
+    if (This%Interpolated) then
       NbEntries = size(This%InterpolationNodes,1)
       allocate(Values(NbEntries*This%NbColumns,1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
     else
       NbEntries = NbLines
       allocate(Values(NbLines*This%NbColumns,1), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Values', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
       Values = Zero
     end if
 
     allocate(TableOutput(NbLines), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='TableOutput', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='TableOutput', ProcName=ProcName, stat=StatLoc)
     allocate(Abscissa(NbLines), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Abscissa', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Abscissa', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, NbLines
-      Abscissa(i) = ConvertToReal( String=Strings(i,This%AbscissaColumn)%GetValue() )
+      Abscissa(i) = ConvertToReal(String=Strings(i,This%AbscissaColumn)%GetValue())
     end do
 
-    if ( This%DebugFlag ) then
+    if (This%DebugFlag) then
       write(*,*)
       write(*,*) 'Interpolation Nodes'
       write(*,*)
       write(*,*) This%InterpolationNodes
     end if
 
-    if ( This%DebugFlag ) then
+    if (This%DebugFlag) then
       write(*,*)
       write(*,*) 'Read in Abscissa'
       write(*,*)
@@ -321,13 +321,13 @@ contains
 
       ii = 1
       do ii = 1, NbLines
-        TableOutput(ii) = ConvertToReal( String=Strings(ii,This%OutputColumn(i))%GetValue() )
+        TableOutput(ii) = ConvertToReal(String=Strings(ii,This%OutputColumn(i))%GetValue())
       end do
 
-      if ( This%Interpolated ) then
-        Values((i-1)*NbEntries+1:i*NbEntries,1) = Interpolate( Abscissa=Abscissa, Ordinate=TableOutput,                           &
+      if (This%Interpolated) then
+        Values((i-1)*NbEntries+1:i*NbEntries,1) = Interpolate(Abscissa=Abscissa, Ordinate=TableOutput,                           &
                                                                                                     Nodes=This%InterpolationNodes)
-        if ( This%DebugFlag ) then
+        if (This%DebugFlag) then
           write(*,*)
           write(*,*) 'Interpolated values from column ' // ConvertToString(Value=This%OutputColumn(i))
           write(*,*)
@@ -335,7 +335,7 @@ contains
         end if
       else
         Values((i-1)*NbEntries+1:i*NbEntries,1) = TableOutput
-        if ( This%DebugFlag ) then
+        if (This%DebugFlag) then
           write(*,*)
           write(*,*) 'Read in values from column ' // ConvertToString(Value=This%OutputColumn(i))
           write(*,*)
@@ -346,19 +346,19 @@ contains
     end do
 
     deallocate(Strings, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Strings', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
 
     deallocate(Abscissa, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='Abscissa', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='Abscissa', ProcName=ProcName, stat=StatLoc)
 
     deallocate(TableOutput, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='TableOutput', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='TableOutput', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(OFileTable_Type), intent(out)                               ::    LHS
     class(OFileFormated_Type), intent(in)                             ::    RHS
@@ -373,22 +373,22 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%DebugFlag = RHS%DebugFlag
           LHS%OutputFile = RHS%OutputFile
           LHS%AbscissaColumn = RHS%AbscissaColumn
           LHS%Interpolated = RHS%Interpolated
           LHS%NbColumns = RHS%NbColumns
           allocate(LHS%OutputColumn, source=RHS%OutputColumn, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%OutputColumn', ProcName=ProcName, stat=StatLoc )
-          if ( LHS%Interpolated ) then
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%OutputColumn', ProcName=ProcName, stat=StatLoc)
+          if (LHS%Interpolated) then
             allocate(LHS%InterpolationNodes, source=RHS%InterpolationNodes, stat=StatLoc)
-            if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
+            if (StatLoc /= 0) call Error%Allocate(Name='LHS%InterpolationNodes', ProcName=ProcName, stat=StatLoc)
           end if
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -396,18 +396,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(OFileTable_Type),intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%OutputColumn) ) deallocate(This%OutputColumn, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%OutputColumn', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%OutputColumn)) deallocate(This%OutputColumn, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%OutputColumn', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%InterpolationNodes) ) deallocate(This%InterpolationNodes, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%InterpolationNodes)) deallocate(This%InterpolationNodes, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%InterpolationNodes', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

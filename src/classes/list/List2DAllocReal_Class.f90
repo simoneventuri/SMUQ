@@ -47,7 +47,7 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Set( This, Values )
+  subroutine Set(This, Values)
 
     class(List2DAllocReal_Type), intent(inout)                        ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Values
@@ -55,10 +55,10 @@ contains
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Purge()
+    if (This%Constructed) call This%Purge()
 
-    allocate( This%Values, source=Values, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Tail%Values', stat=StatLoc)
+    allocate(This%Values, source=Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Tail%Values', stat=StatLoc)
 
     This%Constructed=.true.
 
@@ -66,7 +66,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetR2D( This, Values )
+  subroutine GetR2D(This, Values)
 
     class(List2DAllocReal_Type), intent(in)                           ::    This
     real(rkp), dimension(:,:), allocatable, intent(out)               ::    Values
@@ -74,24 +74,24 @@ contains
     character(*), parameter                                           ::    ProcName='GetR2D'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    allocate( Values, source=This%Values, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( ProcName=ProcName, Name='Values', stat=StatLoc)
+    allocate(Values, source=This%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Purge( This )
+  subroutine Purge(This)
 
     class(List2DAllocReal_Type), intent(inout)                        ::    This
 
     character(*), parameter                                           ::    ProcName='Purge'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
 
     This%Constructed=.false.
 
@@ -99,7 +99,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(List2DAllocReal_Type), intent(out)                          ::    LHS
     class(List2DAllocReal_Type), intent(in)                           ::    RHS
@@ -109,24 +109,24 @@ contains
 
     call LHS%Purge()
 
-    if ( RHS%Constructed ) then
+    if (RHS%Constructed) then
       allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Values', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='LHS%Values', ProcName=ProcName, stat=StatLoc)
     end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine FinalizerList( This )
+  impure elemental subroutine FinalizerList(This)
 
     type(List2DAllocReal_Type), intent(inout)                         ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%Values) ) deallocate(This%Values, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Values', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

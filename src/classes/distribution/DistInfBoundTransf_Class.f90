@@ -73,13 +73,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(DistInfBoundTransf_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'infinite_bound_transform'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -89,15 +89,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(DistInfBoundTransf_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%DistProb) ) deallocate(This%DistProb, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%DistProb)) deallocate(This%DistProb, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
 
     This%Initialized = .false.
     This%Constructed = .false.
@@ -108,7 +108,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(DistInfBoundTransf_Type), intent(inout)                     ::    This
 
@@ -125,7 +125,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(DistInfBoundTransf_Type), intent(inout)                     ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -142,21 +142,21 @@ contains
     character(:), allocatable                                         ::    SectionName
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
     
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     SectionName = 'distribution'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call BaseDistProb_Factory%Construct( Object=This%DistProb, Input=InputSection, Prefix=PrefixLoc )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call BaseDistProb_Factory%Construct(Object=This%DistProb, Input=InputSection, Prefix=PrefixLoc)
 
     This%DistTLeft = This%DistProb%IsTruncatedLeft()
     This%DistTRIght = This%DistProb%IsTruncatedRight()
 
-    if ( This%DistTLeft ) This%DistA = This%DistProb%GetA()
-    if ( This%DistTRight ) This%DistB = This%DistProb%GetB()
+    if (This%DistTLeft) This%DistA = This%DistProb%GetA()
+    if (This%DistTRight) This%DistB = This%DistProb%GetB()
 
     This%Constructed = .true.
 
@@ -164,7 +164,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Distribution )
+  subroutine ConstructCase1(This, Distribution)
 
     class(DistInfBoundTransf_Type), intent(inout)                     ::    This
     class(DistProb_Type), intent(in)                                  ::    Distribution
@@ -172,17 +172,17 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     allocate(This%DistProb, source=Distribution, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
 
     This%DistTLeft = This%DistProb%IsTruncatedLeft()
     This%DistTRIght = This%DistProb%IsTruncatedRight()
 
-    if ( This%DistTLeft ) This%DistA = This%DistProb%GetA()
-    if ( This%DistTRight ) This%DistB = This%DistProb%GetB()
+    if (This%DistTLeft) This%DistA = This%DistProb%GetA()
+    if (This%DistTRight) This%DistB = This%DistProb%GetB()
 
     This%Constructed = .true.
 
@@ -190,12 +190,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(DistInfBoundTransf_Type), intent(in)                        ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -208,31 +208,31 @@ contains
     character(:), allocatable                                         ::    SectionName
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
     
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/distribution'
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/distribution'
 
     SectionName = 'distribution'
-    call GetInput%AddSection( Section=BaseDistProb_Factory%GetObjectInput( Object=This%DistProb, MainSectionName=SectionName,     &
-                                                                                      Prefix=PrefixLoc, Directory=DirectorySub ) )
+    call GetInput%AddSection(Section=BaseDistProb_Factory%GetObjectInput(Object=This%DistProb, Name=SectionName,     &
+                                                                                      Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D( This, X )
+  function PDF_R0D(This, X)
 
     real(rkp)                                                         ::    PDF_R0D
 
@@ -242,20 +242,20 @@ contains
     character(*), parameter                                           ::    ProcName='PDF_R0D'
     real(rkp)                                                         ::    XLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     XLoc = X
-    call This%Transform( Value=XLoc )
+    call This%Transform(Value=XLoc)
 
-    PDF_R0D = This%DistProb%PDF( X=XLoc )
+    PDF_R0D = This%DistProb%PDF(X=XLoc)
 
-    call This%fInvTransform( Value=PDF_R0D, X=XLoc )
+    call This%fInvTransform(Value=PDF_R0D, X=XLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D( This, X )
+  function CDF_R0D(This, X)
 
     real(rkp)                                                         ::    CDF_R0D
 
@@ -265,18 +265,18 @@ contains
     character(*), parameter                                           ::    ProcName='CDF_R0D'
     real(rkp)                                                         ::    XLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     XLoc = X
-    call This%Transform( Value=XLoc )
+    call This%Transform(Value=XLoc)
 
-    CDF_R0D = This%DistProb%CDF( X=XLoc )
+    CDF_R0D = This%DistProb%CDF(X=XLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D( This, P )
+  function InvCDF_R0D(This, P)
 
     real(rkp)                                                         ::    InvCDF_R0D
 
@@ -286,16 +286,16 @@ contains
     character(*), parameter                                           ::    ProcName='InvCDF_R0D'
     real(rkp)                                                         ::    XLoc
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    InvCDF_R0D = This%DistProb%InvCDF( P=P )
-    call This%InvTransform( Value=InvCDF_R0D )
+    InvCDF_R0D = This%DistProb%InvCDF(P=P)
+    call This%InvTransform(Value=InvCDF_R0D)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_0D( This, Value )
+  subroutine Transform_0D(This, Value)
 
     class(DistInfBoundTransf_Type), intent(in)                        ::    This
     real(rkp), intent(inout)                                          ::    Value
@@ -303,11 +303,11 @@ contains
     character(*), parameter                                           ::    ProcName='Transform_0D'
     integer                                                           ::    StatLoc=0
 
-    if ( This%DistTLeft .and. This%DistTRight ) then
-      Value = ( This%DistB*dexp(Value)+This%DistA ) / ( One+dexp(Value) )
-    elseif ( This%DistTLeft ) then
+    if (This%DistTLeft .and. This%DistTRight) then
+      Value = (This%DistB*dexp(Value)+This%DistA) / (One+dexp(Value))
+    elseif (This%DistTLeft) then
       Value = dexp(Value) + This%DistA
-    elseif ( This%DistTRight ) then
+    elseif (This%DistTRight) then
       Value = This%DistB - One / dexp(Value)
     end if
 
@@ -315,7 +315,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_1D( This, Values )
+  subroutine Transform_1D(This, Values)
 
     class(DistInfBoundTransf_Type), intent(in)                        ::    This
     real(rkp), dimension(:), intent(inout)                            ::    Values
@@ -323,11 +323,11 @@ contains
     character(*), parameter                                           ::    ProcName='Transform_1D'
     integer                                                           ::    StatLoc=0
 
-    if ( This%DistTLeft .and. This%DistTRight ) then
-      Values = ( This%DistB*dexp(Values)+This%DistA ) / ( One+dexp(Values) )
-    elseif ( This%DistTLeft ) then
+    if (This%DistTLeft .and. This%DistTRight) then
+      Values = (This%DistB*dexp(Values)+This%DistA) / (One+dexp(Values))
+    elseif (This%DistTLeft) then
       Values = dexp(Values) + This%DistA
-    elseif ( This%DistTRight ) then
+    elseif (This%DistTRight) then
       Values = This%DistB - One / dexp(Values)
     end if
 
@@ -335,7 +335,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine InvTransform_0D( This, Value )
+  subroutine InvTransform_0D(This, Value)
 
     class(DistInfBoundTransf_Type), intent(in)                        ::    This
     real(rkp), intent(inout)                                          ::    Value
@@ -343,11 +343,11 @@ contains
     character(*), parameter                                           ::    ProcName='InvTransform_0D'
     integer                                                           ::    StatLoc=0
 
-    if ( This%DistTLeft .and. This%DistTRight ) then
+    if (This%DistTLeft .and. This%DistTRight) then
       Value = dlog((Value-This%DistA)/(This%DistB-Value))
-    elseif ( This%DistTLeft ) then
+    elseif (This%DistTLeft) then
       Value = dlog((Value-This%DistA))
-    elseif ( This%DistTRight ) then
+    elseif (This%DistTRight) then
       Value = dlog(One/(This%DistB-Value))
     end if
 
@@ -355,7 +355,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine InvTransform_1D( This, Values )
+  subroutine InvTransform_1D(This, Values)
 
     class(DistInfBoundTransf_Type), intent(in)                        ::    This
     real(rkp), dimension(:), intent(inout)                            ::    Values
@@ -363,11 +363,11 @@ contains
     character(*), parameter                                           ::    ProcName='InvTransform_1D'
     integer                                                           ::    StatLoc=0
 
-    if ( This%DistTLeft .and. This%DistTRight ) then
+    if (This%DistTLeft .and. This%DistTRight) then
       Values = dlog((Values-This%DistA)/(This%DistB-Values))
-    elseif ( This%DistTLeft ) then
+    elseif (This%DistTLeft) then
       Values = dlog((Values-This%DistA))
-    elseif ( This%DistTRight ) then
+    elseif (This%DistTRight) then
       Values = dlog(One/(This%DistB-Values))
     end if
 
@@ -375,7 +375,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine fInvTransform_0D( This, Value, X )
+  subroutine fInvTransform_0D(This, Value, X)
 
     class(DistInfBoundTransf_Type), intent(in)                        ::    This
     real(rkp), intent(inout)                                          ::    Value
@@ -384,11 +384,11 @@ contains
     character(*), parameter                                           ::    ProcName='fInvTransform_0D'
     integer                                                           ::    StatLoc=0
 
-    if ( This%DistTLeft .and. This%DistTRight ) then
+    if (This%DistTLeft .and. This%DistTRight) then
       Value = Value * dabs(((X-This%DistA)*(This%DistB-X))/(This%DistB-This%DistA))
-    elseif ( This%DistTLeft ) then
+    elseif (This%DistTLeft) then
       Value = Value * dabs(X-This%DistA)
-    elseif ( This%DistTRight ) then
+    elseif (This%DistTRight) then
       Value = Value * dabs(-(This%DistB-X))
     end if
 
@@ -396,7 +396,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo( This, File )
+  subroutine WriteInfo(This, File)
 
     class(DistInfBoundTransf_Type), intent(in)                        ::    This
     type(SMUQFile_Type), intent(inout)                                ::    File
@@ -405,21 +405,21 @@ contains
     integer                                                           ::    i
     type(String_Type), dimension(3)                                   ::    Strings
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
     
     Strings(1) = 'infboundtransf'
     Strings(2) = '-Inf'
     Strings(3) = 'Inf'
 
-    call File%Append( Strings=Strings )
+    call File%Append(Strings=Strings)
 
-    call This%DistProb%WriteInfo( File=File )
+    call This%DistProb%WriteInfo(File=File)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(DistInfBoundTransf_Type), intent(out)                       ::    LHS
     class(DistProb_Type), intent(in)                                  ::    RHS
@@ -434,9 +434,9 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           allocate(LHS%DistProb, source=RHS%DistProb, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%DistProb', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%DistProb', ProcName=ProcName, stat=StatLoc)
           LHS%DistTLeft = RHS%DistTLeft
           LHS%DistTRight = RHS%DistTRight
           LHS%DistA = RHS%DistA
@@ -444,7 +444,7 @@ contains
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -452,15 +452,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(DistInfBoundTransf_Type), intent(inout)                      ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%DistProb) ) deallocate(This%DistProb, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%DistProb)) deallocate(This%DistProb, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

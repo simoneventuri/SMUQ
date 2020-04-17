@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   OFileFormated_Class.f90
   OFileFormated_Factory_Class.f90
   OFileFormatedContainer_Class.f90

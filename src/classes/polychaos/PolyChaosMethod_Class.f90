@@ -64,28 +64,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_PolyChaosMethod( This )
+  subroutine Initialize_PolyChaosMethod(This)
     import                                                            ::    PolyChaosMethod_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_PolyChaosMethod( This )
+  subroutine Reset_PolyChaosMethod(This)
     import                                                            ::    PolyChaosMethod_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_PolyChaosMethod( This )
+  subroutine SetDefaults_PolyChaosMethod(This)
     import                                                            ::    PolyChaosMethod_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_PolyChaosMethod( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput_PolyChaosMethod(This, Input, SectionChain, Prefix)
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    InputSection_Type
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
@@ -96,19 +96,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_PolyChaosMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_PolyChaosMethod(This, Name, Prefix, Directory)
     import                                                            ::    PolyChaosMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_PolyChaosMethod
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine BuildModel_PolyChaosMethod( This, Basis, SampleSpace, Responses, Model, IndexSetScheme, Coefficients, Indices,       &
+  subroutine BuildModel_PolyChaosMethod(This, Basis, SampleSpace, Responses, Model, IndexSetScheme, Coefficients, Indices,       &
                                                                     CVErrors, OutputDirectory, InputSamples, OutputSamples)
     use Parameters_Library
     import                                                            ::    PolyChaosMethod_Type
@@ -138,7 +138,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_PolyChaosMethod( LHS, RHS )
+  impure elemental subroutine Copy_PolyChaosMethod(LHS, RHS)
     import                                                            ::    PolyChaosMethod_Type
     class(PolyChaosMethod_Type), intent(out)                          ::    LHS
     class(PolyChaosMethod_Type), intent(in)                           ::    RHS
@@ -150,7 +150,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(PolyChaosMethod_Type), intent(inout)                        ::    This
@@ -163,7 +163,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeSobolIndices( Coefficients, Indices, SobolIndices )
+  subroutine ComputeSobolIndices(Coefficients, Indices, SobolIndices)
 
     real(rkp), dimension(:), intent(in)                               ::    Coefficients
     integer, dimension(:,:), intent(in)                               ::    Indices
@@ -181,19 +181,19 @@ contains
     NbDim = size(Indices,1)
     Cardinality = size(Indices,2)
 
-    if ( size(Coefficients,1) /= Cardinality ) call Error%Raise( 'Incorrect size', ProcName=ProcName )
-    if ( size(SobolIndices,1) /= NbDim ) call Error%Raise( 'Incorrect size', ProcName=ProcName )
+    if (size(Coefficients,1) /= Cardinality) call Error%Raise('Incorrect size', ProcName=ProcName)
+    if (size(SobolIndices,1) /= NbDim) call Error%Raise('Incorrect size', ProcName=ProcName)
 
     SobolIndices = Zero
 
-    if ( Cardinality > 1 ) then
+    if (Cardinality > 1) then
       Variance = dot_product(Coefficients(2:),Coefficients(2:))
       i = 1
       do i = 1, NbDim
         VarR0D = Zero
         ii = 1
         do ii = 1, Cardinality
-          if ( Indices(i,ii) /= 0 ) VarR0D = VarR0D + Coefficients(ii)**2
+          if (Indices(i,ii) /= 0) VarR0D = VarR0D + Coefficients(ii)**2
         end do
         SobolIndices(i) = VarR0D / Variance
       end do

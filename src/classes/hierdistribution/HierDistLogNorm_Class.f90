@@ -45,13 +45,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(HierDistLogNorm_Type), intent(inout)                        ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'hiererchical lognormal'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -61,7 +61,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(HierDistLogNorm_Type), intent(inout)                        ::    This
 
@@ -82,7 +82,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateDistribution( This, Mu, Sigma, A, B, Distribution )
+  subroutine GenerateDistribution(This, Mu, Sigma, A, B, Distribution)
 
     class(HierDistLogNorm_Type), intent(in)                           ::    This
     real(rkp), intent(in)                                             ::    Mu
@@ -94,19 +94,19 @@ contains
     character(*), parameter                                           ::    ProcName='GenerateDistribution'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    allocate( DistLogNorm_Type :: Distribution )
+    allocate(DistLogNorm_Type :: Distribution)
 
-    select type ( Distribution )
-      type is ( DistLogNorm_Type ) 
-        if ( This%TruncatedLeft .and. This%TruncatedRight ) then
-          call Distribution%Construct( Mu=Mu, Sigma=Sigma, A=A, B=B )
+    select type (Distribution)
+      type is (DistLogNorm_Type) 
+        if (This%TruncatedLeft .and. This%TruncatedRight) then
+          call Distribution%Construct(Mu=Mu, Sigma=Sigma, A=A, B=B)
         else
-          call Distribution%Construct( Mu=Mu, Sigma=Sigma, A=A )
+          call Distribution%Construct(Mu=Mu, Sigma=Sigma, A=A)
         end if
       class default
-        call Error%Raise( "Something went wrong", ProcName=ProcName )
+        call Error%Raise("Something went wrong", ProcName=ProcName)
     end select
 
   end subroutine

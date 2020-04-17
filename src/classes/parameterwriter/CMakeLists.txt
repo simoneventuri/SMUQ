@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   MFileInput_Class.f90
   MFileInput_Factory_Class.f90
   MFileInputContainer_Class.f90

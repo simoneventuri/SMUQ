@@ -75,13 +75,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(MultiVarDistNorm_Type), intent(inout)                       ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'multivariate_normal'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -91,7 +91,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(MultiVarDistNorm_Type), intent(inout)                       ::    This
 
@@ -101,11 +101,11 @@ contains
     This%Initialized = .false.
     This%Constructed = .false.
 
-    if ( allocated(This%Mu) ) deallocate(This%Mu, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Mu', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Mu)) deallocate(This%Mu, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Mu', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Cov) ) deallocate(This%Cov, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cov', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Cov)) deallocate(This%Cov, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Cov', ProcName=ProcName, stat=StatLoc)
 
     call This%Initialize()
 
@@ -113,7 +113,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(MultiVarDistNorm_Type), intent(inout)                       ::    This
 
@@ -126,7 +126,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(MultiVarDistNorm_Type), intent(inout)                       ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -148,51 +148,51 @@ contains
     integer                                                           ::    i
     character(:), allocatable                                         ::    PrefixLoc
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
     
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'mean'
-    call Input%GetValue( VarC0D, ParameterName=ParameterName, Mandatory=.true. )
-    VarR1D = ConvertToReals( String=VarC0D )
+    call Input%GetValue(VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+    VarR1D = ConvertToReals(String=VarC0D)
     allocate(This%Mu, source=VarR1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Mu', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Mu', ProcName=ProcName, stat=StatLoc)
   
     This%NbDim = size(This%Mu,1)
 
     SectionName = 'covariance'
     ParameterName = 'format'
-    call Input%GetValue( VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true. )
+    call Input%GetValue(VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     SubSectionName = SectionName // '>format'
-    select case ( LowerCase(VarC0D) )
-      case ( 'diagonals' )
+    select case (LowerCase(VarC0D))
+      case ('diagonals')
         ParameterName = 'values'
-        call Input%GetValue( VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
-        VarR1D = ConvertToReals( String=VarC0D )
-        if ( size(VarR1D,1) /= This%NbDim ) call Error%Raise( Line='Mismatching number of diagonal terms', ProcName=ProcName )
+        call Input%GetValue(VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+        VarR1D = ConvertToReals(String=VarC0D)
+        if (size(VarR1D,1) /= This%NbDim) call Error%Raise(Line='Mismatching number of diagonal terms', ProcName=ProcName)
         allocate(This%Cov(This%NbDim,This%NbDim), stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cov', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='This%Cov', ProcName=ProcName, stat=StatLoc)
         This%Cov = Zero
         i = 1
         do i = 1, This%NbDim
           This%Cov(i,i) = VarR1D(i)
         end do
-        This%Mu = ConvertToReals( String=VarC0D )        
-      case ('full' )
-        call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-        call ImportArray( Input=InputSection, Array=VarR2D, Prefix=PrefixLoc )
+        This%Mu = ConvertToReals(String=VarC0D)        
+      case ('full')
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
         allocate(This%Cov, source=VarR2D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cov', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Allocate(Name='This%Cov', ProcName=ProcName, stat=StatLoc)
         deallocate(VarR2D, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR2D', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
       case default
-        call Error%Raise( Line='Specified unknown format for covariance matrix', ProcName=ProcName )
+        call Error%Raise(Line='Specified unknown format for covariance matrix', ProcName=ProcName)
     end select
 
     deallocate(VarR1D, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='VarR1D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
     This%Constructed = .true.
 
@@ -200,7 +200,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Mu, Cov )
+  subroutine ConstructCase1(This, Mu, Cov)
     
     class(MultiVarDistNorm_Type), intent(inout)                       ::    This
     real(rkp), dimension(:), intent(in)                               ::    Mu
@@ -209,23 +209,23 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    StatLoc=0
 
-    if ( This%NbDim == size(Mu,1) .and. This%NbDim == size(Cov,1) .and. This%NbDim == size(Cov,2) ) then
+    if (This%NbDim == size(Mu,1) .and. This%NbDim == size(Cov,1) .and. This%NbDim == size(Cov,2)) then
       This%Mu = Mu
       This%Cov = Cov
     else
-      if ( This%Constructed ) call This%Reset()
-      if ( .not. This%Initialized ) call This%Initialize()
+      if (This%Constructed) call This%Reset()
+      if (.not. This%Initialized) call This%Initialize()
 
       allocate(This%Mu, source=Mu, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Mu', ProcName=ProcName, stat=StatLoc )  
+      if (StatLoc /= 0) call Error%Allocate(Name='This%Mu', ProcName=ProcName, stat=StatLoc)  
 
       This%NbDim = size(This%Mu,1)
 
-      if ( size(Cov,1) /= This%NbDim .or. size(Cov,2) /= This%NbDim ) call Error%Raise( Line='Incorrect dimension Cov matrix',    &
-                                                                                                               ProcName=ProcName )
+      if (size(Cov,1) /= This%NbDim .or. size(Cov,2) /= This%NbDim) call Error%Raise(Line='Incorrect dimension Cov matrix',    &
+                                                                                                               ProcName=ProcName)
 
       allocate(This%Cov, source=Cov, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Cov', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='This%Cov', ProcName=ProcName, stat=StatLoc)
     end if
 
     This%Constructed = .true.
@@ -234,14 +234,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -257,32 +257,32 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddParameter( Name='mean', Value=ConvertToString( Values=This%Mu ) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+    call GetInput%AddParameter(Name='mean', Value=ConvertToString(Values=This%Mu))
 
     SectionName = 'covariance'
-    call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%AddParameter( Name='format', Value='full', SectionName=SectionName )
+    call GetInput%AddSection(SectionName=SectionName)
+    call GetInput%AddParameter(Name='format', Value='full', SectionName=SectionName)
     SubSectionName = 'format'
-    call GetInput%AddSection( SectionName=SubSectionName, To_SubSection=SectionName )
-    call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,             &
-                                                                                                                Mandatory=.true. )
-    if ( ExternalFlag ) then
+    call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,             &
+                                                                                                                Mandatory=.true.)
+    if (ExternalFlag) then
       FileName = DirectoryLoc // '/cov.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%Cov, File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Input=InputSection, Array=This%Cov, File=File)
     else
-      call ExportArray( Input=InputSection, Array=This%Cov )
+      call ExportArray(Input=InputSection, Array=This%Cov)
     end if
     nullify(InputSection)
 
@@ -290,7 +290,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_Full( This, X )
+  function PDF_Full(This, X)
 
     real(rkp)                                                         ::    PDF_Full
 
@@ -300,13 +300,13 @@ contains
     character(*), parameter                                           ::    ProcName='PDF_Full'
     integer                                                           ::    StatLoc=0
 
-    PDF_Full = This%ComputePDF( X=X, Mu=This%Mu, Cov=This%Cov )
+    PDF_Full = This%ComputePDF(X=X, Mu=This%Mu, Cov=This%Cov)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_Cholesky( This, X, L )
+  function PDF_Cholesky(This, X, L)
 
     real(rkp)                                                         ::    PDF_Cholesky
 
@@ -317,13 +317,13 @@ contains
     character(*), parameter                                           ::    ProcName='PDF_Cholesky'
     integer                                                           ::    StatLoc=0
 
-    PDF_Cholesky = This%ComputePDF_Cholesky( X=X, Mu=This%Mu, Cov=This%Cov, L=L )
+    PDF_Cholesky = This%ComputePDF_Cholesky(X=X, Mu=This%Mu, Cov=This%Cov, L=L)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF( X, Mu, Cov )
+  function ComputePDF(X, Mu, Cov)
 
     real(rkp)                                                         ::    ComputePDF
 
@@ -341,10 +341,10 @@ contains
     NbDim = size(Mu,1)
 
     allocate(L, source=Cov, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='L', ProcName=ProcName, stat=StatLoc )    
+    if (StatLoc /= 0) call Error%Allocate(Name='L', ProcName=ProcName, stat=StatLoc)    
 
-    call DPOTRF( 'L', NbDim, L, NbDim, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DPOTRF', ProcName=ProcName )
+    call DPOTRF('L', NbDim, L, NbDim, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DPOTRF', ProcName=ProcName)
 
     ComputePDF = Zero
 
@@ -354,26 +354,26 @@ contains
     end do
 
     allocate(XmMean(NbDim,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='XmMean', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='XmMean', ProcName=ProcName, stat=StatLoc)
 
     XmMean(:,1) = X - Mu
 
-    call DTRTRS( 'L', 'N', 'N', NbDim, 1, L, NbDim, XmMean, NbDim, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DTRTRS with code: ' // ConvertToString(Value=StatLoc),    &
-                                                                                                               ProcName=ProcName )
+    call DTRTRS('L', 'N', 'N', NbDim, 1, L, NbDim, XmMean, NbDim, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DTRTRS with code: ' // ConvertToString(Value=StatLoc),    &
+                                                                                                               ProcName=ProcName)
     
     ComputePDF = - real(NbDim,rkp)/Two * dlog(Two*Pi) - ComputePDF - 0.5 * dot_product(XmMean(:,1), XmMean(:,1))
 
     ComputePDF = dexp(ComputePDF)
 
     deallocate(XmMean, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='XmMean(NbDim)', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='XmMean(NbDim)', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePDF_Cholesky( X, Mu, Cov, L )
+  function ComputePDF_Cholesky(X, Mu, Cov, L)
 
     real(rkp)                                                         ::    ComputePDF_Cholesky
 
@@ -398,26 +398,26 @@ contains
     end do
 
     allocate(XmMean(NbDim,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='XmMean', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='XmMean', ProcName=ProcName, stat=StatLoc)
 
     XmMean(:,1) = X - Mu
 
-    call DTRTRS( 'L', 'N', 'N', NbDim, 1, L, NbDim, XmMean, NbDim, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DTRTRS with code: ' // ConvertToString(Value=StatLoc),    &
-                                                                                                               ProcName=ProcName )
+    call DTRTRS('L', 'N', 'N', NbDim, 1, L, NbDim, XmMean, NbDim, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DTRTRS with code: ' // ConvertToString(Value=StatLoc),    &
+                                                                                                               ProcName=ProcName)
     
     ComputePDF_Cholesky = - real(NbDim,rkp)/Two * dlog(Two*Pi) - ComputePDF_Cholesky - 0.5 * dot_product(XmMean(:,1), XmMean(:,1))
 
     ComputePDF_Cholesky = dexp(ComputePDF_Cholesky)
 
     deallocate(XmMean, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='XmMean(NbDim)', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='XmMean(NbDim)', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function LogPDF_Cholesky( This, X, L )
+  function LogPDF_Cholesky(This, X, L)
 
     real(rkp)                                                         ::    LogPDF_Cholesky
 
@@ -428,13 +428,13 @@ contains
     character(*), parameter                                           ::    ProcName='LogPDF_Cholesky'
     integer                                                           ::    StatLoc=0
 
-    LogPDF_Cholesky = This%LogComputePDF_Cholesky( X=X, Mu=This%Mu, Cov=This%Cov, L=L )
+    LogPDF_Cholesky = This%LogComputePDF_Cholesky(X=X, Mu=This%Mu, Cov=This%Cov, L=L)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function LogComputePDF_Cholesky( X, Mu, Cov, L )
+  function LogComputePDF_Cholesky(X, Mu, Cov, L)
 
     real(rkp)                                                         ::    LogComputePDF_Cholesky
 
@@ -459,13 +459,13 @@ contains
     end do
 
     allocate(XmMean(NbDim,1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='XmMean', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='XmMean', ProcName=ProcName, stat=StatLoc)
 
     XmMean(:,1) = X - Mu
 
-    call DTRTRS( 'L', 'N', 'N', NbDim, 1, L, NbDim, XmMean, NbDim, StatLoc )
-    if ( StatLoc /= 0 ) call Error%Raise( Line='Something went wrong in DTRTRS with code: ' // ConvertToString(Value=StatLoc),    &
-                                                                                                               ProcName=ProcName )
+    call DTRTRS('L', 'N', 'N', NbDim, 1, L, NbDim, XmMean, NbDim, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DTRTRS with code: ' // ConvertToString(Value=StatLoc),    &
+                                                                                                               ProcName=ProcName)
     
     LogComputePDF_Cholesky = - real(NbDim,rkp)/Two * dlog(Two*Pi) - LogComputePDF_Cholesky - 0.5 *                                &
                                                                                              dot_product(XmMean(:,1), XmMean(:,1))
@@ -474,7 +474,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetMu( This, Mu )
+  subroutine GetMu(This, Mu)
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
     real(rkp), allocatable, dimension(:), intent(inout)               ::    Mu
@@ -482,18 +482,18 @@ contains
     character(*), parameter                                           ::    ProcName='GetMu'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( allocated(Mu) ) then
-      if ( size(Mu) /= This%NbDim ) then
+    if (allocated(Mu)) then
+      if (size(Mu) /= This%NbDim) then
         deallocate(Mu, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Mu', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='Mu', ProcName=ProcName, stat=StatLoc)
       end if
     end if
     
-    if ( .not. allocated(Mu) ) then
+    if (.not. allocated(Mu)) then
       allocate(Mu(This%NbDim), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Mu', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='Mu', ProcName=ProcName, stat=StatLoc)
     end if
 
     Mu = This%Mu
@@ -502,7 +502,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetCov( This, Cov )
+  subroutine GetCov(This, Cov)
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Cov
@@ -511,18 +511,18 @@ contains
     integer                                                           ::    StatLoc=0
 
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( allocated(Cov) ) then
-      if ( size(Cov,1) /= This%NbDim .or. size(Cov,2) /= This%NbDIm ) then
+    if (allocated(Cov)) then
+      if (size(Cov,1) /= This%NbDim .or. size(Cov,2) /= This%NbDIm) then
         deallocate(Cov, stat=StatLoc)
-        if ( StatLoc /= 0 ) call Error%Deallocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
+        if (StatLoc /= 0) call Error%Deallocate(Name='Cov', ProcName=ProcName, stat=StatLoc)
       end if
     end if
 
-    if ( .not. allocated(Cov) ) then
+    if (.not. allocated(Cov)) then
       allocate(Cov(This%NbDim,This%NbDim), stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Allocate( Name='Cov', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Allocate(Name='Cov', ProcName=ProcName, stat=StatLoc)
     end if
 
     Cov = This%Cov
@@ -531,7 +531,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsTruncated( This )
+  function IsTruncated(This)
 
     logical                                                           ::    IsTruncated
 
@@ -540,7 +540,7 @@ contains
     character(*), parameter                                           ::    ProcName='IsTruncated'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     IsTruncated = This%Truncated
 
@@ -548,7 +548,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDim( This )
+  function GetNbDim(This)
 
     real(rkp)                                                         ::    GetNbDim
 
@@ -557,7 +557,7 @@ contains
     character(*), parameter                                           ::    ProcName='GetNbDim'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetNbDim = This%NbDim
 
@@ -565,7 +565,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed( This )
+  function IsConstructed(This)
 
     logical                                                           ::    IsConstructed
 
@@ -580,7 +580,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(MultiVarDistNorm_Type), intent(out)                         ::    LHS
     class(MultiVarDistNorm_Type), intent(in)                          ::    RHS
@@ -595,17 +595,17 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           allocate(LHS%Mu, source=RHS%Mu, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Mu', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Mu', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%Cov, source=RHS%Cov, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Cov', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Cov', ProcName=ProcName, stat=StatLoc)
           LHS%Truncated = RHS%Truncated
           LHS%NbDim = RHS%NbDIm
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -613,18 +613,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(MultiVarDistNorm_Type), intent(inout)                        ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%Mu) ) deallocate(This%Mu, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Mu', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Mu)) deallocate(This%Mu, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Mu', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Cov) ) deallocate(This%Cov, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Cov', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Cov)) deallocate(This%Cov, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Cov', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

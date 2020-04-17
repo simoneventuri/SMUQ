@@ -44,7 +44,7 @@ function i_figure = plot_Traces_fun(PlottingFormat, i_figure, save_fig, proc, pl
     nb_processors = length(proc);  
     chain_length = zeros(nb_processors+1,1);
     theta = [];
-    if ( clean_flag == 0 )
+    if (clean_flag == 0)
         iii = 0;
         for i=proc
             iii = iii + 1;
@@ -67,7 +67,7 @@ function i_figure = plot_Traces_fun(PlottingFormat, i_figure, save_fig, proc, pl
             clearvars theta_dirty_temp
         end
         
-    elseif (clean_flag == 1 )
+    elseif (clean_flag == 1)
         
         iii = 0;
         for i=proc

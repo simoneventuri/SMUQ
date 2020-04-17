@@ -55,28 +55,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_SAMethod( This )
+  subroutine Initialize_SAMethod(This)
     import                                                            ::    SAMethod_Type
     class(SAMethod_Type), intent(inout)                               ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_SAMethod( This )
+  subroutine Reset_SAMethod(This)
     import                                                            ::    SAMethod_Type
     class(SAMethod_Type), intent(inout)                               ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_SAMethod( This )
+  subroutine SetDefaults_SAMethod(This)
     import                                                            ::    SAMethod_Type
     class(SAMethod_Type), intent(inout)                               ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_SAMethod( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput_SAMethod(This, Input, SectionChain, Prefix)
     import                                                            ::    SAMethod_Type
     import                                                            ::    InputSection_Type
     class(SAMethod_Type), intent(inout)                               ::    This
@@ -87,19 +87,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_SAMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_SAMethod(This, Name, Prefix, Directory)
     import                                                            ::    SAMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_SAMethod
     class(SAMethod_Type), intent(inout)                               ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_SAMethod( This, SampleSpace, Responses, Model, OutputDirectory )
+  subroutine Run_SAMethod(This, SampleSpace, Responses, Model, OutputDirectory)
     import                                                            ::    Response_Type
     import                                                            ::    SampleSpace_Type
     import                                                            ::    Model_Type
@@ -113,7 +113,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_SAMethod( LHS, RHS )
+  impure elemental subroutine Copy_SAMethod(LHS, RHS)
     import                                                            ::    SAMethod_Type
     class(SAMethod_Type), intent(out)                                 ::    LHS
     class(SAMethod_Type), intent(in)                                  ::    RHS
@@ -125,7 +125,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(SAMethod_Type), intent(inout)                               ::    This

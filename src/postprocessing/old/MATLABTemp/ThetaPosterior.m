@@ -14,7 +14,7 @@ maxposteriorparam = [];
 startpoints = [];
 ystart = zeros(nb_procs,1);
 
-if ( nb_procs > 1 )
+if (nb_procs > 1)
     filename = strcat(outputdirectory,'/',num2str(procs(1)),'/parameter_names.dat');
 else
     filename = strcat(outputdirectory,'/parameter_names.dat');
@@ -96,7 +96,7 @@ logtypes = {'loguniform'; 'lognormal'};
 log10types = {'log10uniform'; 'log10normal'};
       
 for i = 1:nb_procs
-    if ( nb_procs == 1 )
+    if (nb_procs == 1)
         filename = strcat(outputdirectory,'/parameter_chain.dat');
     else
         filename = strcat(outputdirectory,'/',num2str(procs(i)),'/parameter_chain.dat');
@@ -114,7 +114,7 @@ for i = 1:nb_procs
     clearvars filename formatSpec fileID dataArray ans;
     parameterchain = [parameterchain;parameterchaintemp(:,1:2)];
     
-    if ( nb_procs == 1 )
+    if (nb_procs == 1)
         filename = strcat(outputdirectory,'/posterior_chain.dat');
     else
         filename = strcat(outputdirectory,'/',num2str(procs(i)),'/posterior_chain.dat');
@@ -137,7 +137,7 @@ for i = 1:nb_procs
         end
     end
 
-    if ( maxtemp > maxposterior )
+    if (maxtemp > maxposterior)
         maxposterior = maxtemp;
         maxposteriorparam = parameterchaintemp(maxtempi,:);
     end
@@ -145,7 +145,7 @@ for i = 1:nb_procs
     clearvars parameterchaintemp
     clearvars posteriorchaintemp
     
-    if ( nb_procs == 1 )
+    if (nb_procs == 1)
         filename = strcat(outputdirectory,'/posterior_sampler/initial_start.dat');
     else
         filename = strcat(outputdirectory,'/',num2str(procs(i)),'/posterior_sampler/initial_start.dat');
@@ -174,17 +174,17 @@ plotmatrix(parameterchain)
 for i = 1:nb_params
     figure(i)
     hold on
-    if ( ismember(type(i),lineartypes) )
+    if (ismember(type(i),lineartypes))
         hpdf=histfit(parameterchain(:,i),nb_bins_hist,'kernel');
         hold on
-        if ( strcmp('uniform',char(type(i))) )
+        if (strcmp('uniform',char(type(i))))
             tmin = min(i);
             tmax = max(i);
             for ii = 1:nb_procs
                ystart(ii) = unifpdf(startpoints(ii,i),tmin,tmax);
                plot(startpoints(ii,i),ystart(ii),'ko','MarkerSize',10,'LineWidth',3,'MarkerFaceColor','k');
             end
-        elseif ( strcmp('normal',char(type(i))) )
+        elseif (strcmp('normal',char(type(i))))
             tmin = min(i);
             tmax = max(i);
             for ii = 1:nb_procs
@@ -192,10 +192,10 @@ for i = 1:nb_params
                plot(startpoints(ii,i),ystart(ii),'ko','MarkerSize',10,'LineWidth',3,'MarkerFaceColor','k');
             end
         end
-    elseif ( ismember(type(i),logtypes) )
+    elseif (ismember(type(i),logtypes))
         hpdf=histfit(log(parameterchain(:,i)),nb_bins_hist,'kernel');
         hold on
-        if ( strcmp('loguniform',char(type(i))) )
+        if (strcmp('loguniform',char(type(i))))
             tmin = log(min(i));
             tmax = log(max(i));
             for ii = 1:nb_procs
@@ -203,10 +203,10 @@ for i = 1:nb_params
                 plot(log(startpoints(ii,i)),ystart(ii),'ko','MarkerSize',10,'LineWidth',3,'MarkerFaceColor','k');
             end
         end        
-    elseif ( ismember(type(i),log10types) )
+    elseif (ismember(type(i),log10types))
         hpdf=histfit(log10(parameterchain(:,i)),nb_bins_hist,'kernel');
         hold on
-        if ( strcmp('log10uniform',char(type(i))) )
+        if (strcmp('log10uniform',char(type(i))))
             tmin = log10(min(i));
             tmax = log10(max(i));
             for ii = 1:nb_procs
@@ -220,9 +220,9 @@ for i = 1:nb_params
 
     x = linspace(tmin,tmax,1000);
     
-    if ( strcmp(char(type(i)),'uniform') || strcmp(char(type(i)),'log10uniform') || strcmp(char(type(i)),'loguniform') )
+    if (strcmp(char(type(i)),'uniform') || strcmp(char(type(i)),'log10uniform') || strcmp(char(type(i)),'loguniform'))
         pdf=unifpdf(x,tmin,tmax);
-    elseif ( strcmp(char(type(i)),'normal') || strcmp(char(type(i)),'log10normal') || strcmp(char(type(i)),'lognormal') )
+    elseif (strcmp(char(type(i)),'normal') || strcmp(char(type(i)),'log10normal') || strcmp(char(type(i)),'lognormal'))
         pdf=normpdf(x,mu(i),sigma(i));
     else
         break

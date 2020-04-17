@@ -59,28 +59,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_LikelihoodFunction( This )
+  subroutine Initialize_LikelihoodFunction(This)
     import                                                            ::    LikelihoodFunction_Type
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_LikelihoodFunction( This )
+  subroutine Reset_LikelihoodFunction(This)
     import                                                            ::    LikelihoodFunction_Type
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_LikelihoodFunction( This )
+  subroutine SetDefaults_LikelihoodFunction(This)
     import                                                            ::    LikelihoodFunction_Type
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_LikelihoodFunction( This, Input, Prefix )
+  subroutine ConstructInput_LikelihoodFunction(This, Input, Prefix)
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    InputSection_Type
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
@@ -90,19 +90,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_LikelihoodFunction( This, MainSectionName, Prefix, Directory )
+  function GetInput_LikelihoodFunction(This, Name, Prefix, Directory)
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_LikelihoodFunction
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_1D_LikelihoodFunction( This, Responses, Input, Output, LogValue )
+  function Evaluate_1D_LikelihoodFunction(This, Responses, Input, Output, LogValue)
     use                                                               ::    Parameters_Library
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    Response_Type
@@ -118,7 +118,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Evaluate_0D_LikelihoodFunction( This, Response, Input, Output, LogValue )
+  function Evaluate_0D_LikelihoodFunction(This, Response, Input, Output, LogValue)
     use                                                               ::    Parameters_Library
     import                                                            ::    LikelihoodFunction_Type
     import                                                            ::    Response_Type
@@ -134,7 +134,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_LikelihoodFunction( LHS, RHS )
+  impure elemental subroutine Copy_LikelihoodFunction(LHS, RHS)
     import                                                            ::    LikelihoodFunction_Type
     class(LikelihoodFunction_Type), intent(out)                       ::    LHS
     class(LikelihoodFunction_Type), intent(in)                        ::    RHS
@@ -146,7 +146,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
@@ -159,7 +159,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel( This )
+  function GetLabel(This)
 
     character(:), allocatable                                         ::    GetLabel
     class(LikelihoodFunction_Type), intent(inout)                     ::    This

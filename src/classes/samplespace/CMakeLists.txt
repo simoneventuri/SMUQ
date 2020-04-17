@@ -1,4 +1,4 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   SampleSpace_Class.f90
   ParamSpace_Class.f90
   TransfSampleSpace_Factory_Class.f90

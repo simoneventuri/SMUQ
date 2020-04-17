@@ -62,14 +62,14 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(TransfSampleSpaceNone_Type), intent(inout)                  ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Initialized = .true.
       This%Name = 'parameter_space'
       call This%SetDefaults()
@@ -79,25 +79,25 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(TransfSampleSpaceNone_Type), intent(inout)                  ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%DistProb) ) deallocate(This%DistProb, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%DistProb)) deallocate(This%DistProb, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
     This%NbDim = 0
 
-    if ( allocated(This%ParamName) ) deallocate(This%ParamName, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%ParamName)) deallocate(This%ParamName, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamName', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%CorrMat) ) deallocate(This%CorrMat, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%CorrMat)) deallocate(This%CorrMat, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
     This%Correlated=.false.
 
     This%Initialized=.false.
@@ -109,7 +109,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(TransfSampleSpaceNone_Type),intent(inout)                   ::    This
 
@@ -119,7 +119,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------     
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(TransfSampleSpaceNone_Type), intent(inout)                  ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -144,24 +144,24 @@ contains
     logical                                                           ::    Found
     character(:), allocatable                                         ::    SpaceType
 
-    if ( This%Constructed ) call This%Reset
-    if ( .not. This%Initialized ) call This%Initialize  
+    if (This%Constructed) call This%Reset
+    if (.not. This%Initialized) call This%Initialize  
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     SectionName = 'parameters'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     This%NbDim = InputSection%GetNumberOfSubSections()
 
     allocate(This%ParamName(This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%ParamName', ProcName=ProcName, stat=StatLoc)
 
     allocate(This%DistProb(This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
 
     allocate(This%Label(This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, This%NbDim
@@ -169,44 +169,44 @@ contains
 
       ParameterName = 'name'
       call This%ParamName(i)%Set_Value(Value='<undefined>')
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
+      call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
       This%ParamName(i) = VarC0D
 
       ParameterName = 'label'
-      call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true. )
+      call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
       This%Label(i) = VarC0D
 
       SubSectionName = SubSectionName // '>distribution'
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call DistProb_Factory%Construct( Object=DistProb, Input=InputSection, Prefix=PrefixLoc )
-      nullify( InputSection )
-      call This%DistProb(i)%Set( Object=DistProb )
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+      call DistProb_Factory%Construct(Object=DistProb, Input=InputSection, Prefix=PrefixLoc)
+      nullify(InputSection)
+      call This%DistProb(i)%Set(Object=DistProb)
       deallocate(DistProb, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='DistProb', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
     end do 
 
     i = 1
     do i = 1, This%NbDim-1
       ii = 1
       do ii = i+1 ,This%NbDim
-        if ( This%Label(i)%GetValue() == This%Label(ii)%GetValue() ) call Error%Raise( Line='Duplicate labels : ' //              &
+        if (This%Label(i)%GetValue() == This%Label(ii)%GetValue()) call Error%Raise(Line='Duplicate labels : ' //              &
                                                                                       This%Label(i)%GetValue(), ProcName=ProcName)
       end do
     end do
 
     SectionName = 'correlation_matrix'
-    if ( Input%HasSection( SubSectionName=SectionName ) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call ImportArray( Input=InputSection, Array=This%CorrMat, Prefix=PrefixLoc )
-      nullify( InputSection )
-      This%Correlated = .not. IsDiagonal( Array=This%CorrMat )
+    if (Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call ImportArray(Input=InputSection, Array=This%CorrMat, Prefix=PrefixLoc)
+      nullify(InputSection)
+      This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
     else
       This%CorrMat = EyeR(N=This%NbDim)
       This%Correlated = .false.
     end if
 
-    if ( size(This%Corrmat,1) /= This%NbDim .or. size(This%CorrMat,2) /= This%NbDim ) call Error%Raise(                           &
-                                                       Line='Improper sizes for the input correlation matrix', ProcName=ProcName ) 
+    if (size(This%Corrmat,1) /= This%NbDim .or. size(This%CorrMat,2) /= This%NbDim) call Error%Raise(                        &
+                                                       Line='Improper sizes for the input correlation matrix', ProcName=ProcName) 
 
     This%Constructed=.true.
 
@@ -214,7 +214,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructCase1( This, OriginalSampleSpace )
+  subroutine ConstructCase1(This, OriginalSampleSpace)
 
     class(TransfSampleSpaceNone_Type), intent(inout)                  ::    This
     class(SampleSpace_Type), intent(in)                               ::    OriginalSampleSpace
@@ -223,25 +223,25 @@ contains
     integer                                                           ::    i, ii
     integer                                                           ::    StatLoc=0
 
-    if ( This%Constructed ) call This%Reset
-    if ( .not. This%Initialized ) call This%Initialize  
+    if (This%Constructed) call This%Reset
+    if (.not. This%Initialized) call This%Initialize  
 
     This%NbDim = OriginalSampleSpace%GetNbDim()
 
     allocate(This%Label(This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
     This%Label = OriginalSampleSpace%GetLabel()
 
     allocate(This%ParamName(This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%Paramname', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Paramname', ProcName=ProcName, stat=StatLoc)
     This%ParamName = OriginalSampleSpace%GetName()
 
     allocate(This%DistProb(This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
     This%DistProb = OriginalSampleSpace%GetDistribution()
 
     allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
     This%CorrMat = OriginalSampleSpace%GetCorrMat()
 
     This%Correlated = OriginalSampleSpace%IsCorrelated()
@@ -252,12 +252,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(TransfSampleSpaceNone_Type), intent(in)                     ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -274,19 +274,19 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     type(SMUQFile_Type)                                               ::    File
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
     SectionName = 'parameters'
     call GetInput%AddSection(SectionName=SectionName)
@@ -295,26 +295,26 @@ contains
       SubSectionName = 'parameter' // ConvertToString(Value=i)
       call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
       SubSectionName= SectionName // '>' // SubSectionName
-      call GetInput%AddParameter( Name='name', Value=ConvertToString( Value=This%ParamName(i)%GetValue() ),                       &
-                                                                                                      SectionName=SubSectionName )
-      call GetInput%AddParameter( Name='label', Value=ConvertToString( Value=This%Label(i)%GetValue() ),                          &
-                                                                                                      SectionName=SubSectionName )
+      call GetInput%AddParameter(Name='name', Value=ConvertToString(Value=This%ParamName(i)%GetValue()),                       &
+                                                                                                      SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='label', Value=ConvertToString(Value=This%Label(i)%GetValue()),                          &
+                                                                                                      SectionName=SubSectionName)
       DistProb => This%DistProb(i)%GetPointer()
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/distribution' // ConvertToString(i)
-      call GetInput%AddSection( Section=DistProb_Factory%GetObjectInput( Object=DistProb, MainSectionName='distribution',         &
-                                                        Prefix=PrefixLoc, Directory=DirectorySub ), To_SubSection=SubSectionName )
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/distribution' // ConvertToString(i)
+      call GetInput%AddSection(Section=DistProb_Factory%GetObjectInput(Object=DistProb, Name='distribution',         &
+                                                        Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SubSectionName)
       nullify(DistProb)
     end do
 
     SectionName='correlation_matrix'
-    call GetInput%AddSection( SectionName=SectionName )
-    call GetInput%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    if ( ExternalFlag ) then
+    call GetInput%AddSection(SectionName=SectionName)
+    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    if (ExternalFlag) then
       FileName = DirectoryLoc // '/correlation_matrix.dat'
-      call File%Construct( File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ' )
-      call ExportArray( Input=InputSection, Array=This%CorrMat, File=File )
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call ExportArray(Input=InputSection, Array=This%CorrMat, File=File)
     else
-      call ExportArray( Input=InputSection, Array=This%CorrMat )
+      call ExportArray(Input=InputSection, Array=This%CorrMat)
     end if
     nullify(InputSection)
 
@@ -322,7 +322,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Transform1D( This, X )
+  function Transform1D(This, X)
     
     real(rkp), allocatable, dimension(:)                              ::    Transform1D
 
@@ -333,16 +333,16 @@ contains
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    allocate( Transform1D, source=X, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Transform1D', ProcName=ProcName, stat=StatLoc )
+    allocate(Transform1D, source=X, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Transform1D', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvTransform1D( This, Z )
+  function InvTransform1D(This, Z)
     
     real(rkp), allocatable, dimension(:)                              ::    InvTransform1D
 
@@ -353,16 +353,16 @@ contains
     integer                                                           ::    i
     integer                                                           ::    StatLoc=0
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    allocate( InvTransform1D, source=Z, stat=StatLoc )
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='InvTransform1D', ProcName=ProcName, stat=StatLoc )
+    allocate(InvTransform1D, source=Z, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='InvTransform1D', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(TransfSampleSpaceNone_Type), intent(out)                    ::    LHS
     class(SampleSpace_Type), intent(in)                               ::    RHS
@@ -371,7 +371,7 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
-    select type ( RHS )
+    select type (RHS)
 
       type is (TransfSampleSpaceNone_Type)
         call LHS%Reset()
@@ -379,21 +379,21 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
         
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%NbDim = RHS%NbDim
           allocate(LHS%DistProb, source=RHS%DistProb, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%DistProb', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%DistProb', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%ParamName, source=RHS%ParamName, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Paramname', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Paramname', ProcName=ProcName, stat=StatLoc)
           LHS%Correlated = RHS%Correlated
           allocate(LHS%CorrMat, source=RHS%CorrMat, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%Label, source=RHS%Label, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%Label', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Label', ProcName=ProcName, stat=StatLoc)
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -401,24 +401,24 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(TransfSampleSpaceNone_Type),intent(inout)                    ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if ( allocated(This%CorrMat) ) deallocate(This%CorrMat, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%CorrMat', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%CorrMat)) deallocate(This%CorrMat, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%ParamName) ) deallocate(This%ParamName, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%ParamName', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%ParamName)) deallocate(This%ParamName, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamName', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%DistProb) ) deallocate(This%DistProb, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%DistProb', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%DistProb)) deallocate(This%DistProb, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
 
-    if ( allocated(This%Label) ) deallocate(This%Label, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%Label', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

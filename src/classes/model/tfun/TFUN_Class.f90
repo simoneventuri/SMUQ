@@ -56,13 +56,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(TFUN_Type), intent(inout)                                   ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'tfunmodel'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -72,7 +72,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(TFUN_Type), intent(inout)                                   ::    This
 
@@ -82,8 +82,8 @@ contains
     This%Initialized = .false.
     This%Constructed = .false.
 
-    if ( allocated(This%TestFunctions) ) deallocate(This%TestFunctions, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='This%TestFunctions', ProcName=ProcName, stat=StatLoc )
+    if (allocated(This%TestFunctions)) deallocate(This%TestFunctions, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%TestFunctions', ProcName=ProcName, stat=StatLoc)
     This%NbFunctions = 0
 
     call This%SetDefaults()
@@ -92,7 +92,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(TFUN_Type), intent(inout)                                   ::    This
 
@@ -106,7 +106,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     use String_Library
 
@@ -129,59 +129,59 @@ contains
     type(String_Type), allocatable, dimension(:)                      ::    Labels
     logical                                                           ::    Found
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'label'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Label = VarC0D
 
     ParameterName = 'silent'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) This%Silent = VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) This%Silent = VarL0D
 
     SectionName = 'functions'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     This%NbFunctions = InputSection%GetNumberofSubSections()
     nullify(InputSection)
 
     allocate(This%TestFunctions(This%NbFunctions), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='This%TestFunctions', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='This%TestFunctions', ProcName=ProcName, stat=StatLoc)
 
     allocate(Labels(This%NbFunctions), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Labels', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, This%NbFunctions
       SubSectionName = SectionName // '>function' // ConvertToString(Value=i)
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true. )
-      call TestFunction_Factory%Construct( Object=TestFunction, Input=InputSection, Prefix=PrefixLoc )
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+      call TestFunction_Factory%Construct(Object=TestFunction, Input=InputSection, Prefix=PrefixLoc)
       nullify(InputSection)
-      call This%TestFunctions(i)%Set( Object=TestFunction )
+      call This%TestFunctions(i)%Set(Object=TestFunction)
       Labels(i) = TestFunction%GetLabel()
       deallocate(TestFunction, stat=StatLoc)
-      if ( StatLoc /= 0 ) call Error%Deallocate( Name='TestFunction', ProcName=ProcName, stat=StatLoc )
+      if (StatLoc /= 0) call Error%Deallocate(Name='TestFunction', ProcName=ProcName, stat=StatLoc)
     end do
 
     i = 1
     do i = 1, This%NbFunctions
       ii = i
       do ii = i, This%NbFunctions
-        if ( i == ii ) cycle
-        if ( Labels(i)%GetValue() == Labels(ii)%GetValue() ) call Error%Raise( 'Detected duplicate output label : ' //            &
-                                                                                         Labels(i)%GetValue(), ProcName=ProcName )
+        if (i == ii) cycle
+        if (Labels(i)%GetValue() == Labels(ii)%GetValue()) call Error%Raise('Detected duplicate output label : ' //            &
+                                                                                         Labels(i)%GetValue(), ProcName=ProcName)
       end do
     end do
 
     This%NbOutputs = This%NbFunctions
 
     SectionName = 'input_preprocessor'
-    if ( Input%HasSection(SubSectionName=SectionName) ) then
-      call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-      call This%InputProcessor%Construct( Input=InputSection, Prefix=PrefixLoc )
+    if (Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call This%InputProcessor%Construct(Input=InputSection, Prefix=PrefixLoc)
       nullify(InputSection)
     end if
 
@@ -191,14 +191,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use String_Library
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(TFUN_Type), intent(in)                                      ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -211,39 +211,39 @@ contains
     class(TestFunction_Type), pointer                                 ::    TestFunctionPtr=>null()
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='label', Value=This%Label )
+    call GetInput%AddParameter(Name='label', Value=This%Label)
 
-    call GetInput%AddSection( SectionName='functions' )
+    call GetInput%AddSection(SectionName='functions')
 
     i = 1
     do i = 1, This%NbFunctions
       SectionName = 'function' // ConvertToString(Value=i)
-      if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/function' // ConvertToString(Value=i)
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/function' // ConvertToString(Value=i)
       TestFunctionPtr => This%TestFunctions(i)%GetPointer()
-      call GetInput%AddSection( Section=TestFunction_Factory%GetObjectInput(Object=TestFunctionPtr, MainSectionName=SectionName,  &
-                                                            Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection='functions' )
+      call GetInput%AddSection(Section=TestFunction_Factory%GetObjectInput(Object=TestFunctionPtr, Name=SectionName,  &
+                                                            Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection='functions')
     end do
 
-    if ( This%InputProcessor%IsConstructed() ) call GetInput%AddSection( Section=This%InputProcessor%GetInput(                    &
-                                                 MainSectionName='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub) )
+    if (This%InputProcessor%IsConstructed()) call GetInput%AddSection(Section=This%InputProcessor%GetInput(                  &
+                                                 Name='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_0D( This, Input, Output, Stat )
+  subroutine Run_0D(This, Input, Output, Stat)
 
     class(TFUN_Type), intent(inout)                                   ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -255,24 +255,24 @@ contains
     class(TestFunction_Type), pointer                                 ::    TestFunctionPtr=>null()
     integer                                                           ::    i
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if ( size(Output,1) /= This%NbOutputs ) call Error%Raise( 'Passed down an output array of incorrect length',                  &
-                                                                                                               ProcName=ProcName )
+    if (size(Output,1) /= This%NbOutputs) call Error%Raise('Passed down an output array of incorrect length',                  &
+                                                                                                               ProcName=ProcName)
 
     i = 1
     do i = 1, This%NbFunctions
       TestFunctionPtr => This%TestFunctions(i)%GetPointer()
-      call TestFunctionPtr%Run( Input=Input, Output=Output(i) )
+      call TestFunctionPtr%Run(Input=Input, Output=Output(i))
     end do
 
-    if ( present(Stat) ) Stat = 0
+    if (present(Stat)) Stat = 0
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(TFUN_Type), intent(out)                                     ::    LHS
     class(Model_Type), intent(in)                                     ::    RHS
@@ -287,17 +287,17 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%NbFunctions = RHS%NbFunctions
           allocate(LHS%TestFunctions, source=RHS%TestFunctions, stat=StatLoc)
-          if ( StatLoc /= 0 ) call Error%Allocate( Name='LHS%TestFunctions', ProcName=ProcName, stat=StatLoc )
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%TestFunctions', ProcName=ProcName, stat=StatLoc)
           LHS%NbOutputs = RHS%NbOutputs
           LHS%Label = RHS%Label
           LHS%InputProcessor = RHS%InputProcessor
         end if
 
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 

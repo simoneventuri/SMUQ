@@ -55,28 +55,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_SurrogateMethod( This )
+  subroutine Initialize_SurrogateMethod(This)
     import                                                            ::    SurrogateMethod_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_SurrogateMethod( This )
+  subroutine Reset_SurrogateMethod(This)
     import                                                            ::    SurrogateMethod_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_SurrogateMethod( This )
+  subroutine SetDefaults_SurrogateMethod(This)
     import                                                            ::    SurrogateMethod_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_SurrogateMethod( This, Input, SectionChain, Prefix )
+  subroutine ConstructInput_SurrogateMethod(This, Input, SectionChain, Prefix)
     import                                                            ::    SurrogateMethod_Type
     import                                                            ::    InputSection_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
@@ -87,19 +87,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_SurrogateMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_SurrogateMethod(This, Name, Prefix, Directory)
     import                                                            ::    SurrogateMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_SurrogateMethod
     class(SurrogateMethod_Type), intent(inout)                        ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_SurrogateMethod( This, SampleSpace, Responses, Model, SurrogateModel, OutputDirectory )
+  subroutine Run_SurrogateMethod(This, SampleSpace, Responses, Model, SurrogateModel, OutputDirectory)
     import                                                            ::    Response_Type
     import                                                            ::    Model_Type
     import                                                            ::    SurrogateMethod_Type
@@ -114,7 +114,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_SurrogateMethod( LHS, RHS )
+  impure elemental subroutine Copy_SurrogateMethod(LHS, RHS)
     import                                                            ::    SurrogateMethod_Type
     class(SurrogateMethod_Type), intent(out)                          ::    LHS
     class(SurrogateMethod_Type), intent(in)                           ::    RHS
@@ -126,7 +126,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(SurrogateMethod_Type), intent(inout)                        ::    This

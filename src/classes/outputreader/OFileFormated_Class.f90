@@ -55,28 +55,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_OFileFormated( This )
+  subroutine Initialize_OFileFormated(This)
     import                                                            ::    OFileFormated_Type  
     class(OFileFormated_Type), intent(inout)                          ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_OFileFormated( This )
+  subroutine Reset_OFileFormated(This)
     import                                                            ::    OFileFormated_Type  
     class(OFileFormated_Type), intent(inout)                          ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_OFileFormated( This )
+  subroutine SetDefaults_OFileFormated(This)
     import                                                            ::    OFileFormated_Type  
     class(OFileFormated_Type), intent(inout)                          ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_OFileFormated( This, Input, Prefix )
+  subroutine ConstructInput_OFileFormated(This, Input, Prefix)
     import                                                            ::    OFileFormated_Type
     import                                                            ::    InputSection_Type
     class(OFileFormated_Type), intent(inout)                          ::    This
@@ -86,19 +86,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_OFileFormated( This, MainSectionName, Prefix, Directory )
+  function GetInput_OFileFormated(This, Name, Prefix, Directory)
     import                                                            ::    OFileFormated_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_OFileFormated
     class(OFileFormated_Type), intent(in)                             ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReadOutput_OFileFormated( This, Values )
+  subroutine ReadOutput_OFileFormated(This, Values)
     use Output_Class                                              ,only:    Output_Type
     use Parameters_Library
     import                                                            ::    OFileFormated_Type
@@ -108,7 +108,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_OFileFormated( LHS, RHS )
+  impure elemental subroutine Copy_OFileFormated(LHS, RHS)
     import                                                            ::    OFileFormated_Type  
     class(OFileFormated_Type), intent(out)                            ::    LHS
     class(OFileFormated_Type), intent(in)                             ::    RHS
@@ -120,7 +120,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
     class(OFileFormated_Type), intent(inout)                          ::    This
@@ -133,7 +133,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Exists( This )
+  function Exists(This)
 
     logical, allocatable                                              ::    Exists
 

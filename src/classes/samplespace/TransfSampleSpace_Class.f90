@@ -48,7 +48,7 @@ logical, parameter                                                    ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Transform1D_TransfSampleSpace( This, X )
+  function Transform1D_TransfSampleSpace(This, X)
     use Parameters_Library
     import                                                            ::    TransfSampleSpace_Type
     real(rkp), allocatable, dimension(:)                              ::    Transform1D_TransfSampleSpace   
@@ -58,7 +58,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvTransform1D_TransfSampleSpace( This, Z )
+  function InvTransform1D_TransfSampleSpace(This, Z)
     use Parameters_Library
     import                                                            ::    TransfSampleSpace_Type
     real(rkp), allocatable, dimension(:)                              ::    InvTransform1D_TransfSampleSpace   
@@ -72,7 +72,7 @@ end interface
 contains 
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Transform2D( This, X )
+  function Transform2D(This, X)
 
     real(rkp), allocatable, dimension(:,:)                            ::    Transform2D  
 
@@ -84,25 +84,25 @@ contains
     integer                                                           ::    i
     integer                                                           ::    NbDegen
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( This%NbDim /= size(X,1) ) call Error%Raise( Line='Incorrect dimensionality', ProcName=ProcName )
+    if (This%NbDim /= size(X,1)) call Error%Raise(Line='Incorrect dimensionality', ProcName=ProcName)
 
     NbDegen = size(X,2)
 
     allocate(Transform2D(This%NbDim,NbDegen), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Transform2D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Transform2D', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, NbDegen
-      Transform2D(:,i) = This%Transform( X=X(:,i) )
+      Transform2D(:,i) = This%Transform(X=X(:,i))
     end do
                                           
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvTransform2D( This, Z )
+  function InvTransform2D(This, Z)
 
     real(rkp), allocatable, dimension(:,:)                            ::    InvTransform2D 
  
@@ -114,18 +114,18 @@ contains
     integer                                                           ::    i
     integer                                                           ::    NbDegen
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if ( This%NbDim /= size(Z,1) ) call Error%Raise( Line='Incorrect dimensionality', ProcName=ProcName )
+    if (This%NbDim /= size(Z,1)) call Error%Raise(Line='Incorrect dimensionality', ProcName=ProcName)
 
     NbDegen = size(Z,2)
 
     allocate(InvTransform2D(This%NbDim,NbDegen), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='Transform2D', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='Transform2D', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, NbDegen
-      InvTransform2D(:,i) = This%InvTransform( Z=Z(:,i) )
+      InvTransform2D(:,i) = This%InvTransform(Z=Z(:,i))
     end do
                                             
   end function

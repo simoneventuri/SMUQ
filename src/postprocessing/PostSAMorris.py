@@ -30,7 +30,7 @@ responses = rc.get_responses()
 variables = vc.get_variables()
 
 for response in responses:
-    if ( response.get_nb_coords() > 1 ):
+    if (response.get_nb_coords() > 1):
         mu.plot_mu(response, variables)
         mu.plot_mustar(response, variables)
         mu.plot_sigma(response, variables)

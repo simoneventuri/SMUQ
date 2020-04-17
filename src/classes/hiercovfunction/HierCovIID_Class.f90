@@ -56,13 +56,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(HierCovIID_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'HierCovIID'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -72,7 +72,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(HierCovIID_Type), intent(inout)                             ::    This
 
@@ -88,7 +88,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(HierCovIID_Type), intent(inout)                             ::    This
 
@@ -102,7 +102,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(HierCovIID_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -123,17 +123,17 @@ contains
     logical                                                           ::    MandatoryLoc
     logical                                                           ::    InputRequiredTrip
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     InputRequiredTrip = .false.
 
     ParameterName = 'sigma_dependency'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if ( Found ) then
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if (Found) then
       This%Sigma_Dependency=VarC0D
       InputRequiredTrip = .true.
     end if
@@ -141,10 +141,10 @@ contains
     MandatoryLoc = .not. Found
 
     ParameterName = 'sigma'
-    call Input%GetValue( Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found )
-    if ( Found ) This%Sigma=VarR0D
+    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
+    if (Found) This%Sigma=VarR0D
 
-    if ( .not. InputRequiredTrip ) This%InputRequired = .false.
+    if (.not. InputRequiredTrip) This%InputRequired = .false.
    
     This%Constructed = .true.
 
@@ -152,12 +152,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(HierCovIID_Type), intent(in)                                ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -172,27 +172,27 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
-    if ( ExternalFlag ) call MakeDirectory( Path=PrefixLoc // DirectoryLoc, Options='-p' )
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter( Name='sigma', Value=ConvertToString(This%Sigma) )
-    if ( len_trim(This%Sigma_Dependency) /= 0 ) call GetInput%AddParameter( Name='sigma_dependency', Value=This%Sigma_Dependency )
+    call GetInput%AddParameter(Name='sigma', Value=ConvertToString(This%Sigma))
+    if (len_trim(This%Sigma_Dependency) /= 0) call GetInput%AddParameter(Name='sigma_dependency', Value=This%Sigma_Dependency)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate( This, Input, CovFunction )
+  subroutine Generate(This, Input, CovFunction)
 
     class(HierCovIID_Type), intent(in)                                ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -202,25 +202,25 @@ contains
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    Sigma
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
     Sigma = This%Sigma
-    if ( len_trim(This%Sigma_Dependency) /= 0 ) call Input%GetValue( Value=Sigma, Label=This%Sigma_Dependency )
+    if (len_trim(This%Sigma_Dependency) /= 0) call Input%GetValue(Value=Sigma, Label=This%Sigma_Dependency)
 
-    allocate( CovIID_Type :: CovFunction )
+    allocate(CovIID_Type :: CovFunction)
 
     select type (CovFunction)
       type is (CovIID_Type)
-        call CovFunction%Construct( Sigma=Sigma )
+        call CovFunction%Construct(Sigma=Sigma)
       class default
-        call Error%Raise( "Something went wrong", ProcName=ProcName )
+        call Error%Raise("Something went wrong", ProcName=ProcName)
     end select
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(HierCovIID_Type), intent(out)                               ::    LHS
     class(HierCovFunction_Type), intent(in)                           ::    RHS
@@ -236,13 +236,13 @@ contains
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
 
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Sigma_Dependency = RHS%Sigma_Dependency
           LHS%Sigma = RHS%Sigma
         end if
       
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
     end select
 
@@ -250,7 +250,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer( This )
+  impure elemental subroutine Finalizer(This)
 
     type(HierCovIID_Type), intent(inout)                    ::    This
 

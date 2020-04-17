@@ -1,3 +1,3 @@
-add_target_sources ( smuqApp
+add_target_sources (smuqApp
   RandPseudo_Class.f90
- )
+)

@@ -56,46 +56,46 @@ logical, parameter                                                    ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_C0D( Object, DesiredType )
+  subroutine Construct_C0D(Object, DesiredType)
 
     class(DistProb_Type), allocatable, intent(inout)                  ::    Object                                             
     character(*), intent(in)                                          ::    DesiredType
 
     character(*), parameter                                           ::    ProcName='Construct_C0D' 
 
-    if ( allocated( Object ) ) call Error%Raise( Line="Object already allocated", ProcName=ProcName )
+    if (allocated(Object)) call Error%Raise(Line="Object already allocated", ProcName=ProcName)
 
-    select case ( LowerCase(DesiredType) )
+    select case (LowerCase(DesiredType))
 
       case('uniform')
-        allocate( DistUnif_Type :: Object )
+        allocate(DistUnif_Type :: Object)
 
       case('loguniform')
-        allocate( DistLogUnif_Type :: Object )
+        allocate(DistLogUnif_Type :: Object)
 
       case('log10uniform')
-        allocate( DistLog10Unif_Type :: Object )
+        allocate(DistLog10Unif_Type :: Object)
 
       case('normal')
-        allocate( DistNorm_Type :: Object )
+        allocate(DistNorm_Type :: Object)
 
       case('lognormal')
-        allocate( DistLogNorm_Type :: Object )
+        allocate(DistLogNorm_Type :: Object)
 
       case('log10normal')
-        allocate( DistLog10Norm_Type :: Object )
+        allocate(DistLog10Norm_Type :: Object)
 
       case('gamma')
-        allocate( DistGamma_Type :: Object )
+        allocate(DistGamma_Type :: Object)
 
       case('logistic')
-        allocate( DistLogistic_Type :: Object )
+        allocate(DistLogistic_Type :: Object)
 
       case('kernel')
-        allocate( DistKernel_Type :: Object )
+        allocate(DistKernel_Type :: Object)
 
       case default
-        call Error%Raise( Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName )
+        call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
 
     end select
 
@@ -105,7 +105,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_Input( This, Object, Input, Prefix )
+  subroutine Construct_Input(This, Object, Input, Prefix)
     
     use Input_Library
 
@@ -123,22 +123,22 @@ contains
     integer                                                           ::    StatLoc=0 
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
     ParameterName = 'type'
-    call Input%GetValue( Value=VarC0D, ParameterName=ParameterName, Mandatory=.true. )
-    call This%Construct( Object=Object, DesiredType=VarC0D )
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+    call This%Construct(Object=Object, DesiredType=VarC0D)
 
     SectionName = 'type'
-    call Input%FindTargetSection( TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true. )
-    call Object%Construct( Input=InputSection, Prefix=PrefixLoc )
-    nullify( InputSection )
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call Object%Construct(Input=InputSection, Prefix=PrefixLoc)
+    nullify(InputSection)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOption( Object )
+  function GetOption(Object)
 
     character(:), allocatable                                         ::    GetOption
 
@@ -176,7 +176,7 @@ contains
         GetOption = 'kernel'
 
       class default
-        call Error%Raise( Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName )
+        call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
 
     end select
 
@@ -184,7 +184,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetObjectInput( This, Object, MainSectionName, Prefix, Directory )
+  function GetObjectInput(This, Object, Name, Prefix, Directory)
 
     use Input_Library
 
@@ -192,7 +192,7 @@ contains
 
     class(BaseDistProb_Factory_Type), intent(in)                      ::    This
     class(DistProb_Type), intent(in)                                  ::    Object
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -206,18 +206,18 @@ contains
     DirectoryLoc = '<undefined>'
     PrefixLoc = ''
     DirectorySub = DirectoryLoc
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetObjectInput%SetName( SectionName=MainSectionName )
+    call GetObjectInput%SetName(SectionName=Name)
 
-    call GetObjectInput%AddParameter( Name='type', Value=This%GetOption( Object=Object ) )
+    call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
 
-    if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/type'
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/type'
 
-    call GetObjectInput%AddSection( Section=Object%GetInput( MainSectionName='type', Prefix=PrefixLoc, Directory=DirectorySub ) )
+    call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

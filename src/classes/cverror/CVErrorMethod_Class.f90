@@ -56,28 +56,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_CVErrorMethod( This )
+  subroutine Initialize_CVErrorMethod(This)
     import                                                            ::    CVErrorMethod_Type
     class(CVErrorMethod_Type), intent(inout)                          ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_CVErrorMethod( This )
+  subroutine Reset_CVErrorMethod(This)
     import                                                            ::    CVErrorMethod_Type
     class(CVErrorMethod_Type), intent(inout)                          ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_CVErrorMethod( This )
+  subroutine SetDefaults_CVErrorMethod(This)
     import                                                            ::    CVErrorMethod_Type
     class(CVErrorMethod_Type), intent(inout)                          ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_CVErrorMethod( This, Input, Prefix )
+  subroutine ConstructInput_CVErrorMethod(This, Input, Prefix)
     import                                                            ::    CVErrorMethod_Type
     import                                                            ::    InputSection_Type
     class(CVErrorMethod_Type), intent(inout)                          ::    This
@@ -87,19 +87,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_CVErrorMethod( This, MainSectionName, Prefix, Directory )
+  function GetInput_CVErrorMethod(This, Name, Prefix, Directory)
     import                                                            ::    CVErrorMethod_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_CVErrorMethod
     class(CVErrorMethod_Type), intent(in)                             ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeError_CVErrorMethod( This, Solver, System, Goal, Coefficients )
+  function ComputeError_CVErrorMethod(This, Solver, System, Goal, Coefficients)
     use Parameters_Library
     import                                                            ::    LinSolverMethod_Type
     import                                                            ::    CVErrorMethod_Type
@@ -113,7 +113,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_CVErrorMethod( LHS, RHS )
+  impure elemental subroutine Copy_CVErrorMethod(LHS, RHS)
     import                                                            ::    CVErrorMethod_Type
     class(CVErrorMethod_Type), intent(out)                            ::    LHS
     class(CVErrorMethod_Type), intent(in)                             ::    RHS
@@ -125,7 +125,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
 
@@ -139,7 +139,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsCorrected( This )
+  function IsCorrected(This)
 
     logical                                                           ::    IsCorrected
 
@@ -153,7 +153,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function IsNormalized( This )
+  function IsNormalized(This)
 
     logical                                                           ::    IsNormalized
 

@@ -47,7 +47,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSparse_LinSolverSparse( This, System, Goal, ModelSet, CoefficientsSet, CVError )
+  subroutine SolveSparse_LinSolverSparse(This, System, Goal, ModelSet, CoefficientsSet, CVError)
     use Parameters_Library
     import                                                            ::    LinSolverSparse_Type
     class(LinSolverSparse_Type), intent(in)                           ::    This
@@ -60,7 +60,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveFull_LinSolverSparse( This, System, Goal, Coefficients, CVError )
+  subroutine SolveFull_LinSolverSparse(This, System, Goal, Coefficients, CVError)
     use Parameters_Library
     import                                                            ::    LinSolverSparse_Type
     class(LinSolverSparse_Type), intent(in)                           ::    This
@@ -76,7 +76,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
 
@@ -90,7 +90,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSystem( This, System, Goal, Coefficients, CVError )
+  subroutine SolveSystem(This, System, Goal, Coefficients, CVError)
 
     class(LinSolverSparse_Type), intent(in)                           ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
@@ -100,10 +100,10 @@ contains
 
     character(*), parameter                                           ::    ProcName='SolveSystem'
   
-    if ( present(CVError) ) then
-      call This%SolveFull( System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError )
+    if (present(CVError)) then
+      call This%SolveFull(System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError)
     else
-      call This%SolveFull( System=System, Goal=Goal, Coefficients=Coefficients )
+      call This%SolveFull(System=System, Goal=Goal, Coefficients=Coefficients)
     end if
 
   end subroutine

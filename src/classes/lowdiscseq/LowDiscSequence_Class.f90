@@ -61,28 +61,28 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_LowDiscSequence( This )
+  subroutine Initialize_LowDiscSequence(This)
     import                                                            ::    LowDiscSequence_Type
     class(LowDiscSequence_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_LowDiscSequence( This )
+  subroutine Reset_LowDiscSequence(This)
     import                                                            ::    LowDiscSequence_Type
     class(LowDiscSequence_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_LowDiscSequence( This )
+  subroutine SetDefaults_LowDiscSequence(This)
     import                                                            ::    LowDiscSequence_Type
     class(LowDiscSequence_Type), intent(inout)                        ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_LowDiscSequence ( This, Input, Prefix )
+  subroutine ConstructInput_LowDiscSequence (This, Input, Prefix)
     import                                                            ::    LowDiscSequence_Type
     import                                                            ::    InputSection_Type
     class(LowDiscSequence_Type), intent(inout)                        ::    This
@@ -92,19 +92,19 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_LowDiscSequence( This, MainSectionName, Prefix, Directory )
+  function GetInput_LowDiscSequence(This, Name, Prefix, Directory)
     import                                                            ::    LowDiscSequence_Type
     import                                                            ::    InputSection_Type
     type(InputSection_Type)                                           ::    GetInput_LowDiscSequence
     class(LowDiscSequence_Type), intent(in)                           ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Get_0D_LowDiscSequence( This, NbPoints )
+  function Get_0D_LowDiscSequence(This, NbPoints)
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp), allocatable, dimension(:)                              ::    Get_0D_LowDiscSequence
@@ -114,7 +114,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Get_1D_LowDiscSequence( This, NbPoints, NbDim )
+  function Get_1D_LowDiscSequence(This, NbPoints, NbDim)
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp), allocatable, dimension(:,:)                            ::    Get_1D_LowDiscSequence  
@@ -125,7 +125,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoint_0D_LowDiscSequence( This, Point )
+  function GetPoint_0D_LowDiscSequence(This, Point)
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp)                                                         ::    GetPoint_0D_LowDiscSequence
@@ -135,7 +135,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoint_1D_LowDiscSequence( This, Point, NbDim )
+  function GetPoint_1D_LowDiscSequence(This, Point, NbDim)
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp), allocatable, dimension(:)                              ::    GetPoint_1D_LowDiscSequence  
@@ -146,7 +146,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoints_0D_LowDiscSequence( This, SeqStart, SeqEnd )
+  function GetPoints_0D_LowDiscSequence(This, SeqStart, SeqEnd)
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp), allocatable, dimension(:)                              ::    GetPoints_0D_LowDiscSequence
@@ -157,7 +157,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoints_1D_LowDiscSequence( This, SeqStart, SeqEnd, NbDim )
+  function GetPoints_1D_LowDiscSequence(This, SeqStart, SeqEnd, NbDim)
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     real(rkp), allocatable, dimension(:,:)                            ::    GetPoints_1D_LowDiscSequence  
@@ -169,7 +169,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_LowDiscSequence( LHS, RHS )
+  impure elemental subroutine Copy_LowDiscSequence(LHS, RHS)
     import                                                            ::    LowDiscSequence_Type
     class(LowDiscSequence_Type), intent(out)                          ::    LHS
     class(LowDiscSequence_Type), intent(in)                           ::    RHS
@@ -181,7 +181,7 @@ end interface
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName( This )
+  function GetName(This)
 
     character(:), allocatable                                         ::    GetName
 

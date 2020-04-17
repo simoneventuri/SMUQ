@@ -51,13 +51,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize( This )
+  subroutine Initialize(This)
 
     class(CVErrorLOO_Type), intent(inout)                             ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
-    if ( .not. This%Initialized ) then
+    if (.not. This%Initialized) then
       This%Name = 'cverrorloo'
       This%Initialized = .true.
       call This%SetDefaults()
@@ -67,7 +67,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset( This )
+  subroutine Reset(This)
 
     class(CVErrorLOO_Type), intent(inout)                             ::    This
 
@@ -82,7 +82,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults( This )
+  subroutine SetDefaults(This)
 
     class(CVErrorLOO_Type), intent(inout)                             ::    This
 
@@ -95,7 +95,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput( This, Input, Prefix )
+  subroutine ConstructInput(This, Input, Prefix)
 
     class(CVErrorLOO_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -109,18 +109,18 @@ contains
     logical                                                           ::    Found
 
     PrefixLoc = ''
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Prefix)) PrefixLoc = Prefix
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
     ParameterName = 'corrected'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if( Found ) This%Corrected = VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if(Found) This%Corrected = VarL0D
 
     ParameterName = 'normalized'
-    call Input%GetValue( Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found )
-    if( Found ) This%Normalized = VarL0D
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+    if(Found) This%Normalized = VarL0D
 
     This%Constructed = .true.
 
@@ -128,7 +128,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1( This, Corrected, Normalized )
+  subroutine ConstructCase1(This, Corrected, Normalized)
 
     class(CVErrorLOO_Type), intent(inout)                             ::    This
     logical, optional, intent(in)                                     ::    Corrected
@@ -140,12 +140,12 @@ contains
     character(:), allocatable                                         ::    ParameterName
     logical                                                           ::    Found
 
-    if ( This%Constructed ) call This%Reset()
-    if ( .not. This%Initialized ) call This%Initialize()
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
 
-    if( present(Corrected) ) This%Corrected = Corrected
+    if(present(Corrected)) This%Corrected = Corrected
 
-    if( present(Normalized) ) This%Normalized = Normalized
+    if(present(Normalized)) This%Normalized = Normalized
 
     This%Constructed = .true.
 
@@ -153,14 +153,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput( This, MainSectionName, Prefix, Directory )
+  function GetInput(This, Name, Prefix, Directory)
 
     use StringRoutines_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
     class(CVErrorLOO_Type), intent(in)                                ::    This
-    character(*), intent(in)                                          ::    MainSectionName
+    character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
 
@@ -170,25 +170,25 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
     PrefixLoc = ''
-    if ( present(Directory) ) DirectoryLoc = Directory
-    if ( present(Prefix) ) PrefixLoc = Prefix
+    if (present(Directory)) DirectoryLoc = Directory
+    if (present(Prefix)) PrefixLoc = Prefix
     DirectorySub = DirectoryLoc
 
-    if ( len_trim(DirectoryLoc) /= 0 ) ExternalFlag = .true.
+    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
-    call GetInput%AddParameter( Name='corrected', Value=ConvertToString( Value=This%Corrected ) )
-    call GetInput%AddParameter( Name='normalized', Value=ConvertToString( Value=This%Normalized ) )
+    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+    call GetInput%AddParameter(Name='corrected', Value=ConvertToString(Value=This%Corrected))
+    call GetInput%AddParameter(Name='normalized', Value=ConvertToString(Value=This%Normalized))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeError( This, Solver, System, Goal, Coefficients )
+  function ComputeError(This, Solver, System, Goal, Coefficients)
 
     use ieee_arithmetic
 
@@ -211,19 +211,19 @@ contains
     integer                                                           ::    ii
     integer                                                           ::    iii
 
-    if ( .not. This%Constructed ) call Error%Raise( Line='Object was never constructed', ProcName=ProcName )
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     M = size(System,1)
     N = size(System,2)
 
     allocate(SystemLoc(M-1,N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='SystemLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
     allocate(GoalLoc(M-1), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='GoalLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='GoalLoc', ProcName=ProcName, stat=StatLoc)
 
     allocate(CoefficientsLoc(N), stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Allocate( Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
 
     ComputeError = Zero
 
@@ -237,24 +237,24 @@ contains
         SystemLoc(iii,:) = System(ii,:)
         GoalLoc(iii) = Goal(ii)
       end do
-      call Solver%SolveSystem( SystemLoc, GoalLoc, CoefficientsLoc )
+      call Solver%SolveSystem(SystemLoc, GoalLoc, CoefficientsLoc)
       ComputeError = ComputeError + (Goal(i)-dot_product(System(i,:),CoefficientsLoc))**2
     end do
     ComputeError = ComputeError / M
     
     deallocate(SystemLoc, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='SystemLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
     deallocate(GoalLoc, stat=StatLoc)
-    if ( StatLoc /= 0 ) call Error%Deallocate( Name='GoalLoc', ProcName=ProcName, stat=StatLoc )
+    if (StatLoc /= 0) call Error%Deallocate(Name='GoalLoc', ProcName=ProcName, stat=StatLoc)
 
-    if ( This%Normalized ) ComputeError = ComputeError / ComputeSampleVar(Goal)
+    if (This%Normalized) ComputeError = ComputeError / ComputeSampleVar(Goal)
 
-    if ( This%Corrected ) then
-      if ( N >= M - 1 ) then
+    if (This%Corrected) then
+      if (N >= M - 1) then
         ComputeError = ieee_value(ComputeError, ieee_positive_inf)
       else
-        ComputeError = ComputeError * ( M-1 ) / ( M - N - 1 )
+        ComputeError = ComputeError * (M-1) / (M - N - 1)
       end if
     end if
 
@@ -262,7 +262,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy( LHS, RHS )
+  impure elemental subroutine Copy(LHS, RHS)
 
     class(CVErrorLOO_Type), intent(out)                               ::    LHS
     class(CVErrorMethod_Type), intent(in)                             ::    RHS
@@ -275,12 +275,12 @@ contains
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
-        if ( RHS%Constructed ) then
+        if (RHS%Constructed) then
           LHS%Corrected = RHS%Corrected
           LHS%Normalized = RHS%Normalized
         end if
       class default
-        call Error%Raise( Line='Incompatible types', ProcName=ProcName )
+        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
     end select
 
   end subroutine
