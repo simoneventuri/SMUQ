@@ -137,7 +137,6 @@ program SMUQ
       write(*,*)
       SectionChain = 'main'
       call Root%Construct( Input=Input, SectionChain=SectionChain, Prefix=ProgramDefs%GetCaseDir() )
-      write(*,'(A)') 'Running main analysis'
       call RestartUtility%Construct( Input=Root%GetInput(MainSectionName='main', Prefix=ProgramDefs%GetRestartDir(),                &
                                                                             Directory='/main'), Prefix=ProgramDefs%GetRestartDir() )
       call Root%Run()   

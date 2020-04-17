@@ -496,6 +496,10 @@ contains
 
     if ( .not. This%Constructed ) call Error%Raise( Line='The object was never constructed', ProcName=ProcName )
 
+    NbResponses = size(Responses,1)
+    NbDim = SampleSpace%GetNbDim()
+    SilentLoc = This%Silent
+
     if ( SampleSpace%IsCorrelated() ) then
       call Error%Raise( 'Morris method is only able to deal with non-correlated spaces', ProcName=ProcName )
     end if
@@ -510,10 +514,6 @@ contains
 !    end do
 
     call ModelInterface%Construct( Model=Model, Responses=Responses )
-
-    NbResponses = size(Responses,1)
-    NbDim = SampleSpace%GetNbDim()
-    SilentLoc = This%Silent
 
     NbInputs = 0
     NbBlocks = 0
@@ -750,6 +750,13 @@ contains
 
     if ( present(OutputDirectory) ) call This%WriteOutput( Directory=OutputDirectory, SampleSpace=SampleSpace,                    &
                                                                                                              Responses=Responses )
+
+    This%ParamSampleStep = 0
+
+    This%SamplesObtained = .false.
+    This%SamplesRan = .false.
+
+    call This%HistoryStep%Purge()
 
     deallocate(SnapShot, stat=StatLoc)
     if ( StatLoc /= 0 ) call Error%Deallocate( Name='SnapShot', ProcName=ProcName, stat=StatLoc )

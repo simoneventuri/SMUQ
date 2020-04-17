@@ -22,6 +22,7 @@ use Input_Library
 use Parameters_Library
 use String_Library
 use CommandRoutines_Module
+use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use AnalysisMethod_Class                                          ,only:    AnalysisMethod_Type
@@ -48,7 +49,8 @@ type                                                                  ::    Root
   type(Response_Type), allocatable, dimension(:)                      ::    Responses
   type(ParamSpace_Type)                                               ::    ParameterSpace
   class(Model_Type), allocatable                                      ::    Model
-  character(:), allocatable                                           ::    SectionChain                                             
+  character(:), allocatable                                           ::    SectionChain  
+  integer                                                             ::    NbRepetitions                                           
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -124,6 +126,8 @@ subroutine SetDefaults(This)
   character(*), parameter                                           ::    ProcName='SetDefaults'
   integer                                                           ::    StatLoc=0
 
+  This%NbRepetitions = 1
+
   This%SectionChain = ''
 
 end subroutine
@@ -164,6 +168,9 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   if (present(Prefix)) PrefixLoc = Prefix
 
   This%SectionChain = SectionChain
+
+  call Input%GetValue(Value=VarI0D, ParameterName='nb_repetitions', Mandatory=.false., Found=Found)
+  if ( Found ) This%NbRepetitions = VarI0D
 
   SectionName = 'model'
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
@@ -244,6 +251,8 @@ function GetInput( This, MainSectionName, Prefix, Directory )
 
   call GetInput%SetName( SectionName = trim(adjustl(MainSectionName)) )
 
+  call GetInput%AddParameter( Name='nb_repetitions', Value=ConvertToString(Value=This%NbRepetitions) )
+
   SectionName = 'model'
   if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/model'
   call GetInput%AddSection( Section=Model_Factory%GetObjectInput(Object=This%Model, MainSectionName=SectionName,                &
@@ -265,7 +274,7 @@ function GetInput( This, MainSectionName, Prefix, Directory )
 
   SectionName = 'analysis'
   if ( ExternalFlag ) DirectorySub = DirectoryLoc // '/analysis'
-  call GetInput%AddSection( Section=AnalysisMethod_Factory%GetObjectInput(Object=This%AnalysisMethod,                           &
+  call GetInput%AddSection( Section=AnalysisMethod_Factory%GetObjectInput(Object=This%AnalysisMethod,                             &
                                                         MainSectionName=SectionName, Prefix=PrefixLoc, Directory=DirectorySub) )
 
 end function
@@ -279,12 +288,28 @@ subroutine Run(This)
   character(*), parameter                                           ::    ProcName='Run'
   integer                                                           ::    StatLoc=0
   character(:), allocatable                                         ::    OutputDirectory
+  character(:), allocatable                                         ::    OutputDirectoryLoc
+  integer                                                           ::    i
+  character(:), allocatable                                         ::    Line
+  character(:), allocatable                                         ::    LineLoc
 
   OutputDirectory = ProgramDefs%GetOutputDir()
   if (len_trim(OutputDirectory) > 0) OutputDirectory = OutputDirectory // '/analysis'
+  OutputDirectoryLoc = OutputDirectory
 
-  call This%AnalysisMethod%Run(SampleSpace=This%ParameterSpace, Responses=This%Responses, Model=This%Model,                       &                                            
-                                                                                                   OutputDirectory=OutputDirectory)
+  Line = 'Running Analysis'
+  LineLoc = Line
+
+  i = 1
+  do i = 1, THis%NbRepetitions
+    if ( This%NbRepetitions > 1 .and. len_trim(OutputDirectory) > 0 ) OutputDirectoryLoc = OutputDirectory // '_' //              &
+                                                                                           ConvertToString(Value=i)
+    if ( This%NbRepetitions > 1 ) LineLoc = Line // ' ' // ConvertToString(Value=i)
+    write(*,*)
+    write(*,'(A)') LineLoc
+    call This%AnalysisMethod%Run(SampleSpace=This%ParameterSpace, Responses=This%Responses, Model=This%Model,                     &                                            
+                                 OutputDirectory=OutputDirectoryLoc)
+  end do
 
   call This%WriteOutput( Directory=ProgramDefs%GetOutputDir() )
 
@@ -355,6 +380,7 @@ impure elemental subroutine Copy(LHS, RHS)
   LHS%Constructed = RHS%Constructed
 
   if (RHS%Constructed) then
+    LHS%NbRepetitions = RHS%NbRepetitions
     allocate(LHS%Model, source=RHS%Model, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='LHS%Model', ProcName=ProcName, stat=StatLoc)
     LHS%ParameterSpace = RHS%ParameterSpace
