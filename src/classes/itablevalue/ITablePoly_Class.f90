@@ -28,7 +28,6 @@ use Input_Class                                                   ,only:    Inpu
 use ITableValue_Class                                             ,only:    ITableValue_Type
 use IScalarValueClass                                             ,only:    IScalarValue_Type
 use IScalarContainer_Class                                        ,only:    IScalarContainer_Type
-use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
@@ -120,8 +119,8 @@ subroutine ConstructInput(This, Input, Prefix)
   integer                                                             ::    i, ii
   logical                                                             ::    Found
   class(IScalarValue_Type), allocatable                               ::    PolyCoeff
-  type(IScalarFixed_Type)                                             ::    PolyCoeffScalar
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
+
   if (This%Constructed) call This%Reset()
   if (.not. This%Initialized) call This%Initialize()
 
@@ -135,8 +134,6 @@ subroutine ConstructInput(This, Input, Prefix)
 
   allocate(This%PolyCoeff(This%Order+1), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='PolyCoeff', ProcName=ProcName, stat=StatLoc)
-
-  call PolyCoeffScalar%Construct(Value=Zero)
 
   SectionName = 'coefficients'    
 

@@ -28,7 +28,6 @@ use ITableValue_Class                                             ,only:    ITab
 use Input_Class                                                   ,only:    Input_Type
 use IScalarValueClass                                             ,only:    IScalarValue_Type
 use IScalarContainer_Class                                        ,only:    IScalarContainer_Type
-use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none

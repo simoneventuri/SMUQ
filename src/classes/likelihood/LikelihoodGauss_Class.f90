@@ -34,6 +34,9 @@ use HierCovFunction_Class                                         ,only:    Hier
 use HierCovFunction_Factory_Class                                 ,only:    HierCovFunction_Factory
 use List2DAllocReal_Class                                         ,only:    List2DAllocReal_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use IScalarValueClass                                             ,only:    IScalarValue_Type
+use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
 
@@ -45,8 +48,7 @@ type, extends(LikelihoodFunction_Type)                                ::    Like
   logical                                                             ::    MultiplicativeError
   real(rkp)                                                           ::    Scalar=Zero
   class(HierCovFunction_Type), allocatable                            ::    HierCovFunction
-  real(rkp)                                                           ::    Multiplier
-  character(:), allocatable                                           ::    MultiplierDependency
+  class(IScalarValue_Type), allocatable                               ::    Multiplier
   logical                                                             ::    PredefinedCov
   real(rkp), allocatable, dimension(:,:)                              ::    L
   real(rkp), allocatable, dimension(:,:)                              ::    XmMean
@@ -104,6 +106,9 @@ contains
     if (allocated(This%L)) deallocate(This%L, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='This%L', ProcName=ProcName, stat=StatLoc)
 
+    if (allocated(This%Multiplier)) deallocate(This%Multiplier, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Multiplier', ProcName=ProcName, stat=StatLoc)
+
     This%PredefinedCov = .false.
 
     call This%SetDefaults()
@@ -121,8 +126,6 @@ contains
     This%MultiplicativeError = .false.
     This%Scalar = Zero
     This%Label = ''
-    This%Multiplier = One
-    This%MultiplierDependency = ''
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -161,19 +164,25 @@ contains
     call Input%GetValue(Value=VarR0D, ParameterName=Parametername, Mandatory=.false., Found=Found)
     if (Found) This%Scalar = VarR0D
 
-    ParameterName = 'label'
+    ParameterName = 'response'
     call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
     This%Label = VarC0D
 
     SectionName = 'multiplier'
-
-    ParameterName = 'value'
-    call Input%GetValue(Value=VarR0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found)
-    if (Found) This%Multiplier = VarR0D
-
-    ParameterName = 'dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.false., Found=Found)
-    if (Found) This%MultiplierDependency = VarC0D
+    if(Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call IScalarValue_Factory%Construct(Object=This%Multiplier, Input=InputSection, Prefix=PrefixLoc)
+      nullify(InputSection)
+    else
+      allocate(IScalarFixed_Type :: This%Multiplier, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Allocate(Name='This%Multiplier', ProcName=ProcName, stat=StatLoc)
+      select type (Object => This%Multiplier)
+        type is (IScalarFixed_Type)
+          call Object%Construct(Value=One)
+        class default
+          call Error%Raise('Something went wrong', ProcName=ProcName)
+      end select
+    end if
 
     SectionName = 'predefined_covariance'
     if(Input%HasSection(SubSectionName=SectionName)) then
@@ -249,12 +258,11 @@ contains
 
     call GetInput%AddParameter(Name='multiplicative_error', Value=ConvertToString(Value=This%MultiplicativeError))
     call GetInput%AddParameter(Name='scalar', Value=ConvertToString(Value=This%Scalar))
-    call GetInput%AddParameter(Name='label', Value=This%Label)
+    call GetInput%AddParameter(Name='response', Value=This%Label)
 
     SectionName = 'multiplier'
-    call GetInput%AddSection(SectionName=SectionName)
-    call GetInput%AddParameter(Name='value', Value=ConvertToString(Value=This%Multiplier), SectionName=SectionName)
-    call GetInput%AddParameter(Name='dependency', Value=This%MultiplierDependency, SectionName=SectionName)
+    call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Multiplier, Name='multiplier',           &
+                                                                             Prefix=PrefixLoc, Directory=DirectoryLoc))
   
     if (This%PredefinedCov) then
       i = size(This%L,1)
@@ -429,8 +437,7 @@ contains
     NbDegen = size(OutputPtr,2)
     NbDataSets = size(DataPtr,2)
 
-    MultiplierLoc = This%Multiplier
-    if (len_trim(This%MultiplierDependency) > 0) call Input%GetValue(Value=MultiplierLoc, Label=This%MultiplierDependency)
+    MultiplierLoc = This%Multiplier%GetValue(Input=Input)
 
     call This%HierCovFunction%Generate(Input=Input, CovFunction=CovFunction)
     call CovFunction%Evaluate(Coordinates=Response%GetCoordinatesPointer() , CoordinateLabels=Response%GetCoordinateLabels(),    &
@@ -517,8 +524,8 @@ contains
           LHS%Scalar = RHS%Scalar
           LHS%MultiplicativeError = RHS%MultiplicativeError
           LHS%Label = RHS%Label
-          LHS%Multiplier = RHS%Multiplier
-          LHS%MultiplierDependency = LHS%MultiplierDependency
+          allocate(LHS%Multiplier, source=RHS%Multiplier, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Multiplier', ProcName=ProcName, stat=StatLoc)
           allocate(LHS%HierCovFunction, source=RHS%HierCovFunction, stat=StatLoc)
           if (StatLoc /= 0) call Error%Allocate(Name='LHS%CovarianceConstructor', ProcName=ProcName, stat=StatLoc)
         end if
@@ -547,6 +554,9 @@ contains
 
     if (allocated(This%L)) deallocate(This%L, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='This%L', ProcName=ProcName, stat=StatLoc)
+
+    if (allocated(This%Multiplier)) deallocate(This%Multiplier, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Multiplier', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

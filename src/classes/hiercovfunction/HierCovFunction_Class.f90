@@ -36,7 +36,6 @@ type, abstract                                                        ::    Hier
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  logical                                                             ::    InputRequired=.true.
   character(:), allocatable                                           ::    SectionChain
 contains
   procedure, public                                                   ::    GetName

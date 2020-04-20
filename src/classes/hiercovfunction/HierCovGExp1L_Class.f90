@@ -1,5 +1,5 @@
 ! -*-f90-*-
-!!--------------------------------------------------------------------------------------------------------------------------------
+!!----------------------------------------------------------------------------------------------------------------------------------
 !!
 !! Stochastic Modeling & Uncertainty Quantification (SMUQ)
 !!
@@ -14,7 +14,7 @@
 !! You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free 
 !! Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 !!
-!!--------------------------------------------------------------------------------------------------------------------------------
+!!----------------------------------------------------------------------------------------------------------------------------------
 
 module HierCovGExp1L_Class
 
@@ -30,6 +30,9 @@ use CovFunction_Class                                             ,only:    CovF
 use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
 use CovGExp1L_Class                                               ,only:    CovGExp1L_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use IScalarValueClass                                             ,only:    IScalarValue_Type
+use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
 
@@ -38,12 +41,9 @@ private
 public                                                                ::    HierCovGExp1L_Type
 
 type, extends(HierCovFunction_Type)                                   ::    HierCovGExp1L_Type
-  character(:), allocatable                                           ::    L_Dependency
-  real(rkp)                                                           ::    L
-  character(:), allocatable                                           ::    Sigma_Dependency
-  real(rkp)                                                           ::    Sigma
-  character(:), allocatable                                           ::    Gam_Dependency
-  real(rkp)                                                           ::    Gam
+  class(IScalarValue_Type), allocatable                               ::    L
+  class(IScalarValue_Type), allocatable                               ::    Sigma
+  class(IScalarValue_Type), allocatable                               ::    Gam
   real(rkp)                                                           ::    Tolerance
   character(:), allocatable                                           ::    CoordinateLabel
 contains
@@ -61,273 +61,255 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Initialize(This)
 
-    class(HierCovGExp1L_Type), intent(inout)                          ::    This
+  class(HierCovGExp1L_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Initialize'
 
-    if (.not. This%Initialized) then
-      This%Name = 'HierCovGExp1L'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
-
-    class(HierCovGExp1L_Type), intent(inout)                          ::    This
-
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc = 0
-
-    This%Initialized=.false.
-    This%Constructed=.false.
-
+  if (.not. This%Initialized) then
+    This%Name = 'HierCovGExp1L'
+    This%Initialized = .true.
     call This%SetDefaults()
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(HierCovGExp1L_Type), intent(inout)                          ::    This
+  class(HierCovGExp1L_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc = 0
 
-    This%L = One
-    This%L_Dependency = ''
-    This%Sigma = One
-    This%Sigma_Dependency = ''
-    This%Gam = Zero
-    This%Gam_Dependency = ''
-    This%Tolerance = 1e-10
-    This%CoordinateLabel = ''
-    This%InputRequired = .true.
+  This%Initialized=.false.
+  This%Constructed=.false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%L)) deallocate(This%L, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%L', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+  if (allocated(This%Sigma)) deallocate(This%Sigma, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Sigma', ProcName=ProcName, stat=StatLoc)
 
-    class(HierCovGExp1L_Type), intent(inout)                          ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+  if (allocated(This%Gam)) deallocate(This%Gam, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Gam', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    integer                                                           ::    StatLoc=0
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    real(rkp)                                                         ::    VarR0D
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    integer                                                           ::    i
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    PrefixLoc
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
-    logical                                                           ::    MandatoryLoc
-    logical                                                           ::    InputRequiredTrip
+  call This%SetDefaults()
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine SetDefaults(This)
 
-    InputRequiredTrip = .false.
+  class(HierCovGExp1L_Type), intent(inout)                            ::    This
 
-    MandatoryLoc = .false.
+  character(*), parameter                                             ::    ProcName='SetDefaults'
 
-    ParameterName = 'l_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%L_Dependency=VarC0D
-      InputRequiredTrip = .true.
-    end if
-    MandatoryLoc = .not. Found
+  This%Tolerance = 1e-10
+  This%CoordinateLabel = ''
 
-    ParameterName = 'l'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
-    if (Found) This%L=VarR0D
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    ParameterName = 'sigma_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%Sigma_Dependency=VarC0D
-      InputRequiredTrip = .true.
-    end if
-    MandatoryLoc = .not. Found
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    ParameterName = 'sigma'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
-    if (Found) This%Sigma=VarR0D
+  class(HierCovGExp1L_Type), intent(inout)                            ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    ParameterName = 'gamma_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%Gam_Dependency=VarC0D
-      InputRequiredTrip = .true.
-    end if
-    MandatoryLoc = .not. Found
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  real(rkp)                                                           ::    VarR0D
+  character(:), allocatable                                           ::    VarC0D
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  integer                                                             ::    i
+  logical                                                             ::    Found
+  character(:), allocatable                                           ::    PrefixLoc
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
 
-    ParameterName = 'gamma'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
-    if (Found) This%Gam=VarR0D
+  if (This%Constructed) call This%Reset()
+  if (.not. This%Initialized) call This%Initialize()
 
-    ParameterName = 'tolerance'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%Tolerance=VarR0D
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    ParameterName = 'coordinate_label'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-    if (Found) This%CoordinateLabel=VarC0D
+  SectionName = 'l'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call IScalarValue_Factory%Construct(Object=This%L, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-    if (.not. InputRequiredTrip) This%InputRequired = .false.
+  SectionName = 'sigma'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call IScalarValue_Factory%Construct(Object=This%Sigma, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-    This%Constructed = .true.
+  SectionName = 'gamma'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call IScalarValue_Factory%Construct(Object=This%Gam, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  ParameterName = 'tolerance'
+  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%Tolerance=VarR0D
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  ParameterName = 'coordinate_label'
+  call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+  if (Found) This%CoordinateLabel=VarC0D
 
-    type(InputSection_Type)                                           ::    GetInput
+  This%Constructed = .true.
 
-    class(HierCovGExp1L_Type), intent(in)                             ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    FileName
-    type(SMUQFile_Type)                                               ::    File
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  type(InputSection_Type)                                             ::    GetInput
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  class(HierCovGExp1L_Type), intent(in)                               ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  character(:), allocatable                                           ::    FileName
+  type(SMUQFile_Type)                                                 ::    File
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    call GetInput%AddParameter(Name='coordinate_label', Value=This%CoordinateLabel)
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    call GetInput%AddParameter(Name='l', Value=ConvertToString(This%L))
-    if (len_trim(This%L_Dependency) /= 0)call GetInput%AddParameter(Name='l_dependency', Value=This%L_Dependency)
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetInput%AddParameter(Name='sigma', Value=ConvertToString(This%Sigma))
-    if (len_trim(This%Sigma_Dependency) /= 0) call GetInput%AddParameter(Name='sigma_dependency', Value=This%Sigma_Dependency)
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    call GetInput%AddParameter(Name='gamma', Value=ConvertToString(This%Gam))
-    if (len_trim(This%Gam_Dependency) /= 0)call GetInput%AddParameter(Name='gamma_dependency', Value=This%Gam_Dependency)
+  call GetInput%AddParameter(Name='coordinate_label', Value=This%CoordinateLabel)
 
-    call GetInput%AddParameter(Name='tolerance', Value=ConvertToString(This%Tolerance))
+  SectionName = 'l'
+  call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%L, Name=SectionName,                     &
+                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                            
+  SectionName = 'gamma'
+  call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Gam, Name=SectionName,                   &
+                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  SectionName = 'sigma'
+  call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                 &
+                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate(This, Input, CovFunction)
+  call GetInput%AddParameter(Name='tolerance', Value=ConvertToString(This%Tolerance))
 
-    class(HierCovGExp1L_Type), intent(in)                             ::    This
-    type(Input_Type), intent(in)                                      ::    Input
-    class(CovFunction_Type), allocatable, intent(out)                 ::    CovFunction
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    L
-    real(rkp)                                                         ::    Gamma
-    real(rkp)                                                         ::    Sigma
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Generate(This, Input, CovFunction)
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  class(HierCovGExp1L_Type), intent(in)                               ::    This
+  type(Input_Type), intent(in)                                        ::    Input
+  class(CovFunction_Type), allocatable, intent(out)                   ::    CovFunction
 
-    L = This%L
-    if (len_trim(This%L_Dependency) /= 0) call Input%GetValue(Value=L, Label=This%L_Dependency)
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  integer                                                             ::    StatLoc=0
+  real(rkp)                                                           ::    L
+  real(rkp)                                                           ::    Gamma
+  real(rkp)                                                           ::    Sigma
 
-    Gamma = This%Gam
-    if (len_trim(This%Gam_Dependency) /= 0) call Input%GetValue(Value=Gamma, Label=This%Gam_Dependency)
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    Sigma = This%Sigma
-    if (len_trim(This%Sigma_Dependency) /= 0) call Input%GetValue(Value=Sigma, Label=This%Sigma_Dependency)
+  L = This%L%GetValue(Input=Input)
 
-    allocate(CovGExp1L_Type :: CovFunction)
+  Gamma = This%Gam%GetValue(Input=Input)
 
-    select type (CovFunction)
-      type is (CovGExp1L_Type)
-        call CovFunction%Construct(Sigma=Sigma, L=L, Gamma=Gamma, Coordinate=This%CoordinateLabel, Tolerance=This%Tolerance)
-      class default
-        call Error%Raise("Something went wrong", ProcName=ProcName)
-    end select
+  Sigma = This%Sigma%GetValue(Input=Input)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  allocate(CovGExp1L_Type :: CovFunction)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+  select type (CovFunction)
+    type is (CovGExp1L_Type)
+      call CovFunction%Construct(Sigma=Sigma, L=L, Gamma=Gamma, Coordinate=This%CoordinateLabel, Tolerance=This%Tolerance)
+    class default
+      call Error%Raise("Something went wrong", ProcName=ProcName)
+  end select
 
-    class(HierCovGExp1L_Type), intent(out)                            ::    LHS
-    class(HierCovFunction_Type), intent(in)                           ::    RHS
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    i
-    integer                                                           ::    StatLoc=0
+!!--------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    select type (RHS)
-  
-      type is (HierCovGExp1L_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+  class(HierCovGExp1L_Type), intent(out)                              ::    LHS
+  class(HierCovFunction_Type), intent(in)                             ::    RHS
 
-        if (RHS%Constructed) then
-          LHS%L_Dependency = RHS%L_Dependency
-          LHS%L = RHS%L
-          LHS%Sigma_Dependency = RHS%Sigma_Dependency
-          LHS%Sigma = RHS%Sigma
-          LHS%CoordinateLabel = RHS%CoordinateLabel
-          LHS%Gam_Dependency = RHS%Gam_Dependency
-          LHS%Gam = RHS%Gam
-          LHS%Tolerance = RHS%Tolerance
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    i
+  integer                                                             ::    StatLoc=0
 
-    end select
+  select type (RHS)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+    type is (HierCovGExp1L_Type)
+      call LHS%Reset()
+      LHS%Initialized = RHS%Initialized
+      LHS%Constructed = RHS%Constructed
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+      if (RHS%Constructed) then
+        allocate(LHS%L, source=RHS%L, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%L', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%Sigma, source=RHS%Sigma, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%Sigma', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%Gam, source=RHS%Gam, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%Gam', ProcName=ProcName, stat=StatLoc)
+        LHS%CoordinateLabel = RHS%CoordinateLabel
+        LHS%Tolerance = RHS%Tolerance
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-    type(HierCovGExp1L_Type), intent(inout)                        ::    This
+  end select
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!--------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
+
+  type(HierCovGExp1L_Type), intent(inout)                             ::    This
+
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
+
+  if (allocated(This%L)) deallocate(This%L, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%L', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%Sigma)) deallocate(This%Sigma, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Sigma', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%Gam)) deallocate(This%Gam, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Gam', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module
