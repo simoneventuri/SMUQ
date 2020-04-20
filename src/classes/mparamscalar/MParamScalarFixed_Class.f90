@@ -16,32 +16,30 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module PolyCoeffDirect_Class
+module MParamScalarDirect_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
-use StringRoutines_Module
+use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use PolyCoeff_Class                                               ,only:    PolyCoeff_Type
+use MParamScalar_Class                                            ,only:    MParamScalar_Type
 use Input_Class                                                   ,only:    Input_Type
+use StringRoutines_Module
 
 implicit none
 
 private
 
-public                                                                ::    PolyCoeffDirect_Type
+public                                                                ::    MParamScalarDirect_Type
 
-type, extends(PolyCoeff_Type)                                         ::    PolyCoeffDirect_Type
+type, extends(MParamScalar_Type)                                      ::    MParamScalarDirect_Type
   character(:), allocatable                                           ::    Dependency
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
-  generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
-  procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
   procedure, public                                                   ::    GetCharValue
@@ -55,12 +53,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize(This)
 
-    class(PolyCoeffDirect_Type), intent(inout)                        ::    This
+    class(MParamScalarDirect_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
-
     if (.not. This%Initialized) then
-      This%Name = 'polycoeffdirect'
+      This%Name = 'MParamScalarDirect'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -71,11 +68,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset(This)
 
-    class(PolyCoeffDirect_Type), intent(inout)                        ::    This
+    class(MParamScalarDirect_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
-
     call This%SetDefaults()
 
   end subroutine
@@ -84,11 +80,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults(This)
 
-    class(PolyCoeffDirect_Type), intent(inout)                        ::    This
+    class(MParamScalarDirect_Type), intent(inout)                     ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    This%Dependency = '<undefined>'
+    This%Dependency=''
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -96,7 +91,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    class(PolyCoeffDirect_Type), intent(inout)                        ::    This
+    class(MParamScalarDirect_Type), intent(inout)                     ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -106,7 +101,7 @@ contains
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    VarI0D
-
+    logical                                                           ::    Found
     if (This%Constructed) call This%Reset()
     if (.not. This%Initialized) call This%Initialize()
 
@@ -123,32 +118,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, Dependency)
-
-    use String_Library
-
-    class(PolyCoeffDirect_Type), intent(inout)                        ::    This
-    character(*), intent(in)                                          ::    Dependency
-
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    integer                                                           ::    StatLoc=0
-
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-
-    This%Dependency = Dependency
-
-    This%Constructed = .true.
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(PolyCoeffDirect_Type), intent(in)                           ::    This
+    class(MParamScalarDirect_Type), intent(in)                        ::    This
     character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -158,7 +132,6 @@ contains
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
-
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     DirectoryLoc = ''
@@ -180,12 +153,11 @@ contains
 
     real(rkp)                                                         ::    GetValue
 
-    class(PolyCoeffDirect_Type), intent(in)                           ::    This
+    class(MParamScalarDirect_Type), intent(in)                        ::    This
     type(Input_Type), intent(in)                                      ::    Input
 
     character(*), parameter                                           ::    ProcName='GetValue'
     integer                                                           ::    StatLoc=0
-
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     call Input%GetValue(Value=GetValue, Label=This%Dependency)
@@ -194,19 +166,23 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue(This, Input)
+  function GetCharValue(This, Input, Format)
 
     character(:), allocatable                                         ::    GetCharValue
 
-    class(PolyCoeffDirect_Type), intent(in)                           ::    This
+    class(MParamScalarDirect_Type), intent(in)                        ::    This
     type(Input_Type), intent(in)                                      ::    Input
+    character(*), optional, intent(in)                                ::    Format
 
     character(*), parameter                                           ::    ProcName='GetCharValue'
+    character(:), allocatable                                         ::    FormatLoc
     integer                                                           ::    StatLoc=0
-
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetCharValue =  ConvertToString(Value=This%GetValue(Input=Input))
+    FormatLoc = 'G0'
+    if (present(Format)) FormatLoc = Format
+
+    GetCharValue =  ConvertToString(Value=This%GetValue(Input=Input), Format=FormatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -214,15 +190,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy(LHS, RHS)
 
-    class(PolyCoeffDirect_Type), intent(out)                          ::    LHS
-    class(PolyCoeff_Type), intent(in)                                 ::    RHS
+    class(MParamScalarDirect_Type), intent(out)                       ::    LHS
+    class(MParamScalar_Type), intent(in)                              ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (PolyCoeffDirect_Type)
+      type is (MParamScalarDirect_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed

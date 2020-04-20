@@ -72,28 +72,6 @@ contains
   generic, public                                                     ::    assignment(=)           =>    Copy_IF
   procedure, public                                                   ::    Copy_IF
   final                                                               ::    Finalizer_IF
-end type 
-
-type                                                                  ::    InputOperation_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Constructed=.false.
-  logical                                                             ::    Initialized=.false.
-  character(:), allocatable                                           ::    Operation 
-  type(String_Type), allocatable, dimension(:)                        ::    Target
-  integer                                                             ::    NbTargets
-contains
-  procedure, public                                                   ::    Initialize              =>    Initialize_IO
-  procedure, public                                                   ::    Reset                   =>    Reset_IO
-  procedure, public                                                   ::    SetDefaults             =>    SetDefaults_IO
-  generic, public                                                     ::    Construct               =>    ConstructInput_IO
-  procedure, private                                                  ::    ConstructInput_IO
-  procedure, public                                                   ::    GetInput                =>    GetInput_IO
-  procedure, public                                                   ::    OperateInput            =>    OperateInput_IO
-  procedure, private                                                  ::    OpNormalize             =>    OpNormalize_IO
-  procedure, public                                                   ::    GetTargets              =>    GetTargets_IO
-  generic, public                                                     ::    assignment(=)           =>    Copy_IO
-  procedure, public                                                   ::    Copy_IO
-  final                                                               ::    Finalizer_IO
 end type
 
 type                                                                  ::    InputProcessor_Type
@@ -101,9 +79,7 @@ type                                                                  ::    Inpu
   logical                                                             ::    Constructed=.false.
   logical                                                             ::    Initialized=.false.
   integer                                                             ::    NbFixs
-  integer                                                             ::    NbOperations
   integer                                                             ::    NbTransforms
-  type(InputOperation_Type), allocatable, dimension(:)                ::    Operation
   type(InputFixed_Type), allocatable, dimension(:)                    ::    Fix
   type(InputTransform_Type), allocatable, dimension(:)                ::    Transform
 contains
@@ -154,10 +130,6 @@ subroutine Reset(This)
 
   This%Initialized=.false.
   This%Constructed=.false.
-
-  if (allocated(This%Operation)) deallocate(This%Operation, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Operation', ProcName=ProcName, stat=StatLoc)
-  This%NbOperations = 0
 
   if (allocated(This%Fix)) deallocate(This%Fix, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Fix', ProcName=ProcName, stat=StatLoc)
@@ -298,39 +270,6 @@ subroutine ConstructInput(This, Input, Prefix)
     end if
   end if
 
-  This%NbOperations = 0
-  SectionName = 'operations'
-  if (Input%HasSection(SubSectionName=SectionName)) then
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    This%NbOperations = InputSection%GetNumberOfSubSections()
-
-    allocate(This%Operation(This%NbOperations), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%Transform', ProcName=ProcName, stat=StatLoc)
-
-    i = 1
-    do i = 1, This%NbOperations
-      SubSectionName = SectionName // '>transformation' // ConvertToString(Value=i)
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      call This%Operation(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
-      nullify(InputSection)
-    end do
-
-    i = 1
-    do i = 1, This%NbOperations
-      Targets1 = This%Operation(i)%GetTargets()
-      ii = 1
-      do ii = i + 1 , This%NbOperations
-        Targets2 = This%Operation(ii)%GetTargets()
-        do iii = 1, size(Targets1,1)
-          VarC0D = Targets1(iii)%GetValue()
-          do iv = 1, size(Targets2,1)
-            if (VarC0D == Targets2(iv)%GetValue()) call Error%Raise('Duplicate fixed value labels', ProcName=ProcName)
-          end do
-        end do
-      end do
-    end do
-  end if
-
   This%Constructed = .true.
 
 end subroutine
@@ -393,19 +332,6 @@ function GetInput(This, Name, Prefix, Directory)
 
   end if
 
-  if (This%NbOperations > 0) then
-    SectionName = 'operations'
-    call GetInput%AddSection(SectionName=SectionName)
-
-    i = 1
-    do i = 1, This%NbOperations
-      SubSectionName ='operation' // ConvertToString(i)
-      call GetInput%AddSection(Section=This%Operation(i)%GetInput(Name=SubSectionName, Prefix=PrefixLoc, Directory=DirectoryLoc), &
-                               To_SubSection=SectionName)
-    end do
-
-  end if
-
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
@@ -433,11 +359,6 @@ subroutine ProcessInput_0D(This, Input, ProcessedInput)
   i = 1
   do i = 1, This%NbTransforms
     call This%Transform(i)%TransformInput(Input=ProcessedInput)
-  end do
-
-  i = 1
-  do i = 1, This%NbOperations
-    call This%Operation(i)%OperateInput(Input=ProcessedInput)
   end do
 
 end subroutine
@@ -501,13 +422,10 @@ impure elemental subroutine Copy(LHS, RHS)
   if (RHS%Constructed) then
     LHS%NbFixs = RHS%NbFixs
     LHS%NbTransforms = RHS%NbTransforms
-    LHS%NbOperations = RHS%NbOperations
     allocate(LHS%Fix, source=RHS%Fix, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='LHS%Fix', ProcName=ProcName, stat=StatLoc)
     allocate(LHS%Transform, source=RHS%Transform, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='LHS%Transform', ProcName=ProcName, stat=StatLoc)
-    allocate(LHS%Operation, source=RHS%Operation, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='LHS%Operation', ProcName=ProcName, stat=StatLoc)
   end if
 
 end subroutine
@@ -526,9 +444,6 @@ impure elemental subroutine Finalizer(This)
 
   if (allocated(This%Transform)) deallocate(This%Transform, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Transform', ProcName=ProcName, stat=StatLoc)
-
-  if (allocated(This%Operation)) deallocate(This%Operation, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Operation', ProcName=ProcName, stat=StatLoc)
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -944,232 +859,6 @@ impure elemental subroutine Finalizer_IT(This)
 
   if (allocated(This%Transformation)) deallocate(This%Transformation, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Transformation', ProcName=ProcName, stat=StatLoc)
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-!! InputOperation_Type -----------------------------------------------------------------------------------------------------------
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize_IO(This)
-
-  class(InputOperation_Type), intent(inout)                           ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize_IO'
-  integer                                                             ::    StatLoc=0
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = 'InputOperation'
-    call This%SetDefaults()
-  end if
-
-  end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Reset_IO(This)
-
-  class(InputOperation_Type), intent(inout)                           ::    This
-
-  character(*), parameter                                             ::    ProcName='Reset_IO'
-  integer                                                             ::    StatLoc=0
-
-  This%Initialized=.false.
-  This%Constructed=.false.
-
-  if (allocated(This%Target)) deallocate(This%Target, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
-  This%NbTargets = 0
-
-  if (allocated(This%Operation)) deallocate(This%Operation, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Operation', ProcName=ProcName, stat=StatLoc)
-
-  call This%Initialize()
-
-  end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults_IO(This)
-
-  class(InputOperation_Type),intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults_IO'
-
-  end subroutine
-!!-------------------------------------------------------------------------------------------------------------------------------- 
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine ConstructInput_IO(This, Input, Prefix)
-
-  class(InputOperation_Type), intent(inout)                           ::    This
-  type(InputSection_Type), intent(in)                                 ::    Input
-  character(*), optional, intent(in)                                  ::    Prefix
-
-  character(*), parameter                                             ::    ProcName='ConstructInput_IO'
-  integer                                                             ::    StatLoc=0
-  character(:), allocatable                                           ::    PrefixLoc
-  type(InputSection_Type), pointer                                    ::    InputSection=>null()
-  character(:), allocatable                                           ::    ParameterName
-  character(:), allocatable                                           ::    SectionName
-  logical                                                             ::    Found
-  character(:), allocatable                                           ::    VarC0D
-  integer                                                             ::    i
-
-
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
-  
-  PrefixLoc = ''
-  if (present(Prefix)) PrefixLoc = Prefix
-
-  This%NbTargets = 0
-  call Input%GetValue(Value=VarC0D, ParameterName='label', Mandatory=.true.)
-  This%Target = ConvertToStrings(Value=VarC0D, Separator=' ')
-  This%NbTargets = size(This%Target,1)
-
-  call Input%GetValue(Value=VarC0D, ParameterName='operation', Mandatory=.true.)
-  This%Operation = VarC0D
-
-  This%Constructed = .true.
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-function GetInput_IO(This, Name, Prefix, Directory)
-
-  type(InputSection_Type)                                             ::    GetInput_IO
-
-  class(InputOperation_Type), intent(in)                              ::    This
-  character(*), intent(in)                                            ::    Name
-  character(*), optional, intent(in)                                  ::    Prefix
-  character(*), optional, intent(in)                                  ::    Directory
-
-  character(*), parameter                                             ::    ProcName='GetInput_IO'
-  character(:), allocatable                                           ::    PrefixLoc
-  character(:), allocatable                                           ::    DirectoryLoc
-  character(:), allocatable                                           ::    DirectorySub
-  logical                                                             ::    ExternalFlag=.false.
-  character(:), allocatable                                           ::    SectionName
-  character(:), allocatable                                           ::    SubSectionName
-  integer                                                             ::    i
-
-  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-  DirectoryLoc = ''
-  PrefixLoc = ''
-  if (present(Directory)) DirectoryLoc = Directory
-  if (present(Prefix)) PrefixLoc = Prefix
-  DirectorySub = DirectoryLoc
-
-  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
-
-  call GetInput_IO%SetName(SectionName=trim(adjustl(Name)))
-
-  call GetInput_IO%AddParameter(Name='label', Value=ConvertToString(Values=This%Target))
-  call GetInput_IO%AddParameter(Name='operation', Value=This%Operation)
-
-end function
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine OperateInput_IO(This, Input)
-
-  class(InputOperation_Type), intent(in)                              ::    This
-  type(Input_Type), intent(inout)                                     ::    Input
-
-  character(*), parameter                                             ::    ProcName='OperateInput_IO'
-  integer                                                             ::    StatLoc=0
-
-  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-  select case (This%Operation)
-    case('normalize')
-      call This%OpNormalize(Input=Input)
-    case default
-      call Error%Raise('Unrecognized operation', ProcName=ProcName)
-  end select
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine OpNormalize_IO(This, Input)
-
-  class(InputOperation_Type), intent(in)                              ::    This
-  type(Input_Type), intent(inout)                                     ::    Input
-
-  character(*), parameter                                             ::    ProcName='OpNormalize_IO'
-  integer                                                             ::    StatLoc=0
-  real(rkp), allocatable, dimension(:)                                ::    Values
-
-  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-  call Input%GetValue(Labels=This%Target, Values=Values, Mandatory=.true.)
-
-  Values = Values / sum(Values,1)
-
-  call Input%Replace(Values=Values, Labels=This%Target)
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-function GetTargets_IO(This)
-
-  type(String_Type), allocatable, dimension(:)                        ::    GetTargets_IO
-
-  class(InputOperation_Type), intent(in)                              ::    This
-
-  character(*), parameter                                             ::    ProcName='GetTargets_IO'
-  integer                                                             ::    StatLoc=0
-
-  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-  allocate(GetTargets_IO, source=This%Target, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetTargets_IO', ProcName=ProcName, stat=StatLoc)
-
-end function
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-impure elemental subroutine Copy_IO(LHS, RHS)
-
-  class(InputOperation_Type), intent(out)                             ::    LHS
-  class(InputOperation_Type), intent(in)                              ::    RHS
-
-  character(*), parameter                                             ::    ProcName='Copy_IO'
-  integer                                                             ::    StatLoc=0
-  integer                                                             ::    i
-
-  call LHS%Reset()
-  LHS%Initialized = RHS%Initialized
-  LHS%Constructed = RHS%Constructed
-
-  if (RHS%Constructed) then
-    LHS%NbTargets = RHS%NbTargets
-    LHS%Operation = RHS%Operation
-    allocate(LHS%Target, source=RHS%Target, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='LHS%Target', ProcName=ProcName, stat=StatLoc)
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-impure elemental subroutine Finalizer_IO(This)
-
-  type(InputOperation_Type), intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='Finalizer_IO'
-  integer                                                             ::    StatLoc=0
-
-  if (allocated(This%Target)) deallocate(This%Target, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------

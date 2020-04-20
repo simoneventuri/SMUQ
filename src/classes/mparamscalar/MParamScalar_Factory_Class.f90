@@ -24,6 +24,8 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use MParamScalar_Class                                            ,only:    MParamScalar_Type
 use MParamScalarDirect_Class                                      ,only:    MParamScalarDirect_Type
+use MParamScalarTransform_Class                                   ,only:    MParamScalarTransform_Type
+use MParamScalarFixed_Class                                       ,only:    MParamScalarFixed_Type
 
 implicit none
 
@@ -60,6 +62,12 @@ contains
 
       case('direct')
         allocate(MParamScalarDirect_Type :: Object)
+
+      case('fixed')
+        allocate(MParamScalarFixed_Type :: Object)
+
+      case('transform')
+        allocate(MParamScalarTransform_Type :: Object)
 
       case default
         call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
@@ -117,6 +125,12 @@ contains
 
       type is (MParamScalarDirect_Type)
         GetOption = 'direct'
+
+      type is (MParamScalarFixed_Type)
+        GetOption = 'fixed'
+
+      type is (MParamScalarTransform_Type)
+        GetOption = 'transform'
 
       class default
         call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)

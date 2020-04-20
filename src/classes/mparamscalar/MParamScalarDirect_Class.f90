@@ -35,7 +35,6 @@ public                                                                ::    MPar
 
 type, extends(MParamScalar_Type)                                      ::    MParamScalarDirect_Type
   character(:), allocatable                                           ::    Dependency
-  character(:), allocatable                                           ::    Transform
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -85,7 +84,6 @@ contains
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
     This%Dependency=''
-    This%Transform = ''
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -113,10 +111,6 @@ contains
     ParameterName = 'dependency'
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
     This%Dependency = VarC0D
-
-    ParameterName = 'transform'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%Transform = VarC0D
 
     This%Constructed = .true.
 
@@ -150,7 +144,6 @@ contains
 
     call GetInput%SetName(SectionName = trim(adjustl(Name)))
     call GetInput%AddParameter(Name='dependency', Value=This%Dependency)
-    if (len_trim(This%Transform) /= 0) call GetInput%AddParameter(Name='transform', Value=This%Transform)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -168,8 +161,6 @@ contains
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     call Input%GetValue(Value=GetValue, Label=This%Dependency)
-
-    if (len_trim(This%Transform) /= 0) call Transform(Transformation=This%Transform, Value=GetValue)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -213,7 +204,6 @@ contains
         LHS%Constructed = RHS%Constructed
         if (RHS%Constructed) then
           LHS%Dependency = RHS%Dependency
-          if (len_trim(RHS%Transform) /= 0) LHS%Transform = RHS%Transform
         end if
 
       class default

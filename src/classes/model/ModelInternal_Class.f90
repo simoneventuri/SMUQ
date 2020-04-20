@@ -35,65 +35,116 @@ private
 public                                                                ::    ModelInternal_Type
 
 type, abstract, extends(Model_Type)                                   ::    ModelInternal_Type
+  type(InputProcessor_Type)                                           ::    InputProcessor
 contains
+  procedure, public                                                   ::    Run_0D
   procedure, public                                                   ::    Run_1D
+  procedure(RunInternal_ModelInternal), public                        ::    RunInternal
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
 
+abstract interface
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine RunInternal_ModelInternal(This, Input, Output, Stat)
+  import                                                              ::    Output_Type
+  import                                                              ::    Input_Type
+  import                                                              ::    Model_Type
+  class(Model_Type), intent(inout)                                    ::    This
+  type(Input_Type), intent(in)                                        ::    Input
+  type(Output_Type), dimension(:), intent(inout)                      ::    Output
+  integer, optional, intent(out)                                      ::    Stat
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+end interface
+
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_1D(This, Input, Output, Stat)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Run_0D(This, Input, Output, Stat)
+ 
+  class(Model_Type), intent(inout)                                  ::    This
+  type(Input_Type), intent(in)                                      ::    Input
+  type(Output_Type), dimension(:), intent(inout)                    ::    Output
+  integer, optional, intent(out)                                    ::    Stat
 
-    class(ModelInternal_Type), intent(inout)                          ::    This
-    type(Input_Type), dimension(:), intent(in)                        ::    Input
-    type(Output_Type), dimension(:,:), intent(inout)                  ::    Output
-    integer, dimension(:), optional, intent(inout)                    ::    Stat
+  character(*), parameter                                           ::    ProcName='Run_0D'
+  integer                                                           ::    StatLoc=0
+  type(Input_Type)                                                  ::    InputLoc
 
-    character(*), parameter                                           ::    ProcName='Run_1D'
-    integer                                                           ::    NbInputs
-    integer                                                           ::    NbSubModels
-    integer                                                           ::    StatLoc
-    integer                                                           ::    i, ii
-    character(:), allocatable                                         ::    Line
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    NbInputs = size(Input,1)
-    NbSubModels = 1
+  if (This%InputProcessor%IsConstructed()) then
+    call This%InputProcessor%ProcessInput(Input=Input, ProcessedInput=InputLoc)
+    if (present(Stat)) then
+      call This%RunInternal(Input=InputLoc, Output=Output, Stat=Stat)
+    else
+      call This%RunInternal(Input=InputLoc, Output=Output)
+    end if
+  else
+    if (present(Stat)) then
+      call This%RunInternal(Input=Input, Output=Output, Stat=Stat)
+    else
+      call This%RunInternal(Input=Input, Output=Output)
+    end if
+  end if
 
-    if (size(Output,1) /= This%NbOutputs .or. size(Output,2) /= NbInputs)                                                       &
-                                       call Error%Raise('Passed an output array of incorrect dimensionality', ProcName=ProcName)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (size(Stat,1) /= NbInputs) call Error%Raise('Passed a stat array of incorrect length', ProcName=ProcName)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Run_1D(This, Input, Output, Stat)
 
+  class(ModelInternal_Type), intent(inout)                            ::    This
+  type(Input_Type), dimension(:), intent(in)                          ::    Input
+  type(Output_Type), dimension(:,:), intent(inout)                    ::    Output
+  integer, dimension(:), optional, intent(inout)                      ::    Stat
+
+  character(*), parameter                                             ::    ProcName='Run_1D'
+  integer                                                             ::    NbInputs
+  integer                                                             ::    NbSubModels
+  integer                                                             ::    StatLoc
+  integer                                                             ::    i, ii
+  character(:), allocatable                                           ::    Line
+
+  NbInputs = size(Input,1)
+  NbSubModels = 1
+
+  if (size(Output,1) /= This%NbOutputs .or. size(Output,2) /= NbInputs)                                                           &
+                                      call Error%Raise('Passed an output array of incorrect dimensionality', ProcName=ProcName)
+
+  if (size(Stat,1) /= NbInputs) call Error%Raise('Passed a stat array of incorrect length', ProcName=ProcName)
+
+  if (.not. This%Silent) then
+    write(*,*)
+    Line = 'Scheduling ' // ConvertToString(Value=NbInputs) // ' inputs with ' // ConvertToString(Value=NbSubModels) //           &
+                                    ' submodels for a total of ' // ConvertToString(Value=NbInputs*NbSubModels) // ' evaluations'
+    write(*,'(A)') Line
+    Line = '  Number of concurrent input evaluations : 1'
+    write(*,'(A)') Line
+    Line = '  Number of concurrent submodel calls : 1'
+    write(*,'(A)') Line
+  end if
+
+  i = 1
+  do i = 1, NbInputs
     if (.not. This%Silent) then
-      write(*,*)
-      Line = 'Scheduling ' // ConvertToString(Value=NbInputs) // ' inputs with ' // ConvertToString(Value=NbSubModels) //         &
-                                     ' submodels for a total of ' // ConvertToString(Value=NbInputs*NbSubModels) // ' evaluations'
+      Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Input ' // ConvertToString(Value=i) // ' Submodel 1'
       write(*,'(A)') Line
-      Line = '  Number of concurrent input evaluations : 1'
-      write(*,'(A)') Line
-      Line = '  Number of concurrent submodel calls : 1'
+      Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Initializing'
       write(*,'(A)') Line
     end if
+    call This%Run(Input=Input(i), Output=Output(:,i), Stat=StatLoc)
+    if (.not. This%Silent) then
+      Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Complete'
+      write(*,'(A)') Line
+    end if
+    if (present(Stat)) Stat(i) = StatLoc
+  end do
 
-    i = 1
-    do i = 1, NbInputs
-      if (.not. This%Silent) then
-        Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Input ' // ConvertToString(Value=i) // ' Submodel 1'
-        write(*,'(A)') Line
-        Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Initializing'
-        write(*,'(A)') Line
-      end if
-      call This%Run(Input=Input(i), Output=Output(:,i), Stat=StatLoc)
-      if (.not. This%Silent) then
-        Line = '  Evaluation ' // ConvertToString(Value=i) // ' : Complete'
-        write(*,'(A)') Line
-      end if
-      if (present(Stat)) Stat(i) = StatLoc
-    end do
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -259,13 +259,6 @@ contains
 
     This%NbOutputs = This%OutputReader(1)%GetNbOutputs()
 
-    SectionName = 'input_preprocessor'
-    if (Input%HasSection(SubSectionName=SectionName)) then
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      call This%InputProcessor%Construct(Input=InputSection, Prefix=PrefixLoc)
-      nullify(InputSection)
-    end if
-
     This%Constructed = .true.
 
   end subroutine
@@ -329,10 +322,6 @@ contains
                                                                                                       SectionName=SubSectionName)
       call GetInput%AddParameter(Name='run_command', Value=This%SubModelRunCommand(i)%GetValue(), SectionName=SubSectionName)
     end do
-
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/input_preprocessor'
-    if (This%InputProcessor%IsConstructed()) call GetInput%AddSection(Section=This%InputProcessor%GetInput(                  &
-                                                 Name='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -652,7 +641,6 @@ contains
           LHS%WorkDirectory = RHS%WorkDirectory
           LHS%FullWorkDirectory = RHS%FullWorkDirectory
           LHS%Silent = RHS%Silent
-          LHS%InputProcessor = RHS%InputProcessor
         end if
 
       class default

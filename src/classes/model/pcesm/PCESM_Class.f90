@@ -49,7 +49,7 @@ contains
   procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    Run_0D
+  procedure, public                                                   ::    RunInternal
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -260,14 +260,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_0D(This, Input, Output, Stat)
+  subroutine RunInternal(This, Input, Output, Stat)
 
     class(PCESM_Type), intent(inout)                                  ::    This
     type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
-    character(*), parameter                                           ::    ProcName='Run_0D'
+    character(*), parameter                                           ::    ProcName='RunInternal'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 

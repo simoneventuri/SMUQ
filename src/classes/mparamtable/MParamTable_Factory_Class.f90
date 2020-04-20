@@ -23,6 +23,8 @@ use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use MParamTable_Class                                             ,only:    MParamTable_Type
+use MParamTableConstant_Class                                     ,only:    MParamTableConstant_Type
+use MParamTableMultiplier_Class                                   ,only:    MParamTableMultiplier_Type
 use MParamTablePoly_Class                                         ,only:    MParamTablePoly_Type
 use MParamTableCrossOver_Class                                    ,only:    MParamTableCrossOver_Type
 
@@ -64,6 +66,12 @@ contains
 
       case('crossover')
         allocate(MParamTableCrossOver_Type :: Object)
+
+      case('constant')
+        allocate(MParamTableConstant_Type :: Object)
+
+      case('multiplier')
+        allocate(MParamTableMultiplier_Type :: Object)
 
       case default
         call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
@@ -124,6 +132,12 @@ contains
 
       type is (MParamTableCrossOver_Type)
         GetOption = 'crossover'
+
+      type is (MParamTableMultiplier_Type)
+        GetOption = 'multiplier'
+
+      type is (MParamTableConstant_Type)
+        GetOption = 'constant'
 
       class default
         call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
