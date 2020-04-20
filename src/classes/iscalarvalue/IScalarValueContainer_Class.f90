@@ -16,21 +16,21 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module MParamScalarContainer_Class
+module IScalarContainer_Class
 
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use MParamScalar_Class                                            ,only:    MParamScalar_Type
-use MParamScalar_Factory_Class                                    ,only:    MParamScalar_Factory
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
+use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
 
 private
 
-public                                                                ::    MParamScalarContainer_Type
+public                                                                ::    IScalarContainer_Type
 
-type                                                                  ::    MParamScalarContainer_Type
-  class(MParamScalar_Type), allocatable                               ::    Object
+type                                                                  ::    IScalarContainer_Type
+  class(IScalarValue_Type), allocatable                               ::    Object
 contains
   procedure, public                                                   ::    Get
   procedure, public                                                   ::    GetPointer
@@ -45,8 +45,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set(This, Object)
 
-    class(MParamScalarContainer_Type), intent(inout)                  ::    This
-    class(MParamScalar_Type), intent(in)                              ::    Object
+    class(IScalarContainer_Type), intent(inout)                       ::    This
+    class(IScalarValue_Type), intent(in)                              ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
     integer                                                           ::    StatLoc=0
@@ -59,9 +59,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function Get(This)
 
-    class(MParamScalar_Type), allocatable                             ::    Get
+    class(IScalarValue_Type), allocatable                             ::    Get
 
-    class(MParamScalarContainer_Type), intent(in)                     ::    This
+    class(IScalarContainer_Type), intent(in)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
@@ -76,9 +76,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetPointer(This)
 
-    class(MParamScalar_Type), pointer                                 ::    GetPointer
+    class(IScalarValue_Type), pointer                                 ::    GetPointer
 
-    class(MParamScalarContainer_Type), target, intent(in)             ::    This
+    class(IScalarContainer_Type), target, intent(in)                  ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
     if (.not. allocated(This%Object)) call Error%Raise(Line='Member object defined', ProcName=ProcName)
@@ -91,26 +91,19 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy(LHS, RHS)
 
-    class(MParamScalarContainer_Type), intent(inout)                  ::    LHS
-    class(MParamScalarContainer_Type), intent(in)                     ::    RHS
+    class(IScalarContainer_Type), intent(inout)                       ::    LHS
+    class(IScalarContainer_Type), intent(in)                          ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
-    select type (RHS)
-  
-      type is (MParamScalarContainer_Type)
-        if (allocated(RHS%Object)) then
-          if (allocated(LHS%Object)) deallocate(LHS%Object, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Deallocate(Name='LHS%Object', Procname=ProcName, stat=StatLoc)
-          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Object', ProcName=ProcName, stat=StatLoc)
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+    if (allocated(LHS%Object)) deallocate(LHS%Object, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='LHS%Object', ProcName=ProcName, stat=StatLoc)
 
-    end select
+    if (allocated(RHS%Object)) then
+      allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Allocate(Name='LHS%Object', ProcName=ProcName, stat=StatLoc)
+    end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -118,7 +111,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer(This)
 
-    type(MParamScalarContainer_Type), intent(inout)                   ::    This
+    type(IScalarContainer_Type), intent(inout)                        ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc

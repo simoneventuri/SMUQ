@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module MParamScalar_Class
+module IScalarValue_Class
 
 use Input_Library
 use Parameters_Library
@@ -28,9 +28,9 @@ implicit none
 
 private
 
-public                                                                ::    MParamScalar_Type
+public                                                                ::    IScalarValue_Type
 
-type, abstract                                                        ::    MParamScalar_Type
+type, abstract                                                        ::    IScalarValue_Type
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
@@ -38,14 +38,14 @@ contains
   procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_MParamScalar), deferred, public                ::    Initialize
-  procedure(Reset_MParamScalar), deferred, public                     ::    Reset
-  procedure(SetDefaults_MParamScalar), deferred, public               ::    SetDefaults
-  procedure(ConstructInput_MParamScalar), deferred, private           ::    ConstructInput
-  procedure(GetInput_MParamScalar), deferred, public                  ::    GetInput
-  procedure(GetValue_MParamScalar), deferred, public                  ::    GetValue
-  procedure(GetCharValue_MParamScalar), deferred, public              ::    GetCharValue
-  procedure(Copy_MParamScalar), deferred, public                      ::    Copy
+  procedure(Initialize_IScalarValue), deferred, public                ::    Initialize
+  procedure(Reset_IScalarValue), deferred, public                     ::    Reset
+  procedure(SetDefaults_IScalarValue), deferred, public               ::    SetDefaults
+  procedure(ConstructInput_IScalarValue), deferred, private           ::    ConstructInput
+  procedure(GetInput_IScalarValue), deferred, public                  ::    GetInput
+  procedure(GetValue_IScalarValue), deferred, public                  ::    GetValue
+  procedure(GetCharValue_IScalarValue), deferred, public              ::    GetCharValue
+  procedure(Copy_IScalarValue), deferred, public                      ::    Copy
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -53,42 +53,42 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_MParamScalar(This)
-    import                                                            ::    MParamScalar_Type
-    class(MParamScalar_Type), intent(inout)                           ::    This
+  subroutine Initialize_IScalarValue(This)
+    import                                                            ::    IScalarValue_Type
+    class(IScalarValue_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_MParamScalar(This)
-    import                                                            ::    MParamScalar_Type
-    class(MParamScalar_Type), intent(inout)                           ::    This
+  subroutine Reset_IScalarValue(This)
+    import                                                            ::    IScalarValue_Type
+    class(IScalarValue_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_MParamScalar(This)
-    import                                                            ::    MParamScalar_Type
-    class(MParamScalar_Type), intent(inout)                           ::    This
+  subroutine SetDefaults_IScalarValue(This)
+    import                                                            ::    IScalarValue_Type
+    class(IScalarValue_Type), intent(inout)                           ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_MParamScalar(This, Input, Prefix)
-    import                                                            ::    MParamScalar_Type
+  subroutine ConstructInput_IScalarValue(This, Input, Prefix)
+    import                                                            ::    IScalarValue_Type
     import                                                            ::    InputSection_Type
-    class(MParamScalar_Type), intent(inout)                           ::    This
+    class(IScalarValue_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_MParamScalar(This, Name, Prefix, Directory)
-    import                                                            ::    MParamScalar_Type
+  function GetInput_IScalarValue(This, Name, Prefix, Directory)
+    import                                                            ::    IScalarValue_Type
     import                                                            ::    InputSection_Type
-    type(InputSection_Type)                                           ::    GetInput_MParamScalar
-    class(MParamScalar_Type), intent(in)                              ::    This
+    type(InputSection_Type)                                           ::    GetInput_IScalarValue
+    class(IScalarValue_Type), intent(in)                              ::    This
     character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -96,33 +96,33 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue_MParamScalar(This, Input)
+  function GetValue_IScalarValue(This, Input)
     use Parameters_Library
     import                                                            ::    Input_Type
-    import                                                            ::    MParamScalar_Type  
-    real(rkp)                                                         ::    GetValue_MParamScalar
-    class(MParamScalar_Type), intent(in)                              ::    This
+    import                                                            ::    IScalarValue_Type  
+    real(rkp)                                                         ::    GetValue_IScalarValue
+    class(IScalarValue_Type), intent(in)                              ::    This
     type(Input_Type, intent(in)                                       ::    Input
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue_MParamScalar(This, Input, Format)
+  function GetCharValue_IScalarValue(This, Input, Format)
     use Parameters_Library
     import                                                            ::    Input_Type
-    import                                                            ::    MParamScalar_Type
-    character(:), allocatable                                         ::    GetCharValue_MParamScalar
-    class(MParamScalar_Type), intent(in)                              ::    This
+    import                                                            ::    IScalarValue_Type
+    character(:), allocatable                                         ::    GetCharValue_IScalarValue
+    class(IScalarValue_Type), intent(in)                              ::    This
     type(Input_Type, intent(in)                                       ::    Input
     character(*), optional, intent(in)                                ::    Format
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_MParamScalar(LHS, RHS)
-    import                                                            ::    MParamScalar_Type
-    class(MParamScalar_Type), intent(out)                             ::    LHS
-    class(MParamScalar_Type), intent(in)                              ::    RHS
+  impure elemental subroutine Copy_IScalarValue(LHS, RHS)
+    import                                                            ::    IScalarValue_Type
+    class(IScalarValue_Type), intent(out)                             ::    LHS
+    class(IScalarValue_Type), intent(in)                              ::    RHS
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -130,17 +130,17 @@ end interface
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetName(This)
 
-    character(:), allocatable                                         ::    GetName
-    class(MParamScalar_Type), intent(inout)                           ::    This
+  character(:), allocatable                                         ::    GetName
+  class(IScalarValue_Type), intent(inout)                           ::    This
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  character(*), parameter                                           ::    ProcName='GetName'
 
-    GetName = This%Name
+  GetName = This%Name
 
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

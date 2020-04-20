@@ -16,40 +16,37 @@
 !!
 !!----------------------------------------------------------------------------------------------------------------------------------
 
-module MParamTablePoly_Class
+module ITableCrossOver_Class
 
 use Input_Library
 use Parameters_Library
+use ComputingRoutines_Module
 use String_Library
+use ArrayRoutines_Module
+use ArrayIORoutines_Module
 use StringRoutines_Module
+use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use MParamTable_Class                                             ,only:    MParamTable_Type
-use MParamScalar_Class                                            ,only:    MParamScalar_Type
-use MParamScalarContainer_Class                                   ,only:    MParamScalarContainer_Type
-use MParamScalarFixed_Class                                       ,only:    MParamScalarFixed_Type
-use MParamScalar_Factory_Class                                    ,only:    MParamScalar_Factory
+use ITableValue_Class                                             ,only:    ITableValue_Type
+use ITablePoly_Class                                              ,only:    ITablePoly_Type
 use Input_Class                                                   ,only:    Input_Type
-use String_Library
-use StringRoutines_Module
-
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
 private
 
-public                                                                ::    MParamTablePoly_Type
+public                                                                ::    ITableCrossOver_Type
 
-type, extends(MParamTable_Type)                                       ::    MParamTablePoly_Type
-  type(MParamScalarContainer_Type), dimension(:), allocatable         ::    PolyCoeff
-  integer                                                             ::    Order
+type, extends(ITableValue_Type)                                       ::    ITableCrossOver_Type
+  type(ITablePoly_Type)                                               ::    PolyParam
+  real(rkp), allocatable, dimension(:,:)                              ::    OriginalTable
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
-  generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
-  procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
   procedure, public                                                   ::    GetCharValue
@@ -64,11 +61,11 @@ contains
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Initialize(This)
 
-  class(MParamTablePoly_Type), intent(inout)                          ::    This
+  class(ITableCrossOver_Type), intent(inout)                          ::    This
 
   character(*), parameter                                             ::    ProcName='Initialize'
   if (.not. This%Initialized) then
-    This%Name = 'mparamtablepoly'
+    This%Name = 'ITablecrossover'
     This%Initialized = .true.
     call This%SetDefaults()
   end if
@@ -79,13 +76,13 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
-  class(MParamTablePoly_Type), intent(inout)                          ::    This
+  class(ITableCrossOver_Type), intent(inout)                          ::    This
 
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  if (allocated(This%PolyCoeff)) deallocate(This%PolyCoeff, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc)
+  if (allocated(This%OriginalTable)) deallocate(This%OriginalTable, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc)
 
   This%Initialized = .false.
   This%Constructed = .false.
@@ -98,7 +95,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine SetDefaults(This)
 
-  class(MParamTablePoly_Type), intent(inout)                          ::    This
+  class(ITableCrossOver_Type), intent(inout)                          ::    This
 
   character(*), parameter                                             ::    ProcName='SetDefaults'
 
@@ -108,7 +105,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput(This, Input, Prefix)
 
-  class(MParamTablePoly_Type), intent(inout)                          ::    This
+  class(ITableCrossOver_Type), intent(inout)                          ::    This
   type(InputSection_Type), intent(in)                                 ::    Input
   character(*), optional, intent(in)                                  ::    Prefix
 
@@ -118,64 +115,63 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    ParameterName
   character(:), allocatable                                           ::    SectionName
   character(:), allocatable                                           ::    SubSectionName
+  logical                                                             ::    Found
   character(:), allocatable                                           ::    VarC0D
   integer                                                             ::    VarI0D
-  integer                                                             ::    i, ii
-  logical                                                             ::    Found
-  class(MParamScalar_Type), allocatable                               ::    PolyCoeff
-  type(MParamScalarFixed_Type)                                        ::    PolyCoeffScalar
+  integer                                                             ::    i
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  integer                                                             ::    ParamColumn
+  integer                                                             ::    AbscissaColumn
+  type(String_Type), allocatable, dimension(:,:)                      ::    VarR2D
+  
   if (This%Constructed) call This%Reset()
   if (.not. This%Initialized) call This%Initialize()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
-  ParameterName = 'order'
-  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
-  This%Order = VarI0D
-  if (This%Order < 0) call Error%Raise(Line='Specified a polynomial of order less than 0', ProcName=ProcName)
+  SectionName = 'original_values'
 
-  allocate(This%PolyCoeff(This%Order+1), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='PolyCoeff', ProcName=ProcName, stat=StatLoc)
+  SubSectionName = SectionName // '>values'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+  call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-  call PolyCoeffScalar%Construct(Value=Zero)
+  allocate(This%OriginalTable(size(VarR2D,2),2), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc)
 
-  SectionName = 'coefficients'    
+  ParamColumn = 2
+  ParameterName = 'parameter_column'
+  call Input%GetValue(Value=VarI0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
+  ParamColumn = VarI0D
+
+  AbscissaColumn = 1
+  ParameterName = 'abscissa_column'
+  call Input%GetValue(Value=VarI0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
+  AbscissaColumn = VarI0D
+
+  if (ParamColumn > size(VarR2D,1)) call Error%Raise(Line='Specified parameter column is greater than number of columns',    &
+                                                                                                              ProcName=ProcName)
+
+  if (AbscissaColumn > size(VarR2D,1)) call Error%Raise(Line='Specified abscissa column is greater than number of columns',  &
+                                                                                                              ProcName=ProcName) 
+
+  if (AbscissaColumn == ParamColumn) call Error%Raise(Line='Abscissa and parameter columns set to be the same',              &
+                                                                                                              ProcName=ProcName)  
 
   i = 1
-  ii = 0
-  do i = 1, This%Order + 1
-    SubSectionName = SectionName // '>coefficient' // Convert_To_String(i)
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-    call MParamScalar_Factory%Construct(Object=PolyCoeff, Input=InputSection, Prefix=PrefixLoc)
-    call This%PolyCoeff(i)%Set(Object=PolyCoeff)
-    deallocate(PolyCoeff, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='PolyCoeff', ProcName=ProcName, stat=StatLoc)
-    nullify(InputSection)
+  do i = 1, size(VarR2D,2)
+    This%OriginalTable(i,1) = ConvertToReal(String=VarR2D(AbscissaColumn,i)%GetValue())
+    This%OriginalTable(i,2) = ConvertToReal(String=VarR2D(ParamColumn,i)%GetValue())
   end do
 
-  if (ii <= 0) call Error%Raise(Line='Specified polynomial but no coefficients were given', ProcName=ProcName)
+  deallocate(VarR2D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
 
-  This%Constructed = .true.
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine ConstructCase1(This, PolyCoeff)
-
-  class(MParamTablePoly_Type), intent(inout)                          ::    This
-  class(MParamScalarContainer_Type), dimension(:), intent(in)         ::    PolyCoeff
-
-  character(*), parameter                                             ::    ProcName='ConstructCase1'
-  integer                                                             ::    StatLoc=0
-
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
-
-  allocate(This%PolyCoeff, source=PolyCoeff, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc)
+  SectionName = 'polynomial'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call This%PolyParam%Construct(Input=InputSection)
+  nullify(InputSection)
 
   This%Constructed = .true.
 
@@ -187,7 +183,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   type(InputSection_Type)                                             ::    GetInput
 
-  class(MParamTablePoly_Type), intent(in)                             ::    This
+  class(ITableCrossOver_Type), intent(in)                             ::    This
   character(*), intent(in)                                            ::    Name
   character(*), optional, intent(in)                                  ::    Prefix
   character(*), optional, intent(in)                                  ::    Directory
@@ -199,9 +195,9 @@ function GetInput(This, Name, Prefix, Directory)
   logical                                                             ::    ExternalFlag=.false.
   character(:), allocatable                                           ::    SectionName
   character(:), allocatable                                           ::    SubSectionName
-  integer                                                             ::    i
-  integer                                                             ::    NbCoeffs
-  class(MParamScalar_Type), pointer                                   ::    PolyCoeffPointer=>null()
+  character(:), allocatable                                           ::    FileName
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  type(SMUQFile_Type)                                                 ::    File
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -213,19 +209,31 @@ function GetInput(This, Name, Prefix, Directory)
 
   if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-  call GetInput%SetName(SectionName = trim(adjustl(Name)))
-  call GetInput%AddParameter(Name='order', Value=ConvertToString(Value=This%Order))
+  if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-  SectionName = 'coefficients'
-  i = 1
-  do i = 1, size(This%PolyCoeff,1)
-    PolyCoeffPointer => This%PolyCoeff(i)%GetPointer()
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/coefficient' // ConvertToString(Value=i)
-    SubSectionName = 'coefficient' // ConvertToString(Value=i)
-    call GetInput%AddSection(Section=MParamScalar_Factory%GetObjectInput(Name=SubSectionName, Object=PolyCoeffPointer,          &
-                                                          Prefix=PrefixLoc, Directory=DIrectoryLoc), To_SubSection=SectionName)
-    nullify(PolyCoeffPointer)
-  end do
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
+
+  SectionName = 'original_values'
+  call GetInput%AddSection(SectionName=SectionName)
+  call GetInput%AddParameter(Name='abscissa_column', Value='1', SectionName=SectionName)
+  call GetInput%AddParameter(Name='parameter_column', Value='2', SectionName=SectionName)
+
+  SubSectionName = 'values'
+  call GetInput%AddSection(SectionName=SubSectionName)
+  SubSectionName = SectionName // '>values'
+  call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+  if (ExternalFlag) then
+    FileName = DirectoryLoc // '/values.dat'
+    call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+    call ExportArray(Input=InputSection, Array=transpose(This%OriginalTable), File=File)
+  else
+    call ExportArray(Input=InputSection, Array=transpose(This%OriginalTable))
+  end if
+
+  SectionName = 'polynomial'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/polynomial'
+  call GetInput%AddSection(Section=This%PolyParam%GetInput(Name=SectionName, Prefix=PrefixLoc,                      &
+                                                                                                        Directory=DirectorySub))
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -235,14 +243,16 @@ function GetValue(This, Input, Abscissa)
 
   real(rkp), allocatable, dimension(:)                                ::    GetValue
 
-  class(MParamTablePoly_Type), intent(in)                             ::    This
+  class(ITableCrossOver_Type), intent(in)                             ::    This
   type(Input_Type), intent(in)                                        ::    Input
   real(rkp), dimension(:), intent(in)                                 ::    Abscissa
 
   character(*), parameter                                             ::    ProcName='GetValue'
   integer                                                             ::    StatLoc=0
-  integer                                                             ::    i, ii
-  class(MParamScalar_Type), pointer                                   ::    PolyCoeffPointer=>null()
+  integer                                                             ::    i
+  real(rkp), allocatable, dimension(:)                                ::    PolyVal
+  real(rkp), allocatable, dimension(:)                                ::    TableVal
+  logical                                                             ::    TripFlag=.false.
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -250,16 +260,36 @@ function GetValue(This, Input, Abscissa)
   if (StatLoc /= 0) call Error%Allocate(Name='GetValue', ProcName=ProcName, stat=StatLoc)
 
   GetValue = Zero
+  
+  allocate(TableVal, source=Interpolate(Abscissa=This%OriginalTable(:,1), Ordinate=This%OriginalTable(:,2), Nodes=Abscissa),    &
+                                                                                                                    stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
-  ii = 1
-  do ii = 1, size(Abscissa,1)
-    i = 1
-    do i = 1, This%Order+1
-      PolyCoeffPointer => This%PolyCoeff(i)%GetPointer()
-      GetValue(ii) = GetValue(ii) + PolyCoeffPointer%GetValue(Input=Input)*Abscissa(ii)**(i-1)
-      nullify(PolyCoeffPointer)
-    end do
+  allocate(Polyval, source=This%PolyParam%GetValue(Input=Input, Abscissa=Abscissa), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Polyval', ProcName=ProcName, stat=StatLoc)
+
+  TripFlag = .false.
+  GetValue = Zero
+
+  i = 1
+  do i = 1, size(Abscissa,1)
+    if (TripFlag) then
+      GetValue(i) = TableVal(i)
+    else
+      if (TableVal(i) > PolyVal(i)) then
+        GetValue(i) = TableVal(i)
+        TripFlag = .true.
+      else
+        GetValue(i) = PolyVal(i)
+      end if
+    end if
   end do
+
+  deallocate(TableVal, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='TableVal', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(PolyVal, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='PolyVal', ProcName=ProcName, stat=StatLoc)
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -269,16 +299,17 @@ function GetCharValue(This, Input, Abscissa, Format)
 
   type(String_Type), allocatable, dimension(:)                        ::    GetCharValue
 
-  class(MParamTablePoly_Type), intent(in)                             ::    This
+  class(ITableCrossOver_Type), intent(in)                             ::    This
   type(Input_Type), intent(in)                                        ::    Input
   real(rkp), dimension(:), intent(in)                                 ::    Abscissa
   character(*), optional, intent(in)                                  ::    Format
 
-  character(*), parameter                                             ::    ProcName='GetCharValue'
+  character(*), parameter                                             ::    ProcName='GetValue'
   integer                                                             ::    StatLoc=0
-  integer                                                             ::    i, ii
-  class(MParamScalar_Type), pointer                                   ::    PolyCoeffPointer=>null()
-  real(rkp)                                                           ::    VarR0D
+  integer                                                             ::    i
+  real(rkp), allocatable, dimension(:)                                ::    PolyVal
+  real(rkp), allocatable, dimension(:)                                ::    TableVal
+  logical                                                             ::    TripFlag=.false.
   character(:), allocatable                                           ::    FormatLoc
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -288,18 +319,35 @@ function GetCharValue(This, Input, Abscissa, Format)
 
   allocate(GetCharValue(size(Abscissa,1)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='GetValue', ProcName=ProcName, stat=StatLoc)
+  
+  allocate(TableVal, source=Interpolate(Abscissa=This%OriginalTable(:,1), Ordinate=This%originalTable(:,2), Nodes=Abscissa),    &
+                                                                                                                    stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
-  ii = 1
-  do ii = 1, size(Abscissa,1)
-    VarR0D = Zero
-    i = 1
-    do i = 1, This%Order+1
-      PolyCoeffPointer => This%PolyCoeff(i)%GetPointer()
-      VarR0D = VarR0D + PolyCoeffPointer%GetValue(Input=Input)*Abscissa(ii)**(i-1)
-      nullify(PolyCoeffPointer)
-    end do
-    call GetCharValue(ii)%Set_Value(Value=ConvertToString(Value=VarR0D, Format=FormatLoc))
+  allocate(Polyval, source=This%PolyParam%GetValue(Input=Input, Abscissa=Abscissa), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Polyval', ProcName=ProcName, stat=StatLoc)
+
+  TripFlag = .false.
+
+  i = 1
+  do i = 1, size(Abscissa,1)
+    if (TripFlag) then
+      call GetCharValue(i)%Set_Value(ConvertToString(Value=TableVal(i), Format=FormatLoc))
+    else
+      if (TableVal(i) > PolyVal(i)) then
+        call GetCharValue(i)%Set_Value(ConvertToString(Value=TableVal(i), Format=FormatLoc))
+        TripFlag = .true.
+      else
+        call GetCharValue(i)%Set_Value(ConvertToString(Value=PolyVal(i), Format=FormatLoc))
+      end if
+    end if
   end do
+
+  deallocate(TableVal, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='TableVal', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(PolyVal, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='PolyVal', ProcName=ProcName, stat=StatLoc)
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -307,22 +355,21 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Copy(LHS, RHS)
 
-  class(MParamTablePoly_Type), intent(out)                            ::    LHS
-  class(MParamTable_Type), intent(in)                                 ::    RHS
+  class(ITableCrossOver_Type), intent(out)                            ::    LHS
+  class(ITableValue_Type), intent(in)                                 ::    RHS
 
   character(*), parameter                                             ::    ProcName='Copy'
   integer                                                             ::    StatLoc=0
 
   select type (RHS)
 
-    type is (MParamTablePoly_Type)
+    type is (ITableCrossOver_Type)
       call LHS%Reset()
       LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
-        LHS%Order = RHS%Order
-        allocate(LHS%PolyCoeff, source=RHS%PolyCoeff, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='LHS%PolyCoeff', ProcName=ProcName, stat=StatLoc)
+        LHS%OriginalTable = RHS%OriginalTable
+        LHS%PolyParam = RHS%PolyParam
       end if
 
     class default
@@ -336,13 +383,13 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Finalizer(This)
 
-  type(MParamTablePoly_Type), intent(inout)                           ::    This
+  type(ITableCrossOver_Type), intent(inout)                           ::    This
 
   character(*), parameter                                             ::    ProcName='Finalizer'
   integer                                                             ::    StatLoc=0
 
-  if (allocated(This%PolyCoeff)) deallocate(This%PolyCoeff, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc)
+  if (allocated(This%OriginalTable)) deallocate(This%OriginalTable, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc)
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------

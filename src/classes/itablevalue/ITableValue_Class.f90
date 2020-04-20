@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module MParamTable_Class
+module ITableValue_Class
 
 use Input_Library
 use Parameters_Library
@@ -28,9 +28,9 @@ implicit none
 
 private
 
-public                                                                ::    MParamTable_Type
+public                                                                ::    ITableValue_Type
 
-type, abstract                                                        ::    MParamTable_Type
+type, abstract                                                        ::    ITableValue_Type
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
@@ -38,14 +38,14 @@ contains
   procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_MParamTable), deferred, public                 ::    Initialize
-  procedure(Reset_MParamTable), deferred, public                      ::    Reset
-  procedure(SetDefaults_MParamTable), deferred, public                ::    SetDefaults
-  procedure(ConstructInput_MParamTable), deferred, private            ::    ConstructInput
-  procedure(GetInput_MParamTable), deferred, public                   ::    GetInput
-  procedure(GetValue_MParamTable), deferred, public                   ::    GetValue
-  procedure(GetCharValue_MParamTable), deferred, public               ::    GetCharValue
-  procedure(Copy_MParamTable), deferred, public                       ::    Copy
+  procedure(Initialize_ITableValue), deferred, public                 ::    Initialize
+  procedure(Reset_ITableValue), deferred, public                      ::    Reset
+  procedure(SetDefaults_ITableValue), deferred, public                ::    SetDefaults
+  procedure(ConstructInput_ITableValue), deferred, private            ::    ConstructInput
+  procedure(GetInput_ITableValue), deferred, public                   ::    GetInput
+  procedure(GetValue_ITableValue), deferred, public                   ::    GetValue
+  procedure(GetCharValue_ITableValue), deferred, public               ::    GetCharValue
+  procedure(Copy_ITableValue), deferred, public                       ::    Copy
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -53,42 +53,42 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_MParamTable(This)
-    import                                                            ::    MParamTable_Type
-    class(MParamTable_Type), intent(inout)                            ::    This
+  subroutine Initialize_ITableValue(This)
+    import                                                            ::    ITableValue_Type
+    class(ITableValue_Type), intent(inout)                            ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset_MParamTable(This)
-    import                                                            ::    MParamTable_Type
-    class(MParamTable_Type), intent(inout)                            ::    This
+  subroutine Reset_ITableValue(This)
+    import                                                            ::    ITableValue_Type
+    class(ITableValue_Type), intent(inout)                            ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_MParamTable(This)
-    import                                                            ::    MParamTable_Type
-    class(MParamTable_Type), intent(inout)                            ::    This
+  subroutine SetDefaults_ITableValue(This)
+    import                                                            ::    ITableValue_Type
+    class(ITableValue_Type), intent(inout)                            ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_MParamTable(This, Input, Prefix)
-    import                                                            ::    MParamTable_Type
+  subroutine ConstructInput_ITableValue(This, Input, Prefix)
+    import                                                            ::    ITableValue_Type
     import                                                            ::    InputSection_Type
-    class(MParamTable_Type), intent(inout)                            ::    This
+    class(ITableValue_Type), intent(inout)                            ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput_MParamTable(This, Name, Prefix, Directory)
-    import                                                            ::    MParamTable_Type
+  function GetInput_ITableValue(This, Name, Prefix, Directory)
+    import                                                            ::    ITableValue_Type
     import                                                            ::    InputSection_Type
-    type(InputSection_Type)                                           ::    GetInput_MParamTable
-    class(MParamTable_Type), intent(in)                               ::    This
+    type(InputSection_Type)                                           ::    GetInput_ITableValue
+    class(ITableValue_Type), intent(in)                               ::    This
     character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -96,25 +96,25 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue_MParamTable(This, Input, Abscissa)
+  function GetValue_ITableValue(This, Input, Abscissa)
     use Parameters_Library
     import                                                            ::    Input_Type
-    import                                                            ::    MParamTable_Type  
-    real(rkp), allocatable, dimension(:)                              ::    GetValue_MParamTable
-    class(MParamTable_Type), intent(in)                               ::    This
+    import                                                            ::    ITableValue_Type  
+    real(rkp), allocatable, dimension(:)                              ::    GetValue_ITableValue
+    class(ITableValue_Type), intent(in)                               ::    This
     type(Input_Type, intent(in)                                       ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue_MParamTable(This, Input, Abscissa, Format)
+  function GetCharValue_ITableValue(This, Input, Abscissa, Format)
     use Parameters_Library
     use String_Library
     import                                                            ::    Input_Type
-    import                                                            ::    MParamTable_Type
-    type(String_Type), allocatable, dimension(:)                      ::    GetCharValue_MParamTable
-    class(MParamTable_Type), intent(in)                               ::    This
+    import                                                            ::    ITableValue_Type
+    type(String_Type), allocatable, dimension(:)                      ::    GetCharValue_ITableValue
+    class(ITableValue_Type), intent(in)                               ::    This
     type(Input_Type, intent(in)                                       ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
     character(*), optional, intent(in)                                ::    Format
@@ -122,10 +122,10 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy_MParamTable(LHS, RHS)
-    import                                                            ::    MParamTable_Type
-    class(MParamTable_Type), intent(out)                              ::    LHS
-    class(MParamTable_Type), intent(in)                               ::    RHS
+  impure elemental subroutine Copy_ITableValue(LHS, RHS)
+    import                                                            ::    ITableValue_Type
+    class(ITableValue_Type), intent(out)                              ::    LHS
+    class(ITableValue_Type), intent(in)                               ::    RHS
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -133,17 +133,17 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetName(This)
 
-    character(:), allocatable                                         ::    GetName
-    class(MParamTable_Type), intent(inout)                            ::    This
+  character(:), allocatable                                             ::    GetName
+  class(ITableValue_Type), intent(inout)                                ::    This
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  character(*), parameter                                               ::    ProcName='GetName'
 
-    GetName = This%Name
+  GetName = This%Name
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

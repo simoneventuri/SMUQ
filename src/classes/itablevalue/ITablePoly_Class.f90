@@ -16,7 +16,7 @@
 !!
 !!----------------------------------------------------------------------------------------------------------------------------------
 
-module MParamTablePoly_Class
+module ITablePoly_Class
 
 use Input_Library
 use Parameters_Library
@@ -24,24 +24,21 @@ use String_Library
 use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use MParamTable_Class                                             ,only:    MParamTable_Type
-use MParamScalar_Class                                            ,only:    MParamScalar_Type
-use MParamScalarContainer_Class                                   ,only:    MParamScalarContainer_Type
-use MParamScalarFixed_Class                                       ,only:    MParamScalarFixed_Type
-use MParamScalar_Factory_Class                                    ,only:    MParamScalar_Factory
 use Input_Class                                                   ,only:    Input_Type
-use String_Library
-use StringRoutines_Module
-
+use ITableValue_Class                                             ,only:    ITableValue_Type
+use IScalarValueClass                                             ,only:    IScalarValue_Type
+use IScalarContainer_Class                                        ,only:    IScalarContainer_Type
+use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
+use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
 
 private
 
-public                                                                ::    MParamTablePoly_Type
+public                                                                ::    ITablePoly_Type
 
-type, extends(MParamTable_Type)                                       ::    MParamTablePoly_Type
-  type(MParamScalarContainer_Type), dimension(:), allocatable         ::    PolyCoeff
+type, extends(ITableValue_Type)                                       ::    ITablePoly_Type
+  type(IScalarContainer_Type), dimension(:), allocatable              ::    PolyCoeff
   integer                                                             ::    Order
 contains
   procedure, public                                                   ::    Initialize
@@ -64,11 +61,11 @@ contains
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Initialize(This)
 
-  class(MParamTablePoly_Type), intent(inout)                          ::    This
+  class(ITablePoly_Type), intent(inout)                               ::    This
 
   character(*), parameter                                             ::    ProcName='Initialize'
   if (.not. This%Initialized) then
-    This%Name = 'mparamtablepoly'
+    This%Name = 'ITablepoly'
     This%Initialized = .true.
     call This%SetDefaults()
   end if
@@ -79,7 +76,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
-  class(MParamTablePoly_Type), intent(inout)                          ::    This
+  class(ITablePoly_Type), intent(inout)                               ::    This
 
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
@@ -98,7 +95,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine SetDefaults(This)
 
-  class(MParamTablePoly_Type), intent(inout)                          ::    This
+  class(ITablePoly_Type), intent(inout)                               ::    This
 
   character(*), parameter                                             ::    ProcName='SetDefaults'
 
@@ -108,7 +105,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput(This, Input, Prefix)
 
-  class(MParamTablePoly_Type), intent(inout)                          ::    This
+  class(ITablePoly_Type), intent(inout)                               ::    This
   type(InputSection_Type), intent(in)                                 ::    Input
   character(*), optional, intent(in)                                  ::    Prefix
 
@@ -122,8 +119,8 @@ subroutine ConstructInput(This, Input, Prefix)
   integer                                                             ::    VarI0D
   integer                                                             ::    i, ii
   logical                                                             ::    Found
-  class(MParamScalar_Type), allocatable                               ::    PolyCoeff
-  type(MParamScalarFixed_Type)                                        ::    PolyCoeffScalar
+  class(IScalarValue_Type), allocatable                               ::    PolyCoeff
+  type(IScalarFixed_Type)                                             ::    PolyCoeffScalar
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
   if (This%Constructed) call This%Reset()
   if (.not. This%Initialized) call This%Initialize()
@@ -148,7 +145,7 @@ subroutine ConstructInput(This, Input, Prefix)
   do i = 1, This%Order + 1
     SubSectionName = SectionName // '>coefficient' // Convert_To_String(i)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-    call MParamScalar_Factory%Construct(Object=PolyCoeff, Input=InputSection, Prefix=PrefixLoc)
+    call IScalarValue_Factory%Construct(Object=PolyCoeff, Input=InputSection, Prefix=PrefixLoc)
     call This%PolyCoeff(i)%Set(Object=PolyCoeff)
     deallocate(PolyCoeff, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='PolyCoeff', ProcName=ProcName, stat=StatLoc)
@@ -165,8 +162,8 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructCase1(This, PolyCoeff)
 
-  class(MParamTablePoly_Type), intent(inout)                          ::    This
-  class(MParamScalarContainer_Type), dimension(:), intent(in)         ::    PolyCoeff
+  class(ITablePoly_Type), intent(inout)                               ::    This
+  class(IScalarContainer_Type), dimension(:), intent(in)              ::    PolyCoeff
 
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
@@ -187,7 +184,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   type(InputSection_Type)                                             ::    GetInput
 
-  class(MParamTablePoly_Type), intent(in)                             ::    This
+  class(ITablePoly_Type), intent(in)                                  ::    This
   character(*), intent(in)                                            ::    Name
   character(*), optional, intent(in)                                  ::    Prefix
   character(*), optional, intent(in)                                  ::    Directory
@@ -201,7 +198,7 @@ function GetInput(This, Name, Prefix, Directory)
   character(:), allocatable                                           ::    SubSectionName
   integer                                                             ::    i
   integer                                                             ::    NbCoeffs
-  class(MParamScalar_Type), pointer                                   ::    PolyCoeffPointer=>null()
+  class(IScalarValue_Type), pointer                                   ::    PolyCoeffPointer=>null()
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -222,7 +219,7 @@ function GetInput(This, Name, Prefix, Directory)
     PolyCoeffPointer => This%PolyCoeff(i)%GetPointer()
     if (ExternalFlag) DirectorySub = DirectoryLoc // '/coefficient' // ConvertToString(Value=i)
     SubSectionName = 'coefficient' // ConvertToString(Value=i)
-    call GetInput%AddSection(Section=MParamScalar_Factory%GetObjectInput(Name=SubSectionName, Object=PolyCoeffPointer,          &
+    call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Name=SubSectionName, Object=PolyCoeffPointer,          &
                                                           Prefix=PrefixLoc, Directory=DIrectoryLoc), To_SubSection=SectionName)
     nullify(PolyCoeffPointer)
   end do
@@ -235,14 +232,14 @@ function GetValue(This, Input, Abscissa)
 
   real(rkp), allocatable, dimension(:)                                ::    GetValue
 
-  class(MParamTablePoly_Type), intent(in)                             ::    This
+  class(ITablePoly_Type), intent(in)                                  ::    This
   type(Input_Type), intent(in)                                        ::    Input
   real(rkp), dimension(:), intent(in)                                 ::    Abscissa
 
   character(*), parameter                                             ::    ProcName='GetValue'
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i, ii
-  class(MParamScalar_Type), pointer                                   ::    PolyCoeffPointer=>null()
+  class(IScalarValue_Type), pointer                                   ::    PolyCoeffPointer=>null()
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -269,7 +266,7 @@ function GetCharValue(This, Input, Abscissa, Format)
 
   type(String_Type), allocatable, dimension(:)                        ::    GetCharValue
 
-  class(MParamTablePoly_Type), intent(in)                             ::    This
+  class(ITablePoly_Type), intent(in)                                  ::    This
   type(Input_Type), intent(in)                                        ::    Input
   real(rkp), dimension(:), intent(in)                                 ::    Abscissa
   character(*), optional, intent(in)                                  ::    Format
@@ -277,7 +274,7 @@ function GetCharValue(This, Input, Abscissa, Format)
   character(*), parameter                                             ::    ProcName='GetCharValue'
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i, ii
-  class(MParamScalar_Type), pointer                                   ::    PolyCoeffPointer=>null()
+  class(IScalarValue_Type), pointer                                   ::    PolyCoeffPointer=>null()
   real(rkp)                                                           ::    VarR0D
   character(:), allocatable                                           ::    FormatLoc
 
@@ -307,15 +304,15 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Copy(LHS, RHS)
 
-  class(MParamTablePoly_Type), intent(out)                            ::    LHS
-  class(MParamTable_Type), intent(in)                                 ::    RHS
+  class(ITablePoly_Type), intent(out)                                 ::    LHS
+  class(ITableValue_Type), intent(in)                                 ::    RHS
 
   character(*), parameter                                             ::    ProcName='Copy'
   integer                                                             ::    StatLoc=0
 
   select type (RHS)
 
-    type is (MParamTablePoly_Type)
+    type is (ITablePoly_Type)
       call LHS%Reset()
       LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
@@ -336,7 +333,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Finalizer(This)
 
-  type(MParamTablePoly_Type), intent(inout)                           ::    This
+  type(ITablePoly_Type), intent(inout)                                ::    This
 
   character(*), parameter                                             ::    ProcName='Finalizer'
   integer                                                             ::    StatLoc=0

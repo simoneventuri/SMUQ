@@ -16,14 +16,14 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module MParamScalarDirect_Class
+module IScalarDirect_Class
 
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use MParamScalar_Class                                            ,only:    MParamScalar_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use Input_Class                                                   ,only:    Input_Type
 use StringRoutines_Module
 
@@ -31,9 +31,9 @@ implicit none
 
 private
 
-public                                                                ::    MParamScalarDirect_Type
+public                                                                ::    IScalarDirect_Type
 
-type, extends(MParamScalar_Type)                                      ::    MParamScalarDirect_Type
+type, extends(IScalarValue_Type)                                      ::    IScalarDirect_Type
   character(:), allocatable                                           ::    Dependency
 contains
   procedure, public                                                   ::    Initialize
@@ -53,11 +53,11 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize(This)
 
-    class(MParamScalarDirect_Type), intent(inout)                     ::    This
+    class(IScalarDirect_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     if (.not. This%Initialized) then
-      This%Name = 'MParamScalarDirect'
+      This%Name = 'IScalarDirect'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -68,7 +68,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset(This)
 
-    class(MParamScalarDirect_Type), intent(inout)                     ::    This
+    class(IScalarDirect_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
@@ -80,7 +80,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults(This)
 
-    class(MParamScalarDirect_Type), intent(inout)                     ::    This
+    class(IScalarDirect_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
     This%Dependency=''
@@ -91,7 +91,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    class(MParamScalarDirect_Type), intent(inout)                     ::    This
+    class(IScalarDirect_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -122,7 +122,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(MParamScalarDirect_Type), intent(in)                        ::    This
+    class(IScalarDirect_Type), intent(in)                             ::    This
     character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -153,7 +153,7 @@ contains
 
     real(rkp)                                                         ::    GetValue
 
-    class(MParamScalarDirect_Type), intent(in)                        ::    This
+    class(IScalarDirect_Type), intent(in)                             ::    This
     type(Input_Type), intent(in)                                      ::    Input
 
     character(*), parameter                                           ::    ProcName='GetValue'
@@ -170,7 +170,7 @@ contains
 
     character(:), allocatable                                         ::    GetCharValue
 
-    class(MParamScalarDirect_Type), intent(in)                        ::    This
+    class(IScalarDirect_Type), intent(in)                             ::    This
     type(Input_Type), intent(in)                                      ::    Input
     character(*), optional, intent(in)                                ::    Format
 
@@ -190,15 +190,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy(LHS, RHS)
 
-    class(MParamScalarDirect_Type), intent(out)                       ::    LHS
-    class(MParamScalar_Type), intent(in)                              ::    RHS
+    class(IScalarDirect_Type), intent(out)                            ::    LHS
+    class(IScalarValue_Type), intent(in)                              ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
   
-      type is (MParamScalarDirect_Type)
+      type is (IScalarDirect_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
