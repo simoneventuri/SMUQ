@@ -27,8 +27,8 @@ use Error_Class                                                   ,only:    Erro
 use Input_Class                                                   ,only:    Input_Type
 use DistUnif_Class                                                ,only:    DistUnif_Type
 use DistProb_Class                                                ,only:    DistProb_Type
-use IScalarValueClass                                             ,only:    IScalarValue_Type
-use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
+use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
@@ -38,7 +38,8 @@ private
 public                                                                ::    HierDistUnif_Type
 
 type, extends(HierDistProb_Type)                                      ::    HierDistUnif_Type
-
+  class(IScalarValue_Type), allocatable                               ::    A
+  class(IScalarValue_Type), allocatable                               ::    B
 contains
   private
   procedure, public                                                   ::    Initialize
@@ -116,6 +117,8 @@ subroutine ConstructInput(This, Input, Prefix)
 
   character(*), parameter                                             ::    ProcName='ConstructInput'
   character(:), allocatable                                           ::    ParameterName
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    SectionName
   logical                                                             ::    Found
   real(rkp)                                                           ::    VarR0D
   character(:), allocatable                                           ::    VarC0D
@@ -161,6 +164,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   character(*), parameter                                             ::    ProcName='GetInput'
   character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    SectionName
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub
   logical                                                             ::    ExternalFlag=.false.

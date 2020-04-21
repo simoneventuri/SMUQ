@@ -30,8 +30,8 @@ use CovFunction_Class                                             ,only:    CovF
 use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
 use CovGExp1L_Class                                               ,only:    CovGExp1L_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
-use IScalarValueClass                                             ,only:    IScalarValue_Type
-use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
+use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
@@ -209,18 +209,18 @@ function GetInput(This, Name, Prefix, Directory)
   if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   SectionName = 'l'
   if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
-  call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%L, Name=SectionName,                     &
-                                                                            Prefix=PrefixLoc, Directory=DirectorySub))
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%L, Name=SectionName,                           &
+                                                                       Prefix=PrefixLoc, Directory=DirectorySub))
                                                                             
   SectionName = 'gamma'
   if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
-  call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Gam, Name=SectionName,                   &
-                                                                            Prefix=PrefixLoc, Directory=DirectorSub))
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Gam, Name=SectionName,                         &
+                                                                       Prefix=PrefixLoc, Directory=DirectorySub))
 
   SectionName = 'sigma'
   if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
-  call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                 &
-                                                                            Prefix=PrefixLoc, Directory=DirectorySub))
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                       &
+                                                                       Prefix=PrefixLoc, Directory=DirectorySub))
 
   call GetInput%AddParameter(Name='tolerance', Value=ConvertToString(This%Tolerance))
 

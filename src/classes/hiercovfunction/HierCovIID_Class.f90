@@ -30,8 +30,8 @@ use Input_Class                                                   ,only:    Inpu
 use CovFunction_Class                                             ,only:    CovFunction_Type
 use HierCovFunction_Class                                         ,only:    HierCovFunction_Type
 use CovIID_Class                                                  ,only:    CovIID_Type
-use IScalarValueClass                                             ,only:    IScalarValue_Type
-use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
+use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
@@ -175,8 +175,8 @@ function GetInput(This, Name, Prefix, Directory)
 
   SectionName = 'sigma'
   if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
-  call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                   &
-                                                                           Prefix=PrefixLoc, Directory=DirectorySub))
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                       &
+                                                                       Prefix=PrefixLoc, Directory=DirectorySub))
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------

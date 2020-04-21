@@ -18,10 +18,10 @@
 
 module HierDistProbContainer_Class
 
-use Logger_Class                                                  ,only:  Logger
-use Error_Class                                                   ,only:  Error
-use HierDistProb_Class                                            ,only:  HierDistProb_Type
-use HierDistProb_Factory_Class                                    ,only:  HierDistProb_Factory
+use Logger_Class                                                  ,only:    Logger
+use Error_Class                                                   ,only:    Error
+use HierDistProb_Class                                            ,only:    HierDistProb_Type
+use HierDistProb_Factory_Class                                    ,only:    HierDistProb_Factory
 
 implicit none
 

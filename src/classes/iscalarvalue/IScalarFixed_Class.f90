@@ -39,7 +39,9 @@ contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
+  generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
+  procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
   procedure, public                                                   ::    GetCharValue
@@ -112,6 +114,25 @@ subroutine ConstructInput(This, Input, Prefix)
   ParameterName = 'value'
   call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
   This%Value = VarR0D
+
+  This%Constructed = .true.
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, Value)
+
+  class(IScalarFixed_Type), intent(inout)                             ::    This
+  real(rkp), intent(in)                                               ::    Value
+
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  integer                                                             ::    StatLoc=0
+
+  if (This%Constructed) call This%Reset()
+  if (.not. This%Initialized) call This%Initialize()
+
+  This%Value = Value
 
   This%Constructed = .true.
 

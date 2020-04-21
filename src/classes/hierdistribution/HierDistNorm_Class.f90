@@ -27,8 +27,8 @@ use Error_Class                                                   ,only:    Erro
 use Input_Class                                                   ,only:    Input_Type
 use DistNorm_Class                                                ,only:    DistNorm_Type
 use DistProb_Class                                                ,only:    DistProb_Type
-use IScalarValueClass                                             ,only:    IScalarValue_Type
-use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
+use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
@@ -125,6 +125,8 @@ subroutine ConstructInput(This, Input, Prefix)
   character(*), parameter                                             ::    ProcName='ConstructInput'
   integer                                                             ::    StatLoc=0
   character(:), allocatable                                           ::    ParameterName
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    SectionName
   logical                                                             ::    Found
   real(rkp)                                                           ::    VarR0D
   logical                                                             ::    VarL0D
@@ -191,6 +193,8 @@ function GetInput(This, Name, Prefix, Directory)
   character(*), optional, intent(in)                                  ::    Directory
 
   character(*), parameter                                             ::    ProcName='GetInput'
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    SectionName
   character(:), allocatable                                           ::    PrefixLoc
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub

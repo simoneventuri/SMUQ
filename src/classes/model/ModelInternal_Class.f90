@@ -39,7 +39,7 @@ type, abstract, extends(Model_Type)                                   ::    Mode
 contains
   procedure, public                                                   ::    Run_0D
   procedure, public                                                   ::    Run_1D
-  procedure(RunInternal_ModelInternal), public                        ::    RunInternal
+  procedure(RunInternal_ModelInternal), deferred, public              ::    RunInternal
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
@@ -50,8 +50,8 @@ abstract interface
 subroutine RunInternal_ModelInternal(This, Input, Output, Stat)
   import                                                              ::    Output_Type
   import                                                              ::    Input_Type
-  import                                                              ::    Model_Type
-  class(Model_Type), intent(inout)                                    ::    This
+  import                                                              ::    ModelInternal_Type
+  class(ModelInternal_Type), intent(inout)                            ::    This
   type(Input_Type), intent(in)                                        ::    Input
   type(Output_Type), dimension(:), intent(inout)                      ::    Output
   integer, optional, intent(out)                                      ::    Stat
@@ -65,7 +65,7 @@ contains
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine Run_0D(This, Input, Output, Stat)
  
-  class(Model_Type), intent(inout)                                  ::    This
+  class(ModelInternal_Type), intent(inout)                          ::    This
   type(Input_Type), intent(in)                                      ::    Input
   type(Output_Type), dimension(:), intent(inout)                    ::    Output
   integer, optional, intent(out)                                    ::    Stat

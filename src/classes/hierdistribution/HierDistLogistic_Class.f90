@@ -28,8 +28,8 @@ use Error_Class                                                   ,only:    Erro
 use Input_Class                                                   ,only:    Input_Type
 use DistLogistic_Class                                            ,only:    DistLogistic_Type
 use DistProb_Class                                                ,only:    DistProb_Type
-use IScalarValueClass                                             ,only:    IScalarValue_Type
-use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
+use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
@@ -125,6 +125,8 @@ subroutine ConstructInput(This, Input, Prefix)
 
   character(*), parameter                                             ::    ProcName='ConstructInput'
   integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    SectionName
   character(:), allocatable                                           ::    ParameterName
   logical                                                             ::    Found
   real(rkp)                                                           ::    VarR0D
@@ -192,6 +194,7 @@ function GetInput(This, Name, Prefix, Directory)
   character(*), optional, intent(in)                                  ::    Directory
 
   character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    SectionName
   character(:), allocatable                                           ::    PrefixLoc
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub

@@ -172,7 +172,7 @@ function GetValue(This, Input)
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
   call Input%GetValue(Value=GetValue, Label=This%Dependency)
-  call Transform(Transformation=Transformation, Value=GetValue)
+  call Transform(Transformation=This%Transformation, Value=GetValue)
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------

@@ -26,9 +26,6 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use DistLogUnif_Class                                             ,only:    DistLogUnif_Type
 use DistProb_Class                                                ,only:    DistProb_Type
-use IScalarValueClass                                             ,only:    IScalarValue_Type
-use IScalarFixedClass                                             ,only:    IScalarFixed_Type
-use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
 
@@ -37,8 +34,6 @@ private
 public                                                                ::    HierDistLogUnif_Type
 
 type, extends(HierDistUnif_Type)                                      ::    HierDistLogUnif_Type
-  class(IScalarValue_Type), allocatable                               ::    A
-  class(IScalarValue_Type), allocatable                               ::    B
 contains
   procedure, public                                                   ::    Initialize
   procedure, private                                                  ::    GenerateDistribution

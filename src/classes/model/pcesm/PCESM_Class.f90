@@ -276,7 +276,7 @@ contains
 
     i = 1
     do i = 1, This%NbModels
-      call This%PCEModels(i)%Run(Input=Input, Output=Output(i))
+      call This%PCEModels(i)%Run(Input=Input, Output=Output(i:i))
     end do
 
     if (present(Stat)) Stat = 0

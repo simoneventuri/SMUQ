@@ -22,13 +22,16 @@ use Input_Library
 use Parameters_Library
 use String_Library
 use StringRoutines_Module
+use ComputingRoutines_Module
+use ArrayIORoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use ITableValue_Class                                             ,only:    ITableValue_Type
 use Input_Class                                                   ,only:    Input_Type
-use IScalarValueClass                                             ,only:    IScalarValue_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarContainer_Class                                        ,only:    IScalarContainer_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
+use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
 
@@ -38,7 +41,7 @@ public                                                                ::    ITab
 
 type, extends(ITableValue_Type)                                       ::    ITableMultiplier_Type
   real(rkp), allocatable, dimension(:,:)                              ::    OriginalTable
-  type(IScalarValue_Type), allocatable                                ::    Multiplier
+  class(IScalarValue_Type), allocatable                               ::    Multiplier
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -118,10 +121,13 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    VarC0D
   integer                                                             ::    VarI0D
   real(rkp)                                                           ::    VarR0D
+  real(rkp), allocatable, dimension(:,:)                              ::    VarR2D
   integer                                                             ::    i, ii
   logical                                                             ::    Found
   logical                                                             ::    VarL0D
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  integer                                                             ::    AbscissaColumn
+  integer                                                             ::    ParamColumn
 
   if (This%Constructed) call This%Reset()
   if (.not. This%Initialized) call This%Initialize()
@@ -160,8 +166,8 @@ subroutine ConstructInput(This, Input, Prefix)
 
   i = 1
   do i = 1, size(VarR2D,2)
-    This%OriginalTable(i,1) = ConvertToReal(String=VarR2D(AbscissaColumn,i)%GetValue())
-    This%OriginalTable(i,2) = ConvertToReal(String=VarR2D(ParamColumn,i)%GetValue())
+    This%OriginalTable(i,1) = VarR2D(AbscissaColumn,i)
+    This%OriginalTable(i,2) = VarR2D(ParamColumn,i)
   end do
 
   deallocate(VarR2D, stat=StatLoc)
@@ -195,6 +201,9 @@ function GetInput(This, Name, Prefix, Directory)
   character(:), allocatable                                           ::    SectionName
   character(:), allocatable                                           ::    SubSectionName
   integer                                                             ::    i
+  character(:), allocatable                                           ::    FileName
+  type(SMUQFile_Type)                                                 ::    File
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -246,7 +255,7 @@ function GetValue(This, Input, Abscissa)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  GetValue = Interpolate(Abscissa=This%OriginalTable(:,1), Ordinate=This%OriginalTable(:,2), Nodes=Abscissa), stat=StatLoc)
+  GetValue = Interpolate(Abscissa=This%OriginalTable(:,1), Ordinate=This%OriginalTable(:,2), Nodes=Abscissa)
 
   MultiplierLoc = This%Multiplier%GetValue(Input=Input)
 
@@ -267,7 +276,7 @@ function GetCharValue(This, Input, Abscissa, Format)
 
   character(*), parameter                                             ::    ProcName='GetCharValue'
   integer                                                             ::    StatLoc=0
-  integer                                                             ::    i, ii
+  integer                                                             ::    i
   real(rkp)                                                           ::    VarR0D
   real(rkp), allocatable, dimension(:)                                ::    VarR1D
   character(:), allocatable                                           ::    FormatLoc
@@ -282,9 +291,9 @@ function GetCharValue(This, Input, Abscissa, Format)
 
   VarR1D = This%GetValue(Input=Input, Abscissa=Abscissa)
 
-  ii = 1
-  do ii = 1, size(VarR1D,1)
-    call GetCharValue(ii) = ConvertToString(Value=VarR1D(ii), Format=FormatLoc)
+  i = 1
+  do i = 1, size(VarR1D,1)
+    GetCharValue(i) = ConvertToString(Value=VarR1D(i), Format=FormatLoc)
   end do
 
 end function
@@ -308,7 +317,7 @@ impure elemental subroutine Copy(LHS, RHS)
       if (RHS%Constructed) then
         allocate(LHS%OriginalTable, source=RHS%OriginalTable, stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='LHS%OriginalTable', ProcName=ProcName, stat=StatLoc)
-        allocate(LHS%Multiplier, source=RHS%Multplier, stat=StatLoc)
+        allocate(LHS%Multiplier, source=RHS%Multiplier, stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='LHS%Multiplier', ProcName=ProcName, stat=StatLoc)
       end if
 

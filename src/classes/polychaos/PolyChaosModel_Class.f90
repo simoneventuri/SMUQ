@@ -91,9 +91,8 @@ contains
   procedure, private                                                  ::    ConstructInput2
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  generic, public                                                     ::    Run                     =>    Run_0D_Single
-  procedure, public                                                   ::    Run_0D
-  procedure, public                                                   ::    Run_0D_Single
+  procedure, public                                                   ::    RunInternal
+  procedure, private                                                  ::    Run_0D_Single
   procedure, public                                                   ::    ReplaceInputLabel
   procedure, public                                                   ::    ReplaceOutputLabel
   procedure, public                                                   ::    GetNbInputs
@@ -515,7 +514,7 @@ contains
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
-  subroutine Run_0D(This, Input, Output, Stat)
+  subroutine RunInternal(This, Input, Output, Stat)
     
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     type(Input_Type), intent(in)                                      ::    Input
@@ -529,9 +528,9 @@ contains
                                                                                                                ProcName=ProcName)
 
     if (present(Stat)) then
-      call This%Run(Input, Output(1), Stat)
+      call This%Run_0D_Single(Input, Output(1), Stat)
     else
-      call This%Run(Input, Output(1))
+      call This%Run_0D_Single(Input, Output(1))
     end if
 
   end subroutine

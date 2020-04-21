@@ -34,8 +34,8 @@ use HierCovFunction_Class                                         ,only:    Hier
 use HierCovFunction_Factory_Class                                 ,only:    HierCovFunction_Factory
 use List2DAllocReal_Class                                         ,only:    List2DAllocReal_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
-use IScalarValueClass                                             ,only:    IScalarValue_Type
-use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
+use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
@@ -258,8 +258,8 @@ contains
 
     if (ExternalFlag) DirectorySub = DirectoryLoc // '/multiplier'
     SectionName = 'multiplier'
-    call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Multiplier, Name='multiplier',           &
-                                                                             Prefix=PrefixLoc, Directory=DirectorySub))
+    call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Multiplier, Name='multiplier',               &
+                                                                         Prefix=PrefixLoc, Directory=DirectorySub))
   
     if (This%PredefinedCov) then
       i = size(This%L,1)

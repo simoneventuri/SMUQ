@@ -28,8 +28,8 @@ use HierDistProb_Class                                            ,only:    Hier
 use Input_Class                                                   ,only:    Input_Type
 use DistGamma_Class                                               ,only:    DistGamma_Type
 use DistProb_Class                                                ,only:    DistProb_Type
-use IScalarValueClass                                             ,only:    IScalarValue_Type
-use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
+use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
@@ -125,6 +125,7 @@ subroutine ConstructInput(This, Input, Prefix)
 
   character(*), parameter                                             ::    ProcName='ProcessInput'
   integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
   character(:), allocatable                                           ::    ParameterName
   logical                                                             ::    Found
   real(rkp)                                                           ::    VarR0D
@@ -133,6 +134,7 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    PrefixLoc
   logical                                                             ::    MandatoryLoc
   type(IScalarFixed_Type)                                             ::    FixedScalar
+  character(:), allocatable                                           ::    SectionName
 
   if (This%Constructed) call This%Reset()
   if (.not. This%Initialized) call This%Initialize()
@@ -192,9 +194,11 @@ function GetInput(This, Name, Prefix, Directory)
 
   character(*), parameter                                             ::    ProcName='GetInput'
   character(:), allocatable                                           ::    PrefixLoc
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub
   logical                                                             ::    ExternalFlag=.false.
+  character(:), allocatable                                           ::    SectionName
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 

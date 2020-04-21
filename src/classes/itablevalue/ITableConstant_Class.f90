@@ -26,7 +26,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use ITableValue_Class                                             ,only:    ITableValue_Type
 use Input_Class                                                   ,only:    Input_Type
-use IScalarValueClass                                             ,only:    IScalarValue_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarContainer_Class                                        ,only:    IScalarContainer_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
@@ -37,7 +37,7 @@ private
 public                                                                ::    ITableConstant_Type
 
 type, extends(ITableValue_Type)                                       ::    ITableConstant_Type
-  type(IScalarValue_Type), allocatable                                ::    Constant
+  class(IScalarValue_Type), allocatable                               ::    Constant
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -201,8 +201,9 @@ function GetCharValue(This, Input, Abscissa, Format)
 
   character(*), parameter                                             ::    ProcName='GetCharValue'
   integer                                                             ::    StatLoc=0
-  real(rkp)                                                           ::    VarR0D
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
   character(:), allocatable                                           ::    FormatLoc
+  integer                                                             ::    i
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -214,9 +215,9 @@ function GetCharValue(This, Input, Abscissa, Format)
 
   VarR1D = This%GetValue(Input=Input, Abscissa=Abscissa)
 
-  ii = 1
-  do ii = 1, size(VarR1D,1)
-    call GetCharValue(ii) = ConvertToString(Value=VarR1D(ii), Format=FormatLoc)
+  i = 1
+  do i = 1, size(VarR1D,1)
+    GetCharValue(i) = ConvertToString(Value=VarR1D(i), Format=FormatLoc)
   end do
 
 end function

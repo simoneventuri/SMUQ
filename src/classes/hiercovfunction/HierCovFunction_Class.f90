@@ -40,7 +40,6 @@ type, abstract                                                        ::    Hier
 contains
   procedure, public                                                   ::    GetName
   procedure, public                                                   ::    IsConstructed
-  procedure, public                                                   ::    IsInputRequired
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(Initialize_HierCovFunction), deferred, public             ::    Initialize
@@ -122,43 +121,30 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetName(This)
 
-    character(:), allocatable                                         ::    GetName
+  character(:), allocatable                                           ::    GetName
 
-    class(HierCovFunction_Type), intent(in)                           ::    This
-    character(*), parameter                                           ::    ProcName='GetName'
+  class(HierCovFunction_Type), intent(in)                             ::    This
+  character(*), parameter                                             ::    ProcName='GetName'
 
-    GetName = This%Name
+  GetName = This%Name
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+function IsConstructed(This)
 
-    logical                                                           ::    IsConstructed
+  logical                                                             ::    IsConstructed
 
-    class(HierCovFunction_Type), intent(in)                           ::    This
-    character(*), parameter                                           ::    ProcName='IsConstructed'
+  class(HierCovFunction_Type), intent(in)                             ::    This
+  character(*), parameter                                             ::    ProcName='IsConstructed'
 
-    IsConstructed = This%Constructed
+  IsConstructed = This%Constructed
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsInputRequired(This)
-
-    logical                                                           ::    IsInputRequired
-
-    class(HierCovFunction_Type), intent(in)                           ::    This
-    character(*), parameter                                           ::    ProcName='IsInputRequired'
-
-    IsInputRequired = This%InputRequired
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

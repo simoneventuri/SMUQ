@@ -44,7 +44,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 end type
 
-type(IScalar_Factory_Type)                                            ::    IScalarValue_Factory
+type(IScalarValue_Factory_Type)                                       ::    IScalarValue_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
