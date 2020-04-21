@@ -44,72 +44,64 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Initialize(This)
 
-    class(HierDistLog10Norm_Type), intent(inout)                      ::    This
+  class(HierDistLog10Norm_Type), intent(inout)                        ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Initialize'
 
-    if (.not. This%Initialized) then
-      This%Name = 'hierarchical_log10normal'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  if (.not. This%Initialized) then
+    This%Name = 'hierarchical_log10normal'
+    This%Initialized = .true.
+    call This%SetDefaults()
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine SetDefaults(This)
 
-    class(HierDistLog10Norm_Type), intent(inout)                      ::    This
+  class(HierDistLog10Norm_Type), intent(inout)                        ::    This
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  character(*), parameter                                             ::    ProcName='SetDefaults'
 
-    This%A = - huge(One)
-    This%B = huge(One)
-    This%Mu = Zero
-    This%Sigma = One
-    This%TruncatedRight = .false.
-    This%TruncatedLeft = .true.
-    This%MuDependency=''
-    This%SigmaDependency=''
-    This%ADependency=''
-    This%BDependency=''
+  This%TruncatedRight = .false.
+  This%TruncatedLeft = .true.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateDistribution(This, Mu, Sigma, A, B, Distribution)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine GenerateDistribution(This, Mu, Sigma, A, B, Distribution)
 
-    class(HierDistLog10Norm_Type), intent(in)                         ::    This
-    real(rkp), intent(in)                                             ::    Mu
-    real(rkp), intent(in)                                             ::    Sigma
-    real(rkp), intent(in)                                             ::    A
-    real(rkp), intent(in)                                             ::    B
-    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
+  class(HierDistLog10Norm_Type), intent(in)                           ::    This
+  real(rkp), intent(in)                                               ::    Mu
+  real(rkp), intent(in)                                               ::    Sigma
+  real(rkp), intent(in)                                               ::    A
+  real(rkp), intent(in)                                               ::    B
+  class(DistProb_Type), allocatable, intent(out)                      ::    Distribution
 
-    character(*), parameter                                           ::    ProcName='GenerateDistribution'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='GenerateDistribution'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    allocate(DistLog10Norm_Type :: Distribution)
+  allocate(DistLog10Norm_Type :: Distribution)
 
-    select type (Distribution)
-      type is (DistLog10Norm_Type) 
-        if (This%TruncatedLeft .and. This%TruncatedRight) then
-          call Distribution%Construct(Mu=Mu, Sigma=Sigma, A=A, B=B)
-        else
-          call Distribution%Construct(Mu=Mu, Sigma=Sigma, A=A)
-        end if
-      class default
-        call Error%Raise("Something went wrong", ProcName=ProcName)
-    end select
+  select type (Distribution)
+    type is (DistLog10Norm_Type) 
+      if (This%TruncatedLeft .and. This%TruncatedRight) then
+        call Distribution%Construct(Mu=Mu, Sigma=Sigma, A=A, B=B)
+      else
+        call Distribution%Construct(Mu=Mu, Sigma=Sigma, A=A)
+      end if
+    class default
+      call Error%Raise("Something went wrong", ProcName=ProcName)
+  end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

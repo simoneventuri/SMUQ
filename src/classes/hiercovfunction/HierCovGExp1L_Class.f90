@@ -206,17 +206,21 @@ function GetInput(This, Name, Prefix, Directory)
 
   call GetInput%AddParameter(Name='coordinate_label', Value=This%CoordinateLabel)
 
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   SectionName = 'l'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%L, Name=SectionName,                     &
-                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                            Prefix=PrefixLoc, Directory=DirectorySub))
                                                                             
   SectionName = 'gamma'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Gam, Name=SectionName,                   &
-                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                            Prefix=PrefixLoc, Directory=DirectorSub))
 
   SectionName = 'sigma'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                 &
-                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                            Prefix=PrefixLoc, Directory=DirectorySub))
 
   call GetInput%AddParameter(Name='tolerance', Value=ConvertToString(This%Tolerance))
 

@@ -43,45 +43,45 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Initialize(This)
 
-    class(HierDistLog10Unif_Type), intent(inout)                      ::    This
+  class(HierDistLog10Unif_Type), intent(inout)                        ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Initialize'
 
-    if (.not. This%Initialized) then
-      This%Name = 'hiererchical_loguniform'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  if (.not. This%Initialized) then
+    This%Name = 'hiererchical_loguniform'
+    This%Initialized = .true.
+    call This%SetDefaults()
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateDistribution(This, A, B, Distribution)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine GenerateDistribution(This, A, B, Distribution)
 
-    class(HierDistLog10Unif_Type), intent(in)                         ::    This
-    real(rkp), intent(in)                                             ::    A
-    real(rkp), intent(in)                                             ::    B
-    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
+  class(HierDistLog10Unif_Type), intent(in)                           ::    This
+  real(rkp), intent(in)                                               ::    A
+  real(rkp), intent(in)                                               ::    B
+  class(DistProb_Type), allocatable, intent(out)                      ::    Distribution
 
-    character(*), parameter                                           ::    ProcName='GenerateDistribution'
-    integer                                                           ::    StatLoc=0  
+  character(*), parameter                                             ::    ProcName='GenerateDistribution'
+  integer                                                             ::    StatLoc=0  
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    allocate(DistLog10Unif_Type :: Distribution)
+  allocate(DistLog10Unif_Type :: Distribution)
 
-    select type (Distribution)
-      type is (DistLog10Unif_Type) 
-        call Distribution%Construct(A=A, B=B)
-      class default
-        call Error%Raise("Something went wrong", ProcName=ProcName)
-    end select
+  select type (Distribution)
+    type is (DistLog10Unif_Type) 
+      call Distribution%Construct(A=A, B=B)
+    class default
+      call Error%Raise("Something went wrong", ProcName=ProcName)
+  end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

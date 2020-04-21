@@ -1,5 +1,5 @@
 ! -*-f90-*-
-!!--------------------------------------------------------------------------------------------------------------------------------
+!!----------------------------------------------------------------------------------------------------------------------------------
 !!
 !! Stochastic Modeling & Uncertainty Quantification (SMUQ)
 !!
@@ -14,7 +14,7 @@
 !! You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free 
 !! Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 !!
-!!--------------------------------------------------------------------------------------------------------------------------------
+!!----------------------------------------------------------------------------------------------------------------------------------
 ! defined using shape and rate form
 module HierDistGamma_Class
 
@@ -28,6 +28,9 @@ use HierDistProb_Class                                            ,only:    Hier
 use Input_Class                                                   ,only:    Input_Type
 use DistGamma_Class                                               ,only:    DistGamma_Type
 use DistProb_Class                                                ,only:    DistProb_Type
+use IScalarValueClass                                             ,only:    IScalarValue_Type
+use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
 
@@ -36,10 +39,10 @@ private
 public                                                                ::    HierDistGamma_Type
 
 type, extends(HierDistProb_Type)                                      ::    HierDistGamma_Type
-  real(rkp)                                                           ::    Alpha=One
-  real(rkp)                                                           ::    Beta=One
-  character(:), allocatable                                           ::    AlphaDependency
-  character(:), allocatable                                           ::    BetaDependency
+  class(IScalarValue_Type), allocatable                               ::    A
+  class(IScalarValue_Type), allocatable                               ::    B
+  class(IScalarValue_Type), allocatable                               ::    Alpha
+  class(IScalarValue_Type), allocatable                               ::    Beta
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -56,283 +59,298 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Initialize(This)
 
-    class(HierDistGamma_Type), intent(inout)                          ::    This
+  class(HierDistGamma_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Initialize'
 
-    if (.not. This%Initialized) then
-      This%Name = 'hiererchical_gamma'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  if (.not. This%Initialized) then
+    This%Name = 'hiererchical_gamma'
+    This%Initialized = .true.
+    call This%SetDefaults()
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(HierDistGamma_Type), intent(inout)                          ::    This
+  class(HierDistGamma_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    This%Initialized = .false.
-    This%Constructed = .false.
+  This%Initialized = .false.
+  This%Constructed = .false.
 
-    call This%Initialize()
+  if (allocated(This%A)) deallocate(This%A, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%A', ProcName=ProcName, stat=StatLoc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%B)) deallocate(This%B, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%B', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  if (allocated(This%Alpha)) deallocate(This%Alpha, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Alpha', ProcName=ProcName, stat=StatLoc)
 
-    class(HierDistGamma_Type), intent(inout)                          ::    This
+  if (allocated(This%Beta)) deallocate(This%Beta, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Beta', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  call This%Initialize()
 
-    This%A = tiny(One)
-    This%B = One
-    This%Alpha = One
-    This%Beta = One
-    This%TruncatedRight = .false.
-    This%TruncatedLeft = .true.
-    This%AlphaDependency=''
-    This%BetaDependency=''
-    This%ADependency=''
-    This%BDependency=''
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine SetDefaults(This)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+  class(HierDistGamma_Type), intent(inout)                            ::    This
 
-    class(HierDistGamma_Type), intent(inout)                          ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+  character(*), parameter                                             ::    ProcName='SetDefaults'
 
-    character(*), parameter                                           ::    ProcName='ProcessInput'
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    ParameterName
-    logical                                                           ::    Found
-    real(rkp)                                                         ::    VarR0D
-    character(:), allocatable                                         ::    VarC0D
-    logical                                                           ::    VarL0D
-    character(:), allocatable                                         ::    PrefixLoc
-    logical                                                           ::    MandatoryLoc
+  This%TruncatedRight = .false.
+  This%TruncatedLeft = .true.
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-    
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    MandatoryLoc = .true.
-    ParameterName = 'alpha_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%AlphaDependency = VarC0D
-    MandatoryLoc = .not. Found
-    ParameterName = 'alpha'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
-    if (Found) This%Alpha = VarR0D
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    MandatoryLoc = .true.
-    ParameterName = 'beta_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%BetaDependency = VarC0D
-    MandatoryLoc = .not. Found
-    ParameterName = 'beta'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
-    if (Found) This%Beta = VarR0D
+  class(HierDistGamma_Type), intent(inout)                            ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    ParameterName = 'a_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%ADependency = VarC0D
-    ParameterName = 'a'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%A = VarR0D
+  character(*), parameter                                             ::    ProcName='ProcessInput'
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    ParameterName
+  logical                                                             ::    Found
+  real(rkp)                                                           ::    VarR0D
+  character(:), allocatable                                           ::    VarC0D
+  logical                                                             ::    VarL0D
+  character(:), allocatable                                           ::    PrefixLoc
+  logical                                                             ::    MandatoryLoc
+  type(IScalarFixed_Type)                                             ::    FixedScalar
 
-    ParameterName = 'b_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%BDependency = VarC0D
-      This%TruncatedRight = .true.
-    end if
-    ParameterName = 'b'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%B = VarR0D
-      This%TruncatedRight = .true.
-    end if
-
-    This%Constructed = .true.
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
-
-    use StringRoutines_Module
-
-    type(InputSection_Type)                                           ::    GetInput
-
-    class(HierDistGamma_Type), intent(in)                             ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
-
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
-
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
-
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
-    call GetInput%AddParameter(Name='alpha', Value=ConvertToString(Value=This%Alpha))
-    call GetInput%AddParameter(Name='beta', Value=ConvertToString(Value=This%Beta))
-    call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
-    if (This%TruncatedRight) call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
-    if (len_trim(This%AlphaDependency) /= 0) call GetInput%AddParameter(Name='alpha_dependency', Value=This%AlphaDependency)
-    if (len_trim(This%BetaDependency) /= 0) call GetInput%AddParameter(Name='beta_dependency', Value=This%BetaDependency)
-    if (len_trim(This%ADependency) /= 0) call GetInput%AddParameter(Name='a_dependency', Value=This%ADependency)
-    if (len_trim(This%BDependency) /= 0) call GetInput%AddParameter(Name='b_dependency', Value=This%BDependency)
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate(This, Input, Distribution)
-
-    class(HierDistGamma_Type), intent(in)                             ::    This
-    type(Input_Type), intent(in)                                      ::    Input
-    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
-
-    character(*), parameter                                           ::    ProcName='Generate'
-    integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    Alpha
-    real(rkp)                                                         ::    Beta
-    real(rkp)                                                         ::    A
-    real(rkp)                                                         ::    B
-
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-    B = Zero
-
-    Alpha = This%Alpha
-    if (len_trim(This%AlphaDependency) /= 0) call Input%GetValue(Value=Alpha, Label=This%AlphaDependency)
-
-    Beta = This%Beta
-    if (len_trim(This%BetaDependency) /= 0) call Input%GetValue(Value=Beta, Label=This%BetaDependency)
-
-    A = This%A
-    if (len_trim(This%ADependency) /= 0) call Input%GetValue(Value=A, Label=This%ADependency)
-    
-    if (This%TruncatedRight) then
-      if (len_trim(This%BDependency) /= 0) then
-        call Input%GetValue(Value=B, Label=This%BDependency)
-      else
-        B = This%B
-      end if
-    end if
-
-    call This%GenerateDistribution(Alpha=Alpha, Beta=Beta, A=A, B=B, Distribution=Distribution)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateDistribution(This, Alpha, Beta, A, B, Distribution)
-
-    class(HierDistGamma_Type), intent(in)                             ::    This
-    real(rkp), intent(in)                                             ::    Alpha
-    real(rkp), intent(in)                                             ::    Beta
-    real(rkp), intent(in)                                             ::    A
-    real(rkp), intent(in)                                             ::    B
-    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
-
-    character(*), parameter                                           ::    ProcName='GenerateDistribution'
-    integer                                                           ::    StatLoc=0
-
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-    allocate(DistGamma_Type :: Distribution)
-
-    select type (Distribution)
-      type is (DistGamma_Type) 
-        if (This%TruncatedLeft .and. This%TruncatedRight) then
-          call Distribution%Construct(Alpha=Alpha, Beta=Beta, A=A, B=B)
-        else
-          call Distribution%Construct(Alpha=Alpha, Beta=Beta, A=A)
-        end if
-      class default
-        call Error%Raise("Something went wrong", ProcName=ProcName)
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
-
-    class(HierDistGamma_Type), intent(out)                            ::    LHS
-    class(HierDistProb_Type), intent(in)                              ::    RHS
-
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    select type (RHS)
+  if (This%Constructed) call This%Reset()
+  if (.not. This%Initialized) call This%Initialize()
   
-      type is (HierDistGamma_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-        if (RHS%Constructed) then
-          LHS%A = RHS%A
-          LHS%B = RHS%B
-          LHS%Alpha = RHS%Alpha
-          LHS%Beta = RHS%Beta
-          LHS%TruncatedLeft = RHS%TruncatedLeft
-          LHS%TruncatedRight = RHS%TruncatedRight
-          LHS%AlphaDependency = RHS%AlphaDependency
-          LHS%BetaDependency = RHS%BetaDependency
-          LHS%ADependency = RHS%ADependency
-          LHS%BDependency = RHS%BDependency
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+  SectionName = 'a'
+  if(Input%HasSection(SubSectionName=SectionName)) then
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call IScalarValue_Factory%Construct(Object=This%A, Input=InputSection, Prefix=PrefixLoc)
+    nullify(InputSection)
+  else
+    call FixedScalar%Construct(Value=tiny(One))
+    allocate(This%A, source=FixedScalar, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='This%A', ProcName=ProcName, stat=StatLoc)
+  end if
 
-    end select
+  SectionName = 'b'
+  if(Input%HasSection(SubSectionName=SectionName)) then
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call IScalarValue_Factory%Construct(Object=This%B, Input=InputSection, Prefix=PrefixLoc)
+    nullify(InputSection)
+    This%TruncatedRight = .true.
+  else
+    call FixedScalar%Construct(Value=huge(One))
+    allocate(This%B, source=FixedScalar, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='This%B', ProcName=ProcName, stat=StatLoc)
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  SectionName = 'alpha'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call IScalarValue_Factory%Construct(Object=This%Alpha, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+  SectionName = 'beta'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call IScalarValue_Factory%Construct(Object=This%Beta, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-    type(HierDistGamma_Type), intent(inout)                           ::    This
+  This%Constructed = .true.
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
+
+  use StringRoutines_Module
+
+  type(InputSection_Type)                                             ::    GetInput
+
+  class(HierDistGamma_Type), intent(in)                               ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
+
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
+
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
+
+  SectionName = 'a'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%A, Name=SectionName, Prefix=PrefixLoc,         &
+                                                                       Directory=DirectorySub))
+
+  if(This%TruncatedRight) then
+    SectionName = 'b'
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+    call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%B, Name=SectionName, Prefix=PrefixLoc,       &
+                                                                        Directory=DirectorySub))
+  end if
+
+  SectionName = 'alpha'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Alpha, Name=SectionName, Prefix=PrefixLoc,     &
+                                                                       Directory=DirectorySub))
+
+  SectionName = 'beta'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Beta, Name=SectionName, Prefix=PrefixLoc,      &
+                                                                       Directory=DirectorySub))
+
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Generate(This, Input, Distribution)
+
+  class(HierDistGamma_Type), intent(in)                               ::    This
+  type(Input_Type), intent(in)                                        ::    Input
+  class(DistProb_Type), allocatable, intent(out)                      ::    Distribution
+
+  character(*), parameter                                             ::    ProcName='Generate'
+  integer                                                             ::    StatLoc=0
+  real(rkp)                                                           ::    Alpha
+  real(rkp)                                                           ::    Beta
+  real(rkp)                                                           ::    A
+  real(rkp)                                                           ::    B
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  Alpha = This%Alpha%GetValue(Input=Input)
+
+  Beta = This%Beta%GetValue(Input=Input)
+
+  A = This%A%GetValue(Input=Input)
+    
+  B = This%B%GetValue(Input=Input)
+
+  call This%GenerateDistribution(Alpha=Alpha, Beta=Beta, A=A, B=B, Distribution=Distribution)
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine GenerateDistribution(This, Alpha, Beta, A, B, Distribution)
+
+  class(HierDistGamma_Type), intent(in)                               ::    This
+  real(rkp), intent(in)                                               ::    Alpha
+  real(rkp), intent(in)                                               ::    Beta
+  real(rkp), intent(in)                                               ::    A
+  real(rkp), intent(in)                                               ::    B
+  class(DistProb_Type), allocatable, intent(out)                      ::    Distribution
+
+  character(*), parameter                                             ::    ProcName='GenerateDistribution'
+  integer                                                             ::    StatLoc=0
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  allocate(DistGamma_Type :: Distribution)
+
+  select type (Distribution)
+    type is (DistGamma_Type) 
+      if (This%TruncatedLeft .and. This%TruncatedRight) then
+        call Distribution%Construct(Alpha=Alpha, Beta=Beta, A=A, B=B)
+      else
+        call Distribution%Construct(Alpha=Alpha, Beta=Beta, A=A)
+      end if
+    class default
+      call Error%Raise("Something went wrong", ProcName=ProcName)
+  end select
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
+
+  class(HierDistGamma_Type), intent(out)                              ::    LHS
+  class(HierDistProb_Type), intent(in)                                ::    RHS
+
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+
+  select type (RHS)
+
+    type is (HierDistGamma_Type)
+      call LHS%Reset()
+      LHS%Initialized = RHS%Initialized
+      LHS%Constructed = RHS%Constructed
+
+      if (RHS%Constructed) then
+        allocate(LHS%A, source=RHS%A, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%A', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%B, source=RHS%B, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%B', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%Alpha, source=RHS%Alpha, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%Alpha', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%Beta, source=RHS%Beta, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%Beta', ProcName=ProcName, stat=StatLoc)
+        LHS%TruncatedLeft = RHS%TruncatedLeft
+        LHS%TruncatedRight = RHS%TruncatedRight
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+
+  end select
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
+
+  type(HierDistGamma_Type), intent(inout)                             ::    This
+
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
+
+  if (allocated(This%A)) deallocate(This%A, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%A', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%B)) deallocate(This%B, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%B', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%Alpha)) deallocate(This%Alpha, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Alpha', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%Beta)) deallocate(This%Beta, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Beta', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

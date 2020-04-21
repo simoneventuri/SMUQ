@@ -27,6 +27,9 @@ use Error_Class                                                   ,only:    Erro
 use Input_Class                                                   ,only:    Input_Type
 use DistUnif_Class                                                ,only:    DistUnif_Type
 use DistProb_Class                                                ,only:    DistProb_Type
+use IScalarValueClass                                             ,only:    IScalarValue_Type
+use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
 
@@ -53,233 +56,236 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Initialize(This)
 
-    class(HierDistUnif_Type), intent(inout)                           ::    This
+  class(HierDistUnif_Type), intent(inout)                             ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Initialize'
 
-    if (.not. This%Initialized) then
-      This%Name = 'hierarchical_uniform'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  if (.not. This%Initialized) then
+    This%Name = 'hierarchical_uniform'
+    This%Initialized = .true.
+    call This%SetDefaults()
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(HierDistUnif_Type), intent(inout)                           ::    This
+  class(HierDistUnif_Type), intent(inout)                             ::    This
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    This%Initialized = .false.
-    This%Constructed = .false.
+  This%Initialized = .false.
+  This%Constructed = .false.
 
-    call This%Initialize()
+  if (allocated(This%A)) deallocate(This%A, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%A', ProcName=ProcName, stat=StatLoc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%B)) deallocate(This%B, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%B', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  call This%Initialize()
 
-    class(HierDistUnif_Type), intent(inout)                           ::    This
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine SetDefaults(This)
 
-    This%A = Zero
-    This%B = One
-    This%TruncatedLeft=.true.
-    This%TruncatedRight=.true.
-    This%ADependency=''
-    This%BDependency=''
+  class(HierDistUnif_Type), intent(inout)                             ::    This
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='SetDefaults'
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+  This%TruncatedLeft=.true.
+  This%TruncatedRight=.true.
 
-    class(HierDistUnif_Type), intent(inout)                           ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    ParameterName
-    logical                                                           ::    Found
-    real(rkp)                                                         ::    VarR0D
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-    logical                                                           ::    MandatoryLoc
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  class(HierDistUnif_Type), intent(inout)                             ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    ParameterName
+  logical                                                             ::    Found
+  real(rkp)                                                           ::    VarR0D
+  character(:), allocatable                                           ::    VarC0D
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  logical                                                             ::    MandatoryLoc
 
-    This%TruncatedLeft=.true.
-    This%TruncatedRight=.true.
+  if (This%Constructed) call This%Reset()
+  if (.not. This%Initialized) call This%Initialize()
 
-    MandatoryLoc = .true.
-    ParameterName = 'a_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%ADependency = VarC0D
-    MandatoryLoc = .not. Found
-    ParameterName = 'a'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
-    if (Found) This%A = VarR0D
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    MandatoryLoc = .true.
-    ParameterName = 'b_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%BDependency = VarC0D
-    MandatoryLoc = .not. Found
-    ParameterName = 'b'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=MandatoryLoc, Found=Found)
-    if (Found) This%B = VarR0D
+  This%TruncatedLeft=.true.
+  This%TruncatedRight=.true.
 
-    This%Constructed = .true.
+  SectionName = 'a'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call IScalarValue_Factory%Construct(Object=This%A, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  SectionName = 'b'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call IScalarValue_Factory%Construct(Object=This%B, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  This%Constructed = .true.
 
-    use StringRoutines_Module
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    type(InputSection_Type)                                           ::    GetInput
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-    class(HierDistUnif_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  use StringRoutines_Module
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
+  type(InputSection_Type)                                             ::    GetInput
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  class(HierDistUnif_Type), intent(in)                                ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
-    call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
-    if (len_trim(This%ADependency) /= 0) call GetInput%AddParameter(Name='a_dependency', Value=This%ADependency)
-    if (len_trim(This%BDependency) /= 0) call GetInput%AddParameter(Name='b_dependency', Value=This%BDependency)
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate(This, Input, Distribution)
+  SectionName = 'a'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%A, Name=SectionName, Prefix=PrefixLoc,       &
+                                                                        Directory=DirectorySub))
 
-    class(HierDistUnif_Type), intent(in)                              ::    This
-    type(Input_Type), intent(in)                                      ::    Input
-    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
+  SectionName = 'b'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%B, Name=SectionName, Prefix=PrefixLoc,       &
+                                                                        Directory=DirectorySub))
 
-    character(*), parameter                                           ::    ProcName='Generate'
-    integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    A
-    real(rkp)                                                         ::    B    
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Generate(This, Input, Distribution)
 
-    A = This%A
-    if (len_trim(This%ADependency) /= 0) call Input%GetValue(Value=A, Label=This%ADependency)
+  class(HierDistUnif_Type), intent(in)                                ::    This
+  type(Input_Type), intent(in)                                        ::    Input
+  class(DistProb_Type), allocatable, intent(out)                      ::    Distribution
 
-    B = This%B
-    if (len_trim(This%BDependency) /= 0) call Input%GetValue(Value=B, Label=This%BDependency)
+  character(*), parameter                                             ::    ProcName='Generate'
+  integer                                                             ::    StatLoc=0
+  real(rkp)                                                           ::    A
+  real(rkp)                                                           ::    B    
 
-    call This%GenerateDistribution(A=A, B=B, Distribution=Distribution)
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  A = This%A%GetValue(Input=Input)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateDistribution(This, A, B, Distribution)
+  B = This%B%GetValue(Input=Input)
 
-    class(HierDistUnif_Type), intent(in)                              ::    This
-    real(rkp), intent(in)                                             ::    A
-    real(rkp), intent(in)                                             ::    B
-    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
+  call This%GenerateDistribution(A=A, B=B, Distribution=Distribution)
 
-    character(*), parameter                                           ::    ProcName='GenerateDistribution'
-    integer                                                           ::    StatLoc=0  
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine GenerateDistribution(This, A, B, Distribution)
 
-    allocate(DistUnif_Type :: Distribution)
+  class(HierDistUnif_Type), intent(in)                                ::    This
+  real(rkp), intent(in)                                               ::    A
+  real(rkp), intent(in)                                               ::    B
+  class(DistProb_Type), allocatable, intent(out)                      ::    Distribution
 
-    select type (Distribution)
-      type is (DistUnif_Type) 
-        call Distribution%Construct(A=A, B=B)
-      class default
-        call Error%Raise("Something went wrong", ProcName=ProcName)
-    end select
+  character(*), parameter                                             ::    ProcName='GenerateDistribution'
+  integer                                                             ::    StatLoc=0  
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+  allocate(DistUnif_Type :: Distribution)
 
-    class(HierDistUnif_Type), intent(out)                             ::    LHS
-    class(HierDistProb_Type), intent(in)                              ::    RHS
+  select type (Distribution)
+    type is (DistUnif_Type) 
+      call Distribution%Construct(A=A, B=B)
+    class default
+      call Error%Raise("Something went wrong", ProcName=ProcName)
+  end select
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    select type (RHS)
-  
-      type is (HierDistUnif_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+!!--------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-        if (RHS%Constructed) then
-          LHS%A = RHS%A
-          LHS%B = RHS%B
-          LHS%TruncatedLeft=RHS%TruncatedLeft
-          LHS%TruncatedRight=RHS%TruncatedRight
-          LHS%ADependency = RHS%ADependency
-          LHS%BDependency = RHS%BDependency
-        end if
+  class(HierDistUnif_Type), intent(out)                               ::    LHS
+  class(HierDistProb_Type), intent(in)                                ::    RHS
 
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-    end select
+  select type (RHS)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+    type is (HierDistUnif_Type)
+      call LHS%Reset()
+      LHS%Initialized = RHS%Initialized
+      LHS%Constructed = RHS%Constructed
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+      if (RHS%Constructed) then
+        allocate(LHS%A, source=RHS%A, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%A', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%B, source=RHS%B, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%B', ProcName=ProcName, stat=StatLoc)
+        LHS%TruncatedLeft=RHS%TruncatedLeft
+        LHS%TruncatedRight=RHS%TruncatedRight
+      end if
 
-    type(HierDistUnif_Type), intent(inout)                            ::    This
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+  end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
+
+  type(HierDistUnif_Type), intent(inout)                              ::    This
+
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
+
+  if (allocated(This%A)) deallocate(This%A, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%A', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%B)) deallocate(This%B, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%B', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module HierDistUnif_Class

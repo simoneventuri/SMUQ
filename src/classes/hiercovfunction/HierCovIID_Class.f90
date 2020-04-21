@@ -174,8 +174,9 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
   SectionName = 'sigma'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                   &
-                                                                           Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                           Prefix=PrefixLoc, Directory=DirectorySub))
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------

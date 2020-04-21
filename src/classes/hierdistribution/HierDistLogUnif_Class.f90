@@ -26,6 +26,9 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use DistLogUnif_Class                                             ,only:    DistLogUnif_Type
 use DistProb_Class                                                ,only:    DistProb_Type
+use IScalarValueClass                                             ,only:    IScalarValue_Type
+use IScalarFixedClass                                             ,only:    IScalarFixed_Type
+use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
 
@@ -34,6 +37,8 @@ private
 public                                                                ::    HierDistLogUnif_Type
 
 type, extends(HierDistUnif_Type)                                      ::    HierDistLogUnif_Type
+  class(IScalarValue_Type), allocatable                               ::    A
+  class(IScalarValue_Type), allocatable                               ::    B
 contains
   procedure, public                                                   ::    Initialize
   procedure, private                                                  ::    GenerateDistribution
@@ -43,45 +48,45 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Initialize(This)
 
-    class(HierDistLogUnif_Type), intent(inout)                        ::    This
+  class(HierDistLogUnif_Type), intent(inout)                          ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Initialize'
 
-    if (.not. This%Initialized) then
-      This%Name = 'hierarchical_loguniform'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  if (.not. This%Initialized) then
+    This%Name = 'hierarchical_loguniform'
+    This%Initialized = .true.
+    call This%SetDefaults()
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateDistribution(This, A, B, Distribution)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine GenerateDistribution(This, A, B, Distribution)
 
-    class(HierDistLogUnif_Type), intent(in)                           ::    This
-    real(rkp), intent(in)                                             ::    A
-    real(rkp), intent(in)                                             ::    B
-    class(DistProb_Type), allocatable, intent(out)                    ::    Distribution
+  class(HierDistLogUnif_Type), intent(in)                             ::    This
+  real(rkp), intent(in)                                               ::    A
+  real(rkp), intent(in)                                               ::    B
+  class(DistProb_Type), allocatable, intent(out)                      ::    Distribution
 
-    character(*), parameter                                           ::    ProcName='GenerateDistribution'
-    integer                                                           ::    StatLoc=0  
+  character(*), parameter                                             ::    ProcName='GenerateDistribution'
+  integer                                                             ::    StatLoc=0  
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    allocate(DistLogUnif_Type :: Distribution)
+  allocate(DistLogUnif_Type :: Distribution)
 
-    select type (Distribution)
-      type is (DistLogUnif_Type) 
-        call Distribution%Construct(A=A, B=B)
-      class default
-        call Error%Raise("Something went wrong", ProcName=ProcName)
-    end select
+  select type (Distribution)
+    type is (DistLogUnif_Type) 
+      call Distribution%Construct(A=A, B=B)
+    class default
+      call Error%Raise("Something went wrong", ProcName=ProcName)
+  end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

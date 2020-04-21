@@ -149,6 +149,7 @@ contains
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    type(IScalarFixed_Type)                                           ::    FixedScalar
 
     if (This%Constructed) call This%Reset()
     if (.not. This%Initialized) call This%Initialize()
@@ -174,14 +175,9 @@ contains
       call IScalarValue_Factory%Construct(Object=This%Multiplier, Input=InputSection, Prefix=PrefixLoc)
       nullify(InputSection)
     else
-      allocate(IScalarFixed_Type :: This%Multiplier, stat=StatLoc)
+      call FixedScalar%Construct(Value=One)
+      allocate(This%Multiplier, source=FixedScalar, stat=StatLoc)
       if (StatLoc /= 0) call Error%Allocate(Name='This%Multiplier', ProcName=ProcName, stat=StatLoc)
-      select type (Object => This%Multiplier)
-        type is (IScalarFixed_Type)
-          call Object%Construct(Value=One)
-        class default
-          call Error%Raise('Something went wrong', ProcName=ProcName)
-      end select
     end if
 
     SectionName = 'predefined_covariance'
@@ -260,9 +256,10 @@ contains
     call GetInput%AddParameter(Name='scalar', Value=ConvertToString(Value=This%Scalar))
     call GetInput%AddParameter(Name='response', Value=This%Label)
 
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/multiplier'
     SectionName = 'multiplier'
     call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Multiplier, Name='multiplier',           &
-                                                                             Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                             Prefix=PrefixLoc, Directory=DirectorySub))
   
     if (This%PredefinedCov) then
       i = size(This%L,1)

@@ -33,10 +33,6 @@ public                                                                ::    Hier
 
 type, abstract                                                        ::    HierDistProb_Type
   character(:), allocatable                                           ::    Name
-  real(rkp)                                                           ::    A=One
-  real(rkp)                                                           ::    B=One
-  character(:), allocatable                                           ::    ADependency
-  character(:), allocatable                                           ::    BDependency
   logical                                                             ::    TruncatedLeft=.false.
   logical                                                             ::    TruncatedRight=.false.
   logical                                                             ::    Initialized=.false.
@@ -127,49 +123,49 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetName(This)
 
-    character(:), allocatable                                         ::    GetName
-    class(HierDistProb_Type), intent(in)                              ::    This
+  character(:), allocatable                                           ::    GetName
+  class(HierDistProb_Type), intent(in)                                ::    This
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  character(*), parameter                                             ::    ProcName='GetName'
 
-    GetName = This%Name
+  GetName = This%Name
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsTruncatedLeft(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+function IsTruncatedLeft(This)
 
-    logical                                                           ::    IsTruncatedLeft
+  logical                                                             ::    IsTruncatedLeft
 
-    class(HierDistProb_Type), intent(in)                              ::    This
+  class(HierDistProb_Type), intent(in)                                ::    This
 
-    character(*), parameter                                           ::    ProcName='IsTruncatedLeft'
+  character(*), parameter                                             ::    ProcName='IsTruncatedLeft'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    IsTruncatedLeft = This%TruncatedLeft
+  IsTruncatedLeft = This%TruncatedLeft
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsTruncatedRight(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+function IsTruncatedRight(This)
 
-    logical                                                           ::    IsTruncatedRight
+  logical                                                             ::    IsTruncatedRight
 
-    class(HierDistProb_Type), intent(in)                              ::    This
+  class(HierDistProb_Type), intent(in)                                ::    This
 
-    character(*), parameter                                           ::    ProcName='IsTruncatedRight'
+  character(*), parameter                                             ::    ProcName='IsTruncatedRight'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    IsTruncatedRight = This%TruncatedRight
+  IsTruncatedRight = This%TruncatedRight
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -228,24 +228,29 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddParameter(Name='coordinate_label', Value=This%CoordinateLabel)
 
   SectionName = 'l1'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%L1, Name=SectionName,                      &
-                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                            Prefix=PrefixLoc, Directory=DirectorySub))
 
   SectionName = 'l2'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%L2, Name=SectionName,                      &
-                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                            Prefix=PrefixLoc, Directory=DirectorySub))
 
   SectionName = 'lr'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Lr, Name=SectionName,                      &
-                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                            Prefix=PrefixLoc, Directory=DirectorySub))
 
   SectionName = 'zs'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Zs, Name=SectionName,                      &
-                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                            Prefix=PrefixLoc, Directory=DirectorySub))
 
   SectionName = 'sigma'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   call GetInput%AddSection(SectionName=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                   &
-                                                                            Prefix=PrefixLoc, Directory=DirectoryLoc))
+                                                                            Prefix=PrefixLoc, Directory=DirectorySub))
 
   call GetInput%AddParameter(Name='tolerance', Value=ConvertToString(This%Tolerance))
 
