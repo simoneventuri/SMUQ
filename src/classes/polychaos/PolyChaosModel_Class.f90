@@ -91,7 +91,7 @@ contains
   procedure, private                                                  ::    ConstructInput2
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    RunInternal
+  procedure, public                                                   ::    Run_0D
   procedure, private                                                  ::    Run_0D_Single
   procedure, public                                                   ::    ReplaceInputLabel
   procedure, public                                                   ::    ReplaceOutputLabel
@@ -513,8 +513,7 @@ contains
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
-
-  subroutine RunInternal(This, Input, Output, Stat)
+  subroutine Run_0D(This, Input, Output, Stat)
     
     class(PolyChaosModel_Type), intent(inout)                         ::    This
     type(Input_Type), intent(in)                                      ::    Input

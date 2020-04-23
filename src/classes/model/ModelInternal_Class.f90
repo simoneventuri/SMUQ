@@ -35,64 +35,13 @@ private
 public                                                                ::    ModelInternal_Type
 
 type, abstract, extends(Model_Type)                                   ::    ModelInternal_Type
-  type(InputProcessor_Type)                                           ::    InputProcessor
 contains
-  procedure, public                                                   ::    Run_0D
   procedure, public                                                   ::    Run_1D
-  procedure(RunInternal_ModelInternal), deferred, public              ::    RunInternal
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
 
-abstract interface
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine RunInternal_ModelInternal(This, Input, Output, Stat)
-  import                                                              ::    Output_Type
-  import                                                              ::    Input_Type
-  import                                                              ::    ModelInternal_Type
-  class(ModelInternal_Type), intent(inout)                            ::    This
-  type(Input_Type), intent(in)                                        ::    Input
-  type(Output_Type), dimension(:), intent(inout)                      ::    Output
-  integer, optional, intent(out)                                      ::    Stat
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-end interface
-
 contains
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine Run_0D(This, Input, Output, Stat)
- 
-  class(ModelInternal_Type), intent(inout)                          ::    This
-  type(Input_Type), intent(in)                                      ::    Input
-  type(Output_Type), dimension(:), intent(inout)                    ::    Output
-  integer, optional, intent(out)                                    ::    Stat
-
-  character(*), parameter                                           ::    ProcName='Run_0D'
-  integer                                                           ::    StatLoc=0
-  type(Input_Type)                                                  ::    InputLoc
-
-  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-  if (This%InputProcessor%IsConstructed()) then
-    call This%InputProcessor%ProcessInput(Input=Input, ProcessedInput=InputLoc)
-    if (present(Stat)) then
-      call This%RunInternal(Input=InputLoc, Output=Output, Stat=Stat)
-    else
-      call This%RunInternal(Input=InputLoc, Output=Output)
-    end if
-  else
-    if (present(Stat)) then
-      call This%RunInternal(Input=Input, Output=Output, Stat=Stat)
-    else
-      call This%RunInternal(Input=Input, Output=Output)
-    end if
-  end if
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Run_1D(This, Input, Output, Stat)

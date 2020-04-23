@@ -47,7 +47,7 @@ contains
   procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    RunInternal
+  procedure, public                                                   ::    Run_0D
   procedure, public                                                   ::    Copy
 end type
 
@@ -178,13 +178,6 @@ contains
 
     This%NbOutputs = This%NbFunctions
 
-    SectionName = 'input_preprocessor'
-    if (Input%HasSection(SubSectionName=SectionName)) then
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      call This%InputProcessor%Construct(Input=InputSection, Prefix=PrefixLoc)
-      nullify(InputSection)
-    end if
-
     This%Constructed = .true.
 
   end subroutine
@@ -236,21 +229,18 @@ contains
                                                             Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection='functions')
     end do
 
-    if (This%InputProcessor%IsConstructed()) call GetInput%AddSection(Section=This%InputProcessor%GetInput(                  &
-                                                 Name='input_preprocessor', Prefix=PrefixLoc, Directory=DirectorySub))
-
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RunInternal(This, Input, Output, Stat)
+  subroutine Run_0D(This, Input, Output, Stat)
 
     class(TFUN_Type), intent(inout)                                   ::    This
     type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
-    character(*), parameter                                           ::    ProcName='RunInternal'
+    character(*), parameter                                           ::    ProcName='Run_0D'
     integer                                                           ::    StatLoc=0
     class(TestFunction_Type), pointer                                 ::    TestFunctionPtr=>null()
     integer                                                           ::    i
@@ -293,7 +283,6 @@ contains
           if (StatLoc /= 0) call Error%Allocate(Name='LHS%TestFunctions', ProcName=ProcName, stat=StatLoc)
           LHS%NbOutputs = RHS%NbOutputs
           LHS%Label = RHS%Label
-          LHS%InputProcessor = RHS%InputProcessor
         end if
 
       class default

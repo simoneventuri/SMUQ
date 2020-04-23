@@ -43,13 +43,14 @@ public                                                                ::    PCES
 type, extends(ModelInternal_Type)                                     ::    PCESM_Type
   type(PolyChaosModel_Type), allocatable, dimension(:)                ::    PCEModels
   integer                                                             ::    NbModels=0
+  type(InputProcessor_Type)                                           ::    InputProcessor
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    RunInternal
+  procedure, public                                                   ::    Run_0D
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -260,24 +261,33 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RunInternal(This, Input, Output, Stat)
+  subroutine Run_0D(This, Input, Output, Stat)
 
     class(PCESM_Type), intent(inout)                                  ::    This
     type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat
 
-    character(*), parameter                                           ::    ProcName='RunInternal'
+    character(*), parameter                                           ::    ProcName='Run_0D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
+    type(Input_Type)                                                  ::    InputLoc
 
     if (size(Output,1) /= This%NbOutputs) call Error%Raise('Passed down an output array of incorrect length',                  &
                                                                                                                ProcName=ProcName)
 
-    i = 1
-    do i = 1, This%NbModels
-      call This%PCEModels(i)%Run(Input=Input, Output=Output(i:i))
-    end do
+    if (This%InputProcessor%IsConstructed() ) then
+      call This%InputProcessor%ProcessInput(Input=Input, ProcessedInput=InputLoc)
+      i = 1
+      do i = 1, This%NbModels
+        call This%PCEModels(i)%Run(Input=InputLoc, Output=Output(i:i))
+      end do
+    else
+      i = 1
+      do i = 1, This%NbModels
+        call This%PCEModels(i)%Run(Input=Input, Output=Output(i:i))
+      end do
+    end if
 
     if (present(Stat)) Stat = 0
 

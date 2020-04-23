@@ -50,168 +50,168 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Initialize(This)
 
-    class(IScalarDirect_Type), intent(inout)                          ::    This
+  class(IScalarDirect_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
-    if (.not. This%Initialized) then
-      This%Name = 'IScalarDirect'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
-
-    class(IScalarDirect_Type), intent(inout)                          ::    This
-
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Initialize'
+  if (.not. This%Initialized) then
+    This%Name = 'IScalarDirect'
+    This%Initialized = .true.
     call This%SetDefaults()
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(IScalarDirect_Type), intent(inout)                          ::    This
+  class(IScalarDirect_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
-    This%Dependency=''
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
+  call This%SetDefaults()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine SetDefaults(This)
 
-    class(IScalarDirect_Type), intent(inout)                          ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+  class(IScalarDirect_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    VarI0D
-    logical                                                           ::    Found
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  character(*), parameter                                             ::    ProcName='SetDefaults'
+  This%Dependency=''
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    ParameterName = 'dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%Dependency = VarC0D
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    This%Constructed = .true.
+  class(IScalarDirect_Type), intent(inout)                            ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    VarC0D
+  integer                                                             ::    VarI0D
+  logical                                                             ::    Found
+  if (This%Constructed) call This%Reset()
+  if (.not. This%Initialized) call This%Initialize()
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    type(InputSection_Type)                                           ::    GetInput
+  ParameterName = 'dependency'
+  call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%Dependency = VarC0D
 
-    class(IScalarDirect_Type), intent(in)                             ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  This%Constructed = .true.
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  type(InputSection_Type)                                             ::    GetInput
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
-    call GetInput%AddParameter(Name='dependency', Value=This%Dependency)
+  class(IScalarDirect_Type), intent(in)                               ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue(This, Input)
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    real(rkp)                                                         ::    GetValue
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    class(IScalarDirect_Type), intent(in)                             ::    This
-    type(Input_Type), intent(in)                                      ::    Input
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  call GetInput%AddParameter(Name='dependency', Value=This%Dependency)
 
-    character(*), parameter                                           ::    ProcName='GetValue'
-    integer                                                           ::    StatLoc=0
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    call Input%GetValue(Value=GetValue, Label=This%Dependency)
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetValue(This, Input)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  real(rkp)                                                           ::    GetValue
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue(This, Input, Format)
+  class(IScalarDirect_Type), intent(in)                               ::    This
+  type(Input_Type), intent(in)                                        ::    Input
 
-    character(:), allocatable                                         ::    GetCharValue
+  character(*), parameter                                             ::    ProcName='GetValue'
+  integer                                                             ::    StatLoc=0
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    class(IScalarDirect_Type), intent(in)                             ::    This
-    type(Input_Type), intent(in)                                      ::    Input
-    character(*), optional, intent(in)                                ::    Format
+  call Input%GetValue(Value=GetValue, Label=This%Dependency)
 
-    character(*), parameter                                           ::    ProcName='GetCharValue'
-    character(:), allocatable                                         ::    FormatLoc
-    integer                                                           ::    StatLoc=0
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    FormatLoc = 'G0'
-    if (present(Format)) FormatLoc = Format
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetCharValue(This, Input, Format)
 
-    GetCharValue =  ConvertToString(Value=This%GetValue(Input=Input), Format=FormatLoc)
+  character(:), allocatable                                           ::    GetCharValue
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  class(IScalarDirect_Type), intent(in)                               ::    This
+  type(Input_Type), intent(in)                                        ::    Input
+  character(*), optional, intent(in)                                  ::    Format
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+  character(*), parameter                                             ::    ProcName='GetCharValue'
+  character(:), allocatable                                           ::    FormatLoc
+  integer                                                             ::    StatLoc=0
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    class(IScalarDirect_Type), intent(out)                            ::    LHS
-    class(IScalarValue_Type), intent(in)                              ::    RHS
+  FormatLoc = 'G0'
+  if (present(Format)) FormatLoc = Format
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  GetCharValue =  ConvertToString(Value=This%GetValue(Input=Input), Format=FormatLoc)
 
-    select type (RHS)
-  
-      type is (IScalarDirect_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-        if (RHS%Constructed) then
-          LHS%Dependency = RHS%Dependency
-        end if
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+!!--------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    end select
+  class(IScalarDirect_Type), intent(out)                              ::    LHS
+  class(IScalarValue_Type), intent(in)                                ::    RHS
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+
+  select type (RHS)
+
+    type is (IScalarDirect_Type)
+      call LHS%Reset()
+      LHS%Initialized = RHS%Initialized
+      LHS%Constructed = RHS%Constructed
+      if (RHS%Constructed) then
+        LHS%Dependency = RHS%Dependency
+      end if
+
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+
+  end select
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

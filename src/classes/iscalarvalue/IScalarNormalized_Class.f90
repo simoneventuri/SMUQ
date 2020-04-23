@@ -16,39 +16,40 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module IScalarFixed_Class
+module IScalarNormalized_Class
 
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
+use StringRoutines_Module
+use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use Input_Class                                                   ,only:    Input_Type
-use StringRoutines_Module
 
 implicit none
 
 private
 
-public                                                                ::    IScalarFixed_Type
+public                                                                ::    IScalarNormalized_Type
 
-type, extends(IScalarValue_Type)                                      ::    IScalarFixed_Type
-  real(rkp)                                                           ::    Value
-  character(:), allocatable                                           ::    Label
+type, extends(IScalarValue_Type)                                      ::    IScalarNormalized_Type
+  character(:), allocatable                                           ::    Dependency
+  type(String_Type), allocatable, dimension(:)                        ::    NormDependency
+  integer                                                             ::    NbDependencies
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
-  generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
-  procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
   procedure, public                                                   ::    GetCharValue
   procedure, public                                                   ::    Copy
+  final                                                               ::    Finalizer     
 end type
-
+  
 logical   ,parameter                                                  ::    DebugGlobal = .false.
 
 contains
@@ -56,11 +57,11 @@ contains
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Initialize(This)
 
-  class(IScalarFixed_Type), intent(inout)                             ::    This
+  class(IScalarNormalized_Type), intent(inout)                        ::    This
 
   character(*), parameter                                             ::    ProcName='Initialize'
   if (.not. This%Initialized) then
-    This%Name = 'IScalarFixed'
+    This%Name = 'IScalarNormalized'
     This%Initialized = .true.
     call This%SetDefaults()
   end if
@@ -71,11 +72,15 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
-  class(IScalarFixed_Type), intent(inout)                             ::    This
+  class(IScalarNormalized_Type), intent(inout)                        ::    This
 
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
+  if (allocated(This%NormDependency)) deallocate(This%NormDependency, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%NormDependency', ProcName=ProcName, stat=StatLoc)
+  This%NbDependencies = 0
+  
   call This%SetDefaults()
 
 end subroutine
@@ -84,19 +89,19 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine SetDefaults(This)
 
-  class(IScalarFixed_Type), intent(inout)                             ::    This
+  class(IScalarNormalized_Type), intent(inout)                        ::    This
 
   character(*), parameter                                             ::    ProcName='SetDefaults'
 
-  This%Value = Zero
-  
+  This%Dependency=''
+
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput(This, Input, Prefix)
 
-  class(IScalarFixed_Type), intent(inout)                             ::    This
+  class(IScalarNormalized_Type), intent(inout)                        ::    This
   type(InputSection_Type), intent(in)                                 ::    Input
   character(*), optional, intent(in)                                  ::    Prefix
 
@@ -104,36 +109,37 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    PrefixLoc
   integer                                                             ::    StatLoc=0
   character(:), allocatable                                           ::    ParameterName
-  real(rkp)                                                           ::    VarR0D
+  character(:), allocatable                                           ::    VarC0D
+  integer                                                             ::    VarI0D
   logical                                                             ::    Found
+  integer                                                             ::    i 
+  integer                                                             ::    ii
+
   if (This%Constructed) call This%Reset()
   if (.not. This%Initialized) call This%Initialize()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
-  ParameterName = 'value'
-  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
-  This%Value = VarR0D
+  ParameterName = 'dependency'
+  call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%Dependency = VarC0D
 
-  This%Constructed = .true.
+  ParameterName = 'normalization_dependencies'
+  call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%NormDependency = ConvertToStrings(Value=VarC0D)
 
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
+  This%NbDependencies = size(This%NormDependency,1)
 
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine ConstructCase1(This, Value)
+  i = 1
+  ii = 0
+  do i = 1, This%NbDependencies
+    if (This%NormDependency(i)%GetValue() /= This%Dependency) cycle
+    ii = i 
+    exit 
+  end do
 
-  class(IScalarFixed_Type), intent(inout)                             ::    This
-  real(rkp), intent(in)                                               ::    Value
-
-  character(*), parameter                                             ::    ProcName='ConstructCase1'
-  integer                                                             ::    StatLoc=0
-
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
-
-  This%Value = Value
+  if ( ii == 0 ) call Error%Raise('Main dependency must be one of the ones in the normalization factor list', ProcName=ProcName)
 
   This%Constructed = .true.
 
@@ -145,7 +151,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   type(InputSection_Type)                                             ::    GetInput
 
-  class(IScalarFixed_Type), intent(in)                                ::    This
+  class(IScalarNormalized_Type), intent(in)                           ::    This
   character(*), intent(in)                                            ::    Name
   character(*), optional, intent(in)                                  ::    Prefix
   character(*), optional, intent(in)                                  ::    Directory
@@ -155,7 +161,6 @@ function GetInput(This, Name, Prefix, Directory)
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub
   logical                                                             ::    ExternalFlag=.false.
-
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
   DirectoryLoc = ''
@@ -167,7 +172,9 @@ function GetInput(This, Name, Prefix, Directory)
   if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
   call GetInput%SetName(SectionName = trim(adjustl(Name)))
-  call GetInput%AddParameter(Name='value', Value=ConvertToString(Value=This%Value))
+
+  call GetInput%AddParameter(Name='dependency', Value=This%Dependency)
+  call GetInput%AddParameter(Name='normalization_dependencies', Value=ConvertToString(Values=This%NormDependency, Separator=' '))
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -177,15 +184,27 @@ function GetValue(This, Input)
 
   real(rkp)                                                           ::    GetValue
 
-  class(IScalarFixed_Type), intent(in)                                ::    This
+  class(IScalarNormalized_Type), intent(in)                           ::    This
   type(Input_Type), intent(in)                                        ::    Input
 
   character(*), parameter                                             ::    ProcName='GetValue'
   integer                                                             ::    StatLoc=0
+  real(rkp)                                                           ::    DenSum
+  real(rkp)                                                           ::    VarR0D
+  integer                                                             ::    i
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  GetValue = This%Value
+  DenSum = Zero
+
+  i = 1
+  do i = 1, This%NbDependencies
+    call Input%GetValue(Value=VarR0D, Label=This%NormDependency(i)%GetValue())
+    DenSum = DenSum + VarR0D
+  end do
+
+  call Input%GetValue(Value=GetValue, Label=This%Dependency)
+  GetValue = GetValue / DenSum
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -195,14 +214,13 @@ function GetCharValue(This, Input, Format)
 
   character(:), allocatable                                           ::    GetCharValue
 
-  class(IScalarFixed_Type), intent(in)                                ::    This
+  class(IScalarNormalized_Type), intent(in)                           ::    This
   type(Input_Type), intent(in)                                        ::    Input
   character(*), optional, intent(in)                                  ::    Format
 
   character(*), parameter                                             ::    ProcName='GetCharValue'
   character(:), allocatable                                           ::    FormatLoc
   integer                                                             ::    StatLoc=0
-
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
   FormatLoc = 'G0'
@@ -216,7 +234,7 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Copy(LHS, RHS)
 
-  class(IScalarFixed_Type), intent(out)                               ::    LHS
+  class(IScalarNormalized_Type), intent(out)                          ::    LHS
   class(IScalarValue_Type), intent(in)                                ::    RHS
 
   character(*), parameter                                             ::    ProcName='Copy'
@@ -224,12 +242,15 @@ impure elemental subroutine Copy(LHS, RHS)
 
   select type (RHS)
 
-    type is (IScalarFixed_Type)
+    type is (IScalarNormalized_Type)
       call LHS%Reset()
       LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
-        LHS%Value = RHS%Value
+        LHS%Dependency = RHS%Dependency
+        allocate(LHS%NormDependency, source=RHS%NormDependency, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%NormDependency', ProcName=ProcName, stat=StatLoc)
+        LHS%NbDependencies = RHS%NbDependencies
       end if
 
     class default
@@ -240,4 +261,19 @@ impure elemental subroutine Copy(LHS, RHS)
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
+!!--------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
+
+  type(IScalarNormalized_Type), intent(inout)                         ::    This
+
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
+
+  if (allocated(This%NormDependency)) deallocate(This%NormDependency, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%NormDependency', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
 end module
+  

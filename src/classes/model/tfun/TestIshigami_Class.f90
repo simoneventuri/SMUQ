@@ -27,6 +27,9 @@ use Output_Class                                                  ,only:    Outp
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
+use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
+use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
 
 implicit none
 
@@ -38,13 +41,9 @@ type, extends(TestFunction_Type)                                      ::    Test
   real(rkp)                                                           ::    A
   real(rkp)                                                           ::    B
   real(rkp)                                                           ::    C
-  real(rkp)                                                           ::    X1
-  real(rkp)                                                           ::    X2
-  real(rkp)                                                           ::    X3
-  character(:), allocatable                                           ::    X1_Dependency
-  character(:), allocatable                                           ::    X2_Dependency
-  character(:), allocatable                                           ::    X3_Dependency
-
+  class(IScalarValue_Type), allocatable                               ::    X1
+  class(IScalarValue_Type), allocatable                               ::    X2
+  class(IScalarValue_Type), allocatable                               ::    X3
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -61,293 +60,294 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Initialize(This)
 
-    class(TestIshigami_Type), intent(inout)                           ::    This
+  class(TestIshigami_Type), intent(inout)                           ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                           ::    ProcName='Initialize'
 
-    if (.not. This%Initialized) then
-      This%Name = 'ishigami'
-      This%Initialized = .true.
-    end if
+  if (.not. This%Initialized) then
+    This%Name = 'ishigami'
+    This%Initialized = .true.
+  end if
 
-    call This%SetDefaults()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call This%SetDefaults()
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
-
-    class(TestIshigami_Type), intent(inout)                           ::    This
-
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    This%Initialized = .false.
-    This%Constructed = .false.
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    call This%Initialize()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  class(TestIshigami_Type), intent(inout)                           ::    This
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  character(*), parameter                                           ::    ProcName='Reset'    
+  integer                                                           ::    StatLoc=0
 
-    class(TestIshigami_Type), intent(inout)                           ::    This
-
-    character(*), parameter                                           ::    ProcName='SetDefaults'
-    integer                                                           ::    StatLoc=0
+  This%Initialized = .false.
+  This%Constructed = .false.
 
-    This%A = One
-    This%B = Seven
-    This%C = 0.1_rkp
-    This%X1 = One
-    This%X2 = One
-    This%X3 = One
-    This%X1_Dependency = ''
-    This%X2_Dependency = ''
-    This%X3_Dependency = ''
-    This%Label = 'ishigami'
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
-
-    class(TestIshigami_Type), intent(inout)                           ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    logical                                                           ::    Found
-    real(rkp)                                                         ::    VarR0D
-    integer                                                           ::    VarI0D
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    i
-    logical                                                           ::    MandatoryLoc
-
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
-
-    ParameterName = 'label'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%Label = VarC0D
-
-    ParameterName = 'a'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%A = VarR0D
-
-    ParameterName = 'b'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%B = VarR0D
-
-    ParameterName = 'c'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%C = VarR0D
-
-    SectionName = 'parameters'
-
-    ParameterName = 'x1_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
-    if (Found) This%X1_Dependency = VarC0D
-    MandatoryLoc = .not. Found
-    ParameterName = 'x1'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
-    if (Found) This%X1 = VarR0D
-
-    ParameterName = 'x2_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
-    if (Found) This%X2_Dependency = VarC0D
-    MandatoryLoc = .not. Found
-    ParameterName = 'x2'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
-    if (Found) This%X2 = VarR0D
-
-    ParameterName = 'x3_dependency'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
-    if (Found) This%X3_Dependency = VarC0D
-    MandatoryLoc = .not. Found
-    ParameterName = 'x3'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=MandatoryLoc, Found=Found)
-    if (Found) This%X3 = VarR0D
-
-    This%Constructed = .true.
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
-
-    use StringRoutines_Module
-
-    type(InputSection_Type)                                           ::    GetInput
-    class(TestIshigami_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
-
-    character(*), parameter                                           ::    ProcName='GetInput'
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    character(:), allocatable                                         ::    SectionName
-    integer                                                           ::    i
-
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
-
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
-
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
-
-    call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
-    call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
-    call GetInput%AddParameter(Name='c', Value=ConvertToString(Value=This%C))
-    call GetInput%AddParameter(Name='label', Value=This%Label)
-
-    SectionName='parameters'
-    call GetInput%AddSection(SectionName=SectionName)
-    call GetInput%AddParameter(Name='x1', Value=ConvertToString(Value=This%X1), SectionName=SectionName)
-    call GetInput%AddParameter(Name='x2', Value=ConvertToString(This%X2), SectionName=SectionName)
-    call GetInput%AddParameter(Name='x3', Value=ConvertToString(This%X3), SectionName=SectionName)
-    if (len_trim(This%X1_Dependency) /= 0) call GetInput%AddParameter(Name='x1_dependency', Value=This%X1_Dependency,          &
-                                                                                                         SectionName=SectionName)
-    if (len_trim(This%X2_Dependency) /= 0) call GetInput%AddParameter(Name='x2_dependency', Value=This%X2_Dependency,          &
-                                                                                                         SectionName=SectionName)
-    if (len_trim(This%X3_Dependency) /= 0) call GetInput%AddParameter(Name='x3_dependency', Value=This%X3_Dependency,          &
-                                                                                                         SectionName=SectionName)
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run(This, Input, Output)
-
-    class(TestIshigami_Type), intent(inout)                           ::    This
-    type(Input_Type), intent(in)                                      ::    Input
-    type(Output_Type), intent(inout)                                  ::    Output
-
-    character(*), parameter                                           ::    ProcName='ProcessInput'
-    real(rkp), allocatable, dimension(:,:)                            ::    Ordinate
-    real(rkp)                                                         ::    X1
-    real(rkp)                                                         ::    X2
-    real(rkp)                                                         ::    X3
-    integer                                                           ::    i
-    integer                                                           ::    ii
-    integer                                                           ::    iii
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    VarC0D
-
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-    allocate(Ordinate(1,1), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
-    if (len_trim(This%X1_Dependency) /= 0) then
-      call Input%GetValue(Value=X1, Label=This%X1_Dependency)
-    else
-      X1 = This%X1
-    end if
-    if (len_trim(This%X2_Dependency) /= 0) then
-      call Input%GetValue(Value=X2, Label=This%X2_Dependency)
-    else
-      X2 = This%X2
-    end if
-    if (len_trim(This%X3_Dependency) /= 0) then
-      call Input%GetValue(Value=X3, Label=This%X3_Dependency)
-    else
-      X3 = This%X3
-    end if
-    Ordinate(1,1) = This%ComputeIshigami(This%A, This%B, This%C, X1, X2, X3)
-
-    call Output%Construct(Values=Ordinate, Label=This%Label)
-
-    deallocate(Ordinate, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeIshigami(A, B, C, X1, X2, X3)
-
-    real(rkp)                                                         ::    ComputeIshigami
-
-    real(rkp), intent(in)                                             ::    A
-    real(rkp), intent(in)                                             ::    B
-    real(rkp), intent(in)                                             ::    C
-    real(rkp), intent(in)                                             ::    X1
-    real(rkp), intent(in)                                             ::    X2
-    real(rkp), intent(in)                                             ::    X3
-
-    character(*), parameter                                           ::    ProcName='ComputeIshigami'
-
-    ComputeIshigami = A*dsin(X1) + B*(dsin(X2))**2 + C*(X3**4)*dsin(X1)
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
-
-    class(TestIshigami_Type), intent(out)                             ::    LHS
-    class(TestFunction_Type), intent(in)                              ::    RHS
-
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    select type (RHS)
-      type is (TestIshigami_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-        if (RHS%Constructed) then
-          LHS%Label = RHS%Label
-          LHS%A = RHS%A
-          LHS%B = RHS%B
-          LHS%C = RHS%C
-          LHS%X1 = RHS%X1
-          LHS%X2 = RHS%X2
-          LHS%X3 = RHS%X3
-          LHS%X1_Dependency = RHS%X1_Dependency
-          LHS%X2_Dependency = RHS%X2_Dependency
-          LHS%X3_Dependency = RHS%X3_Dependency
-        end if
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(TestIshigami_Type), intent(inout)                            ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%X1)) deallocate(This%X1, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%X1', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%X2)) deallocate(This%X2, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%X2', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%X3)) deallocate(This%X3, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%X3', ProcName=ProcName, stat=StatLoc)
+
+  call This%Initialize()
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine SetDefaults(This)
+
+  class(TestIshigami_Type), intent(inout)                           ::    This
+
+  character(*), parameter                                           ::    ProcName='SetDefaults'
+  integer                                                           ::    StatLoc=0
+
+  This%A = One
+  This%B = Seven
+  This%C = 0.1_rkp
+  This%Label = 'ishigami'
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
+
+  class(TestIshigami_Type), intent(inout)                           ::    This
+  type(InputSection_Type), intent(in)                               ::    Input
+  character(*), optional, intent(in)                                ::    Prefix
+
+  character(*), parameter                                           ::    ProcName='ConstructInput'
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    PrefixLoc
+  character(:), allocatable                                         ::    ParameterName
+  character(:), allocatable                                         ::    SectionName
+  character(:), allocatable                                         ::    SubSectionName
+  logical                                                           ::    Found
+  real(rkp)                                                         ::    VarR0D
+  integer                                                           ::    VarI0D
+  character(:), allocatable                                         ::    VarC0D
+  integer                                                           ::    i
+  logical                                                           ::    MandatoryLoc
+  type(InputSection_Type), pointer                                  ::    InputSection=>null()
+
+  if (This%Constructed) call This%Reset()
+  if (.not. This%Initialized) call This%Initialize()
+
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
+
+  ParameterName = 'label'
+  call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%Label = VarC0D
+
+  ParameterName = 'a'
+  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%A = VarR0D
+
+  ParameterName = 'b'
+  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%B = VarR0D
+
+  ParameterName = 'c'
+  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%C = VarR0D
+
+  SectionName = 'parameters'
+
+  SubSectionName = SectionName // '>x1'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+  call IScalarValue_Factory%Construct(Object=This%X1, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
+
+  SubSectionName = SectionName // '>x2'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+  call IScalarValue_Factory%Construct(Object=This%X2, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
+
+  SubSectionName = SectionName // '>x3'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+  call IScalarValue_Factory%Construct(Object=This%X3, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
+
+  This%Constructed = .true.
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
+
+  use StringRoutines_Module
+
+  type(InputSection_Type)                                           ::    GetInput
+  class(TestIshigami_Type), intent(in)                              ::    This
+  character(*), intent(in)                                          ::    Name
+  character(*), optional, intent(in)                                ::    Prefix
+  character(*), optional, intent(in)                                ::    Directory
+
+  character(*), parameter                                           ::    ProcName='GetInput'
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    PrefixLoc
+  character(:), allocatable                                         ::    DirectoryLoc
+  character(:), allocatable                                         ::    DirectorySub
+  logical                                                           ::    ExternalFlag=.false.
+  character(:), allocatable                                         ::    SectionName
+  character(:), allocatable                                         ::    SubSectionName
+  integer                                                           ::    i
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
+
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
+
+  call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
+  call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
+  call GetInput%AddParameter(Name='c', Value=ConvertToString(Value=This%C))
+  call GetInput%AddParameter(Name='label', Value=This%Label)
+
+  SectionName='parameters'
+  call GetInput%AddSection(SectionName=SectionName)
+  SubSectionName = 'x1'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%X1, Name=SubSectionName, Prefix=PrefixLoc,     &
+                                                                       Directory=DirectorySub), To_SubSection=SectionName)
+
+  SubSectionName = 'x2'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%X2, Name=SubSectionName, Prefix=PrefixLoc,     &
+                                                                       Directory=DirectorySub), To_SubSection=SectionName)
+
+  SubSectionName = 'x3'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%X3, Name=SubSectionName, Prefix=PrefixLoc,     &
+                                                                       Directory=DirectorySub), To_SubSection=SectionName)
+
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Run(This, Input, Output)
+
+  class(TestIshigami_Type), intent(inout)                           ::    This
+  type(Input_Type), intent(in)                                      ::    Input
+  type(Output_Type), intent(inout)                                  ::    Output
+
+  character(*), parameter                                           ::    ProcName='ProcessInput'
+  real(rkp), allocatable, dimension(:,:)                            ::    Ordinate
+  real(rkp)                                                         ::    X1
+  real(rkp)                                                         ::    X2
+  real(rkp)                                                         ::    X3
+  integer                                                           ::    i
+  integer                                                           ::    ii
+  integer                                                           ::    iii
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    VarC0D
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  allocate(Ordinate(1,1), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
+
+  X1 = This%X1%GetValue(Input=Input)
+  X2 = This%X2%GetValue(Input=Input)
+  X3 = This%X3%GetValue(Input=Input)
+
+  Ordinate(1,1) = This%ComputeIshigami(This%A, This%B, This%C, X1, X2, X3)
+
+  call Output%Construct(Values=Ordinate, Label=This%Label)
+
+  deallocate(Ordinate, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+function ComputeIshigami(A, B, C, X1, X2, X3)
+
+  real(rkp)                                                         ::    ComputeIshigami
+
+  real(rkp), intent(in)                                             ::    A
+  real(rkp), intent(in)                                             ::    B
+  real(rkp), intent(in)                                             ::    C
+  real(rkp), intent(in)                                             ::    X1
+  real(rkp), intent(in)                                             ::    X2
+  real(rkp), intent(in)                                             ::    X3
+
+  character(*), parameter                                           ::    ProcName='ComputeIshigami'
+
+  ComputeIshigami = A*dsin(X1) + B*(dsin(X2))**2 + C*(X3**4)*dsin(X1)
+
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
+
+  class(TestIshigami_Type), intent(out)                             ::    LHS
+  class(TestFunction_Type), intent(in)                              ::    RHS
+
+  character(*), parameter                                           ::    ProcName='Copy'
+  integer                                                           ::    StatLoc=0
+
+  select type (RHS)
+    type is (TestIshigami_Type)
+      call LHS%Reset()
+      LHS%Initialized = RHS%Initialized
+      LHS%Constructed = RHS%Constructed
+      if (RHS%Constructed) then
+        LHS%Label = RHS%Label
+        LHS%A = RHS%A
+        LHS%B = RHS%B
+        LHS%C = RHS%C
+        allocate(LHS%X1, source=RHS%X1, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%X1', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%X2, source=RHS%X2, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%X2', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%X3, source=RHS%X3, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%X3', ProcName=ProcName, stat=StatLoc)
+      end if
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+  end select
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
+
+  type(TestIshigami_Type), intent(inout)                            ::    This
+
+  character(*), parameter                                           ::    ProcName='Finalizer'
+  integer                                                           ::    StatLoc=0
+
+  if (allocated(This%X1)) deallocate(This%X1, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%X1', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%X2)) deallocate(This%X2, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%X2', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%X3)) deallocate(This%X3, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%X3', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

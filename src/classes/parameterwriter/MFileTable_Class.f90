@@ -28,9 +28,9 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use MFileInput_Class                                              ,only:    MFileInput_Type
-use MParamTable_Class                                             ,only:    MParamTable_Type
-use MParamTableContainer_Class                                    ,only:    MParamTableContainer_Type
-use MParamTable_Factory_Class                                     ,only:    MParamTable_Factory
+use ITableValue_Class                                             ,only:    ITableValue_Type
+use ITableValueContainer_Class                                    ,only:    ITableValueContainer_Type
+use ITableValue_Factory_Class                                     ,only:    ITableValue_Factory
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use Input_Class                                                   ,only:    Input_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
@@ -42,7 +42,7 @@ private
 public                                                                ::    MFileTable_Type
 
 type, extends(MFileInput_Type)                                        ::    MFileTable_Type
-  type(MParamTableContainer_Type), allocatable, dimension(:)          ::    MParam
+  type(ITableValueContainer_Type), allocatable, dimension(:)          ::    MParam
   integer                                                             ::    NbMParams=0
   integer                                                             ::    AbscissaColumn=1
   type(LinkedList0D_Type), allocatable, dimension(:)                  ::    ParamColumn
@@ -125,7 +125,7 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    class(MParamTable_Type), allocatable                              ::    MParam
+    class(ITableValue_Type), allocatable                              ::    MParam
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
@@ -188,7 +188,7 @@ contains
 
       SubSectionName = SubSectionName // '>parameter'
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-      call MParamTable_Factory%Construct(Object=MParam, Input=InputSection, Prefix=PrefixLoc)
+      call ITableValue_Factory%Construct(Object=MParam, Input=InputSection, Prefix=PrefixLoc)
       nullify(InputSection)
       call This%MParam(i)%Set(Object=MParam)
 
@@ -230,7 +230,7 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    class(MParamTable_Type), pointer                                  ::    MParam=>null()
+    class(ITableValue_Type), pointer                                  ::    MParam=>null()
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
@@ -266,7 +266,7 @@ contains
 
       MParam => This%MParam(i)%GetPointer()
       if (ExternalFlag) DirectorySub = DirectoryLoc // '/parameter' // ConvertToString(Value=i)
-      call GetInput%AddSection(Section=MParamTable_Factory%GetObjectInput(Name='parameter', Object=MParam,            &
+      call GetInput%AddSection(Section=ITableValue_Factory%GetObjectInput(Name='parameter', Object=MParam,            &
                                                          Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SubSectionName)
       nullify(MParam)
     end do
@@ -287,7 +287,7 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbLines=0
     character(:), allocatable                                         ::    VarC0D
-    class(MParamTable_Type), pointer                                  ::    MParamPointer=>null()
+    class(ITableValue_Type), pointer                                  ::    MParamPointer=>null()
     integer                                                           ::    i, ii, iii
     integer, allocatable, dimension(:)                                ::    VarI1D
     type(String_Type), allocatable, dimension(:,:)                    ::    NewEntry

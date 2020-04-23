@@ -27,9 +27,9 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use MFileInput_Class                                              ,only:    MFileInput_Type
-use MParamScalar_Class                                            ,only:    MParamScalar_Type
-use MParamScalarContainer_Class                                   ,only:    MParamScalarContainer_Type
-use MParamScalar_Factory_Class                                    ,only:    MParamScalar_Factory
+use IScalarValue_Class                                            ,only:    IScalarValue_Type
+use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
+use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use Input_Class                                                   ,only:    Input_Type
 
@@ -40,7 +40,7 @@ private
 public                                                                ::    MFileScalar_Type
 
 type, extends(MFileInput_Type)                                        ::    MFileScalar_Type
-  type(MParamScalarContainer_Type), allocatable, dimension(:)         ::    MParam
+  type(IScalarValueContainer_Type), allocatable, dimension(:)         ::    MParam
   integer                                                             ::    NbMParams=0
   type(String_Type), allocatable, dimension(:)                        ::    ParamIdentifier
   type(String_Type), allocatable, dimension(:)                        ::    ParamFormat
@@ -126,7 +126,7 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    class(MParamScalar_Type), allocatable                             ::    MParam
+    class(IScalarValue_Type), allocatable                             ::    MParam
     character(:), allocatable                                         ::    ParameterName
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
@@ -180,7 +180,7 @@ contains
 
       SubSectionName = SubSectionName // '>parameter'
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-      call MParamScalar_Factory%Construct(Object=MParam, Input=InputSection, Prefix=PrefixLoc)
+      call IScalarValue_Factory%Construct(Object=MParam, Input=InputSection, Prefix=PrefixLoc)
       call This%MParam(i)%Set(Object=MParam)
       nullify(InputSection)
 
@@ -209,7 +209,7 @@ contains
     character(:), allocatable                                         ::    DirectorySub
     logical                                                           ::    ExternalFlag=.false.
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    class(MParamScalar_Type), pointer                                 ::    MParam=>null()
+    class(IScalarValue_Type), pointer                                 ::    MParam=>null()
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    i
@@ -239,7 +239,7 @@ contains
       call GetInput%AddParameter(Name='format', Value=This%ParamFormat(i)%GetValue(), SectionName=SubSectionName)
       MParam => This%MParam(i)%GetPointer()
       if (ExternalFlag) DirectorySub = DirectoryLoc // '/parameter' // ConvertToString(Value=i)
-      call GetInput%AddSection(Section=MParamScalar_Factory%GetObjectInput(Name='parameter', Object=MParam,           &
+      call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Name='parameter', Object=MParam,           &
                                                          Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SubSectionName)
       nullify(MParam)
     end do
@@ -260,7 +260,7 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbLines=0
     character(:), allocatable                                         ::    VarC0D
-    class(MParamScalar_Type), pointer                                 ::    MParamPointer=>null()
+    class(IScalarValue_Type), pointer                                 ::    MParamPointer=>null()
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    IndexLoc

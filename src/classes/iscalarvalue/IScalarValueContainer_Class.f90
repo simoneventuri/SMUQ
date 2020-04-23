@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module IScalarContainer_Class
+module IScalarValueContainer_Class
 
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -27,9 +27,9 @@ implicit none
 
 private
 
-public                                                                ::    IScalarContainer_Type
+public                                                                ::    IScalarValueContainer_Type
 
-type                                                                  ::    IScalarContainer_Type
+type                                                                  ::    IScalarValueContainer_Type
   class(IScalarValue_Type), allocatable                               ::    Object
 contains
   procedure, public                                                   ::    Get
@@ -45,7 +45,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Set(This, Object)
 
-    class(IScalarContainer_Type), intent(inout)                       ::    This
+    class(IScalarValueContainer_Type), intent(inout)                  ::    This
     class(IScalarValue_Type), intent(in)                              ::    Object
 
     character(*), parameter                                           ::    ProcName='Set'
@@ -61,7 +61,7 @@ contains
 
     class(IScalarValue_Type), allocatable                             ::    Get
 
-    class(IScalarContainer_Type), intent(in)                          ::    This
+    class(IScalarValueContainer_Type), intent(in)                     ::    This
 
     character(*), parameter                                           ::    ProcName='Get'
     integer                                                           ::    StatLoc=0
@@ -78,7 +78,7 @@ contains
 
     class(IScalarValue_Type), pointer                                 ::    GetPointer
 
-    class(IScalarContainer_Type), target, intent(in)                  ::    This
+    class(IScalarValueContainer_Type), target, intent(in)             ::    This
 
     character(*), parameter                                           ::    ProcName='GetPointer'
     if (.not. allocated(This%Object)) call Error%Raise(Line='Member object defined', ProcName=ProcName)
@@ -91,8 +91,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy(LHS, RHS)
 
-    class(IScalarContainer_Type), intent(inout)                       ::    LHS
-    class(IScalarContainer_Type), intent(in)                          ::    RHS
+    class(IScalarValueContainer_Type), intent(inout)                  ::    LHS
+    class(IScalarValueContainer_Type), intent(in)                     ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    StatLoc=0
@@ -111,7 +111,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer(This)
 
-    type(IScalarContainer_Type), intent(inout)                        ::    This
+    type(IScalarValueContainer_Type), intent(inout)                   ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc

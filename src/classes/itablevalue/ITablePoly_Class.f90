@@ -27,7 +27,7 @@ use Error_Class                                                   ,only:    Erro
 use Input_Class                                                   ,only:    Input_Type
 use ITableValue_Class                                             ,only:    ITableValue_Type
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
-use IScalarContainer_Class                                        ,only:    IScalarContainer_Type
+use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 
 implicit none
@@ -37,7 +37,7 @@ private
 public                                                                ::    ITablePoly_Type
 
 type, extends(ITableValue_Type)                                       ::    ITablePoly_Type
-  type(IScalarContainer_Type), dimension(:), allocatable              ::    PolyCoeff
+  type(IScalarValueContainer_Type), dimension(:), allocatable         ::    PolyCoeff
   integer                                                             ::    Order
 contains
   procedure, public                                                   ::    Initialize
@@ -160,7 +160,7 @@ end subroutine
 subroutine ConstructCase1(This, PolyCoeff)
 
   class(ITablePoly_Type), intent(inout)                               ::    This
-  class(IScalarContainer_Type), dimension(:), intent(in)              ::    PolyCoeff
+  class(IScalarValueContainer_Type), dimension(:), intent(in)         ::    PolyCoeff
 
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0

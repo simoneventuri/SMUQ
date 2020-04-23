@@ -26,6 +26,7 @@ use IScalarValue_Class                                            ,only:    ISca
 use IScalarDirect_Class                                           ,only:    IScalarDirect_Type
 use IScalarTransform_Class                                        ,only:    IScalarTransform_Type
 use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
+use IScalarNormalized_Class                                       ,only:    IScalarNormalized_Type
 
 implicit none
 
@@ -69,6 +70,9 @@ subroutine Construct_C0D(Object, DesiredType)
 
     case('transform')
       allocate(IScalarTransform_Type :: Object)
+
+    case('normalized')
+      allocate(IScalarNormalized_Type :: Object)
 
     case default
       call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
@@ -132,6 +136,9 @@ function GetOption(Object)
 
     type is (IScalarTransform_Type)
       GetOption = 'transform'
+
+    type is (IScalarNormalized_Type)
+      GetOption = 'normalized'
 
     class default
       call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
