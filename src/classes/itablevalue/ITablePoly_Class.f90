@@ -138,7 +138,6 @@ subroutine ConstructInput(This, Input, Prefix)
   SectionName = 'coefficients'    
 
   i = 1
-  ii = 0
   do i = 1, This%Order + 1
     SubSectionName = SectionName // '>coefficient' // Convert_To_String(i)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
@@ -148,8 +147,6 @@ subroutine ConstructInput(This, Input, Prefix)
     if (StatLoc /= 0) call Error%Deallocate(Name='PolyCoeff', ProcName=ProcName, stat=StatLoc)
     nullify(InputSection)
   end do
-
-  if (ii <= 0) call Error%Raise(Line='Specified polynomial but no coefficients were given', ProcName=ProcName)
 
   This%Constructed = .true.
 

@@ -473,6 +473,7 @@ contains
     character(*), parameter                                           ::    ProcName='WriteInput'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
+    integer                                                           ::    ii
     class(MFileInput_Type), pointer                                   ::    MFileInputPtr=>null()
     type(String_Type), allocatable, dimension(:)                      ::    WorkStrings1
     type(String_Type), allocatable, dimension(:)                      ::    WorkStrings2
@@ -487,7 +488,10 @@ contains
 
     i = 1
     do i = 1, This%NbMFileInputs
-      WorkStrings1 = WorkStrings2
+      ii = 1
+      do ii = 1, size(WorkStrings2)
+        WorkStrings1(ii) = WorkStrings2(ii)%GetValue()
+      end do
       MFileInputPtr => This%MFileInputs(i)%GetPointer()
       call MFileInputPtr%WriteInput(Input=Input, Template=WorkStrings1, ProcessedTemplate=WorkStrings2, File=This%ModelFile)
       nullify(MFileInputPtr)

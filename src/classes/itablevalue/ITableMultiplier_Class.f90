@@ -24,6 +24,7 @@ use String_Library
 use StringRoutines_Module
 use ComputingRoutines_Module
 use ArrayIORoutines_Module
+use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use ITableValue_Class                                             ,only:    ITableValue_Type
@@ -173,7 +174,7 @@ subroutine ConstructInput(This, Input, Prefix)
   deallocate(VarR2D, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
 
-  SectionName = 'mutiplier'
+  SectionName = 'multiplier'
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%Multiplier, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -217,13 +218,15 @@ function GetInput(This, Name, Prefix, Directory)
 
   call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
+  if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
+
   SectionName = 'original_values'
   call GetInput%AddSection(SectionName=SectionName)
   call GetInput%AddParameter(Name='abscissa_column', Value='1', SectionName=SectionName)
   call GetInput%AddParameter(Name='parameter_column', Value='2', SectionName=SectionName)
 
   SubSectionName = 'values'
-  call GetInput%AddSection(SectionName=SubSectionName)
+  call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
   SubSectionName = SectionName // '>values'
   call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   if (ExternalFlag) then

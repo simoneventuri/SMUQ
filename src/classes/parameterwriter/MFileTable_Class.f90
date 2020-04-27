@@ -33,6 +33,7 @@ use ITableValueContainer_Class                                    ,only:    ITab
 use ITableValue_Factory_Class                                     ,only:    ITableValue_Factory
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use Input_Class                                                   ,only:    Input_Type
+use List1D_Class                                                  ,only:    List1D_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 
 implicit none
@@ -45,7 +46,7 @@ type, extends(MFileInput_Type)                                        ::    MFil
   type(ITableValueContainer_Type), allocatable, dimension(:)          ::    MParam
   integer                                                             ::    NbMParams=0
   integer                                                             ::    AbscissaColumn=1
-  type(LinkedList0D_Type), allocatable, dimension(:)                  ::    ParamColumn
+  type(List1D_Type), allocatable, dimension(:)                        ::    ParamColumn
   type(String_Type), allocatable, dimension(:)                        ::    ParamFormat
   character(:), allocatable                                           ::    Identifier
 contains
@@ -147,6 +148,7 @@ contains
     if (len_trim(VarC0D) == 0) call Error%Raise('Specified an empty identifier', ProcName=ProcName)
     This%Identifier = VarC0D
 
+    This%AbscissaColumn = 1
     ParameterName = 'abscissa_column'
     call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., Found=Found)
     if (Found) This%AbscissaColumn = VarI0D  
@@ -181,9 +183,10 @@ contains
       if (Found) call This%ParamFormat(i)%Set_Value(Value=VarC0D)
 
       ParameterName = 'column'
-      call Input%GetValue(Values=VarI1D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+      call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+      VarI1D = ConvertToIntegers(String=VarC0D)
       if (any(VarI1D <= 0)) call Error%Raise(Line='Specified column 0 or less', ProcName=ProcName)
-      call This%ParamColumn(i)%Append(Values=VarI1D)
+      call This%ParamColumn(i)%Set(Values=VarI1D)
       call ColumnRecord%Append(Values=VarI1D)
 
       SubSectionName = SubSectionName // '>parameter'
@@ -194,6 +197,9 @@ contains
 
       deallocate(MParam, stat=StatLoc)
       if (StatLoc /= 0) call Error%Deallocate(Name='MParam', ProcName=ProcName, stat=StatLoc)
+
+      deallocate(VarI1D, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)
     end do
 
     call ColumnRecord%Get(Values=VarI1D)
@@ -257,7 +263,9 @@ contains
 
     i = 1
     do i = 1, This%NbMParams
-      SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
+      SubSectionName = 'parameter' // ConvertToString(Value=i)
+      call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+      SubSectionName = SectionName // '>' // SubSectionName 
       call GetInput%AddParameter(Name='format', Value=This%ParamFormat(i)%GetValue(), SectionName=SubSectionName)
       call This%ParamColumn(i)%Get(Values=VarI1D)
       call GetInput%AddParameter(Name='column', Value=ConvertToString(Values=VarI1D), SectionName=SubSectionName)
@@ -288,11 +296,12 @@ contains
     integer                                                           ::    NbLines=0
     character(:), allocatable                                         ::    VarC0D
     class(ITableValue_Type), pointer                                  ::    MParamPointer=>null()
-    integer                                                           ::    i, ii, iii
+    integer                                                           ::    i, ii, iii, iv
     integer, allocatable, dimension(:)                                ::    VarI1D
     type(String_Type), allocatable, dimension(:,:)                    ::    NewEntry
     integer                                                           ::    NbEntries
     character(:), allocatable                                         ::    CommentChar
+    integer                                                           ::    CommentCharLen
     character(:), allocatable                                         ::    SeparatorChar
     real(rkp), allocatable, dimension(:)                              ::    Abscissa
     type(String_Type), allocatable, dimension(:)                      ::    VarString1D
@@ -306,10 +315,12 @@ contains
                                                                                                       'sizes', ProcName=ProcName)
 
     CommentChar = File%GetComment()
+    CommentCharLen = len_trim(CommentChar)
     SeparatorChar = File%GetSeparator()
     NbColumns = 0
     TableStart = 0
     TableEnd = 0
+    NbEntries = 0
 
     NbLines = size(Template,1)
 
@@ -317,6 +328,8 @@ contains
     ii = 0
     do i = 1, NbLines
       VarC0D = trim(adjustl(Template(i)%GetValue()))
+      if (len_trim(VarC0D) == 0) cycle
+      if (VarC0D(1:CommentCharLen) == CommentChar) cycle
       if (VarC0D == '{' // This%Identifier // '}') then
         if (TableStart == 0) then
           TableStart = i
@@ -329,18 +342,29 @@ contains
         end if
       end if
       if (TableStart == 0) cycle
-      if (VarC0D(1:1) /= CommentChar) NbEntries = NbEntries + 1
+      if (TableEnd /= 0) cycle
+      NbEntries = NbEntries + 1
     end do
-
 
     if (TableStart - TableEnd == 1) call Error%Raise('Specified an empty template table', ProcName=ProcName)
     if (TableStart == 0) call Error%Raise('Did not find start of table: ' // This%Identifier, ProcName=ProcName)
     if (TableEnd == 0) call Error%Raise('Did not find end of table: ' // This%Identifier, ProcName=ProcName)
 
-    if (TableStart > 1) ProcessedTemplate(1:TableStart-1) = Template(1:TableStart-1)
-    ProcessedTemplate(TableStart:TableEnd-2) = Template(TableStart+1:TableEnd-1)
-    if (TableEnd < NbLines) ProcessedTemplate(TableEnd-1:Nblines-2) = Template(TableEnd+1:NbLines)
-    ProcessedTemplate(NbLines-1:NbLines) = '' 
+    i = TableStart
+    do i = TableStart, TableEnd-2
+      ProcessedTemplate(i) = Template(i+1)
+    end do
+    ProcessedTemplate(TableEnd-1) = ''
+    ProcessedTemplate(TableEnd) = ''
+
+    if (TableEnd < NbLines) then
+      i = TableEnd-1
+      do i = TableEnd-1, Nblines-2
+        ProcessedTemplate(i) = Template(i+2)
+      end do
+    end if
+    ProcessedTemplate(NbLines-1) = '' 
+    ProcessedTemplate(NbLines) = '' 
 
     TableEnd = TableEnd - 2
 
@@ -348,16 +372,19 @@ contains
     if (StatLoc /= 0) call Error%Allocate(Name='Abscissa', ProcName=ProcName, stat=StatLoc)
     Abscissa = Zero
 
-    call ProcessedTemplate(i)%Parse(Strings=VarString1D, Separator=SeparatorChar)
+    call ProcessedTemplate(TableStart)%Parse(Strings=VarString1D, Separator=SeparatorChar)
     NbColumns = size(VarString1D)
     deallocate(VarString1D, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
     if (This%AbscissaColumn <= NbColumns) then
       i = 1
+      ii = 0
       do i = TableStart, TableEnd
         VarC0D = trim(adjustl(ProcessedTemplate(i)%GetValue()))  
-        if (VarC0D(1:1) == CommentChar) cycle
+        if (len_trim(VarC0D) == 0) cycle
+        if (VarC0D(1:CommentCharLen) == CommentChar) cycle
+        ii = ii + 1
         call ProcessedTemplate(i)%Parse(Strings=VarString1D, Separator=SeparatorChar)
         Abscissa(ii) = ConvertToReal(String=VarString1D(This%AbscissaColumn)%GetValue())
       end do
@@ -377,13 +404,17 @@ contains
     ii = 0
     do i = TableStart, TableEnd
       VarC0D = trim(adjustl(ProcessedTemplate(i)%GetValue()))  
-      if (VarC0D(1:1) == CommentChar) cycle
+      if (len_trim(VarC0D) == 0) cycle
+      if (VarC0D(1:CommentCharLen) == CommentChar) cycle
       ii = ii + 1
       call ProcessedTemplate(i)%Parse(Strings=VarString1D, Separator=SeparatorChar)
       iii = 1
       do iii = 1, This%NbMParams
         call This%ParamColumn(iii)%Get(Values=VarI1D)
-        VarString1D(VarI1D) = NewEntry(ii,iii)
+        iv = 1
+        do iv = 1, size(VarI1D,1)
+          VarString1D(VarI1D(iv)) = NewEntry(ii,iii)%GetValue()
+        end do
         deallocate(VarI1D, stat=StatLoc)
         if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)
       end do
