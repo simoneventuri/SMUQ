@@ -21,7 +21,6 @@ module ITableCrossOver_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use String_Library
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use StringRoutines_Module

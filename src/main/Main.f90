@@ -1,7 +1,6 @@
 program SMUQ
 
   use Input_Library
-  use String_Library
   use Test_Module
   use CommandRoutines_Module
   use Logger_Class                                                  ,only:    Logger

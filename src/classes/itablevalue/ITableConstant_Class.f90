@@ -20,7 +20,6 @@ module ITableConstant_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error

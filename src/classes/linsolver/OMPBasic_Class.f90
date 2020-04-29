@@ -111,8 +111,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use String_Library
-
     class(OMPBasic_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
@@ -163,8 +161,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1(This, MaxNbFeatures, Tolerance, CVErrorMethod)
-
-    use String_Library
 
     class(OMPBasic_Type), intent(inout)                               ::    This
     integer, optional, intent(in)                                     ::    MaxNbFeatures

@@ -20,7 +20,6 @@ module IndexSetScheme_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use ComputingRoutines_Module
 use StringRoutines_Module
 use IndexSet_Class                                                ,only:    IndexSet_Type

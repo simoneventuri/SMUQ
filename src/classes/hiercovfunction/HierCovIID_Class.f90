@@ -20,7 +20,6 @@ module HierCovIID_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use StringRoutines_Module
 use CommandRoutines_Module
 use ComputingRoutines_Module

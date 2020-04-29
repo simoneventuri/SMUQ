@@ -21,7 +21,6 @@ module ModelInternal_class
 use Input_Library
 use Parameters_Library
 use StringRoutines_Module
-use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type

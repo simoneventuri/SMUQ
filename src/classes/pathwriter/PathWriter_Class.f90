@@ -21,7 +21,6 @@ module PathWriter_Class
 use Input_Library
 use Parameters_Library
 use StringRoutines_Module
-use String_Library
 use ArrayIORoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -130,7 +129,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use String_Library
     use StringRoutines_Module
     class(PathWriter_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input

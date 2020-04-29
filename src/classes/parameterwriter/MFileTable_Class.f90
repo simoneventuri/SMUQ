@@ -18,7 +18,6 @@
 
 module MFileTable_Class
 
-use String_Library
 use Input_Library
 use Parameters_Library
 use StringRoutines_Module

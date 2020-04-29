@@ -330,8 +330,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ListGetC1D(This, Values, NodeMin, NodeMax)
 
-    use String_Library
-
     class(LinkedList0D_Type), intent(inout)                           ::    This
     type(String_Type), allocatable, dimension(:), intent(out)         ::    Values
     integer, optional, intent(in)                                     ::    NodeMin

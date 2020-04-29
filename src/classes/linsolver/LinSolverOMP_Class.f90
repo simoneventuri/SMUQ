@@ -126,8 +126,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1(This, OMPMethod)
 
-    use String_Library
-
     class(LinSolverOMP_Type), intent(inout)                           ::    This
     class(OMPMethod_Type), intent(in)                                 ::    OMPMethod
 

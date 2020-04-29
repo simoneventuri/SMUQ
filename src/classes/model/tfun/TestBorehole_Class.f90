@@ -20,7 +20,6 @@ module TestBorehole_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use StringRoutines_Module
 use TestFunction_Class                                            ,only:    TestFunction_Type
 use Output_Class                                                  ,only:    Output_Type

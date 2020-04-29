@@ -21,7 +21,6 @@ module ParameterWriter_Class
 use Input_Library
 use Parameters_Library
 use StringRoutines_Module
-use String_Library
 use ArrayIORoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -69,8 +68,10 @@ contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
-  generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure, private                                                  ::    ConstructInput
+  generic, public                                                     ::    Construct               =>    ConstructInput1,        &
+                                                                                                          ConstructInput2
+  procedure, private                                                  ::    ConstructInput1
+  procedure, private                                                  ::    ConstructInput2
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    WriteInput
   generic, public                                                     ::    assignment(=)           =>    Copy
@@ -130,15 +131,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+  subroutine ConstructInput1(This, Input, Prefix)
 
-    use String_Library
     use StringRoutines_Module
     class(ParameterWriter_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
+    character(*), parameter                                           ::    ProcName='ConstructInput1'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
@@ -169,6 +169,50 @@ contains
       SubSectionName = SectionName // '>file' // ConvertToString(Value=i)
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
       call This%FileProcessors(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
+      nullify(InputSection)
+    end do
+
+    This%Constructed = .true.
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructInput2(This, Input, ConstructPrefix, WritePrefix)
+
+    use StringRoutines_Module
+    class(ParameterWriter_Type), intent(inout)                        ::    This
+    type(InputSection_Type), intent(in)                               ::    Input
+    character(*), intent(in)                                          ::    ConstructPrefix
+    character(*), intent(in)                                          ::    WritePrefix
+
+    character(*), parameter                                           ::    ProcName='ConstructInput2'
+    character(:), allocatable                                         ::    PrefixLoc
+    integer                                                           ::    StatLoc=0
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    class(MFileInput_Type), allocatable                               ::    FileProcessor
+    character(:), allocatable                                         ::    ParameterName
+    character(:), allocatable                                         ::    SectionName
+    character(:), allocatable                                         ::    SubSectionName
+    character(:), allocatable                                         ::    VarC0D
+    integer                                                           ::    VarI0D
+    integer                                                           ::    i
+
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
+    
+    SectionName = 'files'
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    This%NbFiles = InputSection%GetNumberofSubSections()
+
+    allocate(This%FileProcessors(This%NbFiles), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='This%FileProcessors', ProcName=ProcName, stat=StatLoc)
+
+    i = 1
+    do i = 1, This%NbFiles
+      SubSectionName = SectionName // '>file' // ConvertToString(Value=i)
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+      call This%FileProcessors(i)%Construct(Input=InputSection, ConstructPrefix=ConstructPrefix, WritePrefix=WritePrefix)
       nullify(InputSection)
     end do
 
@@ -347,13 +391,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput_FP(This, Input, Prefix)
+  subroutine ConstructInput1_FP(This, Input, Prefix)
 
     class(FileProcessor_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
-    character(*), parameter                                           ::    ProcName='ConstructInput_FP'
+    character(*), parameter                                           ::    ProcName='ConstructInput1_FP'
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
@@ -405,6 +449,61 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ConstructInput2_FP(This, Input, ConstructPrefix, WritePrefix)
+
+    class(FileProcessor_Type), intent(inout)                          ::    This
+    type(InputSection_Type), intent(in)                               ::    Input
+    character(*), intent(in)                                          ::    ConstructPrefix
+    character(*), intent(in)                                          ::    WritePrefix
+
+    character(*), parameter                                           ::    ProcName='ConstructInput2_FP'
+    integer                                                           ::    StatLoc=0
+    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+    character(:), allocatable                                         ::    ParameterName
+    character(:), allocatable                                         ::    SectionName
+    character(:), allocatable                                         ::    SubSectionName
+    character(:), allocatable                                         ::    VarC0D
+    integer                                                           ::    VarI0D
+    logical                                                           ::    Found
+    integer                                                           ::    i
+    class(MFileInput_Type), allocatable                               ::    MFileInput
+
+    if (This%Constructed) call This%Reset()
+    if (.not. This%Initialized) call This%Initialize()
+    
+    SectionName = 'template'
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call ImportFile(Strings=This%TemplateTranscript, Input=InputSection, Prefix=ConstructPrefix)
+    nullify(InputSection)
+
+    SectionName = 'file'
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call This%ModelFile%Construct(Input=InputSection, Prefix=WritePrefix)
+
+    SectionName = 'formats'
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    This%NbMFileInputs = InputSection%GetNumberofSubSections()
+    nullify(InputSection)
+
+    allocate(This%MFileInputs(This%NbMFileInputs), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='This%MFileInputs', ProcName=ProcName, stat=StatLoc)
+
+    i = 1
+    do i = 1, This%NbMFileInputs
+      SubSectionName = SectionName // '>format' // ConvertToString(Value=i)
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+      call MFileInput_Factory%Construct(Object=MFileInput, Input=InputSection, Prefix=ConstructPrefix)
+      call This%MFileInputs(i)%Set(Object=MFileInput)
+      deallocate(MFileInput, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='FileProcessor', ProcName=ProcName, stat=StatLoc)
+    end do
+
+    This%Constructed = .true.
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput_FP(This, Name, Prefix, Directory)
 
     type(InputSection_Type)                                           ::    GetInput_FP
@@ -424,7 +523,8 @@ contains
     integer                                                           ::    i
     class(MFileInput_Type), pointer                                   ::    MFileInputPtr=>null()
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
-
+    type(SMUQFile_Type)                                               ::    File
+    character(:), allocatable                                         ::    FileName
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -446,7 +546,9 @@ contains
     SectionName = 'template'
     call GetInput_FP%AddSection(SectionName=SectionName)
     call GetInput_FP%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call ExportFile(Input=InputSection, Strings=This%TemplateTranscript)
+    FileName = DirectoryLoc // '/' // SectionName // '.dat'
+    call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+    call ExportArray(Input=InputSection, Array=This%TemplateTranscript, File=File)
     nullify(InputSection)
 
     SectionName = 'formats'

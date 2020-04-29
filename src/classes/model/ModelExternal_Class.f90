@@ -21,7 +21,6 @@ module ModelExternal_Class
 use Input_Library
 use Parameters_Library
 use CommandRoutines_Module
-use String_Library
 use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -136,8 +135,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use String_Library
-
     class(ModelExternal_Type), intent(inout)                          ::    This
     class(InputSection_Type), intent(in)                              ::    Input
     character(*), optional, intent(in)                                ::    Prefix
@@ -248,7 +245,7 @@ contains
 
       SectionName = 'parameter_writer'
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      call This%ParameterWriter(i)%Construct(Input=InputSection, Prefix=WorkDirectoryLoc)
+      call This%ParameterWriter(i)%Construct(Input=InputSection, ConstructPrefix=PrefixLoc, WritePrefix=WorkDirectoryLoc)
       nullify(InputSection)
 
       SectionName = 'output_reader'
@@ -266,8 +263,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
-
-    use String_Library
 
     type(InputSection_Type)                                           ::    GetInput
 

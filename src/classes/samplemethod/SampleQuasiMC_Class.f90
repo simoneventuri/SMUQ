@@ -178,9 +178,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
-    use String_Library
-
     type(InputSection_Type)                                           ::    GetInput
     class(SampleQuasiMC_Type), intent(in)                             ::    This
     character(*), intent(in)                                          ::    Name

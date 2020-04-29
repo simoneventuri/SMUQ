@@ -102,8 +102,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use String_Library
-
     class(OrthoJacobi_Type), intent(inout)                            ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix

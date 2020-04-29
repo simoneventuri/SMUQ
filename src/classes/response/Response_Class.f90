@@ -25,7 +25,6 @@ use ArrayIORoutines_Module
 use ArrayRoutines_Module
 use StringRoutines_Module
 use CommandRoutines_Module
-use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type

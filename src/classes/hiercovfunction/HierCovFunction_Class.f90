@@ -20,7 +20,6 @@ module HierCovFunction_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type

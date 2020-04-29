@@ -20,7 +20,6 @@ module ModelTransform_class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
@@ -107,8 +106,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use String_Library
-
     class(ModelTransform_Type), intent(inout)                         ::    This
     class(InputSection_Type), intent(in)                              ::    Input
     character(*), optional, intent(in)                                ::    Prefix
@@ -179,8 +176,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
-
-    use String_Library
 
     type(InputSection_Type)                                           ::    GetInput
 

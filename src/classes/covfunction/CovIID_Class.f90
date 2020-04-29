@@ -20,7 +20,6 @@ module CovIID_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use ArrayRoutines_Module
 use StringRoutines_Module
 use CommandRoutines_Module

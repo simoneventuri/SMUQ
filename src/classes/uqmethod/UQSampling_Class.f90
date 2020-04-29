@@ -25,7 +25,6 @@ use StringRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module
-use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use UQMethod_Class                                                ,only:    UQMethod_Type

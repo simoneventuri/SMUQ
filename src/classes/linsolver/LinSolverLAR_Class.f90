@@ -126,8 +126,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1(This, LARMethod)
 
-    use String_Library
-
     class(LinSolverLAR_Type), intent(inout)                           ::    This
     class(LARMethod_Type), intent(in)                                 ::    LARMethod
 

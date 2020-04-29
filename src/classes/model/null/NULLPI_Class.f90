@@ -95,8 +95,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use String_Library
-
     class(NULLPI_Type), intent(inout)                                 ::    This
     class(InputSection_Type), intent(in)                              ::    Input
     character(*), optional, intent(in)                                ::    Prefix
@@ -120,8 +118,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
-
-    use String_Library
 
     type(InputSection_Type)                                           ::    GetInput
 

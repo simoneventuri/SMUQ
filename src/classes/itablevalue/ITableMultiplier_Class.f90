@@ -20,7 +20,6 @@ module ITableMultiplier_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use StringRoutines_Module
 use ComputingRoutines_Module
 use ArrayIORoutines_Module

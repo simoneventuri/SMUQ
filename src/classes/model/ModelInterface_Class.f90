@@ -22,7 +22,6 @@ use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
 use StringRoutines_Module
-use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Response_Class                                                ,only:    Response_Type

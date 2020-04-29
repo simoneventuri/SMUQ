@@ -19,7 +19,6 @@
 module InputProcessor_Class
 
 use StringRoutines_Module
-use String_Library
 use Parameters_Library
 use Input_Library
 use Logger_Class                                                  ,only:    Logger

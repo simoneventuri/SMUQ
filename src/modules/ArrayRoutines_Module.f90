@@ -1,6 +1,5 @@
 module ArrayRoutines_Module
 
-use String_Library
 use Input_Library
 use Parameters_Library
 use StringRoutines_Module

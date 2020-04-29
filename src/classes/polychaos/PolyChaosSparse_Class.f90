@@ -1255,7 +1255,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput_Cell(This, Input, Prefix)
 
-    use String_Library
     use ArrayRoutines_Module
 
     class(Cell_Type), intent(inout)                                   ::    This
@@ -1375,8 +1374,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1_Cell(This)
-
-    use String_Library
 
     class(Cell_Type), intent(inout)                                   ::    This
 

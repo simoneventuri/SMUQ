@@ -20,7 +20,6 @@ module Root_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use CommandRoutines_Module
 use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger

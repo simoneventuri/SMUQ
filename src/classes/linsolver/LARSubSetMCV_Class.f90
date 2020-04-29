@@ -115,8 +115,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use String_Library
-
     class(LARSubSetMCV_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
@@ -176,8 +174,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1(This, LASSO, Tolerance, CVStopRatio, CVStopMinIter, CVErrorMethod)
-
-    use String_Library
 
     class(LARSubSetMCV_Type), intent(inout)                           ::    This
     logical, optional, intent(in)                                     ::    LASSO

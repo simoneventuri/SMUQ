@@ -21,7 +21,6 @@ module OutputReader_Class
 use Input_Library
 use Parameters_Library
 use StringRoutines_Module
-use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Output_Class                                                  ,only:    Output_Type
@@ -392,7 +391,6 @@ contains
   subroutine ConstructInput_Cell(This, Input, Prefix)
 
     use StringRoutines_Module
-    use String_Library
 
     class(Cell_Type), intent(inout)                                   ::    This
     type(InputSection_Type), intent(in)                               ::    Input

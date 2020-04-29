@@ -25,7 +25,6 @@ use Parameters_Library
 use ComputingRoutines_Module
 use StatisticsRoutines_Module
 use StringRoutines_Module
-use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use DistProb_Class                                                ,only:    DistProb_Type

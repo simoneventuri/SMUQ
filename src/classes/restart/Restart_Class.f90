@@ -163,8 +163,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetDirectory(This, SectionChain)
     
-    use String_Library
-
     character(:), allocatable                                         ::    GetDirectory
 
     class(Restart_Type), intent(inout)                                ::    This
@@ -194,8 +192,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Update(This, InputSection, SectionChain)
     
-    use String_Library
-
     class(Restart_Type), intent(inout)                                ::    This
     type(InputSection_Type), intent(in)                               ::    InputSection
     character(*), intent(in)                                          ::    SectionChain 

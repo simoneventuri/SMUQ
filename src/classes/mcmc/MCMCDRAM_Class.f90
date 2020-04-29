@@ -24,7 +24,6 @@ use CommandRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use StringRoutines_Module
-use String_Library
 use StatisticsRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error

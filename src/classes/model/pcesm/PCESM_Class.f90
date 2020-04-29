@@ -20,9 +20,7 @@ module PCESM_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use StringRoutines_Module
-use String_Library
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -109,8 +107,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
-
-    use String_Library
 
     class(PCESM_Type), intent(inout)                                  ::    This
     class(InputSection_Type), intent(in)                              ::    Input

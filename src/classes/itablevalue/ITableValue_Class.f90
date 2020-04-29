@@ -110,7 +110,6 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetCharValue_ITableValue(This, Input, Abscissa, Format)
     use Parameters_Library
-    use String_Library
     import                                                            ::    Input_Type
     import                                                            ::    ITableValue_Type
     type(String_Type), allocatable, dimension(:)                      ::    GetCharValue_ITableValue

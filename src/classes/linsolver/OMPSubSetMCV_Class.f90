@@ -116,8 +116,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use String_Library
-
     class(OMPSubSetMCV_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
@@ -176,8 +174,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1(This, MaxNbFeatures, Tolerance, CVStopRatio, CVStopMinIter, CVErrorMethod)
-
-    use String_Library
 
     class(OMPSubSetMCV_Type), intent(inout)                           ::    This
     integer, optional, intent(in)                                     ::    MaxNbFeatures

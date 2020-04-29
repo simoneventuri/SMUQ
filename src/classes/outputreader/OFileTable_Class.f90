@@ -20,7 +20,6 @@ module OFileTable_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use StringRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
@@ -31,7 +30,6 @@ use Error_Class                                                   ,only:    Erro
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use OFileFormated_Class                                           ,only:    OFileFormated_Type
 use Output_Class                                                  ,only:    Output_Type
-use String_Library
 
 implicit none
 
@@ -113,8 +111,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
-
-    use String_Library
 
     class(OFileTable_Type), intent(inout)                             ::    This
     type(InputSection_Type), intent(in)                               ::    Input

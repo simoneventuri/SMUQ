@@ -19,7 +19,6 @@
 module Input_Class
 
 use Parameters_Library
-use String_Library
 use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error

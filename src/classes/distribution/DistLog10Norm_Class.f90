@@ -23,7 +23,6 @@ use Parameters_Library
 use ComputingRoutines_Module
 use StatisticsRoutines_Module
 use StringRoutines_Module
-use String_Library
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistNorm_Class                                                ,only:    DistNorm_Type
 use Logger_Class                                                  ,only:    Logger

@@ -1,6 +1,5 @@
 module ArrayIORoutines_Module
 
-use String_Library
 use Input_Library
 use Parameters_Library
 use StringRoutines_Module
@@ -4922,14 +4921,15 @@ contains
         if (present(Separator)) Separator = ' '
         if (Found .and. present(Separator)) Separator = VarC0D
 
-        ParameterName = 'nb_lines'
-        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.true., SectionName=SectionName)
-        NbLines = VarI0D
+        SubSectionName = SectionName // '>lines'
+
+        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+        NbLines = InputSection%GetNumberofParameters()
+        nullify(InputSection)
 
         allocate(Strings(NbLines), stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
 
-        SubSectionName = SectionName // '>lines'
         i = 1
         do i = 1, Nblines
           ParameterName = 'line' // ConvertToString(Value=i)
@@ -4980,9 +4980,10 @@ contains
                                                                                                          SectionName=SectionName)
         SubSectionName = 'lines'        
         call Input%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+        SubSectionName = SectionName // '>' // SubSectionName
         i = 1
         do i = 1, size(Strings,1)
-          call Input%AddParameter(Name='line' // ConvertToString(Value=i), Value=Strings(i)%GetValue())
+          call Input%AddParameter(Name='line' // ConvertToString(Value=i), Value=Strings(i)%GetValue(), SectionName=SubSectionName)
         end do
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)

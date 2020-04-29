@@ -20,7 +20,6 @@ module PolyChaosModel_Class
 
 use Input_Library
 use Parameters_Library
-use String_Library
 use CommandRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
@@ -897,8 +896,6 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1_Cell(This, Coefficients, Indices, Coordinate, CVError)
-
-    use String_Library
 
     class(Cell_Type), intent(inout)                                   ::    This
     real(rkp), dimension(:), intent(in)                               ::    Coefficients

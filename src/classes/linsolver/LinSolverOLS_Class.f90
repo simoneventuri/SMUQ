@@ -148,8 +148,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1(This, CVErrorMethod)
 
-    use String_Library
-
     class(LinSolverOLS_Type), intent(inout)                           ::    This
     class(CVErrorMethod_Type), optional, intent(in)                   ::    CVErrorMethod
 

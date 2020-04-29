@@ -19,9 +19,7 @@
 module TransfSampleSpaceInt_Class
 
 use Input_Library
-use String_Library
 use Parameters_Library
-use String_Library
 use StringRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module

@@ -19,7 +19,6 @@
 module ComputingRoutines_Module
 
 use Parameters_Library
-use String_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use RandPseudo_Class                                              ,only:    RandPseudo_Type
