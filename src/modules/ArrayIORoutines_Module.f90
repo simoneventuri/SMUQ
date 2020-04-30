@@ -553,7 +553,7 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        call Parse(Input=VarC0D, Separator=' ', Output=Array)
+        Array = ConvertToStrings(Value=VarC0D, Separator=' ')
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -709,7 +709,6 @@ contains
     integer                                                           ::    NbLinesSkip=0
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable                                         ::    VarString0D
     integer                                                           ::    VarI0D
     integer                                                           ::    i
     logical                                                           ::    VarL0D
@@ -746,8 +745,7 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        VarString0D = VarC0D
-        Array = VarString0D%Parse(Separator=' ')
+        Array = ConvertToStrings(Value=VarC0D, Separator=' ')
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -777,12 +775,12 @@ contains
     integer                                                           ::    NbLinesSkip=0
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     integer                                                           ::    VarI0D
     integer                                                           ::    i, ii
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
 
     PrefixLoc = ''
     if (present(Prefix)) PrefixLoc = Prefix
@@ -829,7 +827,7 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
+          VarString1D = ConvertToStrings(Value=VarC0D, Separator=' ')
           if (i == 1) then
             NbEntries = size(VarC1D,1)
             if (RowMajorLoc) then
@@ -1487,8 +1485,6 @@ contains
     integer                                                           ::    NbLinesSkip=0
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
-    type(SMUQString_Type)                                             ::    VarString0D
-    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
     integer                                                           ::    VarI0D
     integer                                                           ::    i, ii
     logical                                                           ::    VarL0D
@@ -1540,10 +1536,8 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          VarString0D = VarC0D
           if (i == 1) then
-            VarString1D = VarString0D%Parse(Separator=' ')
-            NbEntries = size(VarString1D,1)
+            NbEntries = size(ConvertToStrings(Value=VarC0D, Separator=' '),1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1551,13 +1545,11 @@ contains
               allocate(Array(NbEntries,NbLines), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
-            deallocate(VarString1D, stat=StatLoc)
-            if (StatLoc /= 0) call Error%Deallocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
           end if
           if (RowMajorLoc) then
-              Array(i,:) = VarString0D%Parse(Separator=' ')
+              Array(i,:) = ConvertToStrings(Value=VarC0D, Separator=' ')
           else
-              Array(:,i) = VarString0D%Parse(Separator=' ')
+              Array(:,i) = ConvertToStrings(Value=VarC0D, Separator=' ')
           end if
 
         end do
@@ -2152,7 +2144,6 @@ contains
     character(:), allocatable                                         ::    Comment
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-    type(SMUQString_Type)                                             ::    VarString0D
 
     RowMajorLoc = .true.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2192,8 +2183,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        VarString0D = VarC0D
-        Array = VarString0D%Parse(Separator=' ')
+        Array = ConvertToStrings(Value=VarC0D, Separator=' ')
       end if
 
     end if
@@ -2867,9 +2857,6 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-    type(SMUQString_Type)                                             ::    VarString0D
-    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
-
 
     RowMajorLoc = .false.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2892,11 +2879,7 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          VarString0D = VarC0D
-          VarString1D = VarString0D%Parse(Separator=' ')
-          Size1 = size(VarString1D,1)
-          deallocate(VarString1D, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Deallocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
+          Size1 = size(ConvertToStrings(Value=VarC0D, Separator=' '),1)
         end if
       end do
       Size2 = ii
@@ -2919,11 +2902,10 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        VarString0D = VarC0D
         if (RowMajorLoc) then
-          Array(ii,:) = VarString0D%Split(Separator=' ')
+          Array(ii,:) = ConvertToStrings(Value=VarC0D, Separator=' ')
         else
-          Array(:,ii) = VarString0D%Split(Separator=' ')
+          Array(:,ii) = ConvertToStrings(Value=VarC0D, Separator=' ')
         end if
       end do
 

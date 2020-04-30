@@ -52,13 +52,19 @@ contains
                                                                                                         ConcatCharString
   procedure, private                                                  ::    ConcatStringString
   procedure, private                                                  ::    ConcatStringChar
-  procedure, private                                                  ::    ConcatCharString
+  procedure, private, pass(String2)                                   ::    ConcatCharString
   generic, public                                                     ::    operator(==)          =>    CompareStringString,      &
                                                                                                         CompareStringChar,        &
                                                                                                         CompareCharString
   procedure, private                                                  ::    CompareStringString
   procedure, private                                                  ::    CompareStringChar
-  procedure, private                                                  ::    CompareCharString
+  procedure, private, pass(String2)                                   ::    CompareCharString
+  generic, public                                                     ::    operator(/=)          =>    NotCompareStringString,   &
+                                                                                                        NotCompareStringChar,     &
+                                                                                                        NotCompareCharString
+  procedure, private                                                  ::    NotCompareStringString
+  procedure, private                                                  ::    NotCompareStringChar
+  procedure, private, pass(String2)                                   ::    NotCompareCharString
   final                                                               ::    Finalizer
 end type
   
@@ -76,8 +82,6 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%ValueSet = .false.
-  
   if (allocated(This%Value)) deallocate(This%Value, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Value', ProcName=ProcName, stat=StatLoc)
 
@@ -212,21 +216,21 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-function Split(This, Separator, Escape)
+function Split(This, Separator)
 
-  use String_Library                                                ,only:    Parse
+  use String_Library                                              ,only:    Parse
 
-  type(SMUQString), allocatable, dimension(:)                         ::    Split
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Split
 
   class(SMUQString_Type), intent(in)                                  ::    This
   character(*), optional, intent(in)                                  ::    Separator
-  character(*), optional, intent(in)                                  ::    Escape
 
   character(*), parameter                                             ::    ProcName='Split'
+  integer                                                             ::    StatLoc=0
   character(:), allocatable                                           ::    SeparatorLoc
   character(:), allocatable, dimension(:)                             ::    SplitChar
   integer                                                             ::    NbStrings
-  integer                                                             ::    if
+  integer                                                             ::    i
 
   SeparatorLoc = ' '
   if (present(Separator)) SeparatorLoc = Separator
@@ -238,11 +242,7 @@ function Split(This, Separator, Escape)
     return
   end if
 
-  if (present(Escape)) then
-    call Parse(Input=This%Value, Separator=SeparatorLoc, Output=SplitChar, EscRHS=Escape)
-  else
-    call Parse(Input=This%Value, Separator=SeparatorLoc, Output=SplitChar)
-  end if
+  call Parse(Input=This%Value, Separator=SeparatorLoc, Output=SplitChar)
 
   NbStrings = size(SplitChar)
 
@@ -312,9 +312,9 @@ function ConcatStringChar(String1, String2)
   character(*), parameter                                             ::    ProcName='ConcatStringChar'
 
   if(allocated(String1%Value)) then
-    ConcatStringString = String1%Value // String2
+    ConcatStringChar = String1%Value // String2
   else
-    ConcatStringString = String2
+    ConcatStringChar = String2
   end if
 
 end function
@@ -391,6 +391,63 @@ function CompareCharString(String1, String2)
     CompareCharString = String2%Value == String1
   else
     CompareCharString = .false.
+  end if
+
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+function NotCompareStringString(String1, String2)
+
+  logical                                                             ::    NotCompareStringString
+
+  class(SMUQString_Type), intent(in)                                  ::    String1
+  class(SMUQString_Type), intent(in)                                  ::    String2
+
+  character(*), parameter                                             ::    ProcName='NotCompareStringString'
+
+  if( allocated(String1%Value) .and. allocated(String2%Value)) then
+    NotCompareStringString = String1%Value /= String2%Value
+  else
+    NotCompareStringString = .true.
+  end if
+
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!--------------------------------------------------------------------------------------------------------------------------------
+function NotCompareStringChar(String1, String2)
+
+  logical                                                             ::    NotCompareStringChar
+
+  class(SMUQString_Type), intent(in)                                  ::    String1
+  character(*), intent(in)                                            ::    String2
+
+  character(*), parameter                                             ::    ProcName='NotCompareStringChar'
+
+  if( allocated(String1%Value) ) then
+    NotCompareStringChar = String1%Value /= String2
+  else
+    NotCompareStringChar = .true.
+  end if
+
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!--------------------------------------------------------------------------------------------------------------------------------
+function NotCompareCharString(String1, String2)
+
+  logical                                                             ::    NotCompareCharString
+
+  character(*), intent(in)                                            ::    String1
+  class(SMUQString_Type), intent(in)                                  ::    String2
+
+  character(*), parameter                                             ::    ProcName='NotCompareCharString'
+
+  if( allocated(String2%Value) ) then
+    NotCompareCharString = String2%Value /= String1
+  else
+    NotCompareCharString = .true.
   end if
 
 end function

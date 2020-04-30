@@ -59,74 +59,98 @@ end interface
 
 interface ConvertToInteger                                            
   module procedure                                                    ::    Convert_C0D_To_I0D
+  module procedure                                                    ::    Convert_String0D_To_I0D
 end interface
 
 interface ConvertToIntegers                                            
   module procedure                                                    ::    Convert_C0D_To_I1D
   module procedure                                                    ::    Convert_C1D_To_I1D
+  module procedure                                                    ::    Convert_String0D_To_I1D
+  module procedure                                                    ::    Convert_String1D_To_I1D
 end interface
 
 interface ConvertToInteger4                                            
   module procedure                                                    ::    Convert_C0D_To_I40D
+  module procedure                                                    ::    Convert_String0D_To_I40D
 end interface
 
 interface ConvertToInteger4s                                            
   module procedure                                                    ::    Convert_C0D_To_I41D
   module procedure                                                    ::    Convert_C1D_To_I41D
+  module procedure                                                    ::    Convert_String0D_To_I41D
+  module procedure                                                    ::    Convert_String1D_To_I41D
 end interface
 
 interface ConvertToInteger8                                            
   module procedure                                                    ::    Convert_C0D_To_I80D
+  module procedure                                                    ::    Convert_String0D_To_I80D
 end interface
 
 interface ConvertToInteger8s                                            
   module procedure                                                    ::    Convert_C0D_To_I81D
   module procedure                                                    ::    Convert_C1D_To_I81D
+  module procedure                                                    ::    Convert_String0D_To_I81D
+  module procedure                                                    ::    Convert_String1D_To_I81D
 end interface
 
 interface ConvertToReal                                            
   module procedure                                                    ::    Convert_C0D_To_R0D
+  module procedure                                                    ::    Convert_String0D_To_R0D
 end interface
 
 interface ConvertToReals                                         
   module procedure                                                    ::    Convert_C0D_To_R1D
   module procedure                                                    ::    Convert_C1D_To_R1D
+  module procedure                                                    ::    Convert_String0D_To_R1D
+  module procedure                                                    ::    Convert_String1D_To_R1D
 end interface
 
 interface ConvertToReal4                                            
   module procedure                                                    ::    Convert_C0D_To_R40D
+  module procedure                                                    ::    Convert_String0D_To_R40D
 end interface
 
 interface ConvertToReal4s                                         
   module procedure                                                    ::    Convert_C0D_To_R41D
   module procedure                                                    ::    Convert_C1D_To_R41D
+  module procedure                                                    ::    Convert_String0D_To_R41D
+  module procedure                                                    ::    Convert_String1D_To_R41D
 end interface
 
 interface ConvertToReal8                                           
   module procedure                                                    ::    Convert_C0D_To_R80D
+  module procedure                                                    ::    Convert_String0D_To_R80D
 end interface
 
 interface ConvertToReal8s                                           
   module procedure                                                    ::    Convert_C0D_To_R81D
   module procedure                                                    ::    Convert_C1D_To_R81D
+  module procedure                                                    ::    Convert_String0D_To_R81D
+  module procedure                                                    ::    Convert_String1D_To_R81D
 end interface
 
 interface ConvertToLogical                                          
   module procedure                                                    ::    Convert_C0D_To_L0D
+  module procedure                                                    ::    Convert_String0D_To_L0D
 end interface
 
 interface ConvertToLogicals                                          
   module procedure                                                    ::    Convert_C0D_To_L1D
   module procedure                                                    ::    Convert_C1D_To_L1D
+  module procedure                                                    ::    Convert_String0D_To_L1D
+  module procedure                                                    ::    Convert_String1D_To_L1D
 end interface
 
 interface ConvertToComplex                                          
   module procedure                                                    ::    Convert_C0D_To_CX0D
+  module procedure                                                    ::    Convert_String0D_To_CX0D
 end interface
 
 interface ConvertToComplexs                                          
   module procedure                                                    ::    Convert_C0D_To_CX1D
   module procedure                                                    ::    Convert_C1D_To_CX1D
+  module procedure                                                    ::    Convert_String0D_To_CX1D
+  module procedure                                                    ::    Convert_String1D_To_CX1D
 end interface
 
 contains
@@ -149,6 +173,21 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_I40D(String)
+
+  integer(4)                                                        ::    Convert_String0D_To_I40D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_I40D'
+  integer                                                           ::    StatLoc=0
+
+  Convert_String0D_To_I40D = ConvertToInteger4(String=String%Get())
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_I41D(String, Separator)
 
   integer(4), allocatable, dimension(:)                             ::    Convert_C0D_To_I41D
@@ -159,14 +198,43 @@ function Convert_C0D_To_I41D(String, Separator)
   character(*), parameter                                           ::    ProcName='Convert_C0D_To_I41D'
   integer                                                           ::    StatLoc=0
   character(:), allocatable                                         ::    SeparatorLoc
-  character(:), allocatable, dimension(:)                           ::    Strings
+  type(SMUQString_Type)                                             ::    VarString0D
+  type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+  integer                                                           ::    i
 
   SeparatorLoc = ' '
   if (present(Separator)) SeparatorLoc = Separator
 
-  call Parse(Input=String, Separator=SeparatorLoc, Output=Strings)
+  VarString0D = String
+  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
 
-  Convert_C0D_To_I41D = ConvertToInteger4s(Strings=Strings)
+  allocate(Convert_C0D_To_I41D(size(VarString1D,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_I41D', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, size(VarString1D)
+    Convert_C0D_To_I41D(i) = ConvertToInteger4(String=VarString1D(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_I41D(String, Separator)
+
+  integer(4), allocatable, dimension(:)                             ::    Convert_String0D_To_I41D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+  character(*), optional, intent(in)                                ::    Separator
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_I41D'
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    SeparatorLoc
+
+  SeparatorLoc = ' '
+  if (present(Separator)) SeparatorLoc = Separator
+
+  Convert_String0D_To_I41D = ConvertToInteger4s(String=String%Get(), Separator=SeparatorLoc)
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -194,18 +262,53 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String1D_To_I41D(Strings)
+
+  integer(4), allocatable, dimension(:)                             ::    Convert_String1D_To_I41D
+
+  class(SMUQString_Type), dimension(:), intent(in)                  ::    Strings
+
+  character(*), parameter                                           ::    ProcName='Convert_String1D_To_I41D'
+  integer                                                           ::    StatLoc=0
+  integer                                                           ::    i
+
+  allocate(Convert_String1D_To_I41D(size(Strings,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C1D_To_I41D', ProcName=ProcName, stat=StatLoc)
+
+  do i = 1, size(Strings,1)
+    Convert_String1D_To_I41D(i) = ConvertToInteger4(String=Strings(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_I80D(String)
 
   integer(8)                                                        ::    Convert_C0D_To_I80D
 
   character(*), intent(in)                                          ::    String
 
-
   character(*), parameter                                           ::    ProcName='Convert_C0D_To_I80D'
   integer                                                           ::    StatLoc=0
 
   read(unit=String, fmt=*, iostat=StatLoc) Convert_C0D_To_I80D
   if (StatLoc /= 0) call Error%Read(Message='Error when performing an internal read', ProcName=ProcName, Status=StatLoc)
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_I80D(String)
+
+  integer(8)                                                        ::    Convert_String0D_To_I80D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_I80D'
+  integer                                                           ::    StatLoc=0
+
+  Convert_String0D_To_I80D = ConvertToInteger8(String=String%Get())
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -221,14 +324,44 @@ function Convert_C0D_To_I81D(String, Separator)
   character(*), parameter                                           ::    ProcName='Convert_C0D_To_I81D'
   integer                                                           ::    StatLoc=0
   character(:), allocatable                                         ::    SeparatorLoc
-  character(:), allocatable, dimension(:)                           ::    Strings
+  type(SMUQString_Type)                                             ::    VarString0D
+  type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+  integer                                                           ::    i
 
   SeparatorLoc = ' '
   if (present(Separator)) SeparatorLoc = Separator
 
-  call Parse(Input=String, Separator=SeparatorLoc, Output=Strings)
+  VarString0D = String
+  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
 
-  Convert_C0D_To_I81D = ConvertToInteger8s(Strings=Strings)
+  allocate(Convert_C0D_To_I81D(size(VarString1D,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_I81D', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, size(VarString1D)
+    Convert_C0D_To_I81D(i) = ConvertToInteger8(String=VarString1D(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_I81D(String, Separator)
+
+  integer(8), allocatable, dimension(:)                             ::    Convert_String0D_To_I81D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+  character(*), optional, intent(in)                                ::    Separator
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_I81D'
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    SeparatorLoc
+  integer                                                           ::    i
+
+  SeparatorLoc = ' '
+  if (present(Separator)) SeparatorLoc = Separator
+
+  Convert_String0D_To_I81D = ConvertToInteger8s(String=String%Get(), Separator=SeparatorLoc)
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -256,6 +389,27 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String1D_To_I81D(Strings)
+
+  integer(8), allocatable, dimension(:)                             ::    Convert_String1D_To_I81D
+
+  class(SMUQString_Type), dimension(:), intent(in)                  ::    Strings
+
+  character(*), parameter                                           ::    ProcName='Convert_String1D_To_I81D'
+  integer                                                           ::    StatLoc=0
+  integer                                                           ::    i
+
+  allocate(Convert_String1D_To_I81D(size(Strings,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_String1D_To_I81D', ProcName=ProcName, stat=StatLoc)
+
+  do i = 1, size(Strings,1)
+    Convert_String1D_To_I81D(i) = ConvertToInteger8(String=Strings(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_I0D(String)
 
   integer                                                           ::    Convert_C0D_To_I0D
@@ -272,6 +426,21 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_I0D(String)
+
+  integer                                                           ::    Convert_String0D_To_I0D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_I0D'
+  integer                                                           ::    StatLoc=0
+
+  Convert_String0D_To_I0D = ConvertToInteger(String=String%Get())
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_I1D(String, Separator)
 
   integer, allocatable, dimension(:)                                ::    Convert_C0D_To_I1D
@@ -282,14 +451,43 @@ function Convert_C0D_To_I1D(String, Separator)
   character(*), parameter                                           ::    ProcName='Convert_C0D_To_I1D'
   integer                                                           ::    StatLoc=0
   character(:), allocatable                                         ::    SeparatorLoc
-  character(:), allocatable, dimension(:)                           ::    Strings
+  type(SMUQString_Type)                                             ::    VarString0D
+  type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+  integer                                                           ::    i
 
   SeparatorLoc = ' '
   if (present(Separator)) SeparatorLoc = Separator
 
-  call Parse(Input=String, Separator=SeparatorLoc, Output=Strings)
+  VarString0D = String
+  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
 
-  Convert_C0D_To_I1D = ConvertToIntegers(Strings=Strings)
+  allocate(Convert_C0D_To_I1D(size(VarString1D,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_I1D', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, size(VarString1D)
+    Convert_C0D_To_I1D(i) = ConvertToInteger(String=VarString1D(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_I1D(String, Separator)
+
+  integer, allocatable, dimension(:)                                ::    Convert_String0D_To_I1D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+  character(*), optional, intent(in)                                ::    Separator
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_I1D'
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    SeparatorLoc
+
+  SeparatorLoc = ' '
+  if (present(Separator)) SeparatorLoc = Separator
+
+  Convert_String0D_To_I1D = ConvertToIntegers(String=String%Get(), Separator=SeparatorLoc)
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -317,6 +515,27 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String1D_To_I1D(Strings)
+
+  integer, allocatable, dimension(:)                                ::    Convert_String1D_To_I1D
+
+  class(SMUQString_Type), dimension(:), intent(in)                  ::    Strings
+
+  character(*), parameter                                           ::    ProcName='Convert_String1D_To_I1D'
+  integer                                                           ::    StatLoc=0
+  integer                                                           ::    i
+
+  allocate(Convert_String1D_To_I1D(size(Strings,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_String1D_To_I1D', ProcName=ProcName, stat=StatLoc)
+
+  do i = 1, size(Strings,1)
+    Convert_String1D_To_I1D(i) = ConvertToInteger(String=Strings(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_R0D(String)
 
   real(rkp)                                                         ::    Convert_C0D_To_R0D
@@ -333,6 +552,21 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_R0D(String)
+
+  real(rkp)                                                         ::    Convert_String0D_To_R0D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_R0D'
+  integer                                                           ::    StatLoc=0
+
+  Convert_String0D_To_R0D = ConvertToReal(String=String%Get())
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_R1D(String, Separator)
 
   real(rkp), allocatable, dimension(:)                              ::    Convert_C0D_To_R1D
@@ -343,14 +577,43 @@ function Convert_C0D_To_R1D(String, Separator)
   character(*), parameter                                           ::    ProcName='Convert_C0D_To_R1D'
   integer                                                           ::    StatLoc=0
   character(:), allocatable                                         ::    SeparatorLoc
-  character(:), allocatable, dimension(:)                           ::    Strings
+  type(SMUQString_Type)                                             ::    VarString0D
+  type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+  integer                                                           ::    i
 
   SeparatorLoc = ' '
   if (present(Separator)) SeparatorLoc = Separator
 
-  call Parse(Input=String, Separator=SeparatorLoc, Output=Strings)
+  VarString0D = String
+  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
 
-  Convert_C0D_To_R1D = ConvertToReals(Strings=Strings)
+  allocate(Convert_C0D_To_R1D(size(VarString1D,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_R1D', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, size(VarString1D)
+    Convert_C0D_To_R1D(i) = ConvertToReal(String=VarString1D(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_R1D(String, Separator)
+
+  real(rkp), allocatable, dimension(:)                              ::    Convert_String0D_To_R1D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+  character(*), optional, intent(in)                                ::    Separator
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_R1D'
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    SeparatorLoc
+
+  SeparatorLoc = ' '
+  if (present(Separator)) SeparatorLoc = Separator
+
+  Convert_String0D_to_R1D = ConvertToReals(String=String%Get(), Separator=SeparatorLoc)
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -378,6 +641,27 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String1D_To_R1D(Strings)
+
+  real(rkp), allocatable, dimension(:)                              ::    Convert_String1D_To_R1D
+
+  class(SMUQString_Type), dimension(:), intent(in)                  ::    Strings
+
+  character(*), parameter                                           ::    ProcName='Convert_String1D_To_R1D'
+  integer                                                           ::    StatLoc=0
+  integer                                                           ::    i
+
+  allocate(Convert_String1D_To_R1D(size(Strings,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_String1D_To_R1D', ProcName=ProcName, stat=StatLoc)
+
+  do i = 1, size(Strings,1)
+    Convert_String1D_To_R1D(i) = ConvertToReal(String=Strings(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_R40D(String)
 
   real(4)                                                           ::    Convert_C0D_To_R40D
@@ -394,6 +678,21 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_R40D(String)
+
+  real(4)                                                           ::    Convert_String0D_To_R40D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_R40D'
+  integer                                                           ::    StatLoc=0
+
+  Convert_String0D_To_R40D = ConvertToReal4(String=String%Get())
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_R41D(String, Separator)
 
   real(4), allocatable, dimension(:)                                ::    Convert_C0D_To_R41D
@@ -404,14 +703,43 @@ function Convert_C0D_To_R41D(String, Separator)
   character(*), parameter                                           ::    ProcName='Convert_C0D_To_R41D'
   integer                                                           ::    StatLoc=0
   character(:), allocatable                                         ::    SeparatorLoc
-  character(:), allocatable, dimension(:)                           ::    Strings
+  type(SMUQString_Type)                                             ::    VarString0D
+  type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+  integer                                                           ::    i
 
   SeparatorLoc = ' '
   if (present(Separator)) SeparatorLoc = Separator
 
-  call Parse(Input=String, Separator=SeparatorLoc, Output=Strings)
+  VarString0D = String
+  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
 
-  Convert_C0D_To_R41D = ConvertToReal4s(Strings=Strings)
+  allocate(Convert_C0D_To_R41D(size(VarString1D,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_R41D', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, size(VarString1D)
+    Convert_C0D_To_R41D(i) = ConvertToReal4(String=VarString1D(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_R41D(String, Separator)
+
+  real(4), allocatable, dimension(:)                                ::    Convert_String0D_To_R41D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+  character(*), optional, intent(in)                                ::    Separator
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_R41D'
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    SeparatorLoc
+
+  SeparatorLoc = ' '
+  if (present(Separator)) SeparatorLoc = Separator
+
+  Convert_String0D_To_R41D = ConvertToReal4s(String=String%Get(), Separator=SeparatorLoc)
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -439,6 +767,27 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String1D_To_R41D(Strings)
+
+  real(4), allocatable, dimension(:)                                ::    Convert_String1D_To_R41D
+
+  class(SMUQString_Type), dimension(:), intent(in)                  ::    Strings
+
+  character(*), parameter                                           ::    ProcName='Convert_String1D_To_R41D'
+  integer                                                           ::    StatLoc=0
+  integer                                                           ::    i
+
+  allocate(Convert_String1D_To_R41D(size(Strings,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_String1D_To_R41D', ProcName=ProcName, stat=StatLoc)
+
+  do i = 1, size(Strings,1)
+    Convert_String1D_To_R41D(i) = ConvertToReal4(String=Strings(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_R80D(String)
 
   real(8)                                                           ::    Convert_C0D_To_R80D
@@ -455,6 +804,21 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_R80D(String)
+
+  real(8)                                                           ::    Convert_String0D_To_R80D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_R80D'
+  integer                                                           ::    StatLoc=0
+
+  Convert_String0D_To_R80D = ConvertToReal8(String=String%Get())
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_R81D(String, Separator)
 
   real(8), allocatable, dimension(:)                                ::    Convert_C0D_To_R81D
@@ -465,14 +829,43 @@ function Convert_C0D_To_R81D(String, Separator)
   character(*), parameter                                           ::    ProcName='Convert_C0D_To_R81D'
   integer                                                           ::    StatLoc=0
   character(:), allocatable                                         ::    SeparatorLoc
-  character(:), allocatable, dimension(:)                           ::    Strings
+  type(SMUQString_Type)                                             ::    VarString0D
+  type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+  integer                                                           ::    i
 
   SeparatorLoc = ' '
   if (present(Separator)) SeparatorLoc = Separator
 
-  call Parse(Input=String, Separator=SeparatorLoc, Output=Strings)
+  VarString0D = String
+  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
 
-  Convert_C0D_To_R81D = ConvertToReal8s(Strings=Strings)
+  allocate(Convert_C0D_To_R81D(size(VarString1D,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_R81D', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, size(VarString1D)
+    Convert_C0D_To_R81D(i) = ConvertToReal8(String=VarString1D(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_R81D(String, Separator)
+
+  real(8), allocatable, dimension(:)                                ::    Convert_String0D_To_R81D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+  character(*), optional, intent(in)                                ::    Separator
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_R81D'
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    SeparatorLoc
+
+  SeparatorLoc = ' '
+  if (present(Separator)) SeparatorLoc = Separator
+
+  Convert_String0D_To_R81D = ConvertToReal8s(String=String%Get(), Separator=SeparatorLoc)
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -500,6 +893,27 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String1D_To_R81D(Strings)
+
+  real(8), allocatable, dimension(:)                                ::    Convert_String1D_To_R81D
+
+  class(SMUQString_Type), dimension(:), intent(in)                  ::    Strings
+
+  character(*), parameter                                           ::    ProcName='Convert_String1D_To_R81D'
+  integer                                                           ::    StatLoc=0
+  integer                                                           ::    i
+
+  allocate(Convert_String1D_To_R81D(size(Strings,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_String1D_To_R81D', ProcName=ProcName, stat=StatLoc)
+
+  do i = 1, size(Strings,1)
+    Convert_String1D_To_R81D(i) = ConvertToReal8(String=Strings(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_L0D(String)
 
   logical                                                           ::    Convert_C0D_To_L0D
@@ -516,6 +930,21 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_L0D(String)
+
+  logical                                                           ::    Convert_String0D_To_L0D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_L0D'
+  integer                                                           ::    StatLoc=0
+
+  Convert_String0D_To_L0D = ConvertToLogical(String=String%Get())
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_L1D(String, Separator)
 
   logical, allocatable, dimension(:)                                ::    Convert_C0D_To_L1D
@@ -526,14 +955,46 @@ function Convert_C0D_To_L1D(String, Separator)
   character(*), parameter                                           ::    ProcName='Convert_C0D_To_L1D'
   integer                                                           ::    StatLoc=0
   character(:), allocatable                                         ::    SeparatorLoc
-  character(:), allocatable, dimension(:)                           ::    Strings
+  type(SMUQString_Type)                                             ::    VarString0D
+  type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+  integer                                                           ::    i
 
   SeparatorLoc = ' '
   if (present(Separator)) SeparatorLoc = Separator
 
-  call Parse(Input=String, Separator=SeparatorLoc, Output=Strings)
+  VarString0D = String
+  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
 
-  Convert_C0D_To_L1D = ConvertToLogicals(Strings=Strings)
+  allocate(Convert_C0D_To_L1D(size(VarString1D,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_L1D', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, size(VarString1D)
+    Convert_C0D_To_L1D(i) = ConvertToLogical(String=VarString1D(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_L1D(String, Separator)
+
+  logical, allocatable, dimension(:)                                ::    Convert_String0D_To_L1D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+  character(*), optional, intent(in)                                ::    Separator
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_L1D'
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    SeparatorLoc
+  type(SMUQString_Type)                                             ::    VarString0D
+  type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+  integer                                                           ::    i
+
+  SeparatorLoc = ' '
+  if (present(Separator)) SeparatorLoc = Separator
+
+  Convert_String0D_To_L1D = ConvertToLogicals(String=String%Get())
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -561,6 +1022,27 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String1D_To_L1D(Strings)
+
+  logical, allocatable, dimension(:)                                ::    Convert_String1D_To_L1D
+
+  class(SMUQString_Type), dimension(:), intent(in)                  ::    Strings
+
+  character(*), parameter                                           ::    ProcName='Convert_String1D_To_L1D'
+  integer                                                           ::    StatLoc=0
+  integer                                                           ::    i
+
+  allocate(Convert_String1D_To_L1D(size(Strings,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_String1D_To_L1D', ProcName=ProcName, stat=StatLoc)
+
+  do i = 1, size(Strings,1)
+    Convert_String1D_To_L1D(i) = ConvertToLogical(String=Strings(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_CX0D(String)
 
   complex                                                           ::    Convert_C0D_To_CX0D
@@ -577,6 +1059,21 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_CX0D(String)
+
+  complex                                                           ::    Convert_String0D_To_CX0D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_CX0D'
+  integer                                                           ::    StatLoc=0
+
+  Convert_String0D_To_CX0D = ConvertToComplex(String=String%Get())
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_CX1D(String, Separator)
 
   complex, allocatable, dimension(:)                                ::    Convert_C0D_To_CX1D
@@ -587,14 +1084,43 @@ function Convert_C0D_To_CX1D(String, Separator)
   character(*), parameter                                           ::    ProcName='Convert_C0D_To_CX1D'
   integer                                                           ::    StatLoc=0
   character(:), allocatable                                         ::    SeparatorLoc
-  character(:), allocatable, dimension(:)                           ::    Strings
+  type(SMUQString_Type)                                             ::    VarString0D
+  type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+  integer                                                           ::    i
 
   SeparatorLoc = ' '
   if (present(Separator)) SeparatorLoc = Separator
 
-  call Parse(Input=String, Separator=SeparatorLoc, Output=Strings)
+  VarString0D = String
+  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
 
-  Convert_C0D_To_CX1D = ConvertToComplexs(Strings=Strings)
+  allocate(Convert_C0D_To_CX1D(size(VarString1D,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_CX1D', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, size(VarString1D)
+    Convert_C0D_To_CX1D(i) = ConvertToComplex(String=VarString1D(i)%Get())
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String0D_To_CX1D(String, Separator)
+
+  complex, allocatable, dimension(:)                                ::    Convert_String0D_To_CX1D
+
+  class(SMUQString_Type), intent(in)                                ::    String
+  character(*), optional, intent(in)                                ::    Separator
+
+  character(*), parameter                                           ::    ProcName='Convert_String0D_To_CX1D'
+  integer                                                           ::    StatLoc=0
+  character(:), allocatable                                         ::    SeparatorLoc
+
+  SeparatorLoc = ' '
+  if (present(Separator)) SeparatorLoc = Separator
+
+  Convert_String0D_To_CX1D = ConvertToComplexs(String=String%Get(), Separator=SeparatorLoc)
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -616,6 +1142,27 @@ function Convert_C1D_To_CX1D(Strings)
   do i = 1, size(Strings,1)
     read(unit=Strings(i), fmt=*, iostat=StatLoc) Convert_C1D_To_CX1D(i)
     if (StatLoc /= 0) call Error%Read(Message='Error when performing an internal read', ProcName=ProcName, Status=StatLoc)
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function Convert_String1D_To_CX1D(Strings)
+
+  complex, allocatable, dimension(:)                                ::    Convert_String1D_To_CX1D
+
+  class(SMUQString_Type), dimension(:), intent(in)                  ::    Strings
+
+  character(*), parameter                                           ::    ProcName='Convert_String1D_To_CX1D'
+  integer                                                           ::    StatLoc=0
+  integer                                                           ::    i
+
+  allocate(Convert_String1D_To_CX1D(size(Strings,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_String1D_To_CX1D', ProcName=ProcName, stat=StatLoc)
+
+  do i = 1, size(Strings,1)
+    Convert_String1D_To_CX1D(i) = ConvertToComplex(String=Strings(i)%Get())
   end do
 
 end function
@@ -813,8 +1360,9 @@ function Convert_String0D_To_C0D(Value, Format)
   if (present(Format)) FormatLoc = Format
 
   FormatLoc = '(' // FormatLoc // ')'
+  write(unit=VarC0D, fmt=FormatLoc, iostat=StatLoc) Value%Get()
 
-  Convert_String0D_To_C0D = Value%GetValue()
+  Convert_String0D_To_C0D = trim(adjustl(VarC0D))
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -1083,10 +1631,10 @@ function Convert_String1D_To_C0D(Values, Format, Separator)
 ! 
 !    FormatLoc = '(' // FormatLoc // ',*(' // SeparatorLoc // ',' // FormatLoc // '))'
 
-  Convert_String1D_To_C0D = Values(1)%Get()
+  Convert_String1D_To_C0D = ConvertToString(Value=Values(1), Format=FormatLoc)
   i = 2
   do i = 2, size(Values,1)
-    Convert_String1D_To_C0D = Convert_String1D_To_C0D // SeparatorLoc // Values(i)
+    Convert_String1D_To_C0D = Convert_String1D_To_C0D // SeparatorLoc // ConvertToString(Value=Values(i), Format=FormatLoc)
   end do
 
 end function
@@ -1103,24 +1651,13 @@ function Convert_C0D_To_String1D(Value, Separator)
   character(*), parameter                                           ::    ProcName='Convert_C0D_To_String1D'
   integer                                                           ::    StatLoc=0
   character(:), allocatable                                         ::    SeparatorLoc
-  integer                                                           ::    i
-  character(:), allocatable, dimension(:)                           ::    Output
+  type(SMUQString_Type)                                             ::    VarString0D
 
   SeparatorLoc = ' '
   if (present(Separator)) SeparatorLoc = Separator
 
-  call Parse(Input=Value, Separator=SeparatorLoc, Output=Output)
-
-  allocate(Convert_C0D_To_String1D(size(Output,1)), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_String1D', ProcName=ProcName, stat=StatLoc)
-
-  i = 1
-  do i = 1, size(Output,1)
-    Convert_C0D_To_String1D(i) = trim(adjustl(Output(i)(:)))
-  end do
-
-  deallocate(Output, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='Output', ProcName=ProcName, stat=StatLoc)
+  VarString0D = Value
+  Convert_C0D_To_String1D = VarString0D%Split(Separator=SeparatorLoc)
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
