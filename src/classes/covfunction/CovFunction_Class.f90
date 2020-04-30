@@ -23,6 +23,7 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -101,10 +102,10 @@ abstract interface
   subroutine Evaluate_1D_CovFunction(This, Coordinates, CoordinateLabels, Covariance)
     use                                                               ::    Parameters_Library
     import                                                            ::    CovFunction_Type
-    import                                                            ::    String_Type
+    import                                                            ::    SMUQString_Type
     class(CovFunction_Type), intent(in)                               ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
-    type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    CoordinateLabels
     real(rkp), dimension(:,:), intent(inout)                          ::    Covariance
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

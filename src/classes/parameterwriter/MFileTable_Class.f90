@@ -34,6 +34,7 @@ use LinkedList0D_Class                                            ,only:    Link
 use Input_Class                                                   ,only:    Input_Type
 use List1D_Class                                                  ,only:    List1D_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -46,7 +47,7 @@ type, extends(MFileInput_Type)                                        ::    MFil
   integer                                                             ::    NbMParams=0
   integer                                                             ::    AbscissaColumn=1
   type(List1D_Type), allocatable, dimension(:)                        ::    ParamColumn
-  type(String_Type), allocatable, dimension(:)                        ::    ParamFormat
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    ParamFormat
   character(:), allocatable                                           ::    Identifier
 contains
   procedure, public                                                   ::    Initialize
@@ -179,7 +180,7 @@ contains
 
       ParameterName = 'format'
       call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SubSectionName, Mandatory=.false., Found=Found)
-      if (Found) call This%ParamFormat(i)%Set_Value(Value=VarC0D)
+      if (Found) This%ParamFormat(i) = VarC0D
 
       ParameterName = 'column'
       call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
@@ -286,8 +287,8 @@ contains
 
     class(MFileTable_Type), intent(inout)                             ::    This
     type(Input_Type), intent(in)                                      ::    Input
-    type(String_Type), dimension(:), intent(in)                       ::    Template
-    type(String_Type), dimension(:), intent(inout)                    ::    ProcessedTemplate
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Template
+    type(SMUQString_Type), dimension(:), intent(inout)                ::    ProcessedTemplate
     type(SMUQFile_Type), intent(in)                                   ::    File
 
     character(*), parameter                                           ::    ProcName='WriteInput'
@@ -297,13 +298,13 @@ contains
     class(ITableValue_Type), pointer                                  ::    MParamPointer=>null()
     integer                                                           ::    i, ii, iii, iv
     integer, allocatable, dimension(:)                                ::    VarI1D
-    type(String_Type), allocatable, dimension(:,:)                    ::    NewEntry
+    type(SMUQString_Type), allocatable, dimension(:,:)                ::    NewEntry
     integer                                                           ::    NbEntries
     character(:), allocatable                                         ::    CommentChar
     integer                                                           ::    CommentCharLen
     character(:), allocatable                                         ::    SeparatorChar
     real(rkp), allocatable, dimension(:)                              ::    Abscissa
-    type(String_Type), allocatable, dimension(:)                      ::    VarString1D
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
     integer                                                           ::    TableStart
     integer                                                           ::    TableEnd
     integer                                                           ::    NbColumns
@@ -326,7 +327,7 @@ contains
     i = 1
     ii = 0
     do i = 1, NbLines
-      VarC0D = trim(adjustl(Template(i)%GetValue()))
+      VarC0D = trim(adjustl(Template(i)%Get()))
       if (len_trim(VarC0D) == 0) cycle
       if (VarC0D(1:CommentCharLen) == CommentChar) cycle
       if (VarC0D == '{' // This%Identifier // '}') then
@@ -380,12 +381,12 @@ contains
       i = 1
       ii = 0
       do i = TableStart, TableEnd
-        VarC0D = trim(adjustl(ProcessedTemplate(i)%GetValue()))  
+        VarC0D = trim(adjustl(ProcessedTemplate(i)%Get()))  
         if (len_trim(VarC0D) == 0) cycle
         if (VarC0D(1:CommentCharLen) == CommentChar) cycle
         ii = ii + 1
         call ProcessedTemplate(i)%Parse(Strings=VarString1D, Separator=SeparatorChar)
-        Abscissa(ii) = ConvertToReal(String=VarString1D(This%AbscissaColumn)%GetValue())
+        Abscissa(ii) = ConvertToReal(String=VarString1D(This%AbscissaColumn)%Get())
       end do
     end if
 
@@ -395,14 +396,14 @@ contains
     i = 1
     do i = 1, This%NbMParams
       MParamPointer => This%MParam(i)%GetPointer()
-      NewEntry(:,i) = MParamPointer%GetCharValue(Input=Input, Abscissa=Abscissa, Format=This%ParamFormat(i)%GetValue())
+      NewEntry(:,i) = MParamPointer%GetCharValue(Input=Input, Abscissa=Abscissa, Format=This%ParamFormat(i)%Get())
       nullify(MParamPointer)
     end do
 
     i = 1
     ii = 0
     do i = TableStart, TableEnd
-      VarC0D = trim(adjustl(ProcessedTemplate(i)%GetValue()))  
+      VarC0D = trim(adjustl(ProcessedTemplate(i)%Get()))  
       if (len_trim(VarC0D) == 0) cycle
       if (VarC0D(1:CommentCharLen) == CommentChar) cycle
       ii = ii + 1
@@ -412,7 +413,7 @@ contains
         call This%ParamColumn(iii)%Get(Values=VarI1D)
         iv = 1
         do iv = 1, size(VarI1D,1)
-          VarString1D(VarI1D(iv)) = NewEntry(ii,iii)%GetValue()
+          VarString1D(VarI1D(iv)) = NewEntry(ii,iii)%Get()
         end do
         deallocate(VarI1D, stat=StatLoc)
         if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)

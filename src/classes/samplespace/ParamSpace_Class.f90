@@ -31,6 +31,7 @@ use DistProb_Factory_Class                                        ,only:    Dist
 use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -220,8 +221,8 @@ contains
     class(ParamSpace_Type), intent(inout)                             ::    This
     type(DistProbContainer_Type), dimension(:), intent(in)            ::    Distributions
     real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
-    type(String_Type), dimension(:), intent(in)                       ::    Labels
-    type(String_Type), dimension(:), optional, intent(in)             ::    Names
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Labels
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Names
     
     character(*), parameter                                           ::    ProcName='ConstructCase1'
     integer                                                           ::    i, ii
@@ -244,12 +245,12 @@ contains
 
     if (present(Names)) then
       do i = 1, This%NbDim
-        call This%ParamName(i)%Set_Value(Value=Names(i)%GetValue())
+        This%ParamName(i) = Names(i)
       end do
     else
       i = 1
       do i = 1, This%NbDim
-        call This%ParamName(i)%Set_Value(Value='param' // ConvertToString(Value=i))
+        This%ParamName(i) = 'param' // ConvertToString(Value=i)
       end do
     end if
 
@@ -257,7 +258,7 @@ contains
     do i = 1, This%NbDim-1
       ii = 1
       do ii = i+1 ,This%NbDim
-        if (This%Label(i)%GetValue() == This%Label(ii)%GetValue()) call Error%Raise(Line='Duplicate labels', ProcName=ProcName)
+        if (This%Label(i) == This%Label(ii)) call Error%Raise(Line='Duplicate labels', ProcName=ProcName)
       end do
     end do
 
@@ -285,8 +286,8 @@ contains
     class(ParamSpace_Type), intent(inout)                             ::    This
     class(DistProb_Type), dimension(:), intent(in)                    ::    Distributions
     real(rkp), dimension(:,:), optional, intent(in)                   ::    CorrMat
-    type(String_Type), dimension(:), intent(in)                       ::    Labels
-    type(String_Type), dimension(:), optional, intent(in)             ::    Names
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Labels
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Names
     
     character(*), parameter                                           ::    ProcName='ConstructCase2'
     integer                                                           ::    i, ii
@@ -313,12 +314,12 @@ contains
 
     if (present(Names)) then
       do i = 1, This%NbDim
-        call This%ParamName(i)%Set_Value(Value=Names(i)%GetValue())
+        This%ParamName(i) = Names(i)%GetValue()
       end do
     else
       i = 1
       do i = 1, This%NbDim
-        call This%ParamName(i)%Set_Value(Value='param' // ConvertToString(Value=i))
+        This%ParamName(i) = 'param' // ConvertToString(Value=i)
       end do
     end if
 
@@ -326,7 +327,7 @@ contains
     do i = 1, This%NbDim-1
       ii = 1
       do ii = i+1 ,This%NbDim
-        if (This%Label(i)%GetValue() == This%Label(ii)%GetValue()) call Error%Raise(Line='Duplicate labels', ProcName=ProcName)
+        if (This%Label(i) == This%Label(ii)) call Error%Raise(Line='Duplicate labels', ProcName=ProcName)
       end do
     end do
 
@@ -581,9 +582,9 @@ contains
     integer                                                           ::    NbDim2
     integer                                                           ::    NbDim
     real(rkp), allocatable, dimension(:,:)                            ::    CorrMat
-    type(String_Type), allocatable, dimension(:)                      ::    Names
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Names
     type(DistProbContainer_Type), allocatable, dimension(:)           ::    Distributions
-    type(String_Type), allocatable, dimension(:)                      ::    Labels
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Labels
 
     NbDim1 = ParameterSpace1%GetNbDim()
     NbDim2 = ParameterSpace2%GetNbDim()

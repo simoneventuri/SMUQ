@@ -22,6 +22,7 @@ use Input_Library
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -251,7 +252,7 @@ contains
   subroutine ImportFile(This, Strings, Mandatory, Found)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
-    type(String_Type), allocatable, dimension(:), intent(out)         ::    Strings
+    type(SMUQString_Type), allocatable, dimension(:), intent(out)     ::    Strings
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
 
@@ -279,7 +280,7 @@ contains
       do i = 1, NbLines
         call This%ReadRecord(Unit=UnitLoc, Record=Record, Stat=StatLoc)
         if (StatLoc /= 0) call Error%Raise(Line='Something went wrong reading the record from file', ProcName=ProcName)
-        call Strings(i)%Set_Value(Value=Record)
+        Strings(i) = Record
       end do
 
       call This%Close()
@@ -316,7 +317,7 @@ contains
   subroutine Export0D_String(This, String)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
-    type(String_Type), intent(in)                                     ::    String
+    type(SMUQString_Type), intent(in)                                 ::    String
 
     character(*), parameter                                           ::    ProcName='Export0D_Strings'
     integer                                                           ::    StatLoc=0
@@ -326,7 +327,7 @@ contains
 
     call This%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
 
-    write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) String%GetValue()
+    write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) String%Get()
     if (StatLoc /= 0) call Error%Write(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
 
     call This%Close()
@@ -338,7 +339,7 @@ contains
   subroutine Export1D_Strings(This, Strings)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
-    type(String_Type), dimension(:), intent(in)                       ::    Strings
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Strings
 
     character(*), parameter                                           ::    ProcName='Export1D_Strings'
     integer                                                           ::    StatLoc=0
@@ -353,7 +354,7 @@ contains
     NbLines = size(Strings,1)
     i = 1
     do i = 1, NbLines
-      write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) Strings(i)%GetValue()
+      write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) Strings(i)%Get()
       if (StatLoc /= 0) call Error%Write(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
     end do
 
@@ -391,7 +392,7 @@ contains
   subroutine Append0D_String(This, String)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
-    type(String_Type), intent(in)                                     ::    String
+    type(SMUQString_Type), intent(in)                                 ::    String
 
     character(*), parameter                                           ::    ProcName='Append0D_String'
     integer                                                           ::    StatLoc=0
@@ -402,7 +403,7 @@ contains
 
     if (This%Exists()) then
       call This%Open(Unit=UnitLoc, Action='write', Status='old', Position='append', Mandatory=.false., Found=Found)
-      write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) String%GetValue()
+      write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) String%Get()
       if (StatLoc /= 0) call Error%Write(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
       call This%Close()
     else
@@ -416,7 +417,7 @@ contains
   subroutine Append1D_Strings(This, Strings)
 
     class(SMUQFile_Type), intent(inout)                               ::    This
-    type(String_Type), dimension(:), intent(in)                       ::    Strings
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Strings
 
     character(*), parameter                                           ::    ProcName='Append1D_Strings'
     integer                                                           ::    StatLoc=0
@@ -432,7 +433,7 @@ contains
       NbLines = size(Strings,1)
       i = 1
       do i = 1, NbLines
-        write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) Strings(i)%GetValue()
+        write(unit=UnitLoc, fmt='(A)', iostat=StatLoc) Strings(i)%Get()
         if (StatLoc /= 0) call Error%Write(File=This%FullFile, ProcName=ProcName, iostat=StatLoc)
       end do
       call This%Close()

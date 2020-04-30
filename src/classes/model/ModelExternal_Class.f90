@@ -44,8 +44,8 @@ type, extends(Model_Type)                                             ::    Mode
   type(PathWriter_Type), allocatable, dimension(:)                    ::    PathWriter
   type(ParameterWriter_Type), allocatable, dimension(:)               ::    ParameterWriter
   type(OutputReader_Type), allocatable, dimension(:)                  ::    OutputReader
-  type(String_Type), allocatable, dimension(:)                        ::    SubModelCaseDirectory
-  type(String_Type), allocatable, dimension(:)                        ::    SubModelRunCommand
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    SubModelCaseDirectory
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    SubModelRunCommand
   integer                                                             ::    NbSubModels
   integer                                                             ::    NbConcurrentEvaluations
   integer                                                             ::    NbConcurrentSubEvaluations
@@ -332,7 +332,7 @@ contains
     character(*), parameter                                           ::    ProcName='Run_0D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    StatRun=0
-    type(String_Type), allocatable, dimension(:)                      ::    Transcript
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Transcript
     integer                                                           ::    i
     integer                                                           ::    iPass
     integer                                                           ::    iRun
@@ -452,7 +452,7 @@ contains
     character(*), parameter                                           ::    ProcName='Run_1D'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbInputs
-    type(String_Type), allocatable, dimension(:)                      ::    Transcript
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Transcript
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii

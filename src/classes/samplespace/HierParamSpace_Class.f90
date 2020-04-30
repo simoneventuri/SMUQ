@@ -34,6 +34,7 @@ use ParamSpace_Class                                              ,only:    Para
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -48,8 +49,8 @@ type                                                                  ::    Hier
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   type(HierDistProbContainer_Type), allocatable, dimension(:)         ::    HierDistProb
-  type(String_Type), allocatable, dimension(:)                        ::    ParamName
-  type(String_Type), allocatable, dimension(:)                        ::    Label
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    ParamName
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Label
   real(rkp), dimension(:,:), allocatable                              ::    CorrMat
 contains
   procedure, public                                                   ::    Initialize
@@ -209,8 +210,7 @@ contains
     do i = 1, This%NbDim-1
       ii = 1
       do ii = i+1 ,This%NbDim
-        if (This%Label(i)%GetValue() == This%Label(ii)%GetValue()) call Error%Raise(Line='Duplicate labels : ' //              &
-                                                                                      This%Label(i)%GetValue(), ProcName=ProcName)
+        if (This%Label(i) == This%Label(ii)) call Error%Raise(Line='Duplicate labels : ' // This%Label(i), ProcName=ProcName)
       end do
     end do
 
@@ -357,7 +357,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetName1D(This)
 
-    type(String_Type), allocatable, dimension(:)                      ::    GetName1D
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    GetName1D
     class(HierParamSpace_Type), intent(in)                            ::    This
 
     character(*), parameter                                           ::    ProcName='GetName1D'
@@ -383,7 +383,7 @@ contains
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetLabel0D = This%Label(Num)%GetValue()      
+    GetLabel0D = This%Label(Num)%Get()      
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -391,7 +391,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetLabel1D(This)
 
-    type(String_Type), allocatable, dimension(:)                      ::    GetLabel1D
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    GetLabel1D
     class(HierParamSpace_Type), intent(in)                            ::    This
 
     character(*), parameter                                           ::    ProcName='GetLabel1D'

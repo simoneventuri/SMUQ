@@ -28,6 +28,7 @@ use Input_Class                                                   ,only:    Inpu
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -191,7 +192,7 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 function GetCharValue(This, Input, Abscissa, Format)
 
-  type(String_Type), allocatable, dimension(:)                        ::    GetCharValue
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetCharValue
   
   class(ITableConstant_Type), intent(in)                              ::    This
   type(Input_Type), intent(in)                                        ::    Input

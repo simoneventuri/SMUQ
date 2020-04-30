@@ -31,6 +31,7 @@ use IScalarValueContainer_Class                                   ,only:    ISca
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use Input_Class                                                   ,only:    Input_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -41,8 +42,8 @@ public                                                                ::    MFil
 type, extends(MFileInput_Type)                                        ::    MFileScalar_Type
   type(IScalarValueContainer_Type), allocatable, dimension(:)         ::    MParam
   integer                                                             ::    NbMParams=0
-  type(String_Type), allocatable, dimension(:)                        ::    ParamIdentifier
-  type(String_Type), allocatable, dimension(:)                        ::    ParamFormat
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    ParamIdentifier
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    ParamFormat
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -251,8 +252,8 @@ contains
 
     class(MFileScalar_Type), intent(inout)                            ::    This
     type(Input_Type), intent(in)                                      ::    Input
-    type(String_Type), dimension(:), intent(in)                       ::    Template
-    type(String_Type), dimension(:), intent(inout)                    ::    ProcessedTemplate
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Template
+    type(SMUQString_Type), dimension(:), intent(inout)                ::    ProcessedTemplate
     type(SMUQFile_Type), intent(in)                                   ::    File
 
     character(*), parameter                                           ::    ProcName='WriteInput'
@@ -286,11 +287,11 @@ contains
 
       ii = 1
       do ii = 1, NbLines
-        if (index(Template(ii)%GetValue(), VarC0D) /= 0) call LineLog(i)%Append(Value=ii)
+        if (index(Template(ii)%Get(), VarC0D) /= 0) call LineLog(i)%Append(Value=ii)
       end do
 
-      if (LineLog(i)%GetLength() < 1) call Error%Raise(Line='Could not find indicator in template: ' //                        &
-                                                                            This%ParamIdentifier(i)%GetValue(), ProcName=ProcName)
+      if (LineLog(i)%GetLength() < 1) call Error%Raise(Line='Could not find indicator in template: ' // This%ParamIdentifier(i),  &
+                                                       ProcName=ProcName)
     end do
 
     i = 1
@@ -299,10 +300,9 @@ contains
       ii = 1
       do ii = 1, LineLog(i)%GetLength()
         call LineLog(i)%Get(Node=ii, Value=IndexLoc)
-        VarC0D = ReplaceCharacter(String=ProcessedTemplate(IndexLoc)%GetValue(),                                                 &
-                 Old='{' // This%ParamIdentifier(i)%GetValue() // '}' ,                                                           &
-                 New=MParamPointer%GetCharValue(Input=Input, Format=This%ParamFormat(i)%GetValue()))
-        call ProcessedTemplate(IndexLoc)%Set_Value(Value=VarC0D)
+        VarC0D = ReplaceCharacter(String=ProcessedTemplate(IndexLoc)%Get(), Old='{' // This%ParamIdentifier(i) // '}' ,            &
+                                  New=MParamPointer%GetCharValue(Input=Input, Format=This%ParamFormat(i)))
+        ProcessedTemplate(IndexLoc) = VarC0D
       end do
       nullify(MParamPointer)
     end do

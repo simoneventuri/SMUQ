@@ -29,6 +29,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use DistProb_Class                                                ,only:    DistProb_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -502,7 +503,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='WriteInfo'
     integer                                                           ::    i
-    type(String_Type), dimension(5)                                   ::    Strings
+    type(SMUQString_Type), dimension(5)                               ::    Strings
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 

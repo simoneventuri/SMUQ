@@ -41,6 +41,7 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use Model_Class                                                   ,only:    Model_Type
 use List2D_Class                                                  ,only:    List2D_Type
 use Histogram_Class                                               ,only:    Histogram_Type, BinValues
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -55,7 +56,7 @@ type, extends(UQMethod_Type)                                          ::    UQSa
   integer                                                             ::    NbSamples
   type(Histogram_Type), allocatable, dimension(:)                     ::    Histograms
   type(List2D_Type), allocatable, dimension(:)                        ::    BinCounts
-  type(String_Type), allocatable, dimension(:)                        ::    Labels
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Labels
   integer                                                             ::    NbHistograms
   real(rkp), allocatable, dimension(:,:)                              ::    ParamRecord
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
@@ -245,11 +246,9 @@ contains
 
     i = 1
     do i = 1, This%NbHistograms
-      Label1 = This%Labels(i)%GetValue()
       ii = i+1
       do ii = i + 1, This%NbHistograms
-        Label2 = This%Labels(ii)%GetValue()
-        if (Label1 /= Label2) cycle
+        if (This%Labels(i) /= This%Labels(ii)) cycle
         call Error%Raise('Detected duplicate label: ' // Label1, ProcName=ProcName)
       end do
     end do

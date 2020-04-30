@@ -29,6 +29,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use Input_Class                                                   ,only:    Input_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -42,7 +43,7 @@ type                                                                  ::    Resp
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Label
   real(rkp), dimension(:,:), allocatable                              ::    Coordinates
-  type(String_Type), allocatable, dimension(:)                        ::    CoordinatesLabels
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    CoordinatesLabels
   integer                                                             ::    NbIndCoordinates=0
   integer                                                             ::    NbNodes=0
   real(rkp), dimension(:,:), allocatable                              ::    ResponseData
@@ -363,7 +364,7 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    GetCoordsLabels_R2D
 
     class(Response_Type), intent(in)                                  ::    This
-    type(String_Type), dimension(:), intent(in)                       ::    Labels
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Labels
 
     character(*), parameter                                           ::    ProcName='GetCoordsLabels_R2D'
     integer                                                           ::    StatLoc=0
@@ -384,7 +385,7 @@ contains
       i = 1
       ii = 0
       do i = 1, This%NbIndCoordinates
-        if (Labels(iii)%GetValue() /= This%CoordinatesLabels(i)%GetValue()) cycle
+        if (Labels(iii) /= This%CoordinatesLabels(i)) cycle
         ii = i
         exit
       end do
@@ -502,7 +503,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetCoordinateLabels(This)
 
-    type(String_Type), allocatable, dimension(:)                      ::    GetCoordinateLabels
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    GetCoordinateLabels
 
     class(Response_Type), intent(in)                                  ::    This
 

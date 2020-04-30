@@ -26,6 +26,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use Input_Class                                                   ,only:    Input_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -35,7 +36,7 @@ public                                                                ::    ISca
 
 type, extends(IScalarValue_Type)                                      ::    IScalarNormalized_Type
   character(:), allocatable                                           ::    Dependency
-  type(String_Type), allocatable, dimension(:)                        ::    NormDependency
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    NormDependency
   integer                                                             ::    NbDependencies
 contains
   procedure, public                                                   ::    Initialize
@@ -135,7 +136,7 @@ subroutine ConstructInput(This, Input, Prefix)
   i = 1
   ii = 0
   do i = 1, This%NbDependencies
-    if (This%NormDependency(i)%GetValue() /= This%Dependency) cycle
+    if (This%NormDependency(i) /= This%Dependency) cycle
     ii = i 
     exit 
   end do
@@ -200,7 +201,7 @@ function GetValue(This, Input)
 
   i = 1
   do i = 1, This%NbDependencies
-    call Input%GetValue(Value=VarR0D, Label=This%NormDependency(i)%GetValue())
+    call Input%GetValue(Value=VarR0D, Label=This%NormDependency(i))
     DenSum = DenSum + VarR0D
   end do
 

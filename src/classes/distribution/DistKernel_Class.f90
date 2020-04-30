@@ -33,6 +33,7 @@ use DistNorm_Class                                                ,only:    Dist
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use KernelDist_Factory_Class                                      ,only:    KernelDist_Factory
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -784,7 +785,7 @@ contains
     character(*), parameter                                           ::    ProcName='WriteInfo'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
-    type(String_Type), allocatable, dimension(:)                      ::    Strings
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Strings
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -807,10 +808,10 @@ contains
     deallocate(VarR1D, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
+    call File%Append(Strings=Strings)
+
     deallocate(Strings, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
-
-    call File%Append(Strings=Strings)
 
     call This%Kernel%WriteInfo(File=File)
 

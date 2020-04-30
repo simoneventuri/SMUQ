@@ -33,6 +33,7 @@ use Model_Class                                                   ,only:    Mode
 use Model_Factory_Class                                           ,only:    Model_Factory
 use Restart_Class                                                 ,only:    RestartUtility
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -326,7 +327,7 @@ subroutine WriteOutput(This, Directory)
   integer                                                           ::    i
   character(:), allocatable                                         ::    Label
   character(:), allocatable                                         ::    PrefixLoc
-  type(String_Type), allocatable, dimension(:)                      ::    ResponseLabels
+  type(SMUQString_Type), allocatable, dimension(:)                  ::    ResponseLabels
   integer                                                           ::    NbResponses
   type(SMUQFile_Type)                                               ::    File
   character(:), allocatable                                         ::    FileName

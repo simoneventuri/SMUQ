@@ -29,6 +29,7 @@ use MFileInputContainer_Class                                     ,only:    MFil
 use MFileInput_Factory_Class                                      ,only:    MFileInput_Factory
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use Input_Class                                                   ,only:    Input_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -40,7 +41,7 @@ type                                                                  ::    File
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  type(String_Type), allocatable, dimension(:)                        ::    TemplateTranscript
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    TemplateTranscript
   type(MFileInputContainer_Type), allocatable, dimension(:)           ::    MFileInputs
   integer                                                             ::    NbMFileInputs
   type(SMUQFile_Type)                                                 ::    ModelFile
@@ -278,7 +279,6 @@ contains
     character(*), parameter                                           ::    ProcName='WriteInput'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
-    type(String_Type), allocatable, dimension(:)                      ::    Strings
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -577,8 +577,8 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
     class(MFileInput_Type), pointer                                   ::    MFileInputPtr=>null()
-    type(String_Type), allocatable, dimension(:)                      ::    WorkStrings1
-    type(String_Type), allocatable, dimension(:)                      ::    WorkStrings2
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    WorkStrings1
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    WorkStrings2
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -590,10 +590,7 @@ contains
 
     i = 1
     do i = 1, This%NbMFileInputs
-      ii = 1
-      do ii = 1, size(WorkStrings2)
-        WorkStrings1(ii) = WorkStrings2(ii)%GetValue()
-      end do
+      WorkStrings1 = WorkStrings2
       MFileInputPtr => This%MFileInputs(i)%GetPointer()
       call MFileInputPtr%WriteInput(Input=Input, Template=WorkStrings1, ProcessedTemplate=WorkStrings2, File=This%ModelFile)
       nullify(MFileInputPtr)

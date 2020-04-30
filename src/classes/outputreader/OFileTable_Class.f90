@@ -253,7 +253,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='ReadOutput'
     integer                                                           ::    StatLoc=0
-    type(String_Type), allocatable, dimension(:,:)                    ::    Strings
+    type(SMUQString_Type), allocatable, dimension(:,:)                ::    Strings
     real(rkp), allocatable, dimension(:)                              ::    TableOutput
     real(rkp), allocatable, dimension(:)                              ::    Abscissa
     real(rkp), allocatable, dimension(:)                              ::    InterpolatedOutput
@@ -295,7 +295,7 @@ contains
 
     i = 1
     do i = 1, NbLines
-      Abscissa(i) = ConvertToReal(String=Strings(i,This%AbscissaColumn)%GetValue())
+      Abscissa(i) = ConvertToReal(String=Strings(i,This%AbscissaColumn)%Get())
     end do
 
     if (This%DebugFlag) then
@@ -317,12 +317,12 @@ contains
 
       ii = 1
       do ii = 1, NbLines
-        TableOutput(ii) = ConvertToReal(String=Strings(ii,This%OutputColumn(i))%GetValue())
+        TableOutput(ii) = ConvertToReal(String=Strings(ii,This%OutputColumn(i))%Get())
       end do
 
       if (This%Interpolated) then
-        Values((i-1)*NbEntries+1:i*NbEntries,1) = Interpolate(Abscissa=Abscissa, Ordinate=TableOutput,                           &
-                                                                                                    Nodes=This%InterpolationNodes)
+        Values((i-1)*NbEntries+1:i*NbEntries,1) = Interpolate(Abscissa=Abscissa, Ordinate=TableOutput,                            &
+                                                                                                     Nodes=This%InterpolationNodes)
         if (This%DebugFlag) then
           write(*,*)
           write(*,*) 'Interpolated values from column ' // ConvertToString(Value=This%OutputColumn(i))

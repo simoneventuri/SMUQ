@@ -22,6 +22,7 @@ use Parameters_Library
 use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -34,7 +35,7 @@ type                                                                  ::    Inpu
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Name
   integer                                                             ::    NbInputs=0
-  type(String_Type), dimension(:), allocatable                        ::    Label
+  type(SMUQString_Type), dimension(:), allocatable                    ::    Label
   real(rkp), dimension(:), allocatable                                ::    Input
 contains
   procedure, public                                                   ::    Initialize
@@ -44,30 +45,40 @@ contains
                                                                                                           ConstructCase2
   procedure, private                                                  ::    ConstructCase1
   procedure, private                                                  ::    ConstructCase2
-  generic, public                                                     ::    GetValue                =>    GetValue0D_Label,       &
+  generic, public                                                     ::    GetValue                =>    GetValue0D_LabelString, &
+                                                                                                          GetValue0D_LabelChar,   &
                                                                                                           GetValue1D_Labels,      &
                                                                                                           GetValue1D
-  procedure, public                                                   ::    GetValue0D_Label
+  procedure, public                                                   ::    GetValue0D_LabelString
+  procedure, public                                                   ::    GetValue0D_LabelChar
   procedure, public                                                   ::    GetValue1D_Labels
   procedure, public                                                   ::    GetValue1D
   procedure, public                                                   ::    GetValuesPointer
-  generic, public                                                     ::    Append                  =>    AppendInput0D,          &
+  generic, public                                                     ::    Append                  =>    AppendInput0D_Char,     &
+                                                                                                          AppendInput0D_String,   &
                                                                                                           AppendInput1D
-  procedure, public                                                   ::    AppendInput0D
+  procedure, public                                                   ::    AppendInput0D_Char
+  procedure, public                                                   ::    AppendInput0D_String
   procedure, public                                                   ::    AppendInput1D
-  generic, public                                                     ::    Replace                 =>    Replace0D,              &
+  generic, public                                                     ::    Replace                 =>    Replace0D_String,       &
+                                                                                                          Replace0D_Char,         &
                                                                                                           Replace1D
-  procedure, public                                                   ::    Replace0D
+  procedure, public                                                   ::    Replace0D_String
+  procedure, public                                                   ::    Replace0D_Char
   procedure, public                                                   ::    Replace1D
-  generic, public                                                     ::    HasParameter            =>    HasParameter0D,         &
+  generic, public                                                     ::    HasParameter            =>    HasParameter0D_Char,    &
+                                                                                                          HasParameter0D_String,  &
                                                                                                           HasParameter1D
-  procedure, public                                                   ::    HasParameter0D
+  procedure, public                                                   ::    HasParameter0DChar
+  procedure, public                                                   ::    HasParameter0DString
   procedure, public                                                   ::    HasParameter1D
   generic, public                                                     ::    HasParameters           =>    HasParameters1D
   procedure, public                                                   ::    HasParameters1D
-  generic, public                                                     ::    Transform               =>    Transform0D,            &
+  generic, public                                                     ::    Transform               =>    Transform0D_Char,       &
+                                                                                                          Transform0D_String,     &
                                                                                                           Transform1D
-  procedure, public                                                   ::    Transform0D
+  procedure, public                                                   ::    Transform0D_String
+  procedure, public                                                   ::    Transform0D_Char
   procedure, public                                                   ::    Transform1D
   procedure, public                                                   ::    GetNbInputs
   generic, public                                                     ::    GetLabel                =>    GetLabel0D,             &
@@ -141,7 +152,7 @@ subroutine ConstructCase1(This, Input, Labels)
 
   class(Input_Type), intent(inout)                                    ::    This
   real(rkp), dimension(:), intent(in)                                 ::    Input
-  type(String_Type), dimension(:), intent(in)                         ::    Labels
+  type(SMUQString_Type), dimension(:), intent(in)                     ::    Labels
   
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
@@ -188,16 +199,16 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine AppendInput0D(This, Value, Label)
+subroutine AppendInput0D_Char(This, Value, Label)
 
   class(Input_Type), intent(inout)                                    ::    This
   real(rkp), intent(in)                                               ::    Value
   character(*), intent(in)                                            ::    Label
   
-  character(*), parameter                                             ::    ProcName='AppendInput0D'
+  character(*), parameter                                             ::    ProcName='AppendInput0D_Char'
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i
-  type(String_Type), allocatable, dimension(:)                        ::    LabelsLoc
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    LabelsLoc
   real(rkp), allocatable, dimension(:)                                ::    ValuesLoc
 
   if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
@@ -226,18 +237,58 @@ subroutine AppendInput0D(This, Value, Label)
   end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
+
+!!------------------------------------------------------------------------------------------------------------------------------
+  subroutine AppendInput0D_String(This, Value, Label)
+
+    class(Input_Type), intent(inout)                                    ::    This
+    real(rkp), intent(in)                                               ::    Value
+    type(SMUQ_String_Type), intent(in)                                  ::    Label
+    
+    character(*), parameter                                             ::    ProcName='AppendInput0D_String'
+    integer                                                             ::    StatLoc=0
+    integer                                                             ::    i
+    type(SMUQString_Type), allocatable, dimension(:)                    ::    LabelsLoc
+    real(rkp), allocatable, dimension(:)                                ::    ValuesLoc
+  
+    if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
+  
+    if (This%HasParameter(Label=Label)) call Error%Raise('Tried to append an input that was already part ' //                &
+                                                                                        'of the input object', ProcName=ProcName)
+  
+    allocate(LabelsLoc(This%NbInputs+1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='LabelsLoc', ProcName=ProcName, stat=StatLoc)
+    LabelsLoc(1:THis%NbInputs) = This%Label
+    LabelsLoc(This%NbInputs+1) = Label
+  
+    allocate(ValuesLoc(This%NbInputs+1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='ValuesLoc', ProcName=ProcName, stat=StatLoc)
+    ValuesLoc(1:This%NbInputs) = This%Input
+    ValuesLoc(This%NbInputs+1) = Value
+  
+    call This%Construct(Input=ValuesLoc, Labels=LabelsLoc)
+  
+    deallocate(ValuesLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='ValuesLoc', ProcName=ProcName, stat=StatLoc)
+  
+    deallocate(LabelsLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='LabelsLoc', ProcName=ProcName, stat=StatLoc)
+  
+    end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine AppendInput1D(This, Values, Labels)
 
   class(Input_Type), intent(inout)                                    ::    This
   real(rkp), dimension(:), intent(in)                                 ::    Values
-  type(String_Type), dimension(:), intent(in)                         ::    Labels
+  type(SMUQString_Type), dimension(:), intent(in)                     ::    Labels
   
   character(*), parameter                                             ::    ProcName='AppendInput1D'
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i
   integer                                                             ::    ii
-  type(String_Type), allocatable, dimension(:)                        ::    LabelsLoc
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    LabelsLoc
   real(rkp), allocatable, dimension(:)                                ::    ValuesLoc
   character(:), allocatable                                           ::    VarC0D
   integer                                                             ::    NbAppendInputs
@@ -271,7 +322,7 @@ subroutine AppendInput1D(This, Values, Labels)
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine GetValue0D_Label(This, Value, Label, Mandatory, Found)
+subroutine GetValue0D_LabelChar(This, Value, Label, Mandatory, Found)
 
   class(Input_Type), intent(in)                                       ::    This
   real(rkp), intent(out)                                              ::    Value
@@ -279,7 +330,7 @@ subroutine GetValue0D_Label(This, Value, Label, Mandatory, Found)
   logical, optional, intent(in)                                       ::    Mandatory
   logical, optional, intent(out)                                      ::    Found
   
-  character(*), parameter                                             ::    ProcName='GetValue0D'
+  character(*), parameter                                             ::    ProcName='GetValue0D_LabelChar'
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i
   logical                                                             ::    FoundLoc
@@ -297,7 +348,7 @@ subroutine GetValue0D_Label(This, Value, Label, Mandatory, Found)
   if (len_trim(Label) > 0) then
     i = 1
     do i = 1, This%NbInputs
-      if (This%Label(i)%GetValue() == Label) then
+      if (This%Label(i) == Label) then
         Value = This%Input(i)
         FoundLoc = .true.
         exit
@@ -313,15 +364,57 @@ subroutine GetValue0D_Label(This, Value, Label, Mandatory, Found)
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine GetValue0D_LabelString(This, Value, Label, Mandatory, Found)
+
+    class(Input_Type), intent(in)                                       ::    This
+    real(rkp), intent(out)                                              ::    Value
+    type(SMUQString_Type), intent(in)                                   ::    Label
+    logical, optional, intent(in)                                       ::    Mandatory
+    logical, optional, intent(out)                                      ::    Found
+    
+    character(*), parameter                                             ::    ProcName='GetValue0D_LabelString'
+    integer                                                             ::    StatLoc=0
+    integer                                                             ::    i
+    logical                                                             ::    FoundLoc
+    logical                                                             ::    MandatoryLoc
+  
+    if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
+  
+    Value = Zero
+  
+    MandatoryLoc = .true.
+    if (present(Mandatory)) MandatoryLoc = Mandatory
+  
+    FoundLoc = .false.
+  
+    if (len_trim(Label) > 0) then
+      i = 1
+      do i = 1, This%NbInputs
+        if (This%Label(i) == Label) then
+          Value = This%Input(i)
+          FoundLoc = .true.
+          exit
+        end if
+      end do
+    end if
+  
+    if (MandatoryLoc .and. .not. FoundLoc) call Error%Raise(Line='Mandatory label not found : ' // Label, ProcName=ProcName)
+  
+    if (present(Found)) Found = FoundLoc
+  
+    end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 subroutine GetValue1D_Labels(This, Values, Labels, Mandatory, Found)
 
   class(Input_Type), intent(in)                                       ::    This
   real(rkp), allocatable, dimension(:), intent(out)                   ::    Values
-  type(String_Type), dimension(:), intent(in)                         ::    Labels
+  type(SMUQString_Type), dimension(:), intent(in)                     ::    Labels
   logical, optional, intent(in)                                       ::    Mandatory
   logical, optional, intent(out)                                      ::    Found
   
-  character(*), parameter                                             ::    ProcName='GetValue1D'
+  character(*), parameter                                             ::    ProcName='GetValue1D_Labels'
   integer                                                             ::    StatLoc=0
   integer                                                             ::    NbLabels
   integer                                                             ::    i
@@ -348,7 +441,7 @@ subroutine GetValue1D_Labels(This, Values, Labels, Mandatory, Found)
     FoundLoc = .false.
     if (len_trim(VarC0D) > 0) then
       do i = 1, This%NbInputs
-        if (This%Label(i)%GetValue() == VarC0D) then
+        if (This%Label(i) == VarC0D) then
           Values(ii) = This%Input(i)
           FoundLoc = .true.
           exit
@@ -400,14 +493,14 @@ function GetValuesPointer(This)
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function HasParameter0D(This, Label)
+function HasParameter0D_String(This, Label)
 
-  logical                                                             ::    HasParameter0D
+  logical                                                             ::    HasParameter0D_String
 
   class(Input_Type), target, intent(in)                               ::    This
-  character(*), intent(in)                                            ::    Label
+  type(SMUQString_Type), intent(in)                                   ::    Label
 
-  character(*), parameter                                             ::    ProcName='HasParameter0D'
+  character(*), parameter                                             ::    ProcName='HasParameter0D_String'
   integer                                                             ::    i
 
   if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
@@ -417,8 +510,37 @@ function HasParameter0D(This, Label)
   if (len_trim(Label) > 0) then
     i = 1
     do i = 1, This%NbInputs
-      if (This%Label(i)%GetValue() /= Label) cycle
-      HasParameter0D = .true.
+      if (This%Label(i) /= Label) cycle
+      HasParameter0D_String = .true.
+      exit
+    end do
+  else
+    call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
+  end if
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function HasParameter0D_Char(This, Label)
+
+  logical                                                             ::    HasParameter0D_Char
+
+  class(Input_Type), target, intent(in)                               ::    This
+  character(*), intent(in)                                            ::    Label
+
+  character(*), parameter                                             ::    ProcName='HasParameter0D_Char'
+  integer                                                             ::    i
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
+
+  HasParameter0D = .false.
+
+  if (len_trim(Label) > 0) then
+    i = 1
+    do i = 1, This%NbInputs
+      if (This%Label(i) /= Label) cycle
+      HasParameter0D_Char = .true.
       exit
     end do
   else
@@ -434,13 +556,12 @@ function HasParameter1D(This, Labels)
   logical, allocatable, dimension(:)                                  ::    HasParameter1D
 
   class(Input_Type), target, intent(in)                               ::    This
-  type(String_Type), dimension(:), intent(in)                         ::    Labels
+  type(SMUQString_Type), dimension(:), intent(in)                     ::    Labels
 
   character(*), parameter                                             ::    ProcName='HasParameter1D'
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i
   integer                                                             ::    ii
-  character(:), allocatable                                           ::    LabelLoc
   integer                                                             ::    NbLabels
 
   if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
@@ -454,11 +575,10 @@ function HasParameter1D(This, Labels)
 
   ii = 1
   do ii = 1, NbLabels
-    LabelLoc = Labels(ii)%GetValue()
     if (len_trim(LabelLoc) > 0) then
       i = 1
       do i = 1, This%NbInputs
-        if (This%Label(i)%GetValue() /= LabelLoc) cycle
+        if (This%Label(i) /= Labels(ii)) cycle
         HasParameter1D(ii) = .true.
         exit
       end do
@@ -471,53 +591,13 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function HasParameters1D(This, Labels)
-
-  logical                                                             ::    HasParameters1D
-
-  class(Input_Type), target, intent(in)                               ::    This
-  type(String_Type), dimension(:), intent(in)                         ::    Labels
-
-  character(*), parameter                                             ::    ProcName='HasParameters1D'
-  integer                                                             ::    StatLoc=0
-  integer                                                             ::    i
-  integer                                                             ::    ii
-  character(:), allocatable                                           ::    LabelLoc
-  integer                                                             ::    NbLabels
-
-  if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
-
-  NbLabels = size(Labels,1)
-
-  HasParameters1D = .true.
-
-  ii = 1
-  do ii = 1, NbLabels
-    LabelLoc = Labels(ii)%GetValue()
-    if (len_trim(LabelLoc) > 0) then
-      i = 1
-      do i = 1, This%NbInputs
-        if (This%Label(i)%GetValue() == LabelLoc) cycle
-        HasParameters1D = .false.
-        exit
-      end do
-    else
-      call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
-    end if
-    if (.not. HasParameters1D) exit
-  end do
-
-end function
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine Replace0D(This, Value, Label)
+subroutine Replace0D_Char(This, Value, Label)
 
   class(Input_Type), intent(inout)                                    ::    This
   real(rkp), intent(in)                                               ::    Value
   character(*), intent(in)                                            ::    Label
   
-  character(*), parameter                                             ::    ProcName='Replace0D'
+  character(*), parameter                                             ::    ProcName='Replace0D_Char'
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i
   logical                                                             ::    Found
@@ -528,7 +608,38 @@ subroutine Replace0D(This, Value, Label)
     Found = .false.
     i = 1
     do i = 1, This%NbInputs
-      if (This%Label(i)%GetValue() /= Label) cycle
+      if (This%Label(i) /= Label) cycle
+      This%Input(i) = Value
+      Found = .true.  
+      exit
+    end do
+    if (.not. Found) call Error%Raise('Did not find input with label :' // Label, ProcName=ProcName)
+  else
+    call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
+  end if
+
+  end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Replace0D_String(This, Value, Label)
+
+  class(Input_Type), intent(inout)                                    ::    This
+  real(rkp), intent(in)                                               ::    Value
+  type(SMUQString_Type), intent(in)                                   ::    Label
+  
+  character(*), parameter                                             ::    ProcName='Replace0D_String'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  logical                                                             ::    Found
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
+
+  if (len_trim(Label) > 0) then
+    Found = .false.
+    i = 1
+    do i = 1, This%NbInputs
+      if (This%Label(i) /= Label) cycle
       This%Input(i) = Value
       Found = .true.  
       exit
@@ -546,7 +657,7 @@ subroutine Replace1D(This, Values, Labels)
 
   class(Input_Type), intent(inout)                                    ::    This
   real(rkp), dimension(:), intent(in)                                 ::    Values
-  type(String_Type), dimension(:), intent(in)                         ::    Labels
+  type(SMUQString_Type), dimension(:), intent(in)                     ::    Labels
   
   character(*), parameter                                             ::    ProcName='Replace1D'
   integer                                                             ::    StatLoc=0
@@ -564,12 +675,11 @@ subroutine Replace1D(This, Values, Labels)
 
   ii = 1
   do ii = 1, NbLabels
-    LabelLoc = Labels(ii)%GetValue()
     if (len_trim(LabelLoc) > 0) then
       Found = .false.
       i = 1
       do i = 1, This%NbInputs
-        if (This%Label(i)%GetValue() /= LabelLoc) cycle
+        if (This%Label(i) /= Labels(ii)) cycle
         This%Input(i) = Values(ii)
         Found = .true.
         exit
@@ -584,7 +694,7 @@ subroutine Replace1D(This, Values, Labels)
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Transform0D(This, Transformation, Label, Mandatory, Found)
+subroutine Transform0D_Char(This, Transformation, Label, Mandatory, Found)
 
   class(Input_Type), intent(inout)                                    ::    This
   character(*), intent(in)                                            ::    Transformation
@@ -592,7 +702,7 @@ subroutine Transform0D(This, Transformation, Label, Mandatory, Found)
   logical, optional, intent(in)                                       ::    Mandatory
   logical, optional, intent(out)                                      ::    Found
   
-  character(*), parameter                                             ::    ProcName='Transform0D'
+  character(*), parameter                                             ::    ProcName='Transform0D_Char'
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i
   logical                                                             ::    MandatoryLoc
@@ -608,7 +718,7 @@ subroutine Transform0D(This, Transformation, Label, Mandatory, Found)
   if (len_trim(Label) > 0) then
     i = 1
     do i = 1, This%NbInputs
-      if (This%Label(i)%GetValue() == Label) then
+      if (This%Label(i) == Label) then
         call Transform(Transformation=Transformation, Value=This%Input(i))
         exit
       end if
@@ -626,11 +736,53 @@ subroutine Transform0D(This, Transformation, Label, Mandatory, Found)
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Transform0D_String(This, Transformation, Label, Mandatory, Found)
+
+    class(Input_Type), intent(inout)                                    ::    This
+    type(SMUQString_Type), intent(in)                                   ::    Transformation
+    type(SMUQString_Type), intent(in)                                   ::    Label
+    logical, optional, intent(in)                                       ::    Mandatory
+    logical, optional, intent(out)                                      ::    Found
+    
+    character(*), parameter                                             ::    ProcName='Transform0D_String'
+    integer                                                             ::    StatLoc=0
+    integer                                                             ::    i
+    logical                                                             ::    MandatoryLoc
+    logical                                                             ::    FoundLoc
+  
+    if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
+  
+    MandatoryLoc = .true.
+    if (present(Mandatory)) MandatoryLoc = Mandatory
+  
+    FoundLoc = .true.
+  
+    if (len_trim(Label) > 0) then
+      i = 1
+      do i = 1, This%NbInputs
+        if (This%Label(i) == Label) then
+          call Transform(Transformation=Transformation, Value=This%Input(i))
+          exit
+        end if
+        if (i == This%NbInputs) FoundLoc = .false.
+      end do
+      if (.not. FoundLoc .and. MandatoryLoc) call Error%Raise('Did not find mandatory input parameter : ' // Label,            &
+                                                                                                                ProcName=ProcName)
+    else
+      call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
+    end if
+  
+    if (present(Found)) Found = FoundLoc
+  
+    end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
 subroutine Transform1D(This, Transformations, Labels, Mandatory, Found)
 
   class(Input_Type), intent(inout)                                    ::    This
-  type(String_Type), dimension(:), intent(in)                         ::    Transformations
-  type(String_Type), dimension(:), intent(in)                         ::    Labels
+  type(SMUQString_Type), dimension(:), intent(in)                     ::    Transformations
+  type(SMUQString_Type), dimension(:), intent(in)                     ::    Labels
   logical, optional, intent(in)                                       ::    Mandatory
   logical, optional, intent(out)                                      ::    Found
   
@@ -695,7 +847,7 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 function GetLabel1D(This)
 
-  type(String_Type), allocatable, dimension(:)                        ::    GetLabel1D
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetLabel1D
   class(Input_Type), intent(in)                                       ::    This
 
   character(*), parameter                                             ::    ProcName='GetLabel1D'

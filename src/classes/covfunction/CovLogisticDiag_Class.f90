@@ -27,6 +27,7 @@ use Error_Class                                                   ,only:    Erro
 use Input_Class                                                   ,only:    Input_Type
 use CovFunction_Class                                             ,only:    CovFunction_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -223,7 +224,7 @@ contains
 
     class(CovLogisticDiag_Type), intent(in)                           ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
-    type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    CoordinateLabels
     real(rkp), dimension(:,:), intent(inout)                          ::    Covariance
 
     character(*), parameter                                           ::    ProcName='Evaluate_1D'
@@ -239,7 +240,7 @@ contains
     i = 1
     iCoordinate = 0
     do i = 1, size(Coordinates,2)
-      if (CoordinateLabels(i)%GetValue() == This%CoordinateLabel) then
+      if (CoordinateLabels(i) == This%CoordinateLabel) then
         iCoordinate = i
         exit
       end if

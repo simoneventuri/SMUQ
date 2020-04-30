@@ -31,6 +31,7 @@ use ITableValue_Class                                             ,only:    ITab
 use ITablePoly_Class                                              ,only:    ITablePoly_Type
 use Input_Class                                                   ,only:    Input_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -121,7 +122,7 @@ subroutine ConstructInput(This, Input, Prefix)
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
   integer                                                             ::    ParamColumn
   integer                                                             ::    AbscissaColumn
-  type(String_Type), allocatable, dimension(:,:)                      ::    VarR2D
+  type(SMUQString_Type), allocatable, dimension(:,:)                  ::    VarR2D
   
   if (This%Constructed) call This%Reset()
   if (.not. This%Initialized) call This%Initialize()
@@ -160,8 +161,8 @@ subroutine ConstructInput(This, Input, Prefix)
 
   i = 1
   do i = 1, size(VarR2D,2)
-    This%OriginalTable(i,1) = ConvertToReal(String=VarR2D(AbscissaColumn,i)%GetValue())
-    This%OriginalTable(i,2) = ConvertToReal(String=VarR2D(ParamColumn,i)%GetValue())
+    This%OriginalTable(i,1) = ConvertToReal(String=VarR2D(AbscissaColumn,i)%Get())
+    This%OriginalTable(i,2) = ConvertToReal(String=VarR2D(ParamColumn,i)%Get())
   end do
 
   deallocate(VarR2D, stat=StatLoc)
@@ -296,7 +297,7 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 function GetCharValue(This, Input, Abscissa, Format)
 
-  type(String_Type), allocatable, dimension(:)                        ::    GetCharValue
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetCharValue
 
   class(ITableCrossOver_Type), intent(in)                             ::    This
   type(Input_Type), intent(in)                                        ::    Input
@@ -331,13 +332,13 @@ function GetCharValue(This, Input, Abscissa, Format)
   i = 1
   do i = 1, size(Abscissa,1)
     if (TripFlag) then
-      call GetCharValue(i)%Set_Value(ConvertToString(Value=TableVal(i), Format=FormatLoc))
+      GetCharValue(i) = ConvertToString(Value=TableVal(i), Format=FormatLoc)
     else
       if (TableVal(i) > PolyVal(i)) then
-        call GetCharValue(i)%Set_Value(ConvertToString(Value=TableVal(i), Format=FormatLoc))
+        GetCharValue(i) = ConvertToString(Value=TableVal(i), Format=FormatLoc)
         TripFlag = .true.
       else
-        call GetCharValue(i)%Set_Value(ConvertToString(Value=PolyVal(i), Format=FormatLoc))
+        GetCharValue(i) = ConvertToString(Value=PolyVal(i), Format=FormatLoc)
       end if
     end if
   end do

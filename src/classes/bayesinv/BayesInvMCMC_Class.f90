@@ -49,6 +49,7 @@ use TransfSampleSpaceUnbound_Class                                ,only:    Tran
 use TransfSampleSpaceNone_Class                                   ,only:    TransfSampleSpaceNone_Type
 use MultiVarDist_Class                                            ,only:    MultiVarDist_Type
 use HierDistProb_Class                                            ,only:    HierDistProb_Type
+use SMUQString_Type
 
 implicit none
 
@@ -306,7 +307,7 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    PosteriorChain
     real(rkp), allocatable, dimension(:,:)                            ::    ParamChain
     real(rkp), allocatable, dimension(:,:)                            ::    MiscChain
-    type(String_Type), allocatable, dimension(:)                      ::    Labels
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Labels
     integer                                                           ::    i
     type(Output_Type), allocatable, dimension(:)                      ::    Output
     type(Output_Type), allocatable, dimension(:,:)                    ::    HierOutput

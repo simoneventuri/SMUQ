@@ -3,6 +3,7 @@ module StringRoutines_Module
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -800,7 +801,7 @@ function Convert_String0D_To_C0D(Value, Format)
 
   character(:), allocatable                                         ::    Convert_String0D_To_C0D
 
-  type(String_Type), intent(in)                                     ::    Value
+  type(SMUQString_Type), intent(in)                                 ::    Value
   character(*), optional, intent(in)                                ::    Format
 
   character(*), parameter                                           ::    ProcName='Convert_String0D_To_C0D'
@@ -1061,7 +1062,7 @@ function Convert_String1D_To_C0D(Values, Format, Separator)
 
   character(:), allocatable                                         ::    Convert_String1D_To_C0D
 
-  type(String_Type), dimension(:), intent(in)                       ::    Values
+  type(SMUQString_Type), dimension(:), intent(in)                   ::    Values
   character(*), optional, intent(in)                                ::    Separator
   character(*), optional, intent(in)                                ::    Format
 
@@ -1082,10 +1083,10 @@ function Convert_String1D_To_C0D(Values, Format, Separator)
 ! 
 !    FormatLoc = '(' // FormatLoc // ',*(' // SeparatorLoc // ',' // FormatLoc // '))'
 
-  Convert_String1D_To_C0D = Values(1)%GetValue()
+  Convert_String1D_To_C0D = Values(1)%Get()
   i = 2
   do i = 2, size(Values,1)
-    Convert_String1D_To_C0D = Convert_String1D_To_C0D // SeparatorLoc // Values(i)%GetValue()
+    Convert_String1D_To_C0D = Convert_String1D_To_C0D // SeparatorLoc // Values(i)
   end do
 
 end function
@@ -1094,7 +1095,7 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C0D_To_String1D(Value, Separator)
 
-  type(String_Type), dimension(:), allocatable                      ::    Convert_C0D_To_String1D
+  type(SMUQString_Type), dimension(:), allocatable                  ::    Convert_C0D_To_String1D
 
   character(*), intent(in)                                          ::    Value
   character(*), optional, intent(in)                                ::    Separator
@@ -1127,7 +1128,7 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 function Convert_C1D_To_String1D(Values)
 
-  type(String_Type), dimension(:), allocatable                      ::    Convert_C1D_To_String1D
+  type(SMUQString_Type), dimension(:), allocatable                  ::    Convert_C1D_To_String1D
 
   character(*), dimension(:), intent(in)                            ::    Values
 
@@ -1150,7 +1151,7 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 function Convert_R41D_To_String1D(Values)
 
-  type(String_Type), dimension(:), allocatable                      ::    Convert_R41D_To_String1D
+  type(SMUQString_Type), dimension(:), allocatable                  ::    Convert_R41D_To_String1D
 
   real(4), dimension(:), intent(in)                                 ::    Values
 
@@ -1173,7 +1174,7 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 function Convert_R81D_To_String1D(Values)
 
-  type(String_Type), dimension(:), allocatable                      ::    Convert_R81D_To_String1D
+  type(SMUQString_Type), dimension(:), allocatable                  ::    Convert_R81D_To_String1D
 
   real(8), dimension(:), intent(in)                                 ::    Values
 

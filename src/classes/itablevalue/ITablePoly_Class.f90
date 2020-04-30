@@ -28,6 +28,7 @@ use ITableValue_Class                                             ,only:    ITab
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -257,7 +258,7 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 function GetCharValue(This, Input, Abscissa, Format)
 
-  type(String_Type), allocatable, dimension(:)                        ::    GetCharValue
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetCharValue
 
   class(ITablePoly_Type), intent(in)                                  ::    This
   type(Input_Type), intent(in)                                        ::    Input
@@ -288,7 +289,7 @@ function GetCharValue(This, Input, Abscissa, Format)
       VarR0D = VarR0D + PolyCoeffPointer%GetValue(Input=Input)*Abscissa(ii)**(i-1)
       nullify(PolyCoeffPointer)
     end do
-    call GetCharValue(ii)%Set_Value(Value=ConvertToString(Value=VarR0D, Format=FormatLoc))
+    call GetCharValue(ii) = ConvertToString(Value=VarR0D, Format=FormatLoc)
   end do
 
 end function

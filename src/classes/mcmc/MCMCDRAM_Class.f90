@@ -643,7 +643,7 @@ contains
     logical                                                           ::    AcceptedFlag
     type(Input_Type)                                                  ::    Input
     real(rkp)                                                         ::    TransitionProb
-    type(String_Type), allocatable, dimension(:)                      ::    Labels
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Labels
     real(rkp), allocatable, dimension(:)                              ::    MiscValues
     logical                                                           ::    MiscValuesFlag
     real(rkp)                                                         ::    HVarR0D

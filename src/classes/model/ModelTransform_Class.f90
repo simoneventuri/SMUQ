@@ -38,7 +38,7 @@ public                                                                ::    Mode
 type, extends(Model_Type)                                             ::    ModelTransform_Type
   class(Model_Type), allocatable                                      ::    Model
   class(TransfSampleSpace_Type), allocatable                          ::    SpaceTransform
-  type(String_Type), allocatable, dimension(:)                        ::    InputLabels
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    InputLabels
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset

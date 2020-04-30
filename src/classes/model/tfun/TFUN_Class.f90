@@ -124,7 +124,7 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
     class(TestFunction_Type), allocatable                             ::    TestFunction
-    type(String_Type), allocatable, dimension(:)                      ::    Labels
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Labels
     logical                                                           ::    Found
 
     if (This%Constructed) call This%Reset()
@@ -169,8 +169,7 @@ contains
       ii = i
       do ii = i, This%NbFunctions
         if (i == ii) cycle
-        if (Labels(i)%GetValue() == Labels(ii)%GetValue()) call Error%Raise('Detected duplicate output label : ' //            &
-                                                                                         Labels(i)%GetValue(), ProcName=ProcName)
+        if (Labels(i) == Labels(ii)) call Error%Raise('Detected duplicate output label', ProcName=ProcName)
       end do
     end do
 

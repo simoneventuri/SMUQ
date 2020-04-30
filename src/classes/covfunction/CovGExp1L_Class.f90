@@ -26,6 +26,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use CovFunction_Class                                             ,only:    CovFunction_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -240,7 +241,7 @@ contains
 
     class(CovGExp1L_Type), intent(in)                                 ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
-    type(String_Type), dimension(:), intent(in)                       ::    CoordinateLabels
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    CoordinateLabels
     real(rkp), dimension(:,:), intent(inout)                          ::    Covariance
 
     character(*), parameter                                           ::    ProcName='Evaluate_1D'

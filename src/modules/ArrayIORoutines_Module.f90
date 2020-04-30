@@ -6,6 +6,7 @@ use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -692,7 +693,7 @@ contains
   subroutine ImportArrayInput_String1D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
-    type(String_Type), allocatable, dimension(:), intent(out)         ::    Array
+    type(SMUQString_Type), allocatable, dimension(:), intent(out)     ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
 
@@ -708,8 +709,8 @@ contains
     integer                                                           ::    NbLinesSkip=0
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
+    character(:), allocatable                                         ::    VarString0D
     integer                                                           ::    VarI0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     integer                                                           ::    i
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
@@ -745,15 +746,8 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
-        allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-        i = 1
-        do i = 1, size(VarC1D)
-          call Array(i)%Set_Value(Value=trim(adjustl(VarC1D(i))))
-        end do
-        deallocate(VarC1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
+        VarString0D = VarC0D
+        Array = VarString0D%Parse(Separator=' ')
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -1475,7 +1469,7 @@ contains
   subroutine ImportArrayInput_String2D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
-    type(String_Type), allocatable, dimension(:,:), intent(out)       ::    Array
+    type(SMUQString_Type), allocatable, dimension(:,:), intent(out)   ::    Array
     character(*), optional, intent(in)                                ::    Prefix
     logical, optional, intent(in)                                     ::    RowMajor
 
@@ -1493,7 +1487,8 @@ contains
     integer                                                           ::    NbLinesSkip=0
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
+    type(SMUQString_Type)                                             ::    VarString0D
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
     integer                                                           ::    VarI0D
     integer                                                           ::    i, ii
     logical                                                           ::    VarL0D
@@ -1545,9 +1540,10 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
+          VarString0D = VarC0D
           if (i == 1) then
-            NbEntries = size(VarC1D,1)
+            VarString1D = VarString0D%Parse(Separator=' ')
+            NbEntries = size(VarString1D,1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1555,19 +1551,13 @@ contains
               allocate(Array(NbEntries,NbLines), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
+            deallocate(VarString1D, stat=StatLoc)
+            if (StatLoc /= 0) call Error%Deallocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
           end if
-          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName)
           if (RowMajorLoc) then
-            ii = 1
-            do ii = 1, NbEntries
-              Array(i,ii) = trim(adjustl(VarC1D(ii)))
-            end do
+              Array(i,:) = VarString0D%Parse(Separator=' ')
           else
-            ii = 1
-            do ii = 1, NbEntries
-              Array(ii,i) = trim(adjustl(VarC1D(ii)))
-            end do
+              Array(:,i) = VarString0D%Parse(Separator=' ')
           end if
 
         end do
@@ -2143,7 +2133,7 @@ contains
   subroutine ImportArray_String1D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), allocatable, intent(out)         ::    Array
+    type(SMUQString_Type), dimension(:), allocatable, intent(out)     ::    Array
     integer, optional, intent(in)                                     ::    NbLinesSkip
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
@@ -2162,7 +2152,7 @@ contains
     character(:), allocatable                                         ::    Comment
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-    character(:), allocatable, dimension(:)                           ::    VarC1D
+    type(SMUQString_Type)                                             ::    VarString0D
 
     RowMajorLoc = .true.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2202,12 +2192,8 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
-        allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-        Array = VarC1D
-        deallocate(VarC1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
+        VarString0D = VarC0D
+        Array = VarString0D%Parse(Separator=' ')
       end if
 
     end if
@@ -2859,7 +2845,7 @@ contains
   subroutine ImportArray_String2D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
 
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:,:), allocatable, intent(out)       ::    Array
+    type(SMUQString_Type), dimension(:,:), allocatable, intent(out)   ::    Array
     integer, optional, intent(in)                                     ::    NbLinesSkip
     logical, optional, intent(in)                                     ::    Mandatory
     logical, optional, intent(out)                                    ::    Found
@@ -2877,11 +2863,13 @@ contains
     integer                                                           ::    Size2=0
     integer                                                           ::    i, ii, iii
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     character(:), allocatable                                         ::    Comment
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
+    type(SMUQString_Type)                                             ::    VarString0D
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+
 
     RowMajorLoc = .false.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2904,8 +2892,11 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-          Size1 = size(VarC1D,1)
+          VarString0D = VarC0D
+          VarString1D = VarString0D%Parse(Separator=' ')
+          Size1 = size(VarString1D,1)
+          deallocate(VarString1D, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Deallocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
         end if
       end do
       Size2 = ii
@@ -2928,18 +2919,11 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
+        VarString0D = VarC0D
         if (RowMajorLoc) then
-          iii = 1
-          do iii = 1, Size1
-            Array(ii,iii) = trim(adjustl(VarC1D(iii)))
-          end do
+          Array(ii,:) = VarString0D%Split(Separator=' ')
         else
-          iii = 1
-          do iii = 1, Size1
-            Array(iii,ii) = trim(adjustl(VarC1D(iii)))
-          end do
+          Array(:,ii) = VarString0D%Split(Separator=' ')
         end if
       end do
 
@@ -3278,7 +3262,7 @@ contains
   subroutine ExportArrayInput_String1D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
-    type(String_Type), dimension(:), intent(in)                       ::    Array
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
@@ -3779,7 +3763,7 @@ contains
   subroutine ExportArrayInput_String2D(Input, Array, File, Format, RowMajor)
 
     class(InputSection_Type), intent(inout)                           ::    Input
-    type(String_Type), dimension(:,:), intent(in)                     ::    Array
+    type(SMUQString_Type), dimension(:,:), intent(in)                 ::    Array
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
@@ -3844,7 +3828,7 @@ contains
 
     real(4), dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -3876,7 +3860,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -3905,7 +3889,7 @@ contains
 
     real(8), dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -3937,7 +3921,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -3966,7 +3950,7 @@ contains
 
     integer(4), dimension(:), intent(in)                              ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -3998,7 +3982,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4027,7 +4011,7 @@ contains
 
     integer(8), dimension(:), intent(in)                              ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4059,7 +4043,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4088,7 +4072,7 @@ contains
 
     character(*), dimension(:), intent(in)                            ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4120,7 +4104,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4149,7 +4133,7 @@ contains
 
     logical, dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4181,7 +4165,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4210,7 +4194,7 @@ contains
 
     complex, dimension(:), intent(in)                                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4242,7 +4226,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4269,9 +4253,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ExportArray_String1D(Array, File, Header, Format, RowMajor, Append)
 
-    type(String_Type), dimension(:), intent(in)                       ::    Array
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4303,7 +4287,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4332,7 +4316,7 @@ contains
 
     real(4), dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4369,7 +4353,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4397,7 +4381,7 @@ contains
 
     real(8), dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4434,7 +4418,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4462,7 +4446,7 @@ contains
 
     integer(4), dimension(:,:), intent(in)                            ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4499,7 +4483,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4527,7 +4511,7 @@ contains
 
     integer(8), dimension(:,:), intent(in)                            ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4564,7 +4548,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4593,7 +4577,7 @@ contains
 
     character(*), dimension(:,:), intent(in)                          ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4630,7 +4614,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4659,7 +4643,7 @@ contains
 
     logical, dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4696,7 +4680,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4725,7 +4709,7 @@ contains
 
     complex, dimension(:,:), intent(in)                               ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4762,7 +4746,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4789,9 +4773,9 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ExportArray_String2D(Array, File, Header, Format, RowMajor, Append)
 
-    type(String_Type), dimension(:,:), intent(in)                     ::    Array
+    type(SMUQString_Type), dimension(:,:), intent(in)                 ::    Array
     type(SMUQFile_Type), intent(inout)                                ::    File
-    type(String_Type), dimension(:), optional, intent(in)             ::    Header
+    type(SMUQString_Type), dimension(:), optional, intent(in)         ::    Header
     character(*), optional, intent(in)                                ::    Format
     logical, optional, intent(in)                                     ::    RowMajor
     logical, optional, intent(in)                                     ::    Append
@@ -4828,7 +4812,7 @@ contains
     if (present(Header)) then
       i = 1
       do i = 1, size(Header,1)
-        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%GetValue()
+        write(UnitLoc, '(A)',iostat=StatLoc) Header(i)%Get()
         if (StatLoc /= 0) call Error%Write(ProcName=ProcName, File=File%GetFullFile(), Unit=UnitLoc, iostat=StatLoc)
       end do
     end if
@@ -4856,7 +4840,7 @@ contains
   subroutine ImportFile(Input, Strings, Prefix, Comment, Separator)
 
     class(InputSection_Type), intent(in)                              ::    Input
-    type(String_Type), allocatable, dimension(:), intent(out)         ::    Strings
+    type(SMUQString_Type), allocatable, dimension(:), intent(out)     ::    Strings
     character(*), optional, intent(out)                               ::    Comment
     character(*), optional, intent(out)                               ::    Separator
     character(*), optional, intent(in)                                ::    Prefix
@@ -4875,7 +4859,7 @@ contains
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    VarI0D
-    type(String_Type), allocatable, dimension(:)                      ::    VarString1D
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
     integer                                                           ::    i
 
     PrefixLoc = ''
@@ -4934,7 +4918,7 @@ contains
         do i = 1, Nblines
           ParameterName = 'line' // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          call Strings(i)%Set_Value(Value=VarC0D)
+          Strings(i) = VarC0D
         end do
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
@@ -4947,7 +4931,7 @@ contains
   subroutine ExportFile(Input, Strings, File, Format)
 
     class(InputSection_Type), intent(inout)                           ::    Input
-    type(String_Type), dimension(:), intent(in)                       ::    Strings
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Strings
     type(SMUQFile_Type), optional, intent(inout)                      ::    File
     character(*), optional, intent(in)                                ::    Format
 
@@ -4983,7 +4967,7 @@ contains
         SubSectionName = SectionName // '>' // SubSectionName
         i = 1
         do i = 1, size(Strings,1)
-          call Input%AddParameter(Name='line' // ConvertToString(Value=i), Value=Strings(i)%GetValue(), SectionName=SubSectionName)
+          call Input%AddParameter(Name='line' // ConvertToString(Value=i), Value=Strings(i)%Get(), SectionName=SubSectionName)
         end do
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)

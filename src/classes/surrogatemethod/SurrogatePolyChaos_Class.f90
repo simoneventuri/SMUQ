@@ -60,6 +60,7 @@ use DistLogNorm_Class                                             ,only:    Dist
 use DistLog10Norm_Class                                           ,only:    DistLog10Norm_Type
 use DistGamma_Class                                               ,only:    DistGamma_Type
 use List2D_Class                                                  ,only:    List2D_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -72,11 +73,11 @@ type, extends(SurrogateMethod_Type)                                   ::    Surr
   class(PolyChaosMethod_Type), allocatable                            ::    PolyChaosMethod
   logical                                                             ::    Silent=.false.
   character(:), allocatable                                           ::    BasisScheme
-  type(String_Type), allocatable, dimension(:)                        ::    InputSamplesLabels
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    InputSamplesLabels
   logical                                                             ::    InputSamplesTransform
   real(rkp), allocatable, dimension(:,:)                              ::    InputSamples
   type(List2D_Type), allocatable, dimension(:)                        ::    OutputSamples
-  type(String_Type), allocatable, dimension(:)                        ::    OutputSamplesLabels
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    OutputSamplesLabels
 contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
@@ -313,13 +314,12 @@ contains
 
     SectionName = 'index_set_scheme'
     if (ExternalFlag) DirectorySub = DirectoryLoc // '/index_set_scheme'
-    call GetInput%AddSection(This%IndexSetScheme%GetInput(Name=SectionName, Prefix=PrefixLoc,                         &
-                                                                                                        Directory=DirectorySub))
+    call GetInput%AddSection(This%IndexSetScheme%GetInput(Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
 
     SectionName = 'method'
     if (ExternalFlag) DirectorySub = DirectoryLoc // '/method'
-    call GetInput%AddSection(Section=PolyChaosMethod_Factory%GetObjectInput(Object=This%PolyChaosMethod,                        &
-                                                         Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
+    call GetInput%AddSection(Section=PolyChaosMethod_Factory%GetObjectInput(Object=This%PolyChaosMethod,                          &
+                                                                       Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -381,7 +381,7 @@ contains
         ii = 1
         iii = 0
         do ii = 1, size(This%InputSamplesLabels,1)
-          if (SpaceTransform%GetLabel(Num=i) == This%InputSamplesLabels(ii)%GetValue()) then
+          if (SpaceTransform%GetLabel(Num=i) == This%InputSamplesLabels(ii)) then
             iii = ii
             exit
           end if
@@ -409,7 +409,7 @@ contains
         ii = 1
         iii = 0
         do ii = 1, size(This%OutputSamples)
-          if (Responses(i)%GetLabel() == This%OutputSamplesLabels(ii)%GetValue()) then
+          if (Responses(i) == This%OutputSamplesLabels(ii)) then
             iii = ii
             exit
           end if

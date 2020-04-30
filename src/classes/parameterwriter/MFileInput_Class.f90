@@ -100,12 +100,12 @@ abstract interface
   subroutine WriteInput_MFileInput(This, Input, Template, ProcessedTemplate, File)
     import                                                            ::    MFileInput_Type
     import                                                            ::    Input_Type
-    import                                                            ::    String_Type
+    import                                                            ::    SMUQString_Type
     import                                                            ::    SMUQFile_Type
     class(MFileInput_Type), intent(inout)                             ::    This
     type(Input_Type), intent(in)                                      ::    Input
-    type(String_Type), dimension(:), intent(in)                       ::    Template
-    type(String_Type), dimension(:), intent(inout)                    ::    ProcessedTemplate
+    type(SMUQString_Type), dimension(:), intent(in)                   ::    Template
+    type(SMUQString_Type), dimension(:), intent(inout)                ::    ProcessedTemplate
     type(SMUQFile_Type), intent(in)                                   ::    File
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

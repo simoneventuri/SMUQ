@@ -26,6 +26,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -41,8 +42,8 @@ type                                                                  ::    File
   integer                                                             ::    NbPaths=0
   character(:), allocatable                                           ::    AbsolutePrefix
   logical, allocatable, dimension(:)                                  ::    PrependAbsolute
-  type(String_Type), allocatable, dimension(:)                        ::    Path
-  type(String_Type), allocatable, dimension(:)                        ::    Identifier
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Path
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Identifier
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize_FP
   procedure, public                                                   ::    Reset                   =>    Reset_FP
@@ -461,11 +462,11 @@ contains
     do i = 1, This%NbPaths
       SubSectionName = 'path' // ConvertToString(Value=i)
       call GetInput_FP%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
-      call GetInput_FP%AddParameter(Name='path', Value=This%Path(i)%GetValue(), SectionName=SectionName // '>' //                &
+      call GetInput_FP%AddParameter(Name='path', Value=This%Path(i)%Get(), SectionName=SectionName // '>' //                      &
                                                                                                                   SubSectionName)
-      call GetInput_FP%AddParameter(Name='identifier', Value=This%Identifier(i)%GetValue(), SectionName=SectionName // '>' //    &
+      call GetInput_FP%AddParameter(Name='identifier', Value=This%Identifier(i)%Get(), SectionName=SectionName // '>' //          &
                                                                                                                   SubSectionName)
-      call GetInput_FP%AddParameter(Name='prepend_absolute', Value=ConvertToString(Value=This%PrependAbsolute(i)),               &
+      call GetInput_FP%AddParameter(Name='prepend_absolute', Value=ConvertToString(Value=This%PrependAbsolute(i)),                &
                                                                                 SectionName=SectionName // '>' // SubSectionName)
     end do
 
@@ -481,7 +482,7 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    ii
-    type(String_Type), allocatable, dimension(:)                      ::    Transcript
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Transcript
     character(:), allocatable                                         ::    VarC0D
     integer                                                           ::    NbLines
     type(LinkedList0D_Type), allocatable, dimension(:)                ::    LineLog
@@ -499,15 +500,15 @@ contains
 
     i = 1
     do i = 1, This%NbPaths
-      VarC0D = '{' // This%Identifier(i)%GetValue() // '}'
+      VarC0D = '{' // This%Identifier(i)%Get() // '}'
 
       ii = 1
       do ii = 1, NbLines
-        if (index(Transcript(ii)%GetValue(), VarC0D) /= 0) call LineLog(i)%Append(Value=ii)
+        if (index(Transcript(ii)%Get(), VarC0D) /= 0) call LineLog(i)%Append(Value=ii)
       end do
 
-      if (LineLog(i)%GetLength() < 1) call Error%Raise(Line='Could not find path indicator : ' //                              &
-                                                                                 This%Identifier(i)%GetValue(), ProcName=ProcName)
+      if (LineLog(i)%GetLength() < 1) call Error%Raise(Line='Could not find path indicator : ' // This%Identifier(i),             &
+                                                       ProcName=ProcName)
     end do
 
     IndexLoc = 0
@@ -516,10 +517,9 @@ contains
       ii = 1
       do ii = 1, LineLog(i)%GetLength()
         call LineLog(i)%Get(Node=ii, Value=IndexLoc)
-        Line = This%Path(i)%GetValue()
+        Line = This%Path(i)%Get()
         if (This%PrependAbsolute(i)) Line = This%AbsolutePrefix // Line
-        VarC0D = ReplaceCharacter(String=Transcript(IndexLoc)%GetValue(), Old='{' // This%Identifier(i)%GetValue() // '}' , &
-                 New=Line)
+        VarC0D = ReplaceCharacter(String=Transcript(IndexLoc)%Get(), Old='{' // This%Identifier(i) // '}' , New=Line)
         Transcript(IndexLoc) = VarC0D
       end do
     end do

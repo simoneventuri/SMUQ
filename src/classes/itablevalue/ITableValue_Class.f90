@@ -23,6 +23,7 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -112,7 +113,8 @@ abstract interface
     use Parameters_Library
     import                                                            ::    Input_Type
     import                                                            ::    ITableValue_Type
-    type(String_Type), allocatable, dimension(:)                      ::    GetCharValue_ITableValue
+    import                                                            ::    SMUQString_Type
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    GetCharValue_ITableValue
     class(ITableValue_Type), intent(in)                               ::    This
     type(Input_Type, intent(in)                                       ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa

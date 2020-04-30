@@ -19,8 +19,9 @@
 module LinkedList0D_Class
 
 use Parameters_Library
-use Logger_Class          ,only:  Logger
-use Error_Class           ,only:  Error
+use Logger_Class                                                  ,only:    Logger
+use Error_Class                                                   ,only:    Error
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -331,7 +332,7 @@ contains
   subroutine ListGetC1D(This, Values, NodeMin, NodeMax)
 
     class(LinkedList0D_Type), intent(inout)                           ::    This
-    type(String_Type), allocatable, dimension(:), intent(out)         ::    Values
+    type(SMUQString_Type), allocatable, dimension(:), intent(out)     ::    Values
     integer, optional, intent(in)                                     ::    NodeMin
     integer, optional, intent(in)                                     ::    NodeMax
 
@@ -352,7 +353,7 @@ contains
     i = NodeMinLoc
     do i = NodeMinLoc, NodeMaxLoc
       call This%Get(Node=i, Value=VarC0D)
-      call Values(i)%Initialize(Value=VarC0D)
+      Values(i) = VarC0D)
     end do
 
   end subroutine

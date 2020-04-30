@@ -29,6 +29,7 @@ use DistProbContainer_Class                                       ,only:    Dist
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use DistNorm_Class                                                ,only:    DistNorm_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -43,8 +44,8 @@ type, abstract                                                        ::    Samp
   integer                                                             ::    NbDim=0
   logical                                                             ::    Correlated=.false.
   type(DistProbContainer_Type), allocatable, dimension(:)             ::    DistProb
-  type(String_Type), allocatable, dimension(:)                        ::    ParamName
-  type(String_Type), allocatable, dimension(:)                        ::    Label
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    ParamName
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Label
   real(rkp), dimension(:,:), allocatable                              ::    CorrMat
 contains
   procedure(Initialize_SampleSpace), deferred, public                 ::    Initialize
@@ -55,26 +56,32 @@ contains
   procedure(GetInput_SampleSpace), deferred, public                   ::    GetInput
   procedure, public                                                   ::    GetNbDim
   procedure, public                                                   ::    IsCorrelated
-  generic, public                                                     ::    GetDistribution         =>    GetDist0D_Label,        &
+  generic, public                                                     ::    GetDistribution         =>    GetDist0D_LabelString,  &
+                                                                                                          GetDist0D_LabelChar,    &
                                                                                                           GetDist0D_Num,          &
                                                                                                           GetDist1D
-  procedure, private                                                  ::    GetDist0D_Label
+  procedure, private                                                  ::    GetDist0D_LabelString
+  procedure, private                                                  ::    GetDist0D_LabelChar
   procedure, private                                                  ::    GetDist0D_Num
   procedure, private                                                  ::    GetDist1D
   generic, public                                                     ::    GetLabel                =>    GetLabel0D,             &
                                                                                                           GetLabel1D
   procedure, private                                                  ::    GetLabel0D
   procedure, private                                                  ::    GetLabel1D
-  generic, public                                                     ::    GetName                 =>    GetName0D_Label,        &
+  generic, public                                                     ::    GetName                 =>    GetName0D_LabelChar,    &
+                                                                                                          GetName0D_LabelString,  &
                                                                                                           GetName0D_Num,          &
                                                                                                           GetName1D
-  procedure, private                                                  ::    GetName0D_Label
+  procedure, private                                                  ::    GetName0D_LabelString
+  procedure, private                                                  ::    GetName0D_LabelChar
   procedure, private                                                  ::    GetName0D_Num
   procedure, private                                                  ::    GetName1D
-  generic, public                                                     ::    GetDistributionPointer  =>    GetDistPointer_Label,   &
-                                                                                                          GetDistPointer_Num
-  procedure, public                                                   ::    GetDistPointer_Label
-  procedure, public                                                   ::    GetDistPointer_Num
+  generic, public                                                     ::    GetDistributionPointer  =>    GetDistPtr_LabelChar,   &
+                                                                                                          GetDistPtr_LabelString, &
+                                                                                                          GetDistPtr_Num
+  procedure, public                                                   ::    GetDistPtr_LabelChar
+  procedure, public                                                   ::    GetDistPtr_LabelString
+  procedure, public                                                   ::    GetDistPtr_Num
   procedure, public                                                   ::    GetCorrMat
   procedure, public                                                   ::    GetCorrMatPointer
   procedure, public                                                   ::    Draw
@@ -158,19 +165,19 @@ contains
     if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
     if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
 
-    GetName0D_Num = This%ParamName(Num)%GetValue()      
+    GetName0D_Num = This%ParamName(Num)     
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName0D_Label(This, Label)
+  function GetName0D_LabelChar(This, Label)
 
-    character(:), allocatable                                         ::    GetName0D_Label
+    character(:), allocatable                                         ::    GetName0D_LabelChar
     class(SampleSpace_Type), intent(in)                               ::    This
     character(*), intent(in)                                          ::    Label
 
-    character(*), parameter                                           ::    ProcName='GetName0D_Label'
+    character(*), parameter                                           ::    ProcName='GetName0D_LabelChar'
     integer                                                           ::    i
     integer                                                           ::    ii
 
@@ -179,14 +186,42 @@ contains
     i = 1
     ii = 0
     do i = 1, This%NbDim
-      if (This%Label(i)%GetValue() /= Label) cycle
+      if (This%Label(i) /= Label) cycle
       ii = i
       exit
     end do
 
     if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-    GetName0D_Label = This%ParamName(ii)%GetValue()      
+    GetName0D_LabelChar = This%ParamName(ii)%GetValue()      
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetName0D_LabelString(This, Label)
+
+    character(:), allocatable                                         ::    GetName0D_LabelString
+    class(SampleSpace_Type), intent(in)                               ::    This
+    type(SMUQString_Type), intent(in)                                 ::    Label
+
+    character(*), parameter                                           ::    ProcName='GetName0D_LabelString'
+    integer                                                           ::    i
+    integer                                                           ::    ii
+
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+    i = 1
+    ii = 0
+    do i = 1, This%NbDim
+      if (This%Label(i) /= Label) cycle
+      ii = i
+      exit
+    end do
+
+    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+
+    GetName0D_LabelString = This%ParamName(ii)%GetValue()      
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -194,7 +229,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetName1D(This)
 
-    type(String_Type), allocatable, dimension(:)                      ::    GetName1D
+    type(SMUQString_Type), allocatable, dimension(:)                      ::    GetName1D
     class(SampleSpace_Type), intent(in)                               ::    This
 
     character(*), parameter                                           ::    ProcName='GetName1D'
@@ -228,7 +263,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetLabel1D(This)
 
-    type(String_Type), allocatable, dimension(:)                      ::    GetLabel1D
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    GetLabel1D
     class(SampleSpace_Type), intent(in)                               ::    This
 
     character(*), parameter                                           ::    ProcName='GetLabel1D'
@@ -266,14 +301,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDist0D_Label(This, Label)
+  function GetDist0D_LabelChar(This, Label)
 
-    class(DistProb_Type), allocatable                                 ::    GetDist0D_Label
+    class(DistProb_Type), allocatable                                 ::    GetDist0D_LabelChar
 
     class(SampleSpace_Type), intent(in)                               ::    This
     character(*), intent(in)                                          ::    Label
 
-    character(*), parameter                                           ::    ProcName='GetDist0D_Label'
+    character(*), parameter                                           ::    ProcName='GetDist0D_LabelChar'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    ii
@@ -290,7 +325,38 @@ contains
 
     if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-    allocate(GetDist0D_Label, source=This%DistProb(ii)%GetPointer(), stat=StatLoc)
+    allocate(GetDist0D_LabelChar, source=This%DistProb(ii)%GetPointer(), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='GetDist0D_Num', ProcName=ProcName, stat=StatLoc)
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetDist0D_LabelString(This, Label)
+
+    class(DistProb_Type), allocatable                                 ::    GetDist0D_LabelString
+
+    class(SampleSpace_Type), intent(in)                               ::    This
+    type(SMUQString_Type), intent(in)                                 ::    Label
+
+    character(*), parameter                                           ::    ProcName='GetDist0D_LabelString'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    ii
+
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+    i = 1
+    ii = 0
+    do i = 1, This%NbDim
+      if (This%Label(i) /= Label) cycle
+      ii = i
+      exit
+    end do
+
+    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+
+    allocate(GetDist0D_LabelString, source=This%DistProb(ii)%GetPointer(), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='GetDist0D_Num', ProcName=ProcName, stat=StatLoc)
 
   end function
@@ -316,14 +382,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistPointer_Label(This, Label)
+  function GetDistPtr_LabelChar(This, Label)
 
-    class(DistProb_Type), pointer                                     ::    GetDistPointer_Label
+    class(DistProb_Type), pointer                                     ::    GetDistPtr_LabelChar
 
     class(SampleSpace_Type), intent(in)                               ::    This
     character(*), intent(in)                                          ::    Label
 
-    character(*), parameter                                           ::    ProcName='GetDistPointer_Label'
+    character(*), parameter                                           ::    ProcName='GetDistPtr_LabelChar'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    ii
@@ -333,27 +399,57 @@ contains
     i = 1
     ii = 0
     do i = 1, This%NbDim
-      if (This%Label(i)%GetValue() /= Label) cycle
+      if (This%Label(i) /= Label) cycle
       ii = i
       exit
     end do
 
     if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-    GetDistPointer_Label => This%DistProb(ii)%GetPointer()
+    GetDistPtr_LabelChar => This%DistProb(ii)%GetPointer()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistPointer_Num(This, Num)
+  function GetDistPtr_LabelString(This, Label)
 
-    class(DistProb_Type), pointer                                     ::    GetDistPointer_Num
+    class(DistProb_Type), pointer                                     ::    GetDistPtr_LabelString
+
+    class(SampleSpace_Type), intent(in)                               ::    This
+    character(*), intent(in)                                          ::    Label
+
+    character(*), parameter                                           ::    ProcName='GetDistPtr_LabelString'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    ii
+
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+    i = 1
+    ii = 0
+    do i = 1, This%NbDim
+      if (This%Label(i) /= Label) cycle
+      ii = i
+      exit
+    end do
+
+    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+
+    GetDistPtr_LabelString => This%DistProb(ii)%GetPointer()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetDistPtr_Num(This, Num)
+
+    class(DistProb_Type), pointer                                     ::    GetDistPtr_Num
 
     class(SampleSpace_Type), intent(in)                               ::    This
     integer, intent(in)                                               ::    Num
 
-    character(*), parameter                                           ::    ProcName='GetDistPointer_Num'
+    character(*), parameter                                           ::    ProcName='GetDistPtr_Num'
     integer                                                           ::    StatLoc=0
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -361,7 +457,7 @@ contains
     if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
     if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
 
-    GetDistPointer_Num => This%DistProb(Num)%GetPointer()
+    GetDistPtr_Num => This%DistProb(Num)%GetPointer()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -39,6 +39,7 @@ use TransfSampleSpace_Factory_Class                               ,only:    Tran
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -75,11 +76,11 @@ type, extends(ModelInternal_Type)                                     ::    Poly
   type(OrthoMultiVar_Type)                                            ::    Basis
   class(TransfSampleSpace_Type), allocatable                          ::    TransformedSpace
   integer                                                             ::    NbDim=0
-  type(String_Type), allocatable, dimension(:)                        ::    InputLabel
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    InputLabel
   integer                                                             ::    NbCells=0
   type(Cell_Type), allocatable, dimension(:)                          ::    Cells
   character(:), allocatable                                           ::    OutputLabel
-  type(String_Type), allocatable, dimension(:)                        ::    CoordinateLabels
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    CoordinateLabels
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize
   procedure, public                                                   ::    Reset                   =>    Reset
@@ -605,7 +606,7 @@ contains
 
     i = 1
     do i = 1, This%NbDim
-      if (This%InputLabel(i)%GetValue() == OldLabel) then
+      if (This%InputLabel(i) == OldLabel) then
         This%InputLabel(i) = NewLabel
         exit
       end if

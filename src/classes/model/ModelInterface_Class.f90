@@ -40,7 +40,7 @@ type                                                                  ::    Mode
   logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   class(Model_Type), allocatable                                      ::    Model
-  type(String_Type), allocatable, dimension(:)                        ::    ResponseLabels
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    ResponseLabels
   integer, allocatable, dimension(:)                                  ::    ResponseNbNodes
   integer                                                             ::    NbResponses=0
 contains
@@ -190,10 +190,9 @@ contains
 
       i = 1
       do i = 1, This%NbResponses
-        LabelLoc = This%ResponseLabels(i)%GetValue()
         ii = 1
         do ii = 1, NbOutputs
-          if (LabelLoc == OutputLoc(ii)%GetLabel()) then
+          if (This%ResponseLabels(i) == OutputLoc(ii)%GetLabel()) then
             Output(i) = OutputLoc(ii)
             exit
           end if
@@ -216,7 +215,7 @@ contains
     CorrectOrder = .true.
     i = 1
     do i = 1, This%NbResponses
-      if (This%ResponseLabels(i)%GetValue() == Output(i)%GetLabel()) cycle
+      if (This%ResponseLabels(i) == Output(i)%GetLabel()) cycle
       CorrectOrder = .false.
       exit
     end do
@@ -228,14 +227,13 @@ contains
 
       i = 1
       do i = 1, This%NbResponses
-        LabelLoc = This%ResponseLabels(i)%GetValue()
         ii = 1
         do ii = 1, NbOutputs
-          if (LabelLoc == OutputLoc(ii)%GetLabel()) then
+          if (This%ResponseLabels(i) == OutputLoc(ii)%GetLabel()) then
             Output(i) = OutputLoc(ii)
             exit
           end if
-          call Error%Raise('Did not find required output : ' // LabelLoc, ProcName=ProcName)
+          call Error%Raise('Did not find required output', ProcName=ProcName)
         end do
       end do
 

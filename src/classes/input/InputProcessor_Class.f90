@@ -24,6 +24,7 @@ use Input_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -35,8 +36,8 @@ type                                                                  ::    Inpu
   character(:), allocatable                                           ::    Name
   logical                                                             ::    Constructed=.false.
   logical                                                             ::    Initialized=.false.
-  type(String_Type), allocatable, dimension(:)                        ::    Transformation
-  type(String_Type), allocatable, dimension(:)                        ::    Target
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Transformation
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Target
   integer                                                             ::    NbTargets
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize_IT
@@ -57,7 +58,7 @@ type                                                                  ::    Inpu
   logical                                                             ::    Constructed=.false.
   logical                                                             ::    Initialized=.false.
   real(rkp), allocatable, dimension(:)                                ::    Value
-  type(String_Type), allocatable, dimension(:)                        ::    Target
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Target
   integer                                                             ::    NbTargets
 contains
   procedure, public                                                   ::    Initialize              =>    Initialize_IF
@@ -174,8 +175,8 @@ subroutine ConstructInput(This, Input, Prefix)
   integer                                                             ::    iv
   character(:), allocatable                                           ::    VarC0D
   real(rkp)                                                           ::    VarR0D
-  type(String_Type), allocatable, dimension(:)                        ::    Targets1
-  type(String_Type), allocatable, dimension(:)                        ::    Targets2
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Targets1
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Targets2
 
 
   if (This%Constructed) call This%Reset()
@@ -209,9 +210,8 @@ subroutine ConstructInput(This, Input, Prefix)
       do ii = i + 1 , This%NbFixs
         Targets2 = This%Fix(ii)%GetTargets()
         do iii = 1, size(Targets1,1)
-          VarC0D = Targets1(iii)%GetValue()
           do iv = 1, size(Targets2,1)
-            if (VarC0D == Targets2(iv)%GetValue()) call Error%Raise('Duplicate fixed value labels', ProcName=ProcName)
+            if (Targets1(iii) == Targets2(iv)) call Error%Raise('Duplicate fixed value labels', ProcName=ProcName)
           end do
         end do
       end do
@@ -242,9 +242,8 @@ subroutine ConstructInput(This, Input, Prefix)
       do ii = i + 1 , This%NbTransforms
         Targets2 = This%Transform(ii)%GetTargets()
         do iii = 1, size(Targets1,1)
-          VarC0D = Targets1(iii)%GetValue()
           do iv = 1, size(Targets2,1)
-            if (VarC0D == Targets2(iv)%GetValue()) call Error%Raise('Duplicate fixed value labels : ' // VarC0D, ProcName=ProcName)
+            if (Targets1(iii) == Targets2(iv)) call Error%Raise('Duplicate fixed value labels', ProcName=ProcName)
           end do
         end do
       end do
@@ -258,10 +257,9 @@ subroutine ConstructInput(This, Input, Prefix)
         do ii = i + 1 , This%NbFixs
           Targets2 = This%Fix(ii)%GetTargets()
           do iii = 1, size(Targets1,1)
-            VarC0D = Targets1(iii)%GetValue()
             do iv = 1, size(Targets2,1)
-              if (VarC0D == Targets2(iv)%GetValue()) call Error%Raise('Transformation of a fixed parameter not allowed : '          &
-                                                                    // VarC0D, ProcName=ProcName)
+              if (Targets1(iii) == Targets2(iv)) call Error%Raise('Transformation of a fixed parameter not allowed : ', &
+                                                                  ProcName=ProcName)
             end do
           end do
         end do
@@ -596,7 +594,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 function GetTargets_IF(This)
 
-  type(String_Type), allocatable, dimension(:)                        ::    GetTargets_IF
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetTargets_IF
 
   class(InputFixed_Type), intent(in)                                  ::    This
 
@@ -781,7 +779,7 @@ function GetInput_IT(This, Name, Prefix, Directory)
   call GetInput_IT%SetName(SectionName=trim(adjustl(Name)))
 
   call GetInput_IT%AddParameter(Name='label', Value=ConvertToString(Values=This%Target))
-  call GetInput_IT%AddParameter(Name='transformation', Value=This%Transformation(1)%GetValue())
+  call GetInput_IT%AddParameter(Name='transformation', Value=This%Transformation(1)%Get()))
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -805,7 +803,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 function GetTargets_IT(This)
 
-  type(String_Type), allocatable, dimension(:)                        ::    GetTargets_IT
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetTargets_IT
 
   class(InputTransform_Type), intent(in)                              ::    This
 
