@@ -662,7 +662,7 @@ contains
 
       ! Checks if all cells reached maximum truncation order
       OrderExceededFlag = .true.
-      if (This%IndexOrder <= IndexMaxOrder) OrderExceededFlag = .false.
+      if (This%IndexOrder < IndexMaxOrder) OrderExceededFlag = .false.
 
       if (OrderExceededFlag) then
         if (.not. SilentLoc) then
@@ -848,8 +848,7 @@ contains
           write(*,'(A)') Line
         end if
 
-        if (iEnd < NbIndices) call Error%Raise('Number of samples must be greater than the number of indices',                 &
-                                                                                                               ProcName=ProcName)
+        if (iEnd < NbIndices) call Error%Raise('Number of samples must be greater than the number of indices', ProcName=ProcName)
 
         ! Constructing design space
         allocate(DesignSpace(iEnd,NbIndices), stat=StatLoc)

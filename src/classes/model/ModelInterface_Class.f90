@@ -28,6 +28,7 @@ use Response_Class                                                ,only:    Resp
 use Model_Class                                                   ,only:    Model_Type
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -243,8 +244,8 @@ contains
 
     i = 1
     do i = 1, This%NbResponses
-      if (Output(i)%GetNbNodes() /= This%ResponseNbNodes(i)) call Error%Raise(Line='Mismatching number of ' //               &
-                                          'output nodes for response : ' // This%ResponseLabels(i)%GetValue(), ProcName=ProcName)
+      if (Output(i)%GetNbNodes() /= This%ResponseNbNodes(i)) call Error%Raise(Line='Mismatching number of ' //                    &
+                                                       'output nodes for response : ' // This%ResponseLabels(i), ProcName=ProcName)
     end do
 
   end subroutine
@@ -262,7 +263,6 @@ contains
     integer                                                           ::    StatLoc=0
     integer, allocatable, dimension(:)                                ::    StatRun
     type(Output_Type), dimension(:,:), allocatable                    ::    OutputLoc
-    character(:), allocatable                                         ::    LabelLoc
     integer                                                           ::    NbInputs
     integer                                                           ::    NbOutputs
     integer                                                           ::    i
@@ -292,14 +292,13 @@ contains
       do iii = 1, NbInputs
         i = 1
         do i = 1, This%NbResponses
-          LabelLoc = This%ResponseLabels(i)%GetValue()
           ii = 1
           do ii = 1, NbOutputs
-            if (LabelLoc == OutputLoc(ii,iii)%GetLabel()) then
+            if (This%ResponseLabels(i) == OutputLoc(ii,iii)%GetLabel()) then
               Output(i,iii) = OutputLoc(ii,iii)
               exit
             end if
-            call Error%Raise('Did not find required output : ' // LabelLoc, ProcName=ProcName)
+            call Error%Raise('Did not find required output : ' // This%ResponseLabels(i), ProcName=ProcName)
           end do
         end do
         i = 1
@@ -329,7 +328,7 @@ contains
     do ii = 1, NbInputs
       i = 1
       do i = 1, This%NbResponses
-        if (This%ResponseLabels(i)%GetValue() == Output(i,ii)%GetLabel()) cycle
+        if (This%ResponseLabels(i) == Output(i,ii)%GetLabel()) cycle
         CorrectOrder = .false.
         exit
       end do
@@ -345,14 +344,13 @@ contains
         OutputLoc(:,1) = Output(:,iii)
         i = 1
         do i = 1, This%NbResponses
-          LabelLoc = This%ResponseLabels(i)%GetValue()
           ii = 1
           do ii = 1, NbOutputs
-            if (LabelLoc == OutputLoc(ii,1)%GetLabel()) then
+            if (This%ResponseLabels(i) == OutputLoc(ii,1)%GetLabel()) then
               Output(i,iii) = OutputLoc(ii,1)
               exit
             end if
-            call Error%Raise('Did not find required output : ' // LabelLoc, ProcName=ProcName)
+            call Error%Raise('Did not find required output : ' // This%ResponseLabels(i), ProcName=ProcName)
           end do
         end do
       end do
@@ -364,8 +362,8 @@ contains
     do ii = 1, NbInputs
       i = 1
       do i = 1, This%NbResponses
-        if (Output(i,ii)%GetNbNodes() /= This%ResponseNbNodes(i)) call Error%Raise(Line='Mismatching number of ' //            &
-                                          'output nodes for response : ' // This%ResponseLabels(i)%GetValue(), ProcName=ProcName)
+        if (Output(i,ii)%GetNbNodes() /= This%ResponseNbNodes(i)) call Error%Raise(Line='Mismatching number of ' //               &
+                                                       'output nodes for response : ' // This%ResponseLabels(i), ProcName=ProcName)
       end do
     end do
 
@@ -405,7 +403,7 @@ contains
     i = 1
     ii = 0
     do i = 1, This%NbResponses
-      if (This%ResponseLabels(i)%GetValue() /= Label) cycle
+      if (This%ResponseLabels(i) /= Label) cycle
       ii = i
       exit
     end do

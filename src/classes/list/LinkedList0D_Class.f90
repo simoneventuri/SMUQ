@@ -139,7 +139,8 @@ contains
     integer                                                           ::    i
     integer                                                           ::    Length
     integer                                                           ::    StatLoc
-    Length = int(size(Values,1),8)
+
+    Length = size(Values,1)
 
     i = 1
     do i = 1, Length
@@ -353,7 +354,7 @@ contains
     i = NodeMinLoc
     do i = NodeMinLoc, NodeMaxLoc
       call This%Get(Node=i, Value=VarC0D)
-      Values(i) = VarC0D)
+      Values(i) = VarC0D
     end do
 
   end subroutine

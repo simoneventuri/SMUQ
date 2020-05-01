@@ -93,8 +93,14 @@ contains
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run_0D
   procedure, private                                                  ::    Run_0D_Single
-  procedure, public                                                   ::    ReplaceInputLabel
-  procedure, public                                                   ::    ReplaceOutputLabel
+  generic, public                                                     ::    ReplaceInputLabel       =>    ReplaceInputLabel_Char, &
+                                                                                                          ReplaceInputLabel_String
+  procedure, private                                                  ::    ReplaceInputLabel_Char
+  procedure, private                                                  ::    ReplaceInputLabel_String
+  generic, public                                                     ::    ReplaceOutputLabel      =>    ReplaceOutputLabel_Char,&
+                                                                                                          ReplaceOutputLabel_String
+  procedure, private                                                  ::    ReplaceOutputLabel_Char
+  procedure, private                                                  ::    ReplaceOutputLabel_String
   procedure, public                                                   ::    GetNbInputs
   procedure, public                                                   ::    GetNbNodes
   procedure, public                                                   ::    GetCoefficientsPointer
@@ -185,7 +191,6 @@ contains
     integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    VarC0D
     logical                                                           ::    VarL0D
-    character(:), allocatable, dimension(:)                           ::    Strings
     integer                                                           ::    i
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    FileName
@@ -193,6 +198,7 @@ contains
     integer                                                           ::    UnitLoc
     integer                                                           ::    IOLoc
     logical                                                           ::    Found
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
 
     if (This%Constructed) call This%Reset()
     if (.not. This%Initialized) call This%Initialize()  
@@ -226,7 +232,7 @@ contains
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call This%Basis%Construct(Input=InputSection, Prefix=PrefixLoc)
     nullify(InputSection)
-    if (This%Basis%GetNbDim() /= This%NbDim) call Error%Raise(                                                               &
+    if (This%Basis%GetNbDim() /= This%NbDim) call Error%Raise( &
                Line='Dimension of basis polynomials does not match the dimension of original parameter space', ProcName=ProcName)
 
     ParameterName = 'output_label'
@@ -251,12 +257,13 @@ contains
     allocate(This%CoordinateLabels(size(This%Cells(1)%GetCoordinatePointer())))
     ParameterName = 'coordinate_labels'
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-    call Parse(Input=VarC0D, Separator=' ', Output=Strings)
-    if (size(Strings,1) /= size(This%CoordinateLabels)) call Error%Raise('Incorrect number of coordinate labels',              &
-                                                                                                               ProcName=ProcName)
+    allocate(VarString1D, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
+    if (size(VarString1D,1) /= size(This%CoordinateLabels)) call Error%Raise('Incorrect number of coordinate labels', &
+                                                                             ProcName=ProcName)
     i = 1
     do i = 1, size(This%CoordinateLabels)
-      This%CoordinateLabels(i) = trim(adjustl(Strings(i)(:)))
+      This%CoordinateLabels(i) = VarString1D(i)
     end do
 
     This%Constructed = .true.
@@ -280,7 +287,6 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     integer                                                           ::    VarI0D
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    Strings
     integer                                                           ::    i
     logical                                                           ::    Found
     character(:), allocatable                                         ::    PrefixLoc
@@ -288,6 +294,7 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    UnitLoc
     integer                                                           ::    IOLoc
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
 
     if (This%Constructed) call This%Reset()
     if (.not. This%Initialized) call This%Initialize()  
@@ -345,12 +352,13 @@ contains
     allocate(This%CoordinateLabels(size(This%Cells(1)%GetCoordinatePointer())))
     ParameterName = 'coordinate_labels'
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-    call Parse(Input=VarC0D, Separator=' ', Output=Strings)
-    if (size(Strings,1) /= size(This%CoordinateLabels)) call Error%Raise('Incorrect number of coordinate labels',              &
-                                                                                                               ProcName=ProcName)
+    allocate(VarString1D, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
+    if (size(VarString1D,1) /= size(This%CoordinateLabels)) call Error%Raise('Incorrect number of coordinate labels', &
+                                                                             ProcName=ProcName)
     i = 1
     do i = 1, size(This%CoordinateLabels)
-      This%CoordinateLabels(i) = trim(adjustl(Strings(i)(:)))
+      This%CoordinateLabels(i) = VarString1D(i)
     end do
 
     This%Constructed = .true.
@@ -593,24 +601,54 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReplaceInputLabel(This, OldLabel, NewLabel)
+  subroutine ReplaceInputLabel_Char(This, Old, New)
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
-    character(*), intent(in)                                          ::    OldLabel
-    character(*), intent(in)                                          ::    NewLabel
+    character(*), intent(in)                                          ::    Old
+    character(*), intent(in)                                          ::    New
 
-    character(*), parameter                                           ::    ProcName='ReplaceInputLabel'
+    character(*), parameter                                           ::    ProcName='ReplaceInputLabel_Char'
     integer                                                           ::    i
+    integer                                                           ::    ii
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+    ii = 0
+    i = 1
+    do i = 1, This%NbDim
+      if (This%InputLabel(i) /= Old) cycle
+      This%InputLabel(i) = New
+      ii = i
+      exit
+    end do
+
+    if (ii == 0) call Error%Raise('Did not find old label to be replaced', ProcName=ProcName)
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ReplaceInputLabel_String(This, Old, New)
+
+    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    type(SMUQString_Type), intent(in)                                 ::    Old
+    type(SMUQString_Type), intent(in)                                 ::    New
+
+    character(*), parameter                                           ::    ProcName='ReplaceInputLabel_String'
+    integer                                                           ::    i
+    integer                                                           ::    ii
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
+    ii = 0
     i = 1
     do i = 1, This%NbDim
-      if (This%InputLabel(i) == OldLabel) then
-        This%InputLabel(i) = NewLabel
-        exit
-      end if
+      if (This%InputLabel(i) /= Old) cycle
+      This%InputLabel(i) = New
+      ii = i
+      exit
     end do
+
+    if (ii == 0) call Error%Raise('Did not find old label to be replaced', ProcName=ProcName)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -702,16 +740,31 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ReplaceOutputLabel(This, NewLabel)
+  subroutine ReplaceOutputLabel_Char(This, New)
 
     class(PolyChaosModel_Type), intent(inout)                         ::    This
-    character(*), intent(in)                                          ::    NewLabel
+    character(*), intent(in)                                          ::    New
 
-    character(*), parameter                                           ::    ProcName='ReplaceOutputLabel'
+    character(*), parameter                                           ::    ProcName='ReplaceOutputLabel_Char'
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    This%OutputLabel = NewLabel
+    This%OutputLabel = New
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ReplaceOutputLabel_String(This, New)
+
+    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    type(SMUQString_Type), intent(in)                                 ::    New
+
+    character(*), parameter                                           ::    ProcName='ReplaceOutputLabel_String'
+
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+    This%OutputLabel = New%Get()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

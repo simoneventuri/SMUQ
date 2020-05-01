@@ -37,6 +37,7 @@ use MCMCMethod_Class
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use Restart_Class                                                 ,only:    RestartUtility
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -246,7 +247,7 @@ contains
       ParameterName = 'format'
       call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
       SubSectionName = SectionName // '>format'
-      select case (LowerCase(VarC0D))
+      select case (VarC0D)
         case ('diagonals')
           ParameterName = 'values'
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)

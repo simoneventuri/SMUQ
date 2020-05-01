@@ -519,7 +519,7 @@ contains
         call LineLog(i)%Get(Node=ii, Value=IndexLoc)
         Line = This%Path(i)%Get()
         if (This%PrependAbsolute(i)) Line = This%AbsolutePrefix // Line
-        VarC0D = ReplaceCharacter(String=Transcript(IndexLoc)%Get(), Old='{' // This%Identifier(i) // '}' , New=Line)
+        VarC0D = Transcript(IndexLoc)%Replace(Old='{' // This%Identifier(i) // '}' , New=Line)
         Transcript(IndexLoc) = VarC0D
       end do
     end do

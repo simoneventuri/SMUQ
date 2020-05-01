@@ -613,8 +613,8 @@ contains
     SilentLoc = This%Silent
 
     if (This%ModelRunCounter == 0) then
-      if ((present(InputSamples) .and. .not. present(OutputSamples)) .or.                                                      &
-                                                                    (present(OutputSamples) .and. .not. present(InputSamples)))&
+      if ((present(InputSamples) .and. .not. present(OutputSamples)) .or.                                                         &
+                                                                    (present(OutputSamples) .and. .not. present(InputSamples)))   &
                 call Error%Raise(Line='Need both parameter and output samples to be passed at the same time', ProcName=ProcName)
 
       if (present(InputSamples)) then
@@ -625,7 +625,7 @@ contains
           write(*,'(A)') '' 
         end if
 
-        if (size(InputSamples,1) /= NbDim) call Error%Raise(Line='Dimensionality of provided samples does not match ' //  &
+        if (size(InputSamples,1) /= NbDim) call Error%Raise(Line='Dimensionality of provided samples does not match ' //          &
                                                                       'the dimensionality of the input space', ProcName=ProcName)
 
         This%ParamRecord = InputSamples
@@ -633,9 +633,9 @@ contains
         i = 1
         do i = 1, NbOutputs
           call OutputSamples(i)%GetPointer(Values=VarR2DPointer)
-          if (size(VarR2DPointer,1) /= size(InputSamples,2)) call Error%Raise('Mismatch in number of input and output samples' &
+          if (size(VarR2DPointer,1) /= size(InputSamples,2)) call Error%Raise('Mismatch in number of input and output samples'    &
                                                                                                              , ProcName=ProcName)
-          if (size(VarR2DPointer,2) /= NbCellsOutput(i)) call Error%Raise('Mismatch in number of nodes in response and ' //    &
+          if (size(VarR2DPointer,2) /= NbCellsOutput(i)) call Error%Raise('Mismatch in number of nodes in response and ' //       &
                                                                                      'initial output samples', ProcName=ProcName)
 
           if (i > 1) then
@@ -699,7 +699,7 @@ contains
       OrderExceededFlag = .true.
       i = 1
       do i = 1, This%NbCells
-        if (This%Cells(i)%GetTruncationOrder() <= IndexMaxOrder) then
+        if (This%Cells(i)%GetTruncationOrder() < IndexMaxOrder) then
           OrderExceededFlag = .false.
           exit
         end if

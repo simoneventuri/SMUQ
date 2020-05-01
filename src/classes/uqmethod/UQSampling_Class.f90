@@ -377,7 +377,7 @@ contains
       SubSectionName = SectionName // '>histogram' // ConvertToString(Value=i)
       call GetInput%AddSection(SectionName='histogram' // ConvertToString(Value=i), To_SubSection=SectionName)
 
-      call GetInput%AddParameter(Name='label', Value=This%Labels(i)%GetValue(), SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='label', Value=This%Labels(i)%Get(), SectionName=SubSectionName)
 
       if (ExternalFlag) DirectorySub = DirectoryLoc // '/histogram' // ConvertToString(Value=i)
       call GetInput%AddSection(Section=This%Histograms(i)%GetInput(Name='histogram', Prefix=PrefixLoc,               &
@@ -504,24 +504,20 @@ contains
   
       i = 1
       do i = 1, This%NbHistograms
-        allocate(VarI2D(This%Histograms(i)%GetNbBins(),ModelInterface%GetResponseNbNodes(Label=This%Labels(i)%GetValue())),       &
-                                                                                                                     stat=StatLoc)
+        iii = 0
+        ii = 1
+        do ii = 1, size(Responses,1)
+          if (This%Labels(i) /= Responses(i)%GetLabel()) cycle
+          iii = ii
+          exit
+        end do
+        if (iii == 0) call Error%Raise('Did not find required response : ' // This%Labels(i), ProcName=ProcName)
+        allocate(VarI2D(This%Histograms(i)%GetNbBins(),Responses(iii)%GetNbNodes()), stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='VarI2D', ProcName=ProcName, stat=StatLoc)
         VarI2D = 0
         call This%BinCounts(i)%Set(Values=VarI2D)
         deallocate(VarI2D, stat=StatLoc)
         if (StatLoc /= 0) call Error%Deallocate(Name='VarI2D', ProcName=ProcName, stat=StatLoc)
-      end do
-    else
-      i = 1
-      do i = 1, This%NbHistograms
-        call This%BinCounts(i)%GetPointer(Values=VarI2DPtr)
-        if (size(VarI2DPtr,1) /= This%Histograms(i)%GetNbBins()) call Error%Raise('Mismatch in response number of bins ' //    &
-                                                ' and size of bin count array: ' // This%Labels(i)%GetValue(), ProcName=ProcName)
-        if (size(VarI2DPtr,2) /= ModelInterface%GetResponseNbNodes(Label=This%Labels(i)%GetValue()))                            &
-            call Error%Raise('Mismatch in response number of nodes and number of histograms for response: ' //                   &
-                                                                                    This%Labels(i)%GetValue(), ProcName=ProcName)
-        nullify(VarI2DPtr)
       end do
     end if
 
@@ -599,16 +595,14 @@ contains
 
           ii = 1
           do ii = 1, This%NbHistograms
-            VarC0D = This%Labels(ii)%GetValue()
-
             iii = 1
             iOutput = 0
             do iii = 1, NbOutputs
-              if (Outputs(iii,iRun)%GetLabel() /= VarC0D) cycle
+              if (Outputs(iii,iRun)%GetLabel() /= This%Labels(ii)) cycle
               iOutput = iii
               exit
             end do
-            if (iOutput == 0) call Error%Raise('Did not find required output : ' // VarC0D, ProcName=ProcName)  
+            if (iOutput == 0) call Error%Raise('Did not find required output : ' // This%Labels(ii), ProcName=ProcName)  
 
             call This%BinCounts(ii)%GetPointer(Values=VarI2DPtr)
             VarR2DPtr => Outputs(iOutput,iRun)%GetValuesPointer()
@@ -731,15 +725,15 @@ contains
       i = 1
       do i = 1, This%NbHistograms
 
-        call MakeDirectory(Path=Directory // '/' // This%Labels(i)%GetValue(), Options='-p')
+        call MakeDirectory(Path=Directory // '/' // This%Labels(i), Options='-p')
 
         call This%BinCounts(i)%GetPointer(Values=VarI2DPtr)
 
-        FileName = '/' // This%Labels(i)%GetValue() // '/bin_counts.dat'
+        FileName = '/' // This%Labels(i) // '/bin_counts.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=VarI2DPtr, File=File, RowMajor=.true.)
 
-        FileName = '/' //This%Labels(i)%GetValue() // '/bin_edges.dat'
+        FileName = '/' //This%Labels(i) // '/bin_edges.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=This%Histograms(i)%GetBinEdgesPointer(), File=File)
 

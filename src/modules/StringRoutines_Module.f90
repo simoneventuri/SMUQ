@@ -206,7 +206,8 @@ function Convert_C0D_To_I41D(String, Separator)
   if (present(Separator)) SeparatorLoc = Separator
 
   VarString0D = String
-  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
+  allocate(VarString1D, source=VarString0D%Split(Separator=SeparatorLoc), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
   allocate(Convert_C0D_To_I41D(size(VarString1D,1)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_I41D', ProcName=ProcName, stat=StatLoc)
@@ -332,7 +333,8 @@ function Convert_C0D_To_I81D(String, Separator)
   if (present(Separator)) SeparatorLoc = Separator
 
   VarString0D = String
-  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
+  allocate(VarString1D, source=VarString0D%Split(Separator=SeparatorLoc), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
   allocate(Convert_C0D_To_I81D(size(VarString1D,1)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_I81D', ProcName=ProcName, stat=StatLoc)
@@ -459,7 +461,8 @@ function Convert_C0D_To_I1D(String, Separator)
   if (present(Separator)) SeparatorLoc = Separator
 
   VarString0D = String
-  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
+  allocate(VarString1D, source=VarString0D%Split(Separator=SeparatorLoc), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
   allocate(Convert_C0D_To_I1D(size(VarString1D,1)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_I1D', ProcName=ProcName, stat=StatLoc)
@@ -585,7 +588,8 @@ function Convert_C0D_To_R1D(String, Separator)
   if (present(Separator)) SeparatorLoc = Separator
 
   VarString0D = String
-  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
+  allocate(VarString1D, source=VarString0D%Split(Separator=SeparatorLoc), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
   allocate(Convert_C0D_To_R1D(size(VarString1D,1)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_R1D', ProcName=ProcName, stat=StatLoc)
@@ -711,7 +715,8 @@ function Convert_C0D_To_R41D(String, Separator)
   if (present(Separator)) SeparatorLoc = Separator
 
   VarString0D = String
-  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
+  allocate(VarString1D, source=VarString0D%Split(Separator=SeparatorLoc), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
   allocate(Convert_C0D_To_R41D(size(VarString1D,1)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_R41D', ProcName=ProcName, stat=StatLoc)
@@ -837,7 +842,8 @@ function Convert_C0D_To_R81D(String, Separator)
   if (present(Separator)) SeparatorLoc = Separator
 
   VarString0D = String
-  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
+  allocate(VarString1D, source=VarString0D%Split(Separator=SeparatorLoc), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
   allocate(Convert_C0D_To_R81D(size(VarString1D,1)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_R81D', ProcName=ProcName, stat=StatLoc)
@@ -963,7 +969,8 @@ function Convert_C0D_To_L1D(String, Separator)
   if (present(Separator)) SeparatorLoc = Separator
 
   VarString0D = String
-  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
+  allocate(VarString1D, source=VarString0D%Split(Separator=SeparatorLoc), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
   allocate(Convert_C0D_To_L1D(size(VarString1D,1)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_L1D', ProcName=ProcName, stat=StatLoc)
@@ -1092,7 +1099,8 @@ function Convert_C0D_To_CX1D(String, Separator)
   if (present(Separator)) SeparatorLoc = Separator
 
   VarString0D = String
-  VarString1D = VarString0D%Split(Separator=SeparatorLoc)
+  allocate(VarString1D, source=VarString0D%Split(Separator=SeparatorLoc), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
   allocate(Convert_C0D_To_CX1D(size(VarString1D,1)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_CX1D', ProcName=ProcName, stat=StatLoc)
@@ -1657,7 +1665,8 @@ function Convert_C0D_To_String1D(Value, Separator)
   if (present(Separator)) SeparatorLoc = Separator
 
   VarString0D = Value
-  Convert_C0D_To_String1D = VarString0D%Split(Separator=SeparatorLoc)
+  allocate(Convert_C0D_To_String1D, source=VarString0D%Split(Separator=SeparatorLoc), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Convert_C0D_To_String1D', ProcName=ProcName, stat=StatLoc)
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------

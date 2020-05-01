@@ -409,7 +409,7 @@ contains
         ii = 1
         iii = 0
         do ii = 1, size(This%OutputSamples)
-          if (Responses(i) == This%OutputSamplesLabels(ii)) then
+          if (Responses(i)%GetLabel() == This%OutputSamplesLabels(ii)) then
             iii = ii
             exit
           end if

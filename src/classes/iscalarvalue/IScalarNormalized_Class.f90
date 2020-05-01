@@ -128,7 +128,7 @@ subroutine ConstructInput(This, Input, Prefix)
   ParameterName = 'normalization_dependencies'
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
 
-  allocate(This%NormDependency, source=ConvertToStrings(Value=VarC0D), stat=StatLoc)
+  allocate(This%NormDependency, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%NormDependency', ProcName=ProcName, stat=StatLoc)
 
   This%NbDependencies = size(This%NormDependency,1)

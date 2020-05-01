@@ -56,15 +56,19 @@ contains
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
-  generic, public                                                     ::    GetCoordinates          =>    GetCoordsLabel_R1D,     &
+  generic, public                                                     ::    GetCoordinates          =>    GetCoordsLab_R1DChar,   &
+                                                                                                          GetCoordsLab_R1DString, &
                                                                                                           GetCoordsLabels_R2D,    &
                                                                                                           GetCoords_R2D
-  generic, public                                                     ::    GetCoordinatesPointer   =>    GetCoordsLabelPtr_R1D,  &
+  generic, public                                                     ::    GetCoordinatesPointer   =>    GetCoordsLabP_R1DChar,  &
+                                                                                                          GetCoordsLabP_R1DString,&
                                                                                                           GetCoordsPtr_R2D
-  procedure, public                                                   ::    GetCoordsLabel_R1D
+  procedure, public                                                   ::    GetCoordsLab_R1DChar
+  procedure, public                                                   ::    GetCoordsLab_R1DString
   procedure, public                                                   ::    GetCoordsLabels_R2D
   procedure, public                                                   ::    GetCoords_R2D
-  procedure, public                                                   ::    GetCoordsLabelPtr_R1D
+  procedure, public                                                   ::    GetCoordsLabP_R1DChar
+  procedure, public                                                   ::    GetCoordsLabP_R1DString
   procedure, public                                                   ::    GetCoordsPtr_R2D
   procedure, public                                                   ::    GetCoordinateLabels
   procedure, public                                                   ::    GetNbIndCoordinates
@@ -187,7 +191,7 @@ contains
     ParameterName = 'labels'
     call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
 
-    allocate(This%Coordinateslabels, source=ConvertToStrings(Value=VarC0D), stat=StatLoc)
+    allocate(This%Coordinateslabels, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Coordinateslabels', ProcName=ProcName, stat=StatLoc)
 
     SubSectionName = SectionName // '>values'
@@ -328,14 +332,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordsLabel_R1D(This, Label)
+  function GetCoordsLab_R1DChar(This, Label)
 
-    real(rkp), allocatable, dimension(:)                              ::    GetCoordsLabel_R1D
+    real(rkp), allocatable, dimension(:)                              ::    GetCoordsLab_R1DChar
 
     class(Response_Type), intent(in)                                  ::    This
     character(*), intent(in)                                          ::    Label
 
-    character(*), parameter                                           ::    ProcName='GetCoordsLabel_R1D'
+    character(*), parameter                                           ::    ProcName='GetCoordsLab_R1DChar'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    ii
@@ -345,15 +349,46 @@ contains
     i = 1
     ii = 0
     do i = 1, This%NbIndCoordinates
-      if (Label /= This%CoordinatesLabels(i)%GetValue()) cycle
+      if (Label /= This%CoordinatesLabels(i)) cycle
       ii = i
       exit
     end do
 
     if (ii == 0) call Error%Raise(Line='Did not finding a coordinate with requested label', ProcName=ProcName)
 
-    allocate(GetCoordsLabel_R1D, source=This%Coordinates(:,ii), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetCoordsLabel_R1D', ProcName=ProcName, stat=StatLoc)
+    allocate(GetCoordsLab_R1DChar, source=This%Coordinates(:,ii), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='GetCoordsLab_R1DChar', ProcName=ProcName, stat=StatLoc)
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+    !!------------------------------------------------------------------------------------------------------------------------------
+  function GetCoordsLab_R1DString(This, Label)
+
+    real(rkp), allocatable, dimension(:)                              ::    GetCoordsLab_R1DString
+
+    class(Response_Type), intent(in)                                  ::    This
+    type(SMUQString_Type), intent(in)                                 ::    Label
+
+    character(*), parameter                                           ::    ProcName='GetCoordsLab_R1DString'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    ii
+
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+    i = 1
+    ii = 0
+    do i = 1, This%NbIndCoordinates
+      if (Label /= This%CoordinatesLabels(i)) cycle
+      ii = i
+      exit
+    end do
+
+    if (ii == 0) call Error%Raise(Line='Did not finding a coordinate with requested label', ProcName=ProcName)
+
+    allocate(GetCoordsLab_R1DString, source=This%Coordinates(:,ii), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='GetCoordsLab_R1DString', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -415,14 +450,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordsLabelPtr_R1D(This, Label)
+  function GetCoordsLabP_R1DChar(This, Label)
 
-    real(rkp), pointer, dimension(:)                                  ::    GetCoordsLabelPtr_R1D
+    real(rkp), pointer, dimension(:)                                  ::    GetCoordsLabP_R1DChar
 
     class(Response_Type), target, intent(in)                          ::    This
     character(*), intent(in)                                          ::    Label
 
-    character(*), parameter                                           ::    ProcName='GetCoordsLabel_R1D'
+    character(*), parameter                                           ::    ProcName='GetCoordsLabP_R1DChar'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    ii
@@ -432,14 +467,44 @@ contains
     i = 1
     ii = 0
     do i = 1, This%NbIndCoordinates
-      if (Label /= This%CoordinatesLabels(i)%GetValue()) cycle
+      if (Label /= This%CoordinatesLabels(i)) cycle
       ii = i
       exit
     end do
 
     if (ii == 0) call Error%Raise(Line='Did not finding a coordinate with requested label', ProcName=ProcName)
 
-    GetCoordsLabelPtr_R1D => This%Coordinates(:,ii)
+    GetCoordsLabP_R1DChar => This%Coordinates(:,ii)
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetCoordsLabP_R1DString(This, Label)
+
+    real(rkp), pointer, dimension(:)                                  ::    GetCoordsLabP_R1DString
+
+    class(Response_Type), target, intent(in)                          ::    This
+    type(SMUQString_Type), intent(in)                                 ::    Label
+
+    character(*), parameter                                           ::    ProcName='GetCoordsLabP_R1DString'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    ii
+
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+    i = 1
+    ii = 0
+    do i = 1, This%NbIndCoordinates
+      if (Label /= This%CoordinatesLabels(i)) cycle
+      ii = i
+      exit
+    end do
+
+    if (ii == 0) call Error%Raise(Line='Did not finding a coordinate with requested label', ProcName=ProcName)
+
+    GetCoordsLabP_R1DString => This%Coordinates(:,ii)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

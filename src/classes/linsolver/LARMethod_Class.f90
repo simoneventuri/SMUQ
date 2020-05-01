@@ -48,7 +48,7 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Assumes that the first column is the mean
-  subroutine BuildMetaModels(This, System, Goal, ModelSet, CoefficientsSet, AddDrop, Tolerance, ConstantModel)
+  subroutine BuildMetaModels(This, System, Goal, ModelSet, CoefficientsSet, AddDrop, Tolerance)
 
     class(LARMethod_Type), intent(in)                                 ::    This
     real(rkp), dimension(:,:), target, intent(inout)                  ::    System
@@ -57,7 +57,6 @@ contains
     integer, allocatable, dimension(:), optional, intent(out)         ::    AddDrop
     real(rkp), allocatable, dimension(:), optional, intent(out)       ::    CoefficientsSet
     real(rkp), optional, intent(in)                                   ::    Tolerance
-    logical, optional, intent(out)                                    ::    ConstantModel
 
     character(*), parameter                                           ::    ProcName='BuildMetaModels'
     integer                                                           ::    StatLoc=0
@@ -179,13 +178,14 @@ contains
       Mean(i) = ComputeMean(Values=System(:,i))
       System(:,i) = System(:,i) - Mean(i)
       Norm(i) = DNRM2(M,System(:,i),1)
-      if (abs((Norm(i)**2/real(M,rkp))/Mean(i)) > 1e-10) then
-        System(:,i) = System(:,i)/ Norm(i)
-      else
+      if (all(System(:,i) == Zero) .or.                                                                                           &
+          (dabs(Mean(i)) > Zero .and. (Norm(i)/dsqrt(real(M-1,rkp)))/dabs(Mean(i)) < 1e-6)) then
         Norm(i) = One
         if (ConstantIndex == 0) ConstantIndex = i
         Active(i) = .true.
         System(:,i) = Zero
+      else
+        System(:,i) = System(:,i)/ Norm(i)
       end if
     end do
 
@@ -195,9 +195,8 @@ contains
 
     if (present(AddDrop) .and. ConstantIndex /= 0) call AddDropLoc%Append(Value=ConstantIndex)
 
-    if (present(ConstantModel)) ConstantModel = .false.
-
-    if (dsqrt((GoalVariance*(real((M-1),rkp)/real(M,rkp))))/abs(GoalMean) < 1e-10 .and. ConstantIndex /= 0) then
+    if ((all(Goal == Zero) .or. (dabs(GoalMean) > Zero .and. dsqrt(GoalVariance)/dabs(GoalMean) < 1e-6)) .and.                    &
+        ConstantIndex /= 0) then
       if (present(ModelSet)) then
         allocate(ModelSet(1), stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='ModelSet', ProcName=ProcName, stat=StatLoc)
@@ -208,7 +207,6 @@ contains
         if (StatLoc /= 0) call Error%Allocate(Name='Coefficients', ProcName=ProcName, stat=StatLoc)
         CoefficientsSet = GoalMean / Mean(ConstantIndex)
       end if
-      if (present(ConstantModel)) ConstantModel = .true.
     else
       if (GoalVariance <= Zero) GoalVariance = tiny(One)
 

@@ -68,10 +68,12 @@ contains
   procedure, private                                                  ::    GetName1D
   procedure, private                                                  ::    GetLabel0D
   procedure, private                                                  ::    GetLabel1D
-  generic, public                                                     ::    GetDistributionPointer  =>    GetDistPointer_Label,   &
-                                                                                                          GetDistPointer_Num
-  procedure, public                                                   ::    GetDistPointer_Label
-  procedure, public                                                   ::    GetDistPointer_Num
+  generic, public                                                     ::    GetDistributionPointer  =>    GetDistPtr_LabChar,     &
+                                                                                                          GetDistPtr_LabString,   &
+                                                                                                          GetDistPtr_Num
+  procedure, public                                                   ::    GetDistPtr_LabChar
+  procedure, public                                                   ::    GetDistPtr_LabString
+  procedure, public                                                   ::    GetDistPtr_Num
   procedure, public                                                   ::    IsCorrelated
   procedure, public                                                   ::    GetNbDim
   procedure, public                                                   ::    Copy
@@ -189,7 +191,6 @@ contains
       SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
 
       ParameterName = 'name'
-      call This%ParamName(i)%Set_Value(Value='<undefined>')
       call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
       This%ParamName(i) = VarC0D
 
@@ -277,10 +278,8 @@ contains
       SubSectionName = 'parameter' // ConvertToString(Value=i)
       call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
       SubSectionName= SectionName // '>' // SubSectionName
-      call GetInput%AddParameter(Name='name', Value=ConvertToString(Value=This%ParamName(i)%GetValue()),                       &
-                                                                                                      SectionName=SubSectionName)
-      call GetInput%AddParameter(Name='label', Value=ConvertToString(Value=This%Label(i)%GetValue()),                          &
-                                                                                                      SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='name', Value=This%ParamName(i)%Get(), SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='label', Value=This%Label(i)%Get(), SectionName=SubSectionName)
       HierDistProb => This%HierDistProb(i)%GetPointer()
       if (ExternalFlag) DirectorySub = DirectoryLoc // '/distribution' // ConvertToString(i)
       call GetInput%AddSection(Section=HierDistProb_Factory%GetObjectInput(Object=HierDistProb, Name='distribution', &
@@ -349,7 +348,7 @@ contains
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetName0D = This%ParamName(Num)%GetValue()      
+    GetName0D = This%ParamName(Num)%Get()      
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -422,14 +421,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistPointer_Label(This, Label)
+  function GetDistPtr_LabChar(This, Label)
 
-    class(HierDistProb_Type), pointer                                 ::    GetDistPointer_Label
+    class(HierDistProb_Type), pointer                                 ::    GetDistPtr_LabChar
 
     class(HierParamSpace_Type), intent(in)                            ::    This
     character(*), intent(in)                                          ::    Label
 
-    character(*), parameter                                           ::    ProcName='GetDistPointer_Label'
+    character(*), parameter                                           ::    ProcName='GetDistPtr_LabChar'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     integer                                                           ::    ii
@@ -439,27 +438,57 @@ contains
     i = 1
     ii = 0
     do i = 1, This%NbDim
-      if (This%Label(i)%GetValue() /= Label) cycle
+      if (This%Label(i) /= Label) cycle
       ii = i
       exit
     end do
 
     if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-    GetDistPointer_Label => This%HierDistProb(ii)%GetPointer()
+    GetDistPtr_LabChar => This%HierDistProb(ii)%GetPointer()
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+ !!------------------------------------------------------------------------------------------------------------------------------
+  function GetDistPtr_LabString(This, Label)
+
+    class(HierDistProb_Type), pointer                                 ::    GetDistPtr_LabString
+
+    class(HierParamSpace_Type), intent(in)                            ::    This
+    type(SMUQString_Type), intent(in)                                 ::    Label
+
+    character(*), parameter                                           ::    ProcName='GetDistPtr_LabString'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    integer                                                           ::    ii
+
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+    i = 1
+    ii = 0
+    do i = 1, This%NbDim
+      if (This%Label(i) /= Label) cycle
+      ii = i
+      exit
+    end do
+
+    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+
+    GetDistPtr_LabString => This%HierDistProb(ii)%GetPointer()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistPointer_Num(This, Num)
+  function GetDistPtr_Num(This, Num)
 
-    class(HierDistProb_Type), pointer                                 ::    GetDistPointer_Num
+    class(HierDistProb_Type), pointer                                 ::    GetDistPtr_Num
 
     class(HierParamSpace_Type), intent(in)                            ::    This
     integer, intent(in)                                               ::    Num
 
-    character(*), parameter                                           ::    ProcName='GetDistPointer_Num'
+    character(*), parameter                                           ::    ProcName='GetDistPtr_Num'
     integer                                                           ::    StatLoc=0
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -467,7 +496,7 @@ contains
     if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
     if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
 
-    GetDistPointer_Num => This%HierDistProb(Num)%GetPointer()
+    GetDistPtr_Num => This%HierDistProb(Num)%GetPointer()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

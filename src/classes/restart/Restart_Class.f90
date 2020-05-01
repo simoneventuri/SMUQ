@@ -21,10 +21,12 @@ module Restart_Class
 use Input_Library
 use Parameters_Library
 use CommandRoutines_Module
+use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use ProgramDefs_Class                                             ,only:    ProgramDefs
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -170,17 +172,19 @@ contains
 
     character(*), parameter                                           ::    ProcName='GetDirectory'
     integer                                                           ::    StatLoc=0
-    character(:), allocatable, dimension(:)                           ::    SectionNames
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    SectionNames
     integer                                                           ::    NbSections=0
     integer                                                           ::    i
 
-    call Parse(Input=SectionChain, Separator='>', Output=SectionNames)
+    allocate(SectionNames, source=ConvertToStrings(Value=SectionChain, Separator='>'), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='SectionNames', ProcName=ProcName, stat=StatLoc)
+
     NbSections = size(SectionNames,1)
 
     GetDirectory = ''
 
     do i = 1, NbSections
-      GetDirectory = GetDirectory // '/' // trim(adjustl(SectionNames(i)))
+      GetDirectory = GetDirectory // '/' // SectionNames(i)
     end do
 
     deallocate(SectionNames, stat=StatLoc)

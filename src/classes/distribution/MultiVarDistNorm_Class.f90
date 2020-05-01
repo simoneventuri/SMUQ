@@ -165,7 +165,7 @@ contains
     ParameterName = 'format'
     call Input%GetValue(VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     SubSectionName = SectionName // '>format'
-    select case (LowerCase(VarC0D))
+    select case (VarC0D)
       case ('diagonals')
         ParameterName = 'values'
         call Input%GetValue(VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)

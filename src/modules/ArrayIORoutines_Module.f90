@@ -33,7 +33,6 @@ interface ImportArray
   module procedure                                                    ::    ImportArrayInput_R81D
   module procedure                                                    ::    ImportArrayInput_I41D
   module procedure                                                    ::    ImportArrayInput_I81D
-  module procedure                                                    ::    ImportArrayInput_C1D
   module procedure                                                    ::    ImportArrayInput_L1D
   module procedure                                                    ::    ImportArrayInput_CX1D
   module procedure                                                    ::    ImportArrayInput_String1D
@@ -41,7 +40,6 @@ interface ImportArray
   module procedure                                                    ::    ImportArrayInput_R82D
   module procedure                                                    ::    ImportArrayInput_I42D
   module procedure                                                    ::    ImportArrayInput_I82D
-  module procedure                                                    ::    ImportArrayInput_C2D
   module procedure                                                    ::    ImportArrayInput_L2D
   module procedure                                                    ::    ImportArrayInput_CX2D
   module procedure                                                    ::    ImportArrayInput_String2D
@@ -49,7 +47,6 @@ interface ImportArray
   module procedure                                                    ::    ImportArray_R81D
   module procedure                                                    ::    ImportArray_I41D
   module procedure                                                    ::    ImportArray_I81D
-  module procedure                                                    ::    ImportArray_C1D
   module procedure                                                    ::    ImportArray_L1D
   module procedure                                                    ::    ImportArray_CX1D
   module procedure                                                    ::    ImportArray_String1D
@@ -57,7 +54,6 @@ interface ImportArray
   module procedure                                                    ::    ImportArray_R82D
   module procedure                                                    ::    ImportArray_I42D
   module procedure                                                    ::    ImportArray_I82D
-  module procedure                                                    ::    ImportArray_C2D
   module procedure                                                    ::    ImportArray_L2D
   module procedure                                                    ::    ImportArray_CX2D
   module procedure                                                    ::    ImportArray_String2D
@@ -499,69 +495,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_C1D(Input, Array, Prefix, RowMajor)
-
-    class(InputSection_Type), intent(in)                              ::    Input
-    character(:), allocatable, dimension(:), intent(out)              ::    Array
-    character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    RowMajor
-
-    character(*), parameter                                           ::    ProcName='ImportArrayInput_C1D'
-    integer                                                           ::    StatLoc
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    logical                                                           ::    Found
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    type(SMUQFile_Type)                                               ::    ArrayFile
-    integer                                                           ::    NbLinesSkip=0
-    character(:), allocatable                                         ::    Source
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    VarI0D
-    logical                                                           ::    VarL0D
-    logical                                                           ::    RowMajorLoc
-
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
-
-    RowMajorLoc = .true.
-    if (present(RowMajor)) RowMajorLoc = RowMajor
-
-    ParameterName = 'source'
-    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
-    Source = VarC0D
-
-    SectionName = 'source'
-    NbLinesSkip = 0
-
-    select case (Source)
-      case('external')
-        ParameterName = 'row_major'
-        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if (Found) RowMajorLoc = VarL0D
-
-        ParameterName = 'nb_lines_skip'
-        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if (Found) NbLinesSkip = VarI0D
-
-        SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
-        nullify(InputSection)
-        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
-      case('internal')
-        ParameterName = 'values'
-        call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        Array = ConvertToStrings(Value=VarC0D, Separator=' ')
-      case default
-        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ImportArrayInput_L1D(Input, Array, Prefix, RowMajor)
 
     class(InputSection_Type), intent(in)                              ::    Input
@@ -745,7 +678,8 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        Array = ConvertToStrings(Value=VarC0D, Separator=' ')
+        allocate(Array, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -827,9 +761,8 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          VarString1D = ConvertToStrings(Value=VarC0D, Separator=' ')
           if (i == 1) then
-            NbEntries = size(VarC1D,1)
+            NbEntries = size(ConvertToReal4s(String=VarC0D, Separator=' '),1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -838,13 +771,10 @@ contains
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName)
-
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToReal4s(Strings=VarC1D)
+            Array(i,:) = ConvertToReal4s(String=VarC0D, Separator=' ')
           else
-            Array(:,i) = ConvertToReal4s(Strings=VarC1D)
+            Array(:,i) = ConvertToReal4s(String=VarC0D, Separator=' ')
           end if
 
         end do
@@ -878,7 +808,6 @@ contains
     integer                                                           ::    NbLinesSkip=0
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     integer                                                           ::    VarI0D
     integer                                                           ::    i, ii
     logical                                                           ::    VarL0D
@@ -930,9 +859,8 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
           if (i == 1) then
-            NbEntries = size(VarC1D,1)
+            NbEntries = size(ConvertToReal8s(String=VarC0D, Separator=' '),1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -941,13 +869,10 @@ contains
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName)
-
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToReal8s(Strings=VarC1D)
+            Array(i,:) = ConvertToReal8s(String=VarC0D, Separator=' ')
           else
-            Array(:,i) = ConvertToReal8s(Strings=VarC1D)
+            Array(:,i) = ConvertToReal8s(String=VarC0D, Separator=' ')
           end if
 
         end do
@@ -981,7 +906,6 @@ contains
     integer                                                           ::    NbLinesSkip=0
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     integer                                                           ::    VarI0D
     integer                                                           ::    i, ii
     logical                                                           ::    VarL0D
@@ -1033,9 +957,8 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
           if (i == 1) then
-            NbEntries = size(VarC1D,1)
+            NbEntries = size(ConvertToInteger4s(String=VarC0D, Separator=' '),1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1044,12 +967,10 @@ contains
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName)
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToInteger4s(Strings=VarC1D)
+            Array(i,:) = ConvertToInteger4s(String=VarC0D, Separator=' ')
           else
-            Array(:,i) = ConvertToInteger4s(Strings=VarC1D)
+            Array(:,i) = ConvertToInteger4s(String=VarC0D, Separator=' ')
           end if
         end do
 
@@ -1082,7 +1003,6 @@ contains
     integer                                                           ::    NbLinesSkip=0
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     integer                                                           ::    VarI0D
     integer                                                           ::    i, ii
     logical                                                           ::    VarL0D
@@ -1134,9 +1054,8 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
           if (i == 1) then
-            NbEntries = size(VarC1D,1)
+            NbEntries = size(ConvertToInteger8s(String=VarC0D, Separator=' '),1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1145,113 +1064,10 @@ contains
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName)
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToInteger8s(Strings=VarC1D)
+            Array(i,:) = ConvertToInteger8s(String=VarC0D, Separator=' ')
           else
-            Array(:,i) = ConvertToInteger8s(Strings=VarC1D)
-          end if
-        end do
-
-      case default
-        call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArrayInput_C2D(Input, Array, Prefix, RowMajor)
-
-    class(InputSection_Type), intent(in)                              ::    Input
-    character(:), allocatable, dimension(:,:), intent(out)            ::    Array
-    character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    RowMajor
-
-    character(*), parameter                                           ::    ProcName='ImportArrayInput_C2D'
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    logical                                                           ::    Found
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    type(SMUQFile_Type)                                               ::    ArrayFile
-    integer                                                           ::    NbLines=0
-    integer                                                           ::    NbEntries=0
-    integer                                                           ::    NbLinesSkip=0
-    character(:), allocatable                                         ::    Source
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
-    integer                                                           ::    VarI0D
-    integer                                                           ::    i, ii
-    logical                                                           ::    VarL0D
-    logical                                                           ::    RowMajorLoc
-    character(:), allocatable                                         ::    ParamPrefix
-
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
-
-    RowMajorLoc = .false.
-    if (present(RowMajor)) RowMajorLoc = RowMajor
-
-    ParameterName = 'source'
-    call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
-    Source = VarC0D
-
-    SectionName = 'source'
-    NbLinesSkip = 0
-
-    select case (Source)
-      case('external')
-        ParameterName = 'row_major'
-        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if (Found) RowMajorLoc = VarL0D
-
-        ParameterName = 'nb_lines_skip'
-        call Input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if (Found) NbLinesSkip = VarI0D
-
-        SubSectionName = SectionName // '>file'
-        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-        call ArrayFile%Construct(Input=InputSection, Prefix=PrefixLoc)
-        nullify(InputSection)
-        call ImportArray(File=ArrayFile, Array=Array, NbLinesSkip=NbLinesSkip, RowMajor=RowMajorLoc)
-      case('internal')
-        ParameterName = 'row_major'
-        call Input%GetValue(Value=VarL0D, ParameterName=Parametername, Mandatory=.false., SectionName=SectionName, Found=Found)
-        if (Found) RowMajorLoc = VarL0D
-
-        SubSectionName = SectionName // '>array'
-        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-        NbLines = InputSection%GetNumberofParameters()
-        if (NbLines <= 0) call Error%Raise(Line='Specified 0 or less columns to be read in', ProcName=ProcName)
-
-        ParamPrefix = 'column'
-        if (RowMajorLoc) ParamPrefix = 'row'
-
-        i = 1
-        do i = 1, NbLines
-          ParameterName = ParamPrefix // ConvertToString(Value=i)
-          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
-          if (i == 1) then
-            NbEntries = size(VarC1D,1)
-            if (RowMajorLoc) then
-              allocate(character(200) :: Array(NbLines,NbEntries), stat=StatLoc)
-              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-            else
-              allocate(character(200) :: Array(NbEntries,NbLines), stat=StatLoc)
-              if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-            end if
-          end if
-          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName)
-          if (RowMajorLoc) then
-            Array(i,:) = VarC1D
-          else
-            Array(:,i) = VarC1D
+            Array(:,i) = ConvertToInteger8s(String=VarC0D, Separator=' ')
           end if
         end do
 
@@ -1284,7 +1100,6 @@ contains
     integer                                                           ::    NbLinesSkip=0
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     integer                                                           ::    VarI0D
     integer                                                           ::    i, ii
     logical                                                           ::    VarL0D
@@ -1336,9 +1151,8 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
           if (i == 1) then
-            NbEntries = size(VarC1D,1)
+            NbEntries = size(ConvertToLogicals(String=VarC0D, Separator=' '),1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1347,12 +1161,10 @@ contains
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName)
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToLogicals(Strings=VarC1D)
+            Array(i,:) = ConvertToLogicals(String=VarC0D, Separator=' ')
           else
-            Array(:,i) = ConvertToLogicals(Strings=VarC1D)
+            Array(:,i) = ConvertToLogicals(String=VarC0D, Separator=' ')
           end if
         end do
 
@@ -1385,7 +1197,6 @@ contains
     integer                                                           ::    NbLinesSkip=0
     character(:), allocatable                                         ::    Source
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     integer                                                           ::    VarI0D
     integer                                                           ::    i, ii
     logical                                                           ::    VarL0D
@@ -1437,9 +1248,8 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
           if (i == 1) then
-            NbEntries = size(VarC1D,1)
+            NbEntries = size(ConvertToComplexs(String=VarC0D, Separator=' '),1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1448,12 +1258,10 @@ contains
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
             end if
           end if
-          if (size(VarC1D,1) /= NbEntries) call Error%Raise(Line='Specified line not equal to the length of the first line',&
-                                                             ProcName=ProcName)
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToComplexs(Strings=VarC1D)
+            Array(i,:) = ConvertToComplexs(String=VarC0D, Separator=' ')
           else
-            Array(:,i) = ConvertToComplexs(Strings=VarC1D)
+            Array(:,i) = ConvertToComplexs(String=VarC0D, Separator=' ')
           end if
         end do
       case default
@@ -1584,7 +1392,6 @@ contains
     character(:), allocatable                                         ::    Comment
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-    character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -1624,12 +1431,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
-        allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-        Array = ConvertToReal4s(Strings=VarC1D)
-        deallocate(VarC1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
+        Array = ConvertToReal4s(String=VarC0D, Separator=' ')
       end if
 
     end if
@@ -1664,7 +1466,6 @@ contains
     character(:), allocatable                                         ::    Comment
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-    character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -1704,12 +1505,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
-        allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-        Array = ConvertToReal8s(Strings=VarC1D)
-        deallocate(VarC1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
+        Array = ConvertToReal4s(String=VarC0D, Separator=' ')
       end if
 
     end if
@@ -1744,7 +1540,6 @@ contains
     character(:), allocatable                                         ::    Comment
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-    character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -1784,12 +1579,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
-        allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-        Array = ConvertToInteger4s(Strings=VarC1D)
-        deallocate(VarC1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
+        Array = ConvertToInteger4s(String=VarC0D, Separator=' ')
       end if
 
     end if
@@ -1824,7 +1614,6 @@ contains
     character(:), allocatable                                         ::    Comment
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-    character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -1864,92 +1653,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
-        allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-        Array = ConvertToInteger8s(Strings=VarC1D)
-        deallocate(VarC1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
-      end if
-
-    end if
-
-    call File%Close()
-
-    if (present(Found)) Found = FoundLoc
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_C1D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
-
-    type(SMUQFile_Type), intent(inout)                                ::    File
-    character(:), dimension(:), allocatable, intent(out)              ::    Array
-    integer, optional, intent(in)                                     ::    NbLinesSkip
-    logical, optional, intent(in)                                     ::    Mandatory
-    logical, optional, intent(out)                                    ::    Found
-    logical, optional, intent(in)                                     ::    RowMajor
-
-    character(*), parameter                                           ::    ProcName='ImportArray_C1D'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    UnitLoc
-    logical                                                           ::    MandatoryLoc=.true.
-    logical                                                           ::    FoundLoc=.false.
-    integer                                                           ::    NbLines=0
-    integer                                                           ::    NbLinesSkipLoc=0
-    integer                                                           ::    Size1=0
-    integer                                                           ::    i, ii
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable                                         ::    Comment
-    logical                                                           ::    VarL0D
-    logical                                                           ::    RowMajorLoc
-    character(:), allocatable, dimension(:)                           ::    VarC1D
-
-    RowMajorLoc = .true.
-    if (present(RowMajor)) RowMajorLoc = RowMajor
-
-    if (present(Mandatory)) MandatoryLoc = Mandatory
-
-    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
-
-    if (FoundLoc) then
-      NbLines = File%GetNbLines()
-      Comment = File%GetComment()
-      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
-
-      ii = 0
-      i = 1
-      do i = 1, NbLines
-        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
-        if (i <= NbLinesSkipLoc) cycle
-        if (VarC0D(1:len(Comment)) == Comment) cycle
-        ii = ii + 1
-      end do
-
-      if (RowMajorLoc) then
-        Size1 = ii
-        if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
-        call File%Rewind()
-        allocate(character(200) :: Array(Size1), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-        i = 1
-        ii = 0
-        do i = 1, NbLines
-          call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
-          if (i <= NbLinesSkipLoc) cycle
-          if (VarC0D(1:len(Comment)) == Comment) cycle
-          ii = ii + 1
-          Array(ii) = VarC0D
-        end do
-      else
-        if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
-        allocate(character(200) :: Array(size(VarC1D,1)), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-        Array = VarC1D
-        deallocate(VarC1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
+        Array = ConvertToInteger8s(String=VarC0D, Separator=' ')
       end if
 
     end if
@@ -1984,7 +1688,6 @@ contains
     character(:), allocatable                                         ::    Comment
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-    character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2024,12 +1727,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
-        allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-        Array = ConvertToLogicals(Strings=VarC1D)
-        deallocate(VarC1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
+        Array = ConvertToLogicals(String=VarC0D, Separator=' ')
       end if
 
     end if
@@ -2064,7 +1762,6 @@ contains
     character(:), allocatable                                         ::    Comment
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
-    character(:), allocatable, dimension(:)                           ::    VarC1D
 
     RowMajorLoc = .true.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2104,12 +1801,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        call Parse(Input=VarC0D, Separator=' ', Output=VarC1D)
-        allocate(Array(size(VarC1D,1)), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-        Array = ConvertToComplexs(Strings=VarC1D)
-        deallocate(VarC1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarC1D', ProcName=ProcName, stat=StatLoc)
+        Array = ConvertToComplexs(String=VarC0D, Separator=' ')
       end if
 
     end if
@@ -2183,7 +1875,8 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        Array = ConvertToStrings(Value=VarC0D, Separator=' ')
+        allocate(Array, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
       end if
 
     end if
@@ -2217,7 +1910,6 @@ contains
     integer                                                           ::    Size2=0
     integer                                                           ::    i, ii, iii
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     character(:), allocatable                                         ::    Comment
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
@@ -2244,8 +1936,7 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-          Size1 = size(VarC1D,1)
+          Size1 = size(ConvertToReal4s(String=VarC0D, Separator=' '),1)
         end if
       end do
       Size2 = ii
@@ -2268,12 +1959,10 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToReal4s(Strings=VarC1D)
+          Array(ii,:) = ConvertToReal4s(String=VarC0D, Separator=' ')
         else
-          Array(:,ii) = ConvertToReal4s(Strings=VarC1D)
+          Array(:,ii) = ConvertToReal4s(String=VarC0D, Separator=' ')
         end if
       end do
 
@@ -2308,7 +1997,6 @@ contains
     integer                                                           ::    Size2=0
     integer                                                           ::    i, ii, iii
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     character(:), allocatable                                         ::    Comment
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
@@ -2335,8 +2023,7 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-          Size1 = size(VarC1D,1)
+          Size1 = size(ConvertToReal8s(String=VarC0D, Separator=' '),1)
         end if
       end do
       Size2 = ii
@@ -2359,12 +2046,10 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToReal8s(Strings=VarC1D)
+          Array(ii,:) = ConvertToReal8s(String=VarC0D, Separator=' ')
         else
-          Array(:,ii) = ConvertToReal8s(Strings=VarC1D)
+          Array(:,ii) = ConvertToReal8s(String=VarC0D, Separator=' ')
         end if
       end do
 
@@ -2399,7 +2084,6 @@ contains
     integer                                                           ::    Size2=0
     integer                                                           ::    i, ii, iii
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     character(:), allocatable                                         ::    Comment
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
@@ -2426,8 +2110,7 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-          Size1 = size(VarC1D,1)
+          Size1 = size(ConvertToInteger4s(String=VarC0D, Separator=' '),1)
         end if
       end do
       Size2 = ii
@@ -2450,12 +2133,10 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToInteger4s(Strings=VarC1D)
+          Array(ii,:) = ConvertToInteger4s(String=VarC0D, Separator=' ')
         else
-          Array(:,ii) = ConvertToInteger4s(Strings=VarC1D)
+          Array(:,ii) = ConvertToInteger4s(String=VarC0D, Separator=' ')
         end if
       end do
 
@@ -2490,7 +2171,6 @@ contains
     integer                                                           ::    Size2=0
     integer                                                           ::    i, ii, iii
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     character(:), allocatable                                         ::    Comment
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
@@ -2517,8 +2197,7 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-          Size1 = size(VarC1D,1)
+          Size1 = size(ConvertToInteger8s(String=VarC0D, Separator=' '),1)
         end if
       end do
       Size2 = ii
@@ -2541,102 +2220,10 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToInteger8s(Strings=VarC1D)
+          Array(ii,:) = ConvertToInteger8s(String=VarC0D, Separator=' ')
         else
-          Array(:,ii) = ConvertToInteger8s(Strings=VarC1D)
-        end if
-      end do
-
-    end if
-
-    call File%Close()
-
-    if (present(Found)) Found = FoundLoc
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ImportArray_C2D(File, Array, NbLinesSkip, Mandatory, Found, RowMajor)
-
-    type(SMUQFile_Type), intent(inout)                                ::    File
-    character(:), dimension(:,:), allocatable, intent(out)            ::    Array
-    integer, optional, intent(in)                                     ::    NbLinesSkip
-    logical, optional, intent(in)                                     ::    Mandatory
-    logical, optional, intent(out)                                    ::    Found
-    logical, optional, intent(in)                                     ::    RowMajor
-
-    character(*), parameter                                           ::    ProcName='ImportArray_C2D'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    UnitLoc
-    logical                                                           ::    MandatoryLoc=.true.
-    logical                                                           ::    FoundLoc=.false.
-    integer                                                           ::    NbLines=0
-    integer                                                           ::    NbLinesSkipLoc=0
-    integer                                                           ::    NbEntries=0
-    integer                                                           ::    Size1=0
-    integer                                                           ::    Size2=0
-    integer                                                           ::    i, ii, iii
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
-    character(:), allocatable                                         ::    Comment
-    character(:), allocatable                                         ::    Separator
-    logical                                                           ::    VarL0D
-    logical                                                           ::    RowMajorLoc
-
-    RowMajorLoc = .false.
-    if (present(RowMajor)) RowMajorLoc = RowMajor
-
-    if (present(Mandatory)) MandatoryLoc = Mandatory
-
-    call File%Open(Unit=UnitLoc, Action='read', Status='old', Position='rewind', Mandatory=MandatoryLoc, Found=FoundLoc)
-
-    if (FoundLoc) then
-      NbLines = File%GetNbLines()
-      Comment = File%GetComment()
-      Separator = File%GetSeparator()
-      if (present(NbLinesSkip)) NbLinesSkipLoc = NbLinesSkip
-
-      ii = 0
-      i = 1
-      do i = 1, NbLines
-        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
-        if (i <= NbLinesSkipLoc) cycle
-        if (VarC0D(1:len(Comment)) == Comment) cycle
-        ii = ii + 1
-        if (ii == 1) then
-          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-          Size1 = size(VarC1D,1)
-        end if
-      end do
-      Size2 = ii
-      if (Size1 <= 0) call Error%Raise(Line='File was found to contain no usable lines', ProcName=ProcName)
-
-      call File%Rewind()
-
-      if (RowMajorLoc) then
-        allocate(character(200) :: Array(Size2,Size1), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-      else
-        allocate(character(200) :: Array(Size1,Size2), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
-      end if
-
-      i = 1
-      ii = 0
-      do i = 1, NbLines
-        call File%ReadRecord(Unit=UnitLoc, Record=VarC0D)
-        if (i <= NbLinesSkipLoc) cycle
-        if (VarC0D(1:len(Comment)) == Comment) cycle
-        ii = ii + 1
-        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-        if (RowMajorLoc) then
-          Array(ii,:) = VarC1D
-        else
-          Array(:,ii) = VarC1D
+          Array(:,ii) = ConvertToInteger8s(String=VarC0D, Separator=' ')
         end if
       end do
 
@@ -2671,7 +2258,6 @@ contains
     integer                                                           ::    Size2=0
     integer                                                           ::    i, ii, iii
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     character(:), allocatable                                         ::    Comment
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
@@ -2698,8 +2284,7 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-          Size1 = size(VarC1D,1)
+          Size1 = size(ConvertToLogicals(String=VarC0D, Separator=' '),1)
         end if
       end do
       Size2 = ii
@@ -2722,12 +2307,10 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToLogicals(Strings=VarC1D)
+          Array(ii,:) = ConvertToLogicals(String=VarC0D, Separator=' ')
         else
-          Array(:,ii) = ConvertToLogicals(Strings=VarC1D)
+          Array(:,ii) = ConvertToLogicals(String=VarC0D, Separator=' ')
         end if
       end do
 
@@ -2762,7 +2345,6 @@ contains
     integer                                                           ::    Size2=0
     integer                                                           ::    i, ii, iii
     character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable, dimension(:)                           ::    VarC1D
     character(:), allocatable                                         ::    Comment
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
@@ -2789,8 +2371,7 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-          Size1 = size(VarC1D,1)
+          Size1 = size(ConvertToComplexs(String=VarC0D, Separator=' '),1)
         end if
       end do
       Size2 = ii
@@ -2813,12 +2394,10 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
-        call Parse(Input=VarC0D, Separator=Separator, Output=VarC1D)
-        if (size(VarC1D) /= Size1) call Error%Raise(Line='Number of entries mismatch in the line', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToComplexs(Strings=VarC1D)
+          Array(ii,:) = ConvertToComplexs(String=VarC0D, Separator=' ')
         else
-          Array(:,ii) = ConvertToComplexs(Strings=VarC1D)
+          Array(:,ii) = ConvertToComplexs(String=VarC0D, Separator=' ')
         end if
       end do
 

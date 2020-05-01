@@ -288,7 +288,7 @@ contains
     i = 1
     iCoordinate = 0
     do i = 1, size(Coordinates,2)
-      if (CoordinateLabels(i)%GetValue() == This%CoordinateLabel) then
+      if (CoordinateLabels(i) == This%CoordinateLabel) then
         iCoordinate = i
         exit
       end if

@@ -30,6 +30,7 @@ use Error_Class                                                   ,only:    Erro
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use OFileFormated_Class                                           ,only:    OFileFormated_Type
 use Output_Class                                                  ,only:    Output_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -219,8 +220,8 @@ contains
 
     call GetInput%AddSection(Section=This%OutputFile%GetInput(Name='file', Prefix=PrefixLoc, Directory=DirectorySub))
 
-    call GetInput%AddParameter(Name='debug', Value=Convert_To_String(This%DebugFlag))
-    call GetInput%AddParameter(Name='abscissa_column', Value=Convert_To_String(This%AbscissaColumn))
+    call GetInput%AddParameter(Name='debug', Value=ConvertToString(This%DebugFlag))
+    call GetInput%AddParameter(Name='abscissa_column', Value=ConvertToString(This%AbscissaColumn))
     call GetInput%AddParameter(Name='output_column', Value=ConvertToString(Values=This%OutputColumn))
 
     if (This%Interpolated) then

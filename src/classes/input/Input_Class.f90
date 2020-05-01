@@ -69,8 +69,8 @@ contains
   generic, public                                                     ::    HasParameter            =>    HasParameter0D_Char,    &
                                                                                                           HasParameter0D_String,  &
                                                                                                           HasParameter1D
-  procedure, public                                                   ::    HasParameter0DChar
-  procedure, public                                                   ::    HasParameter0DString
+  procedure, public                                                   ::    HasParameter0D_Char
+  procedure, public                                                   ::    HasParameter0D_String
   procedure, public                                                   ::    HasParameter1D
   generic, public                                                     ::    HasParameters           =>    HasParameters1D
   procedure, public                                                   ::    HasParameters1D
@@ -243,7 +243,7 @@ subroutine AppendInput0D_Char(This, Value, Label)
 
     class(Input_Type), intent(inout)                                    ::    This
     real(rkp), intent(in)                                               ::    Value
-    type(SMUQ_String_Type), intent(in)                                  ::    Label
+    type(SMUQString_Type), intent(in)                                   ::    Label
     
     character(*), parameter                                             ::    ProcName='AppendInput0D_String'
     integer                                                             ::    StatLoc=0
@@ -345,16 +345,14 @@ subroutine GetValue0D_LabelChar(This, Value, Label, Mandatory, Found)
 
   FoundLoc = .false.
 
-  if (len_trim(Label) > 0) then
-    i = 1
-    do i = 1, This%NbInputs
-      if (This%Label(i) == Label) then
-        Value = This%Input(i)
-        FoundLoc = .true.
-        exit
-      end if
-    end do
-  end if
+  i = 1
+  do i = 1, This%NbInputs
+    if (This%Label(i) == Label) then
+      Value = This%Input(i)
+      FoundLoc = .true.
+      exit
+    end if
+  end do
 
   if (MandatoryLoc .and. .not. FoundLoc) call Error%Raise(Line='Mandatory label not found : ' // Label, ProcName=ProcName)
 
@@ -386,17 +384,15 @@ subroutine GetValue0D_LabelChar(This, Value, Label, Mandatory, Found)
     if (present(Mandatory)) MandatoryLoc = Mandatory
   
     FoundLoc = .false.
-  
-    if (len_trim(Label) > 0) then
-      i = 1
-      do i = 1, This%NbInputs
-        if (This%Label(i) == Label) then
-          Value = This%Input(i)
-          FoundLoc = .true.
-          exit
-        end if
-      end do
-    end if
+
+    i = 1
+    do i = 1, This%NbInputs
+      if (This%Label(i) == Label) then
+        Value = This%Input(i)
+        FoundLoc = .true.
+        exit
+      end if
+    end do
   
     if (MandatoryLoc .and. .not. FoundLoc) call Error%Raise(Line='Mandatory label not found : ' // Label, ProcName=ProcName)
   
@@ -421,7 +417,6 @@ subroutine GetValue1D_Labels(This, Values, Labels, Mandatory, Found)
   integer                                                             ::    ii
   logical                                                             ::    FoundLoc
   logical                                                             ::    MandatoryLoc
-  character(:), allocatable                                           ::    VarC0D
 
   if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
 
@@ -435,21 +430,18 @@ subroutine GetValue1D_Labels(This, Values, Labels, Mandatory, Found)
   Values = Zero
 
   ii = 1
-  do ii = 1, NbLabels
-    VarC0D = Labels(ii)%GetValue()
+  do ii = 1, NbLabels    
     i = 1
     FoundLoc = .false.
-    if (len_trim(VarC0D) > 0) then
-      do i = 1, This%NbInputs
-        if (This%Label(i) == VarC0D) then
-          Values(ii) = This%Input(i)
-          FoundLoc = .true.
-          exit
-        end if
-      end do
-    end if
+    do i = 1, This%NbInputs
+      if (This%Label(i) == Labels(ii)) then
+        Values(ii) = This%Input(i)
+        FoundLoc = .true.
+        exit
+      end if
+    end do
     if (.not. FoundLoc) then
-      if (MandatoryLoc) call Error%Raise(Line='Mandatory label not found : ' // VarC0D, ProcName=ProcName)
+      if (MandatoryLoc) call Error%Raise(Line='Mandatory label not found : ' // Labels(ii)%Get(), ProcName=ProcName)
       exit
     end if
   end do
@@ -505,18 +497,14 @@ function HasParameter0D_String(This, Label)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
 
-  HasParameter0D = .false.
+  HasParameter0D_String = .false.
 
-  if (len_trim(Label) > 0) then
-    i = 1
-    do i = 1, This%NbInputs
-      if (This%Label(i) /= Label) cycle
-      HasParameter0D_String = .true.
-      exit
-    end do
-  else
-    call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
-  end if
+  i = 1
+  do i = 1, This%NbInputs
+    if (This%Label(i) /= Label) cycle
+    HasParameter0D_String = .true.
+    exit
+  end do
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -534,18 +522,13 @@ function HasParameter0D_Char(This, Label)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
 
-  HasParameter0D = .false.
-
-  if (len_trim(Label) > 0) then
-    i = 1
-    do i = 1, This%NbInputs
-      if (This%Label(i) /= Label) cycle
-      HasParameter0D_Char = .true.
-      exit
-    end do
-  else
-    call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
-  end if
+  HasParameter0D_Char = .false.
+  i = 1
+  do i = 1, This%NbInputs
+    if (This%Label(i) /= Label) cycle
+    HasParameter0D_Char = .true.
+    exit
+  end do
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -575,16 +558,50 @@ function HasParameter1D(This, Labels)
 
   ii = 1
   do ii = 1, NbLabels
-    if (len_trim(LabelLoc) > 0) then
-      i = 1
-      do i = 1, This%NbInputs
-        if (This%Label(i) /= Labels(ii)) cycle
-        HasParameter1D(ii) = .true.
-        exit
-      end do
-    else
-      call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
-    end if
+    i = 1
+    do i = 1, This%NbInputs
+      if (This%Label(i) /= Labels(ii)) cycle
+      HasParameter1D(ii) = .true.
+      exit
+    end do
+  end do
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function HasParameters1D(This, Labels)
+
+  logical                                                             ::    HasParameters1D
+
+  class(Input_Type), target, intent(in)                               ::    This
+  type(SMUQString_Type), dimension(:), intent(in)                     ::    Labels
+
+  character(*), parameter                                             ::    ProcName='HasParameters1D'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  integer                                                             ::    ii
+  integer                                                             ::    iii
+  character(:), allocatable                                           ::    LabelLoc
+  integer                                                             ::    NbLabels
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
+
+  NbLabels = size(Labels,1)
+
+  HasParameters1D = .true.
+
+  ii = 1
+  do ii = 1, NbLabels
+    i = 1
+    iii = 0
+    do i = 1, This%NbInputs
+      if (This%Label(i) == Labels(ii)) then
+        iii = i
+      end if
+    end do
+    if (iii == 0) HasParameters1D = .false.
+    if (.not. HasParameters1D) exit
   end do
 
 end function
@@ -604,19 +621,15 @@ subroutine Replace0D_Char(This, Value, Label)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
 
-  if (len_trim(Label) > 0) then
-    Found = .false.
-    i = 1
-    do i = 1, This%NbInputs
-      if (This%Label(i) /= Label) cycle
-      This%Input(i) = Value
-      Found = .true.  
-      exit
-    end do
-    if (.not. Found) call Error%Raise('Did not find input with label :' // Label, ProcName=ProcName)
-  else
-    call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
-  end if
+  Found = .false.
+  i = 1
+  do i = 1, This%NbInputs
+    if (This%Label(i) /= Label) cycle
+    This%Input(i) = Value
+    Found = .true.  
+    exit
+  end do
+  if (.not. Found) call Error%Raise('Did not find input with label :' // Label, ProcName=ProcName)
 
   end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -635,19 +648,15 @@ subroutine Replace0D_String(This, Value, Label)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
 
-  if (len_trim(Label) > 0) then
-    Found = .false.
-    i = 1
-    do i = 1, This%NbInputs
-      if (This%Label(i) /= Label) cycle
-      This%Input(i) = Value
-      Found = .true.  
-      exit
-    end do
-    if (.not. Found) call Error%Raise('Did not find input with label :' // Label, ProcName=ProcName)
-  else
-    call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
-  end if
+  Found = .false.
+  i = 1
+  do i = 1, This%NbInputs
+    if (This%Label(i) /= Label) cycle
+    This%Input(i) = Value
+    Found = .true.  
+    exit
+  end do
+  if (.not. Found) call Error%Raise('Did not find input with label :' // Label, ProcName=ProcName)
 
   end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -675,19 +684,15 @@ subroutine Replace1D(This, Values, Labels)
 
   ii = 1
   do ii = 1, NbLabels
-    if (len_trim(LabelLoc) > 0) then
-      Found = .false.
-      i = 1
-      do i = 1, This%NbInputs
-        if (This%Label(i) /= Labels(ii)) cycle
-        This%Input(i) = Values(ii)
-        Found = .true.
-        exit
-      end do
-      if (.not. Found) call Error%Raise('Did not find input with label :' // LabelLoc, ProcName=ProcName)
-    else
-      call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
-    end if
+    Found = .false.
+    i = 1
+    do i = 1, This%NbInputs
+      if (This%Label(i) /= Labels(ii)) cycle
+      This%Input(i) = Values(ii)
+      Found = .true.
+      exit
+    end do
+    if (.not. Found) call Error%Raise('Did not find input with label :' // LabelLoc, ProcName=ProcName)
   end do
 
   end subroutine
@@ -715,20 +720,16 @@ subroutine Transform0D_Char(This, Transformation, Label, Mandatory, Found)
 
   FoundLoc = .true.
 
-  if (len_trim(Label) > 0) then
-    i = 1
-    do i = 1, This%NbInputs
-      if (This%Label(i) == Label) then
-        call Transform(Transformation=Transformation, Value=This%Input(i))
-        exit
-      end if
-      if (i == This%NbInputs) FoundLoc = .false.
-    end do
-    if (.not. FoundLoc .and. MandatoryLoc) call Error%Raise('Did not find mandatory input parameter : ' // Label,            &
-                                                                                                              ProcName=ProcName)
-  else
-    call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
-  end if
+  i = 1
+  do i = 1, This%NbInputs
+    if (This%Label(i) == Label) then
+      call Transform(Transformation=Transformation, Value=This%Input(i))
+      exit
+    end if
+    if (i == This%NbInputs) FoundLoc = .false.
+  end do
+  if (.not. FoundLoc .and. MandatoryLoc) call Error%Raise('Did not find mandatory input parameter : ' // Label,                   &
+                                                                                                                 ProcName=ProcName)
 
   if (present(Found)) Found = FoundLoc
 
@@ -757,20 +758,16 @@ subroutine Transform0D_Char(This, Transformation, Label, Mandatory, Found)
   
     FoundLoc = .true.
   
-    if (len_trim(Label) > 0) then
-      i = 1
-      do i = 1, This%NbInputs
-        if (This%Label(i) == Label) then
-          call Transform(Transformation=Transformation, Value=This%Input(i))
-          exit
-        end if
-        if (i == This%NbInputs) FoundLoc = .false.
-      end do
-      if (.not. FoundLoc .and. MandatoryLoc) call Error%Raise('Did not find mandatory input parameter : ' // Label,            &
-                                                                                                                ProcName=ProcName)
-    else
-      call Error%Raise(Line='Specified an empty parameter label', ProcName=ProcName)
-    end if
+    i = 1
+    do i = 1, This%NbInputs
+      if (This%Label(i) == Label) then
+        call Transform(Transformation=Transformation, Value=This%Input(i))
+        exit
+      end if
+      if (i == This%NbInputs) FoundLoc = .false.
+    end do
+    if (.not. FoundLoc .and. MandatoryLoc) call Error%Raise('Did not find mandatory input parameter : ' // Label,                 &
+                                                                                                                 ProcName=ProcName)
   
     if (present(Found)) Found = FoundLoc
   
@@ -802,8 +799,7 @@ subroutine Transform1D(This, Transformations, Labels, Mandatory, Found)
 
   i = 1
   do i = 1, size(Labels,1)
-    call This%Transform(Transformation=Transformations(i)%GetValue(), Label=Labels(i)%GetValue(), Mandatory=MandatoryLoc,      &
-                                                                                                                Found=FoundLoc)
+    call This%Transform(Transformation=Transformations(i), Label=Labels(i), Mandatory=MandatoryLoc, Found=FoundLoc)
   end do
 
   if (present(Found)) Found = FoundLoc
@@ -839,7 +835,7 @@ function GetLabel0D(This, Num)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  GetLabel0D = This%Label(Num)%GetValue()
+  GetLabel0D = This%Label(Num)%Get()
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -907,6 +903,9 @@ impure elemental subroutine Finalizer(This)
 
   if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------

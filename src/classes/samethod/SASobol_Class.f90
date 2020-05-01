@@ -485,6 +485,9 @@ contains
     NbDim = SampleSpace%GetNbDim()
     SilentLoc = This%Silent
 
+    allocate(SnapShot(NbDim), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='SnapShot', ProcName=ProcName, stat=StatLoc)
+
     allocate(BlockOutput(NbDim+1), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='BlockOutput', ProcName=ProcName, stat=StatLoc)
     BlockOutput = Zero
@@ -717,6 +720,12 @@ contains
 
     if (present(OutputDirectory)) call This%WriteOutput(Directory=OutputDirectory, SampleSpace=SampleSpace,                    &
                                                                                                              Responses=Responses)
+
+    This%SamplesObtained = .false.
+    This%SamplesRan = .false.
+
+    This%ParamSampleStep = 0
+    This%NbCells = 0
 
     deallocate(SnapShot, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='SnapShot', ProcName=ProcName, stat=StatLoc)
@@ -1484,10 +1493,6 @@ contains
 
     if (allocated(This%SnapShot)) deallocate(This%SnapShot, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='This%SnapShot', ProcName=ProcName, stat=StatLoc)
-
-    call This%StHistory%Purge()
-    call This%MeanHistory%Purge()
-    call This%VarianceHistory%Purge()
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

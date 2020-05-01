@@ -161,7 +161,7 @@ contains
     if (.not. Found) VarC0D = 'G0'
     i = 1
     do i = 1, THis%NbMParams
-      call This%ParamFormat(i)%Set_Value(Value=VarC0D)
+      This%ParamFormat(i) =VarC0D
     end do
 
     i = 1
@@ -170,13 +170,13 @@ contains
 
       ParameterName = 'format'
       call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SubSectionName, Mandatory=.false., Found=Found)
-      if (Found) call This%ParamFormat(i)%Set_Value(Value=VarC0D)
+      if (Found) This%ParamFormat(i) = VarC0D
 
       ParameterName = 'identifier'
       call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SubSectionName, Mandatory=.true.)
-      call This%ParamIdentifier(i)%Set_Value(Value=VarC0D)
+      This%ParamIdentifier(i) =VarC0D
 
-      VarC0D = '{' // This%ParamIdentifier(i)%Getvalue() // '}'
+      VarC0D = '{' // This%ParamIdentifier(i) // '}'
 
       SubSectionName = SubSectionName // '>parameter'
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
@@ -235,8 +235,8 @@ contains
     do i = 1, This%NbMParams
       call GetInput%AddSection(SectionName='parameter' // ConvertToString(Value=i), To_SubSection=SectionName)
       SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
-      call GetInput%AddParameter(Name='identifier', Value=This%ParamIdentifier(i)%GetValue(), SectionName=SubSectionName)
-      call GetInput%AddParameter(Name='format', Value=This%ParamFormat(i)%GetValue(), SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='identifier', Value=This%ParamIdentifier(i)%Get(), SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='format', Value=This%ParamFormat(i)%Get(), SectionName=SubSectionName)
       MParam => This%MParam(i)%GetPointer()
       if (ExternalFlag) DirectorySub = DirectoryLoc // '/parameter' // ConvertToString(Value=i)
       call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Name='parameter', Object=MParam,           &
@@ -283,7 +283,7 @@ contains
 
     i = 1
     do i = 1, This%NbMParams
-      VarC0D = '{' // This%ParamIdentifier(i)%GetValue() // '}'
+      VarC0D = '{' // This%ParamIdentifier(i) // '}'
 
       ii = 1
       do ii = 1, NbLines
@@ -300,8 +300,8 @@ contains
       ii = 1
       do ii = 1, LineLog(i)%GetLength()
         call LineLog(i)%Get(Node=ii, Value=IndexLoc)
-        VarC0D = ReplaceCharacter(String=ProcessedTemplate(IndexLoc)%Get(), Old='{' // This%ParamIdentifier(i) // '}' ,            &
-                                  New=MParamPointer%GetCharValue(Input=Input, Format=This%ParamFormat(i)))
+        VarC0D = ProcessedTemplate(IndexLoc)%Replace(Old='{' // This%ParamIdentifier(i) // '}',                                    &
+                                                     New=MParamPointer%GetCharValue(Input=Input, Format=This%ParamFormat(i)%Get()))
         ProcessedTemplate(IndexLoc) = VarC0D
       end do
       nullify(MParamPointer)

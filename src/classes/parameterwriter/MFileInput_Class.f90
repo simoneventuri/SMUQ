@@ -24,7 +24,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
-
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 

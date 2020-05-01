@@ -272,39 +272,8 @@ contains
     character(*), parameter                                           ::    ProcName='SolveSparse'
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    CVErrorLoc
-    real(rkp)                                                         ::    GoalMean
-    real(rkp)                                                         ::    GoalVariance
-    real(rkp)                                                         ::    MeanLoc
-    real(rkp)                                                         ::    VarianceLoc
-    integer                                                           ::    M
-    integer                                                           ::    N
-    integer                                                           ::    i
-
+    
     if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-    M = size(Goal,1)
-    N = size(System,2)
-    GoalMean = ComputeMean(Values=Goal)
-    GoalVariance = ComputeSampleVar(Values=Goal)
-
-    if (dsqrt(abs((GoalVariance*real(M-1,rkp))/real(M,rkp)))/abs(GoalMean) < 1e-10) then
-      i = 1
-      do i = 1, N
-        MeanLoc = ComputeMean(Values=System(:,i))
-        VarianceLoc = ComputePopulationVar(Values=System(:,i))
-        if (abs(dsqrt(VarianceLoc)/MeanLoc) < 1e-10) then
-          allocate(ModelSet(1), stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='ModelSet', ProcName=ProcName, stat=StatLoc)
-          ModelSet = i
-          allocate(CoefficientsSet(1), stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
-          CoefficientsSet = GoalMean / MeanLoc
-          if (present(CVError)) CVError = Zero
-          return
-        end if
-      end do
-      GoalVariance = tiny(One)
-    end if
 
     select type (CVErrorMethod => This%CVError)
       type is (CVErrorLOO_Type)

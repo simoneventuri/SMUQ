@@ -49,7 +49,7 @@ use TransfSampleSpaceUnbound_Class                                ,only:    Tran
 use TransfSampleSpaceNone_Class                                   ,only:    TransfSampleSpaceNone_Type
 use MultiVarDist_Class                                            ,only:    MultiVarDist_Type
 use HierDistProb_Class                                            ,only:    HierDistProb_Type
-use SMUQString_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 

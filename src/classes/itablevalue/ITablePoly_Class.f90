@@ -139,7 +139,7 @@ subroutine ConstructInput(This, Input, Prefix)
 
   i = 1
   do i = 1, This%Order + 1
-    SubSectionName = SectionName // '>coefficient' // Convert_To_String(i)
+    SubSectionName = SectionName // '>coefficient' // ConvertToString(i)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call IScalarValue_Factory%Construct(Object=PolyCoeff, Input=InputSection, Prefix=PrefixLoc)
     call This%PolyCoeff(i)%Set(Object=PolyCoeff)
@@ -289,7 +289,7 @@ function GetCharValue(This, Input, Abscissa, Format)
       VarR0D = VarR0D + PolyCoeffPointer%GetValue(Input=Input)*Abscissa(ii)**(i-1)
       nullify(PolyCoeffPointer)
     end do
-    call GetCharValue(ii) = ConvertToString(Value=VarR0D, Format=FormatLoc)
+    GetCharValue(ii) = ConvertToString(Value=VarR0D, Format=FormatLoc)
   end do
 
 end function

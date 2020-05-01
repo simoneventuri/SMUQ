@@ -165,7 +165,7 @@ contains
     if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
     if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
 
-    GetName0D_Num = This%ParamName(Num)     
+    GetName0D_Num = This%ParamName(Num)%Get()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -193,7 +193,7 @@ contains
 
     if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-    GetName0D_LabelChar = This%ParamName(ii)%GetValue()      
+    GetName0D_LabelChar = This%ParamName(ii)%Get()      
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -221,7 +221,7 @@ contains
 
     if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-    GetName0D_LabelString = This%ParamName(ii)%GetValue()      
+    GetName0D_LabelString = This%ParamName(ii)%Get()      
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -255,7 +255,7 @@ contains
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetLabel0D = This%Label(Num)%GetValue()
+    GetLabel0D = This%Label(Num)%Get()
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -318,7 +318,7 @@ contains
     i = 1
     ii = 0
     do i = 1, This%NbDim
-      if (This%Label(i)%GetValue() /= Label) cycle
+      if (This%Label(i) /= Label) cycle
       ii = i
       exit
     end do
@@ -417,7 +417,7 @@ contains
     class(DistProb_Type), pointer                                     ::    GetDistPtr_LabelString
 
     class(SampleSpace_Type), intent(in)                               ::    This
-    character(*), intent(in)                                          ::    Label
+    type(SMUQString_Type), intent(in)                                 ::    Label
 
     character(*), parameter                                           ::    ProcName='GetDistPtr_LabelString'
     integer                                                           ::    StatLoc=0

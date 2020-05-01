@@ -297,19 +297,7 @@ contains
     M = size(System,1)
     N = size(System,2)
 
-    call This%BuildMetaModels(System=System, Goal=Goal, AddDrop=AddDrop, Tolerance=This%Tolerance, ConstantModel=ConstantModel)
-
-    if (ConstantModel) then
-        allocate(CoefficientsSet(1), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
-        CoefficientsSet = ComputeMean(Values=Goal) / ComputeMean(Values=System(:,AddDrop(1)))
-        allocate(ModelSet(1), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='ModelSet', ProcName=ProcName, stat=StatLoc)
-        ModelSet = AddDrop(1)
-        CVErrorLoc = Zero
-        if (present(CVError)) CVError = CVErrorLoc
-        return
-    end if
+    call This%BuildMetaModels(System=System, Goal=Goal, AddDrop=AddDrop, Tolerance=This%Tolerance)
 
     select type (CVErrorMethod => This%CVError)
       type is (CVErrorLOO_Type)

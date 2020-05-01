@@ -260,8 +260,8 @@ contains
     call GetInput%AddParameter(Name='max_order', Value=ConvertToString(Value=This%MaxOrder))
 
     if (ExternalFlag) DirectorySub = DirectoryLoc // '/index_set'
-    call GetInput%AddSection(Section=This%IndexSet%GetInput(Name='index_set', Prefix=PrefixLoc,                       &
-                                                                                                         Directory=DirectorySub))
+    call GetInput%AddSection(Section=IndexSet_Factory%GetObjectInput(Object=This%IndexSet, Name='index_set',                  &
+                                                                         Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

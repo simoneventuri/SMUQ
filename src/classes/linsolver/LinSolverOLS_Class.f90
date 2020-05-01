@@ -226,36 +226,12 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    M
     integer                                                           ::    N
-    real(rkp)                                                         ::    GoalMean
-    real(rkp)                                                         ::    GoalVariance
-    real(rkp)                                                         ::    MeanLoc
-    real(rkp)                                                         ::    VarianceLoc
     integer                                                           ::    i
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     M = size(System,1)
     N = size(System,2)
-
-    GoalMean = ComputeMean(Values=Goal)
-    GoalVariance = ComputeSampleVar(Values=Goal)
-
-    if (dsqrt(abs((GoalVariance*real(M-1,rkp))/real(M,rkp))) / abs(GoalMean) < 1e-10) then
-      i = 1
-      do i = 1, N
-        MeanLoc = ComputeMean(Values=System(:,i))
-        VarianceLoc = ComputePopulationVar(Values=System(:,i))
-        if (abs(VarianceLoc/MeanLoc) < 1e-10) then
-          allocate(Coefficients(N), stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
-          Coefficients = Zero
-          Coefficients(i) = GoalMean / MeanLoc
-          if (present(CVError)) CVError = Zero
-          return
-        end if
-      end do
-      GoalVariance = tiny(One)
-    end if
 
     if (M /= size(Goal,1)) call Error%Raise(Line='Incorrect system and goal sizes', ProcName=ProcName)
 
@@ -307,23 +283,6 @@ contains
 
     GoalMean = ComputeMean(Values=Goal)
     GoalVariance = ComputeSampleVar(Values=Goal)
-
-    if (abs((GoalVariance*real(M-1,rkp))/real(M,rkp)) < 1e-10) then
-      i = 1
-      do i = 1, N
-        MeanLoc = ComputeMean(Values=System(:,i))
-        VarianceLoc = ComputePopulationVar(Values=System(:,i))
-        if (abs(VarianceLoc/MeanLoc) < 1e-10) then
-          allocate(Coefficients(N), stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
-          Coefficients = Zero
-          Coefficients(i) = GoalMean / MeanLoc
-          if (present(CVError)) CVError = Zero
-          return
-        end if
-      end do
-      GoalVariance = tiny(One)
-    end if
 
     allocate(SystemLoc(M,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
@@ -400,23 +359,6 @@ contains
 
     GoalMean = ComputeMean(Values=Goal)
     GoalVariance = ComputeSampleVar(Values=Goal)
-
-    if (abs((GoalVariance*real(M-1,rkp))/real(M,rkp)) < 1e-10) then
-      i = 1
-      do i = 1, N
-        MeanLoc = ComputeMean(Values=System(:,i))
-        VarianceLoc = ComputePopulationVar(Values=System(:,i))
-        if (abs(VarianceLoc/MeanLoc) < 1e-10) then
-          allocate(Coefficients(N), stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
-          Coefficients = Zero
-          Coefficients(i) = GoalMean / MeanLoc
-          if (present(CVError)) CVError = Zero
-          return
-        end if
-      end do
-      GoalVariance = tiny(One)
-    end if
 
     allocate(Q1, source=System, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Q', ProcName=ProcName, stat=StatLoc)
@@ -543,23 +485,6 @@ contains
 
     GoalMean = ComputeMean(Values=Goal)
     GoalVariance = ComputeSampleVar(Values=Goal)
-
-    if (abs((GoalVariance*real(M-1,rkp))/real(M,rkp)) < 1e-10) then
-      i = 1
-      do i = 1, N
-        MeanLoc = ComputeMean(Values=System(:,i))
-        VarianceLoc = ComputePopulationVar(Values=System(:,i))
-        if (abs(VarianceLoc/MeanLoc) < 1e-10) then
-          allocate(Coefficients(N), stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsSet', ProcName=ProcName, stat=StatLoc)
-          Coefficients = Zero
-          Coefficients(i) = GoalMean / MeanLoc
-          if (present(CVError)) CVError = Zero
-          return
-        end if
-      end do
-      GoalVariance = tiny(One)
-    end if
 
     if (M < N) call Error%Raise(Line='Routine optimized for overdetermined systems', ProcName=ProcName)
 

@@ -525,7 +525,8 @@ subroutine ConstructInput_IF(This, Input, Prefix)
 
   This%NbTargets = 0
   call Input%GetValue(Value=VarC0D, ParameterName='label', Mandatory=.true.)
-  This%Target = ConvertToStrings(Value=VarC0D, Separator=' ')
+  allocate(This%Target, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
   This%NbTargets = size(This%Target,1)
 
   allocate(This%Value(This%NbTargets), stat=StatLoc)
@@ -731,7 +732,8 @@ subroutine ConstructInput_IT(This, Input, Prefix)
 
   This%NbTargets = 0
   call Input%GetValue(Value=VarC0D, ParameterName='label', Mandatory=.true.)
-  This%Target = ConvertToStrings(Value=VarC0D, Separator=' ')
+  allocate(This%Target, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
   This%NbTargets = size(This%Target,1)
 
   allocate(This%Transformation(This%NbTargets), stat=StatLoc)
@@ -779,7 +781,7 @@ function GetInput_IT(This, Name, Prefix, Directory)
   call GetInput_IT%SetName(SectionName=trim(adjustl(Name)))
 
   call GetInput_IT%AddParameter(Name='label', Value=ConvertToString(Values=This%Target))
-  call GetInput_IT%AddParameter(Name='transformation', Value=This%Transformation(1)%Get()))
+  call GetInput_IT%AddParameter(Name='transformation', Value=This%Transformation(1)%Get())
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------

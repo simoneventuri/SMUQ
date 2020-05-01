@@ -8,7 +8,8 @@ program SMUQ
   use ProgramDefs_Class                                             ,only:    ProgramDefs
   use Root_Class                                                    ,only:    Root_Type
   use Restart_Class                                                 ,only:    RestartUtility
-  
+  use SMUQString_Class                                              ,only:    SMUQString_Type
+
   implicit none
   
   character(*), parameter                                               ::    ProcName='main'
@@ -22,7 +23,7 @@ program SMUQ
   character(:), allocatable                                             ::    FileName
   character(:), allocatable                                             ::    RunDirectory
   character(:), allocatable                                             ::    SectionChain
-  character(:), allocatable                                             ::    SMUQTask
+  type(SMUQString_Type)                                                 ::    SMUQTask
   logical                                                               ::    VarL0D
   
   write(*,*)
@@ -130,7 +131,7 @@ program SMUQ
   !! Constructing from input and running analysis
   !!--------------------------------------------------------------------------------------------------------------------------------
   
-  select case (LowerCase(SMUQTask))
+  select case (SMUQTask%Lower())
     case('main')
       write(*,'(A)') 'Constructing objects from input and creating necessary temporary work directories'
       write(*,*)

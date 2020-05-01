@@ -33,6 +33,7 @@ use InputProcessor_Class                                          ,only:    Inpu
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -276,8 +277,8 @@ function GetInput(This, Name, Prefix, Directory)
 
   SectionName = 'initial_conditions'
   call GetInput%AddSection(SectionName=SectionName)
-  call GetInput%AddParameter(Name='position', Value=Convert_To_String(This%X0), SectionName=SectionName)
-  call GetInput%AddParameter(Name='velocity', Value=Convert_To_String(This%Xdot0), SectionName=SectionName)
+  call GetInput%AddParameter(Name='position', Value=ConvertToString(Value=This%X0), SectionName=SectionName)
+  call GetInput%AddParameter(Name='velocity', Value=ConvertToString(Value=This%Xdot0), SectionName=SectionName)
 
   SectionName = 'abscissa'
   call GetInput%AddSection(SectionName=SectionName)

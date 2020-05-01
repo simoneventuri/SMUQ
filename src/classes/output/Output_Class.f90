@@ -294,6 +294,12 @@ contains
     if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
 
+    if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
+
+    if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
+
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

@@ -39,6 +39,10 @@ contains
   procedure, public                                                   ::    Upper
   procedure, public                                                   ::    Lower
   procedure, public                                                   ::    Split
+  generic, public                                                     ::    Replace               =>    Replace_Char,             &
+                                                                                                        Replace_String
+  procedure, private                                                  ::    Replace_Char
+  procedure, private                                                  ::    Replace_String
   generic, public                                                     ::    Set                   =>    SetString,                &
                                                                                                         SetChar
   procedure, private                                                  ::    SetString
@@ -253,6 +257,51 @@ function Split(This, Separator)
   do i = 1, NbStrings
     Split(i) = trim(adjustl(SplitChar(i)))
   end do
+
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+function Replace_Char(This, Old, New)
+
+  character(:), allocatable                                           ::    Replace_Char
+
+  class(SMUQString_Type), intent(in)                                  ::    This
+  character(*), intent(in)                                            ::    Old
+  character(*), intent(in)                                            ::    New
+
+  character(*), parameter                                             ::    ProcName='Split'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    LengthOld
+  integer                                                             ::    iIndex
+
+  Replace_Char = This%Value
+
+  do
+    iIndex = index(This%Value,Old)
+    if (iIndex+LengthOld-1 /= len(Replace_Char)) then
+      Replace_Char = Replace_Char(1:iIndex-1) // New // Replace_Char(iIndex+LengthOld:)
+    else
+      Replace_Char = Replace_Char(1:iIndex-1) // New
+    end if
+  end do
+
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+function Replace_String(This, Old, New)
+
+  character(:), allocatable                                           ::    Replace_String
+
+  class(SMUQString_Type), intent(in)                                  ::    This
+  type(SMUQString_Type), intent(in)                                   ::    Old
+  type(SMUQString_Type), intent(in)                                   ::    New
+
+  character(*), parameter                                             ::    ProcName='Split'
+  integer                                                             ::    StatLoc=0
+
+  Replace_String = This%Replace(Old=Old%Get(), New=New%Get())
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------

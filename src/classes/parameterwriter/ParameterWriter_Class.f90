@@ -50,8 +50,10 @@ contains
   procedure, public                                                   ::    Initialize              =>    Initialize_FP
   procedure, public                                                   ::    Reset                   =>    Reset_FP
   procedure, public                                                   ::    SetDefaults             =>    SetDefaults_FP
-  generic, public                                                     ::    Construct               =>    ConstructInput_FP
-  procedure, private                                                  ::    ConstructInput_FP
+  generic, public                                                     ::    Construct               =>    ConstructInput1_FP,     &
+                                                                                                          ConstructInput2_FP
+  procedure, private                                                  ::    ConstructInput1_FP
+  procedure, private                                                  ::    ConstructInput2_FP
   procedure, public                                                   ::    GetInput                =>    GetInput_FP
   procedure, public                                                   ::    WriteInput              =>    WriteInput_FP
   generic, public                                                     ::    assignment(=)           =>    Copy

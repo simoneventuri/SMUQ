@@ -31,6 +31,7 @@ use Model_Class                                                   ,only:    Mode
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
 use InputProcessor_Class                                          ,only:    InputProcessor_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 

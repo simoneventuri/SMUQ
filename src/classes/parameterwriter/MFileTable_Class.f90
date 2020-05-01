@@ -171,7 +171,7 @@ contains
     if (.not. Found) VarC0D = 'G0'
     i = 1
     do i = 1, THis%NbMParams
-      call This%ParamFormat(i)%Set_Value(Value=VarC0D)
+      This%ParamFormat(i) = VarC0D
     end do
 
     i = 1
@@ -266,7 +266,7 @@ contains
       SubSectionName = 'parameter' // ConvertToString(Value=i)
       call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
       SubSectionName = SectionName // '>' // SubSectionName 
-      call GetInput%AddParameter(Name='format', Value=This%ParamFormat(i)%GetValue(), SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='format', Value=This%ParamFormat(i)%Get(), SectionName=SubSectionName)
       call This%ParamColumn(i)%Get(Values=VarI1D)
       call GetInput%AddParameter(Name='column', Value=ConvertToString(Values=VarI1D), SectionName=SubSectionName)
       deallocate(VarI1D, stat=StatLoc)
@@ -372,10 +372,10 @@ contains
     if (StatLoc /= 0) call Error%Allocate(Name='Abscissa', ProcName=ProcName, stat=StatLoc)
     Abscissa = Zero
 
-    call ProcessedTemplate(TableStart)%Parse(Strings=VarString1D, Separator=SeparatorChar)
-    NbColumns = size(VarString1D)
-    deallocate(VarString1D, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
+    NbColumns = size(ProcessedTemplate(TableStart)%Split(Separator=SeparatorChar),1)
+
+    allocate(VarString1D(NbColumns), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
     if (This%AbscissaColumn <= NbColumns) then
       i = 1
@@ -385,7 +385,7 @@ contains
         if (len_trim(VarC0D) == 0) cycle
         if (VarC0D(1:CommentCharLen) == CommentChar) cycle
         ii = ii + 1
-        call ProcessedTemplate(i)%Parse(Strings=VarString1D, Separator=SeparatorChar)
+        VarString1D =  ProcessedTemplate(i)%Split(Separator=SeparatorChar)
         Abscissa(ii) = ConvertToReal(String=VarString1D(This%AbscissaColumn)%Get())
       end do
     end if
@@ -407,7 +407,7 @@ contains
       if (len_trim(VarC0D) == 0) cycle
       if (VarC0D(1:CommentCharLen) == CommentChar) cycle
       ii = ii + 1
-      call ProcessedTemplate(i)%Parse(Strings=VarString1D, Separator=SeparatorChar)
+      VarString1D = ProcessedTemplate(i)%Split(Separator=SeparatorChar)
       iii = 1
       do iii = 1, This%NbMParams
         call This%ParamColumn(iii)%Get(Values=VarI1D)

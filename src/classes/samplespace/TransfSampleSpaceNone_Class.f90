@@ -32,6 +32,7 @@ use DistProb_Factory_Class                                        ,only:    Dist
 use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -166,7 +167,6 @@ contains
       SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
 
       ParameterName = 'name'
-      call This%ParamName(i)%Set_Value(Value='<undefined>')
       call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
       This%ParamName(i) = VarC0D
 
@@ -187,8 +187,7 @@ contains
     do i = 1, This%NbDim-1
       ii = 1
       do ii = i+1 ,This%NbDim
-        if (This%Label(i)%GetValue() == This%Label(ii)%GetValue()) call Error%Raise(Line='Duplicate labels : ' //              &
-                                                                                      This%Label(i)%GetValue(), ProcName=ProcName)
+        if (This%Label(i) == This%Label(ii)) call Error%Raise(Line='Duplicate labels : ' // This%Label(i), ProcName=ProcName)
       end do
     end do
 
@@ -293,10 +292,8 @@ contains
       SubSectionName = 'parameter' // ConvertToString(Value=i)
       call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
       SubSectionName= SectionName // '>' // SubSectionName
-      call GetInput%AddParameter(Name='name', Value=ConvertToString(Value=This%ParamName(i)%GetValue()),                       &
-                                                                                                      SectionName=SubSectionName)
-      call GetInput%AddParameter(Name='label', Value=ConvertToString(Value=This%Label(i)%GetValue()),                          &
-                                                                                                      SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='name', Value=This%ParamName(i)%Get(), SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='label', Value=This%Label(i)%Get(), SectionName=SubSectionName)
       DistProb => This%DistProb(i)%GetPointer()
       if (ExternalFlag) DirectorySub = DirectoryLoc // '/distribution' // ConvertToString(i)
       call GetInput%AddSection(Section=DistProb_Factory%GetObjectInput(Object=DistProb, Name='distribution',         &

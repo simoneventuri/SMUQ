@@ -33,6 +33,7 @@ use Input_Class                                                   ,only:    Inpu
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use ProgramDefs_Class                                             ,only:    ProgramDefs
 use InputProcessor_Class                                          ,only:    InputProcessor_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -313,9 +314,8 @@ contains
       SubSectionName = 'submodel' // ConvertToString(Value=i)
       call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
       SubSectionName = SectionName // '>' // SubSectionName
-      call GetInput%AddParameter(Name='case_directory', Value=This%SubModelCaseDirectory(i)%GetValue(),                          &
-                                                                                                      SectionName=SubSectionName)
-      call GetInput%AddParameter(Name='run_command', Value=This%SubModelRunCommand(i)%GetValue(), SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='case_directory', Value=This%SubModelCaseDirectory(i)%Get(), SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='run_command', Value=This%SubModelRunCommand(i)%Get(), SectionName=SubSectionName)
     end do
 
   end function
@@ -342,16 +342,15 @@ contains
     integer                                                           ::    NbCompletedSubModels
     character(:), allocatable                                         ::    Line
 
-    if (size(Output,1) /= This%NbOutputs) call Error%Raise('Passed down an output array of incorrect length',                  &
-                                                                                                               ProcName=ProcName)
+    if (size(Output,1) /= This%NbOutputs) call Error%Raise('Passed down an output array of incorrect length', ProcName=ProcName)
 
     Command = 'sh ' // This%BashLaunchFile%GetFullFile()
 
 
     if (.not. This%Silent) then
       write(*,*)
-      Line = 'Scheduling 1 input with' // ConvertToString(Value=This%NbSubModels) //                                              &
-                                          'submodels for a total of ' // ConvertToString(Value=This%NbSubModels) // ' evaluations'
+      Line = 'Scheduling 1 input with' // ConvertToString(Value=This%NbSubModels) &
+             // 'submodels for a total of ' // ConvertToString(Value=This%NbSubModels) // ' evaluations'
       write(*,'(A)') Line
       Line = '  Number of concurrent input evaluations : ' // ConvertToString(Value=This%NbConcurrentEvaluations)
       write(*,'(A)') Line
@@ -383,17 +382,17 @@ contains
         if (iSubModel > This%NbSubModels) exit
 
         if (.not. This%Silent) then
-          Line = '  Evaluation ' // ConvertToString(Value=iRun) // ' : Input ' // ConvertToString(Value=1) // ' Submodel '        &
-                                                                                                     // ConvertToString(iSubModel)
+          Line = '  Evaluation ' // ConvertToString(Value=iRun) // ' : Input ' // ConvertToString(Value=1) // ' Submodel ' &
+                 // ConvertToString(iSubModel)
           write(*,'(A)') Line
           Transcript(iLine) = 'echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Initializing"'
           iLine = iLine + 1
         end if
 
-        Transcript(iLine) = '(cd ' // This%FullWorkDirectory // '/' // ConvertToString(Value=1) //                               &
-                                                                         This%SubModelCaseDirectory(iSubModel)%GetValue() // ' \ '
+        Transcript(iLine) = '(cd ' // This%FullWorkDirectory // '/' // ConvertToString(Value=1) &
+                            // This%SubModelCaseDirectory(iSubModel) // ' \ '
         iLine = iLine + 1
-        Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel)%GetValue() // ' \ '
+        Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel) // ' \ '
         iLine = iLine + 1
         if (.not. This%Silent) then
           Transcript(iLine) = 'echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
@@ -518,17 +517,17 @@ contains
         do ii = 1, This%NbConcurrentSubEvaluations
           if (iSubModel > This%NbSubModels) exit
           if (.not. This%Silent) then
-            Line = '    Evaluation ' // ConvertToString(Value=iRun) // ' : Input ' // ConvertToString(Value=iInput) //            &
-                                                                                        ' Submodel ' // ConvertToString(iSubModel)
+            Line = '    Evaluation ' // ConvertToString(Value=iRun) // ' : Input ' // ConvertToString(Value=iInput) // &
+                   ' Submodel ' // ConvertToString(iSubModel)
             write(*,'(A)') Line
             Transcript(iLine) = 'echo "    Evaluation ' // ConvertToString(Value=iRun) // ' : Initializing"'
             iLine = iLine + 1
           end if
 
-          Transcript(iLine) = '(cd ' // This%FullWorkDirectory // '/' // ConvertToString(Value=i) //                             &
-                                                                         This%SubModelCaseDirectory(iSubModel)%GetValue() // ' \ '
+          Transcript(iLine) = '(cd ' // This%FullWorkDirectory // '/' // ConvertToString(Value=i) &
+                              // This%SubModelCaseDirectory(iSubModel) // ' \ '
           iLine = iLine + 1
-          Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel)%GetValue() // ' \ '
+          Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel) // ' \ '
           iLine = iLine + 1
 
           if (.not. This%Silent) then

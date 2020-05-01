@@ -19,9 +19,11 @@
 module ComputingRoutines_Module
 
 use Parameters_Library
+use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use RandPseudo_Class                                              ,only:    RandPseudo_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -95,8 +97,10 @@ interface ScrambleArray
 end interface
 
 interface Transform
-  module procedure                                                    ::    Transform_VarR0D
-  module procedure                                                    ::    Transform_VarR1D
+  module procedure                                                    ::    Transform_VarR0DChar
+  module procedure                                                    ::    Transform_VarR0DString
+  module procedure                                                    ::    Transform_VarR1DChar
+  module procedure                                                    ::    Transform_VarR1DString
 end interface
 
 interface Pochhammer
@@ -950,21 +954,22 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_VarR0D(Transformation, Value)
+  subroutine Transform_VarR0DChar(Transformation, Value)
 
     character(*), intent(in)                                          ::    Transformation
     real(rkp), intent(inout)                                          ::    Value
 
-    character(*), parameter                                           ::    ProcName='Transform_1_VarR0D'
+    character(*), parameter                                           ::    ProcName='Transform_VarR0DChar'
     integer                                                           ::    StatLoc
-    character(:), allocatable, dimension(:)                           ::    TransformationsLoc
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    TransformationsLoc
     integer                                                           ::    i
 
-    call Parse(Input=Transformation, Separator=' ', Output=TransformationsLoc)
+    allocate(TransformationsLoc, source=ConvertToStrings(Value=Transformation, Separator=' '), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc)
 
     i = 1
-    do i = 1, size(TransformationsLoc)
-      select case (trim(adjustl(TransformationsLoc(i))))
+    do i = 1, size(TransformationsLoc,1)
+      select case (TransformationsLoc(i)%Strip())
         case ('^2')
           Value = Value**2
         case('sqrt')
@@ -992,21 +997,107 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Transform_VarR1D(Transformation, Values)
+  subroutine Transform_VarR0DString(Transformation, Value)
+
+    type(SMUQString_Type), intent(in)                                 ::    Transformation
+    real(rkp), intent(inout)                                          ::    Value
+
+    character(*), parameter                                           ::    ProcName='Transform_VarR0DString'
+    integer                                                           ::    StatLoc
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    TransformationsLoc
+    integer                                                           ::    i
+
+    allocate(TransformationsLoc, source=Transformation%Split(Separator=' '), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc)
+
+    i = 1
+    do i = 1, size(TransformationsLoc,1)
+      select case (TransformationsLoc(i)%Strip())
+        case ('^2')
+          Value = Value**2
+        case('sqrt')
+          if (Value < Zero) call Error%Raise(Line='Tried to take square root of a negative number', ProcName=ProcName)
+          Value = dsqrt(Value)
+        case('log')
+          if (Value <= Zero) call Error%Raise(Line='Tried to take log of a number at or below zero', ProcName=ProcName)
+          Value = dlog(Value)
+        case('log10')
+          if (Value <= Zero) call Error%Raise(Line='Tried to take log10 of a number at or below zero', ProcName=ProcName)
+          Value = dlog10(Value)
+        case('exp')
+          Value = dexp(Value)
+        case('10^')
+          Value = Ten**Value
+        case default
+          call Error%Raise(Line='Did not recognize the transformation option', ProcName=ProcName)
+      end select
+    end do
+
+    deallocate(TransformationsLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc)
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Transform_VarR1DChar(Transformation, Values)
 
     character(*), intent(in)                                          ::    Transformation
     real(rkp), dimension(:), intent(inout)                            ::    Values
 
-    character(*), parameter                                           ::    ProcName='Transform_1_VarR0D'
+    character(*), parameter                                           ::    ProcName='Transform_VarR1DChar'
     integer                                                           ::    StatLoc
-    character(:), allocatable, dimension(:)                           ::    TransformationsLoc
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    TransformationsLoc
     integer                                                           ::    i
 
-    call Parse(Input=Transformation, Separator=' ', Output=TransformationsLoc)
+    allocate(TransformationsLoc, source=ConvertToStrings(Value=Transformation, Separator=' '), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc)
 
     i = 1
-    do i = 1, size(TransformationsLoc)
-      select case (trim(adjustl(TransformationsLoc(i))))
+    do i = 1, size(TransformationsLoc,1)
+      select case (TransformationsLoc(i)%Strip())
+        case ('^2')
+          Values = Values**2
+        case('sqrt')
+          if (any(Values < Zero)) call Error%Raise(Line='Tried to take square root of a negative number', ProcName=ProcName)
+          Values = dsqrt(Values)
+        case('log')
+          if (any(Values <= Zero)) call Error%Raise(Line='Tried to take log of a number at or below zero', ProcName=ProcName)
+          Values = dlog(Values)
+        case('log10')
+          if (any(Values <= Zero)) call Error%Raise(Line='Tried to take log10 of a number at or below zero', ProcName=ProcName)
+          Values = dlog10(Values)
+        case('exp')
+          Values = dexp(Values)
+        case('10^')
+          Values = Ten**Values
+        case default
+          call Error%Raise(Line='Did not recognize the transformation option', ProcName=ProcName)
+      end select
+    end do
+
+    deallocate(TransformationsLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc)
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Transform_VarR1DString(Transformation, Values)
+
+    type(SMUQString_Type), intent(in)                                 ::    Transformation
+    real(rkp), dimension(:), intent(inout)                            ::    Values
+
+    character(*), parameter                                           ::    ProcName='Transform_VarR1DString'
+    integer                                                           ::    StatLoc
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    TransformationsLoc
+    integer                                                           ::    i
+
+    allocate(TransformationsLoc, source=Transformation%Split(Separator=' '), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='TransformationsLoc', ProcName=ProcName, stat=StatLoc)
+    i = 1
+    do i = 1, size(TransformationsLoc,1)
+      select case (TransformationsLoc(i)%Strip())
         case ('^2')
           Values = Values**2
         case('sqrt')

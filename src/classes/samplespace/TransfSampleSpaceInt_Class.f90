@@ -33,6 +33,7 @@ use DistProbContainer_Class                                       ,only:    Dist
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -171,7 +172,6 @@ contains
       SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
 
       ParameterName = 'name'
-      call This%ParamName(i)%Set_Value(Value='<undefined>')
       call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
       This%ParamName(i) = VarC0D
 
@@ -192,8 +192,7 @@ contains
     do i = 1, This%NbDim-1
       ii = 1
       do ii = i+1 ,This%NbDim
-        if (This%Label(i)%GetValue() == This%Label(ii)%GetValue()) call Error%Raise(Line='Duplicate labels : ' //              &
-                                                                                      This%Label(i)%GetValue(), ProcName=ProcName)
+        if (This%Label(i) == This%Label(ii)) call Error%Raise(Line='Duplicate labels : ' // This%Label(i), ProcName=ProcName)
       end do
     end do
 
@@ -208,15 +207,15 @@ contains
       This%Correlated = .false.
     end if
 
-    if (size(This%Corrmat,1) /= This%NbDim .or. size(This%CorrMat,2) /= This%NbDim) call Error%Raise(                        &
-                                                       Line='Improper sizes for the input correlation matrix', ProcName=ProcName)
+    if (size(This%Corrmat,1) /= This%NbDim .or. size(This%CorrMat,2) /= This%NbDim) call Error%Raise( &
+                                                         Line='Improper sizes for the input correlation matrix', ProcName=ProcName)
 
     SectionName = 'original_sample_space'
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call This%OrigSampleSpace%Construct(Input=InputSection, Prefix=PrefixLoc)
 
-    if (This%Correlated .or. This%OrigSampleSpace%IsCorrelated()) call Error%Raise('Integral sample space ' //                 &
-                                                'transformation is not yet implemented for correlated spaces', ProcName=ProcName)
+    if (This%Correlated .or. This%OrigSampleSpace%IsCorrelated()) call Error%Raise('Integral sample space ' // &
+                                                  'transformation is not yet implemented for correlated spaces', ProcName=ProcName)
 
     This%Constructed=.true.
 
@@ -259,15 +258,13 @@ contains
 
     call This%OrigSampleSpace%Construct(SampleSpace=OriginalSampleSpace)
 
-    if (This%Correlated .or. This%OrigSampleSpace%IsCorrelated()) call Error%Raise('Integral sample space ' //                 &
-                                                'transformation is not yet implemented for correlated spaces', ProcName=ProcName)
+    if (This%Correlated .or. This%OrigSampleSpace%IsCorrelated()) call Error%Raise('Integral sample space ' &
+                                             // 'transformation is not yet implemented for correlated spaces', ProcName=ProcName)
 
     i = 1
     do i = 1, This%NbDim
-      if (This%OrigSampleSpace%GetName(Num=i) /= This%ParamName(i)%GetValue()) call Error%Raise('Mismatch in names',           &
-                                                                                                               ProcName=ProcName)
-      if (This%OrigSampleSpace%GetLabel(Num=i) /= This%Label(i)%GetValue()) call Error%Raise('Mismatch in labels',             &
-                                                                                                               ProcName=ProcName)
+      if (This%OrigSampleSpace%GetName(Num=i) /= This%ParamName(i)) call Error%Raise('Mismatch in names', ProcName=ProcName)
+      if (This%OrigSampleSpace%GetLabel(Num=i) /= This%Label(i)) call Error%Raise('Mismatch in labels', ProcName=ProcName)
     end do
 
     This%Constructed=.true.
@@ -428,10 +425,8 @@ contains
       SubSectionName = 'parameter' // ConvertToString(Value=i)
       call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
       SubSectionName= SectionName // '>' // SubSectionName
-      call GetInput%AddParameter(Name='name', Value=ConvertToString(Value=This%ParamName(i)%GetValue()),                       &
-                                                                                                      SectionName=SubSectionName)
-      call GetInput%AddParameter(Name='label', Value=ConvertToString(Value=This%Label(i)%GetValue()),                          &
-                                                                                                      SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='name', Value=This%ParamName(i)%Get(), SectionName=SubSectionName)
+      call GetInput%AddParameter(Name='label', Value=This%Label(i)%Get(), SectionName=SubSectionName)
       DistProb => This%DistProb(i)%GetPointer()
       if (ExternalFlag) DirectorySub = DirectoryLoc // '/distribution' // ConvertToString(i)
       call GetInput%AddSection(Section=DistProb_Factory%GetObjectInput(Object=DistProb, Name='distribution',         &
@@ -480,7 +475,7 @@ contains
 
     do i = 1, This%NbDim
       Distribution => This%DistProb(i)%GetPointer()
-      OrigDistribution => This%OrigSampleSpace%GetDistributionPointer(Label=This%Label(i)%GetValue())
+      OrigDistribution => This%OrigSampleSpace%GetDistributionPointer(Label=This%Label(i))
       Transform1D(i) = Distribution%InvCDF(OrigDistribution%CDF(X(i)))
       nullify(Distribution)
       nullify(OrigDistribution)
@@ -510,7 +505,7 @@ contains
 
     do i = 1, This%NbDim
       Distribution => This%DistProb(i)%GetPointer()
-      OrigDistribution => This%OrigSampleSpace%GetDistributionPointer(Label=This%Label(i)%GetValue())
+      OrigDistribution => This%OrigSampleSpace%GetDistributionPointer(Label=This%Label(i))
       InvTransform1D(i) = OrigDistribution%InvCDF(Distribution%CDF(Z(i)))
     end do 
 
