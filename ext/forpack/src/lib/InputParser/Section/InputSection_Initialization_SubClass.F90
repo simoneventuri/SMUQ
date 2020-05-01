@@ -518,8 +518,14 @@ Module Procedure FreeSection
   call FinalizeSection(This)
 End Procedure
 
+!--------------------------------------------------------------------
+! Modification : 05/01/2020
+! Przemyslaw Rostkowski 
+! changed finalize section to free each section through a loop
+!--------------------------------------------------------------------
 
 Module Procedure FinalizeSection
+  integer ::  i
   This%Mandatory    =   .False.
   This%Empty        =   .True.
   This%Defined      =   .False.
@@ -527,7 +533,13 @@ Module Procedure FinalizeSection
   This%NParameters  =   0
   if ( allocated(  This%Name       ) ) deallocate( This%Name       )
   if ( allocated(  This%Parameters ) ) deallocate( This%Parameters )
-  if ( RECURSIVE_ALLOCATABLE_DERIVEDTYPE_ALLOCATED( This%Sections   ) ) deallocate( This%Sections )
+  if ( RECURSIVE_ALLOCATABLE_DERIVEDTYPE_ALLOCATED( This%Sections   ) ) then
+    i = 1
+    do i = 1, size(This%Sections,1)
+      call This%Sections(i)%Free()
+    end do
+    deallocate(This%Sections)
+  end if
 End Procedure
 
 Module Procedure SetSectionName

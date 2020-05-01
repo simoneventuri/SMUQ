@@ -344,6 +344,9 @@ contains
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
+    if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
+
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

@@ -20,7 +20,7 @@ Module InputParameter_Class
     character(:)        ,allocatable                    ::  ParentSection
     type(InputParamProperties_Type)                     ::  Properties
   contains
-!     final                       ::  FinalizeParameter
+    final                       ::  FinalizeParameter
     procedure   ,public         ::  Initialize      =>  InitializeParameter
     procedure   ,public         ::  Free            =>  FreeParameter
     procedure   ,public         ::  SetName         =>  SetParameterName
@@ -65,7 +65,14 @@ Module InputParameter_Class
   End Interface
 
   Interface
-    Pure Module Subroutine FinalizeParameter( This )
+
+!--------------------------------------------------------------------
+! Modification : 05/01/2020
+! Przemyslaw Rostkowski 
+! changed finalize and free routines to be elemental
+!--------------------------------------------------------------------
+
+    Pure elemental Module Subroutine FinalizeParameter( This )
       type(InputParameter_Type)                             ,intent(inout)  ::  This
     End Subroutine
     Pure Module Subroutine InitializeParameter( This, Name, Value )
@@ -73,7 +80,7 @@ Module InputParameter_Class
       character(*)                                          ,intent(in)     ::  Name
       character(*)                                          ,intent(in)     ::  Value
     End Subroutine
-    Pure Module Subroutine FreeParameter( This )
+    Pure elemental Module Subroutine FreeParameter( This )
       class(InputParameter_Type)                            ,intent(inout)  ::  This
     End Subroutine
     Module Function NewParameterFromNameValue( Name, Value ) result(This)

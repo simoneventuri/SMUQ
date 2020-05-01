@@ -34,7 +34,7 @@ use SampleSpace_Class                                             ,only:    Samp
 use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
-use Restart_Class                                                 ,only:    RestartUtility
+use Restart_Class                                                 ,only:    RestartUtility, RestartTarget
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use Model_Class                                                   ,only:    Model_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
@@ -200,7 +200,6 @@ contains
     character(:), allocatable                                         ::    PrefixLoc
     integer                                                           ::    StatLoc=0
     integer, allocatable, dimension(:)                                ::    VarI1D
-    integer, allocatable, dimension(:,:)                              ::    VarI2D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
 
@@ -324,7 +323,6 @@ contains
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    SectionName
     integer                                                           ::    i
-    integer, dimension(:,:), pointer                                  ::    VarI2D=>null()
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     type(SMUQFile_Type)                                               ::    File
     character(:), allocatable                                         ::    FileName
@@ -472,8 +470,11 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    BlockOutput
     class(DistProb_Type), pointer                                     ::    DistProbPtr=>null()
     logical                                                           ::    Converged
+    procedure(RestartGetInput), pointer                               ::    RestartGetInput
 
     if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+    RestartGetInput => This%GetInput()
 
     if (SampleSpace%IsCorrelated()) then
       call Error%Raise('Sobol method is only able to deal with non-correlated spaces', ProcName=ProcName)
@@ -697,8 +698,12 @@ contains
         end if
 
         if (i /= This%NbBlocks) then
-          call RestartUtility%Update(InputSection=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(),     &
-                        Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain)
+          allocate(InputSection, source=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(), &
+                                        Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), stat=StatLoc)
+          if (StatLoc /= 0) call Error%Allocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
+          call RestartUtility%Update(InputSection=InputSection, SectionChain=This%SectionChain)
+          deallocate(InputSection, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Deallocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
         end if
 
       end do
@@ -715,8 +720,13 @@ contains
       end do
     end if
 
-    call RestartUtility%Update(InputSection=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(),         &
-                      Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain)
+    allocate(InputSection, source=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(), &
+    Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
+    call RestartUtility%Update(InputSection=InputSection, SectionChain=This%SectionChain)
+    deallocate(InputSection, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
+
 
     if (present(OutputDirectory)) call This%WriteOutput(Directory=OutputDirectory, SampleSpace=SampleSpace,                    &
                                                                                                              Responses=Responses)
@@ -726,6 +736,8 @@ contains
 
     This%ParamSampleStep = 0
     This%NbCells = 0
+
+    call This%HistoryStep%Purge()
 
     deallocate(SnapShot, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='SnapShot', ProcName=ProcName, stat=StatLoc)
@@ -747,6 +759,8 @@ contains
 
     deallocate(NbCellsOutput, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc)
+
+    nullify(RestartGetInput)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

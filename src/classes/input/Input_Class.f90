@@ -131,8 +131,10 @@ subroutine Reset(This)
   if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
 
-  call This%Initialize()
+  if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
 
+  call This%Initialize()
 
   end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------

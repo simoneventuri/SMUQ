@@ -820,7 +820,7 @@ contains
 
     type(LinkedList1D_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
+    character(*), parameter                                           ::    ProcName='FinalizerList'
     type(ListNode1D_Type), pointer                                    ::    TempCurrent => null()
     type(ListNode1D_Type), pointer                                    ::    TempNext => null()
     integer                                                           ::    i

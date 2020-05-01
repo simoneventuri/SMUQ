@@ -59,6 +59,19 @@ end type
 logical   ,parameter                                                  ::    DebugGlobal = .false.
 type(Restart_Type)                                                    ::    RestartUtility
 
+abstract interface
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine RestartTarget(This, Name, Prefix, Directory)
+    use Parameters_Library
+    import                                                            ::    Input_Type
+    class(*), intent(in)                                              ::    This
+    character(*), intent(in)                                          ::    Name
+    character(*), optional, intent(in)                                ::    Prefix
+    character(*), optional, intent(in)                                ::    Directory
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+end interface
+
 contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -194,10 +207,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Update(This, InputSection, SectionChain)
+  subroutine Update(This, GetInput, SectionChain)
     
     class(Restart_Type), intent(inout)                                ::    This
-    type(InputSection_Type), intent(in)                               ::    InputSection
+    procedure(RestartGetInput), pointer                               ::    GetInput
     character(*), intent(in)                                          ::    SectionChain 
 
     character(*), parameter                                           ::    ProcName='ConstructCase1'
@@ -224,6 +237,8 @@ contains
     call InputSectionPointer%Write(FileUnit=UnitLoc)
 
     call This%RestartFile%Close()
+
+    nullify(InputSectionPointer)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

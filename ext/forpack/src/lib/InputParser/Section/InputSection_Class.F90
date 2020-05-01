@@ -256,12 +256,17 @@ Module InputSection_Class
       logical                                     ,optional ,intent(in)     ::  Debug                           !< Debugging indicator
     End Subroutine
 !
-    Pure Recursive Module Subroutine FreeSection( This )
+!--------------------------------------------------------------------
+! Modification : 05/01/2020
+! Przemyslaw Rostkowski 
+! changed pure to impure for freesection and finalizesection routines
+!--------------------------------------------------------------------
+    imPure Recursive Module Subroutine FreeSection( This )
       class(InputSection_Type)                              ,intent(inout)  ::  This                            !< Passed-object dummy argument corresponding to the Section object to be finalized
     End Subroutine
 
 !     Pure Recursive Module Subroutine FinalizeSection( This )
-    Pure Recursive Module Subroutine FinalizeSection( This )
+    imPure Recursive Module Subroutine FinalizeSection( This )
       type(InputSection_Type)                               ,intent(inout)  ::  This                            !< Passed-object dummy argument corresponding to the Section object to be finalized
     End Subroutine
 !
