@@ -33,6 +33,7 @@ implicit none
 private
 
 public                                                                ::    RestartUtility
+public                                                                ::    RestartTarget
 
 type                                                                  ::    Restart_Type
   character(:), allocatable                                           ::    Name
@@ -51,7 +52,10 @@ contains
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetDirectory
   procedure, public                                                   ::    GetPrefix
-  procedure, public                                                   ::    Update
+  generic, public                                                     ::    Update                  =>    Update_Section, &
+                                                                                                          Update_Routine
+  procedure, private                                                  ::    Update_Section
+  procedure, private                                                  ::    Update_Routine
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer     
 end type
@@ -61,14 +65,13 @@ type(Restart_Type)                                                    ::    Rest
 
 abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RestartTarget(This, Name, Prefix, Directory)
-    use Parameters_Library
-    import                                                            ::    Input_Type
-    class(*), intent(in)                                              ::    This
+  function RestartTarget(Name, Prefix, Directory)
+    import                                                            ::    InputSection_Type
+    type(InputSection_Type), allocatable                              ::    RestartTarget
     character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
-  end subroutine
+    character(*), intent(in)                                          ::    Prefix
+    character(*), intent(in)                                          ::    Directory
+  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 end interface
 
@@ -207,13 +210,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Update(This, GetInput, SectionChain)
+  subroutine Update_Section(This, InputSection, SectionChain)
     
+    use String_Library
+
     class(Restart_Type), intent(inout)                                ::    This
-    procedure(RestartGetInput), pointer                               ::    GetInput
+    type(InputSection_Type), intent(in)                               ::    InputSection
     character(*), intent(in)                                          ::    SectionChain 
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
+    character(*), parameter                                           ::    ProcName='Update_Section'
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSectionPointer=>null()
     character(:), allocatable                                         ::    SectionName
@@ -238,7 +243,28 @@ contains
 
     call This%RestartFile%Close()
 
-    nullify(InputSectionPointer)
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Update_Routine(This, Input, SectionChain)
+    
+    class(Restart_Type), intent(inout)                                ::    This
+    procedure(RestartTarget), pointer                                 ::    Input
+    character(*), intent(in)                                          ::    SectionChain 
+
+    character(*), parameter                                           ::    ProcName='Update_Routine'
+    integer                                                           ::    StatLoc=0
+    type(InputSection_Type), allocatable                              ::    InputSection
+
+    allocate(InputSection, source=Input(Name='temp', Prefix=This%GetPrefix(), &
+                                        Directory=This%GetDirectory(SectionChain=SectionChain)), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
+
+    call This%Update(InputSection=InputSection, SectionChain=SectionChain)
+
+    deallocate(InputSection, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

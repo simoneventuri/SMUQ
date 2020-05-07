@@ -15,17 +15,15 @@
 !! Software Foundation, Inc. 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
-
 module LinSolverSparse_Factory_Class
 
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use LinSolverSparse_Class                                         ,only:    LinSolverSparse_Type
+use LinSolverMethod_Class                                         ,only:    LinSolverMethod_Type
 use LinSolverLAR_Class                                            ,only:    LinSolverLAR_Type
 use LinSolverOMP_Class                                            ,only:    LinSolverOMP_Type
-!use LinSolverLASSO_Class                                          ,only:    LinSolverLASSO_Type
 
 implicit none
 
@@ -48,135 +46,129 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_C0D(Object, DesiredType)
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Construct_C0D(Object, DesiredType)
 
-    class(LinSolverSparse_Type), allocatable, intent(inout)           ::    Object
-    character(*), intent(in)                                          ::    DesiredType
+  class(LinSolverMethod_Type), allocatable, intent(inout)           ::    Object
+  character(*), intent(in)                                          ::    DesiredType
 
-    character(*), parameter                                           ::    ProcName='Construct_C0D'                                    
+  character(*), parameter                                           ::    ProcName='Construct_C0D'                                    
 
-    if (allocated(Object)) call Error%Raise(Line='Object already allocated', ProcName=ProcName)
+  if (allocated(Object)) call Error%Raise(Line='Object already allocated', ProcName=ProcName)
 
-    select case (LowerCase(DesiredType))
+  select case (LowerCase(DesiredType))
 
-      case('lar')
-        allocate(LinSolverLAR_Type :: Object)
+    case('lar')
+      allocate(LinSolverLAR_Type :: Object)
 
-      case('omp')
-        allocate(LinSolverOMP_Type :: Object)
+    case('omp')
+      allocate(LinSolverOMP_Type :: Object)
 
-!      case('lasso')
-!        allocate(LinSolverLASSO_Type :: Object)
+    case default
+      call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
 
-      case default
-        call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
+  end select
 
-    end select
+  call Object%Initialize()
 
-    call Object%Initialize()
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine Construct_Input(This, Object, Input, Prefix)
+  
+  use Input_Library
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_Input(This, Object, Input, Prefix)
-    
-    use Input_Library
+  class(LinSolverSparse_Factory_Type), intent(in)                   ::    This
+  class(LinSolverSparse_Type), allocatable, intent(inout)           ::    Object
+  type(InputSection_Type), intent(in)                               ::    Input
+  character(*), optional, intent(in)                                ::    Prefix
 
-    class(LinSolverSparse_Factory_Type), intent(in)                   ::    This
-    class(LinSolverSparse_Type), allocatable, intent(inout)           ::    Object
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+  character(*), parameter                                           ::    ProcName='Construct_Input'                                   
+  type(InputSection_Type), pointer                                  ::    InputSection=>null()
+  character(:), allocatable                                         ::    ParameterName
+  character(:), allocatable                                         ::    SectionName
+  character(:), allocatable                                         ::    PrefixLoc
+  character(:), allocatable                                         ::    VarC0D
+  integer                                                           ::    StatLoc=0 
 
-    character(*), parameter                                           ::    ProcName='Construct_Input'                                   
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    StatLoc=0 
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  ParameterName = 'type'
+  call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+  call This%Construct(Object=Object, DesiredType=VarC0D)
 
-    ParameterName = 'type'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-    call This%Construct(Object=Object, DesiredType=VarC0D)
+  SectionName = 'type'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call Object%Construct(Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-    SectionName = 'type'
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call Object%Construct(Input=InputSection, Prefix=PrefixLoc)
-    nullify(InputSection)
+end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetOption(Object)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOption(Object)
+  character(:), allocatable                                         ::    GetOption
 
-    character(:), allocatable                                         ::    GetOption
+  class(LinSolverMethod_Type), intent(in)                           ::    Object                                                                                            
 
-    class(LinSolverSparse_Type), intent(in)                           ::    Object                                                                                            
+  character(*), parameter                                           ::    ProcName='GetOption' 
 
-    character(*), parameter                                           ::    ProcName='GetOption' 
+  select type (Object)
 
-    select type (Object)
+    type is (LinSolverLAR_Type)
+      GetOption = 'lar'
 
-      type is (LinSolverLAR_Type)
-        GetOption = 'lar'
+    type is (LinSolverOMP_Type)
+      GetOption = 'omp'
 
-      type is (LinSolverOMP_Type)
-        GetOption = 'omp'
+    class default
+      call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
 
-!      type is (LinSolverLASSO_Type)
-!        GetOption = 'lasso'
+  end select
 
-      class default
-        call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-    end select
+!!--------------------------------------------------------------------------------------------------------------------------------
+function GetObjectInput(This, Object, Name, Prefix, Directory)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  use Input_Library
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetObjectInput(This, Object, Name, Prefix, Directory)
+  type(InputSection_Type)                                           ::    GetObjectInput
 
-    use Input_Library
+  class(LinSolverSparse_Factory_Type), intent(in)                   ::    This
+  class(LinSolverMethod_Type), intent(in)                           ::    Object
+  character(*), intent(in)                                          ::    Name
+  character(*), optional, intent(in)                                ::    Prefix
+  character(*), optional, intent(in)                                ::    Directory
 
-    type(InputSection_Type)                                           ::    GetObjectInput
+  character(*), parameter                                           ::    ProcName='GetObjectInput'
+  character(:), allocatable                                         ::    PrefixLoc
+  character(:), allocatable                                         ::    DirectoryLoc
+  character(:), allocatable                                         ::    DirectorySub
+  logical                                                           ::    ExternalFlag=.false.
+  integer                                                           ::    StatLoc=0
 
-    class(LinSolverSparse_Factory_Type), intent(in)                   ::    This
-    class(LinSolverSparse_Type), intent(in)                           ::    Object
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  DirectoryLoc = '<undefined>'
+  PrefixLoc = ''
+  DirectorySub = DirectoryLoc
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    character(*), parameter                                           ::    ProcName='GetObjectInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    integer                                                           ::    StatLoc=0
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    DirectoryLoc = '<undefined>'
-    PrefixLoc = ''
-    DirectorySub = DirectoryLoc
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
+  call GetObjectInput%SetName(SectionName=Name)
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
 
-    call GetObjectInput%SetName(SectionName=Name)
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/type'
 
-    call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
+  call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectorySub))
 
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/type'
-
-    call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectorySub))
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

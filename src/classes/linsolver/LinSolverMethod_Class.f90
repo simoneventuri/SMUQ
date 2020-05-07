@@ -42,7 +42,7 @@ contains
   procedure(SetDefaults_LinSolverMethod), deferred, public            ::    SetDefaults
   procedure(ConstructInput_LinSolverMethod), deferred, private        ::    ConstructInput
   procedure(GetInput_LinSolverMethod), deferred, public               ::    GetInput
-  procedure(SolveSystem_LinSolverMethod), deferred, public            ::    SolveSystem
+  procedure(Solve_LinSolverMethod), deferred, public                  ::    Solve
   procedure(Copy_LinSolverMethod), deferred, public                   ::    Copy
 end type
 
@@ -82,13 +82,13 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SolveSystem_LinSolverMethod(This, System, Goal, Coefficients, CVError)
+  subroutine Solve_LinSolverMethod(This, System, Goal, Coefficients, CVError)
     use Parameters_Library
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(in)                           ::    This
     real(rkp), dimension(:,:), intent(inout)                          ::    System
     real(rkp), dimension(:), intent(inout)                            ::    Goal
-    real(rkp), allocatable, dimension(:), intent(out)                 ::    Coefficients
+    real(rkp), dimension(:), intent(inout)                            ::    Coefficients
     real(rkp), optional, intent(out)                                  ::    CVError
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -117,18 +117,18 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetName(This)
 
-    character(:), allocatable                                         ::    GetName
+  character(:), allocatable                                           ::    GetName
 
-    class(LinSolverMethod_Type), intent(inout)                        ::    This
+  class(LinSolverMethod_Type), intent(inout)                          ::    This
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  character(*), parameter                                             ::    ProcName='GetName'
 
-    GetName = This%Name
+  GetName = This%Name
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

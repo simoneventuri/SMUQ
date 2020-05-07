@@ -29,6 +29,7 @@ implicit none
 
 private
 
+public                                                                ::    IsFinite
 public                                                                ::    LinSequence
 public                                                                ::    LinSpace
 public                                                                ::    Log10Space
@@ -48,6 +49,15 @@ public                                                                ::    Poch
 public                                                                ::    RandomInteger
 
 logical, parameter                                                    ::    DebugGlobal = .false.
+
+interface IsFinite
+  module procedure                                                    ::    IsFinite_R40D
+  module procedure                                                    ::    IsFinite_R41D
+  module procedure                                                    ::    IsFinite_R42D
+  module procedure                                                    ::    IsFinite_R80D
+  module procedure                                                    ::    IsFinite_R81D
+  module procedure                                                    ::    IsFinite_R82D
+end interface
 
 interface Interpolate
   module procedure                                                    ::    Interpolate_R1D_R1D
@@ -84,7 +94,8 @@ interface ComputeEigenvalues ! square matrices
 end interface
 
 interface ComputeQR
-  module procedure                                                    ::    ComputeQR
+  module procedure                                                    ::    ComputeQR_System
+  module procedure                                                    ::    ComputeQR_Q 
 end interface
 
 interface ComputeNorm
@@ -126,6 +137,146 @@ interface RandomInteger
 end interface
 
 contains
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsFinite_R40D(Value)
+
+    logical                                                           ::    IsFinite_R40D
+
+    real(4), intent(in)                                               ::    Value
+
+    real(4), parameter                                                ::    Big=huge(0.0_r4)
+    real(4), parameter                                                ::    Small=huge(0.0_r4)
+
+    IsFinite_R40D = .false.
+    if (Value >= Small .and. Value <= Big .and. Value == Value) IsFinite_R40D = .true.
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsFinite_R41D(Values)
+
+    logical                                                           ::    IsFinite_R41D
+
+    real(4), dimension(:), intent(in)                                 ::    Value
+
+    real(4), parameter                                                ::    Big=huge(0.0_r4)
+    real(4), parameter                                                ::    Small=huge(0.0_r4)
+    integer                                                           ::    i
+
+    IsFinite_R41D = .true.
+
+    i = 1
+    do i = 1, size(Values,1)
+      if (Values(i) >= Small .and. Values(i) <= Big .and. Values(i) == Values(i)) cycle
+      IsFinite_R41D = .false.
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsFinite_R42D(Values)
+
+    logical                                                           ::    IsFinite_R42D
+
+    real(4), dimension(:,:), intent(in)                               ::    Value
+
+    real(4), parameter                                                ::    Big=huge(0.0_r4)
+    real(4), parameter                                                ::    Small=huge(0.0_r4)
+    integer                                                           ::    i
+    integer                                                           ::    j
+    integer                                                           ::    M 
+    integer                                                           ::    N 
+
+    M = size(Values,2)
+    N = size(Values,1)
+
+    IsFinite_R42D = .true.
+
+    i = 1
+    do i = 1, M
+      j = 1
+      do j = 1, N
+        if (Values(j,i) >= Small .and. Values(j,i) <= Big .and. Values(j,i) == Values(j,i)) cycle
+        IsFinite_R42D = .false.
+      end do
+      if (.not. IsFinite_R42D) exit
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsFinite_R80D(Value)
+
+    logical                                                           ::    IsFinite_R40D
+
+    real(8), intent(in)                                               ::    Value
+
+    real(8), parameter                                                ::    Big=huge(0.0_r8)
+    real(8), parameter                                                ::    Small=huge(0.0_r8)
+
+    IsFinite_R80D = .false.
+    if (Value >= Small .and. Value <= Big .and. Value == Value) IsFinite_R80D = .true.
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+  function IsFinite_R81D(Values)
+
+    logical                                                           ::    IsFinite_R81D
+
+    real(4), dimension(:), intent(in)                                 ::    Value
+
+    real(4), parameter                                                ::    Big=huge(0.0_r8)
+    real(4), parameter                                                ::    Small=huge(0.0_r8)
+    integer                                                           ::    i
+
+    IsFinite_R81D = .true.
+
+    i = 1
+    do i = 1, size(Values,1)
+      if (Values(i) >= Small .and. Values(i) <= Big .and. Values(i) == Values(i)) cycle
+      IsFinite_R81D = .false.
+    end do
+    
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function IsFinite_R82D(Values)
+
+    logical                                                           ::    IsFinite_R82D
+
+    real(4), dimension(:,:), intent(in)                               ::    Value
+
+    real(4), parameter                                                ::    Big=huge(0.0_r8)
+    real(4), parameter                                                ::    Small=huge(0.0_r8)
+    integer                                                           ::    i
+    integer                                                           ::    j
+    integer                                                           ::    M 
+    integer                                                           ::    N 
+
+    M = size(Values,2)
+    N = size(Values,1)
+
+    IsFinite_R82D = .true.
+
+    i = 1
+    do i = 1, M
+      j = 1
+      do j = 1, N
+        if (Values(j,i) >= Small .and. Values(j,i) <= Big .and. Values(j,i) == Values(j,i)) cycle
+        IsFinite_R82D = .false.
+      end do
+      if (.not. IsFinite_R82D) exit
+    end do
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function LinSequence(SeqStart, SeqEnd, SeqSkip, Scrambled)
@@ -789,13 +940,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeQR(Matrix, Q, R)
+  subroutine ComputeQR_System(Matrix, Q, R)
 
     real(rkp), dimension(:,:), intent(in)                             ::    Matrix
     real(rkp), allocatable, dimension(:,:), intent(out)               ::    Q
     real(rkp), allocatable, dimension(:,:), intent(out)               ::    R
 
-    character(*), parameter                                           ::    ProcName='ComputeQR'
+    character(*), parameter                                           ::    ProcName='ComputeQR_System'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    M
     integer                                                           ::    N
@@ -813,6 +964,70 @@ contains
     allocate(Q(M,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Q', ProcName=ProcName, stat=StatLoc)
     Q = Matrix
+
+    allocate(R(N,N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
+    R = Zero
+
+    allocate(TAU(min(M,N)), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
+
+    call DGEQRF(M, N, Q, M, TAU, WORKSIZE, -1, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
+
+    LWORK = nint(WORKSIZE(1))
+
+    allocate(WORK(LWORK), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+
+    call DGEQRF(M, N, Q, M, TAU, WORK, LWORK, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
+
+    deallocate(WORK, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+
+    i = 1
+    do i = 1, N
+      R(1:i,i) = Q(1:i,i)
+    end do
+
+    call DORGQR(M, N, N, Q, M, TAU, WORKSIZE, -1, StatLoc) 
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORMQR", ProcName=ProcName)
+
+    LWORK = nint(WORKSIZE(1))
+
+    allocate(WORK(LWORK), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+
+    call DORGQR(M, N, N, Q, M, TAU, WORK, LWORK, StatLoc) 
+    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORMQR", ProcName=ProcName)
+
+    deallocate(WORK, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc) 
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ComputeQR_Q(Q, R)
+
+    real(rkp), dimension(:,:), intent(inout)                          ::    Q
+    real(rkp), allocatable, dimension(:,:), intent(out)               ::    R
+
+    character(*), parameter                                           ::    ProcName='ComputeQR_Q'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    M
+    integer                                                           ::    N
+    real(rkp), allocatable, dimension(:)                              ::    TAU
+    real(rkp), allocatable, dimension(:)                              ::    WORK
+    real(rkp), dimension(1)                                           ::    WORKSIZE=0
+    integer                                                           ::    LWORK
+    integer                                                           ::    i
+
+    M = size(Matrix,1)
+    N = size(Matrix,2)
+
+    if (M < N) call Error%Raise(Line='This routine works only with tall matrices', ProcName=ProcName)
 
     allocate(R(N,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)

@@ -29,7 +29,7 @@ use Error_Class                                                   ,only:    Erro
 use Output_Class                                                  ,only:    Output_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
-use Restart_Class                                                 ,only:    RestartUtility
+use Restart_Class                                                 ,only:    RestartUtility, RestartTarget
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use MCMCMethod_Class
 use MCMCMethod_Factory_Class                                      ,only:    MCMCMethod_Factory

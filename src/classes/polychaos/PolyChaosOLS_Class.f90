@@ -44,7 +44,7 @@ use Input_Class                                                   ,only:    Inpu
 use Output_Class                                                  ,only:    Output_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
-use Restart_Class                                                 ,only:    RestartUtility
+use Restart_Class                                                 ,only:    RestartUtility, RestartTarget
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use List2D_Class                                                  ,only:    List2D_Type
 use Model_Class                                                   ,only:    Model_Type
@@ -556,6 +556,11 @@ contains
     integer                                                           ::    IndexStartOrder
     integer                                                           ::    IndexMaxOrder
     integer                                                           ::    ReqNbSamples
+    procedure(RestartTarget), pointer                                 ::    RestartInput=>null()
+
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+    RestartInput => GetRestartInput
 
     call ModelInterface%Construct(Model=Model, Responses=Responses)
 
@@ -800,10 +805,7 @@ contains
           i = i + NbInputs
           This%ParamSampleStep = i
 
-          if (i /= iEnd) then
-            call RestartUtility%Update(InputSection=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(),       &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain)
-          end if
+          if (i /= iEnd) call RestartUtility%Update(Input=RestartInput, SectionChain=This%SectionChain)
     
         end do
 
@@ -836,8 +838,7 @@ contains
      
       iEnd = size(This%ParamRecord,2)
 
-      call RestartUtility%Update(InputSection=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(),           &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain)
+      call RestartUtility%Update(Input=RestartInput, SectionChain=This%SectionChain)
 
       !***************************************************************************************************************************
       ! Updating coefficients
@@ -936,8 +937,7 @@ contains
       This%SamplesRan = .false.
       This%SamplesAnalyzed = .false.
 
-      call RestartUtility%Update(InputSection=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(),           &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain)
+      call RestartUtility%Update(Input=RestartInput, SectionChain=This%SectionChain)
 
     end do
 
@@ -992,6 +992,26 @@ contains
     deallocate(This%Cells, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='This%Cells', ProcName=ProcName, stat=StatLoc)
     This%NbCells = 0
+
+    contains
+
+      !!--------------------------------------------------------------------------------------------------------------------------
+      function GetRestartInput(Name, Prefix, Directory)
+
+        type(InputSection_Type), allocatable                          ::    GetRestartInput
+
+        character(*), intent(in)                                      ::    Name
+        character(*), intent(in)                                      ::    Prefix
+        character(*), intent(in)                                      ::    Directory
+
+        character(*), parameter                                       ::    ProcName='Run'
+        integer                                                       ::    StatLoc=0
+
+        allocate(GetRestartInput, source= This%GetInput(Name=Name, Prefix=Prefix, Directory=Directory), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='GetRestartInput', ProcName=ProcName, stat=StatLoc)
+
+      end function
+      !!--------------------------------------------------------------------------------------------------------------------------
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

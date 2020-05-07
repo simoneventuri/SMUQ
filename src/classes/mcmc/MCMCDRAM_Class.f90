@@ -36,7 +36,7 @@ use Input_Class                                                   ,only:    Inpu
 use MCMCMethod_Class
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
-use Restart_Class                                                 ,only:    RestartUtility
+use Restart_Class                                                 ,only:    RestartUtility, RestartTarget
 use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
@@ -649,6 +649,11 @@ contains
     logical                                                           ::    MiscValuesFlag
     real(rkp)                                                         ::    HVarR0D
     real(rkp)                                                         ::    TVarR0D
+    procedure(RestartTarget), pointer                                 ::    RestartInput=>null()
+
+    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+    RestartInput => GetRestartInput
 
     HVarR0D = dlog(huge(VarR0D))
     TVarR0D = dlog(tiny(VarR0D))
@@ -1123,15 +1128,13 @@ contains
 
       if (This%CheckpointFreq > 0) then
         if (mod(This%Step,This%CheckpointFreq) == 0 .and. This%Step /= This%ChainLength) then
-          call RestartUtility%Update(InputSection=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(),       &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain)
+          call RestartUtility%Update(Input=RestartInput, SectionChain=This%SectionChain)
         end if
       end if
 
     end do
 
-    call RestartUtility%Update(InputSection=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(),             &
-                          Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), SectionChain=This%SectionChain)
+    call RestartUtility%Update(Input=RestartInput, SectionChain=This%SectionChain)
 
     if (present(OutputDirectory)) then
       call This%WriteOutput(Directory=OutputDirectory)
@@ -1246,6 +1249,26 @@ contains
 
     deallocate(This%StartMu, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='This%StartMu', ProcName=ProcName, stat=StatLoc)
+
+    contains
+
+      !!--------------------------------------------------------------------------------------------------------------------------
+      function GetRestartInput(Name, Prefix, Directory)
+
+        type(InputSection_Type), allocatable                          ::    GetRestartInput
+
+        character(*), intent(in)                                      ::    Name
+        character(*), intent(in)                                      ::    Prefix
+        character(*), intent(in)                                      ::    Directory
+
+        character(*), parameter                                       ::    ProcName='Run'
+        integer                                                       ::    StatLoc=0
+
+        allocate(GetRestartInput, source= This%GetInput(Name=Name, Prefix=Prefix, Directory=Directory), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='GetRestartInput', ProcName=ProcName, stat=StatLoc)
+
+      end function
+      !!--------------------------------------------------------------------------------------------------------------------------
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -470,11 +470,11 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    BlockOutput
     class(DistProb_Type), pointer                                     ::    DistProbPtr=>null()
     logical                                                           ::    Converged
-    procedure(RestartGetInput), pointer                               ::    RestartGetInput
+    procedure(RestartTarget), pointer                                 ::    RestartInput=>null()
 
     if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    RestartGetInput => This%GetInput()
+    RestartInput => GetRestartInput
 
     if (SampleSpace%IsCorrelated()) then
       call Error%Raise('Sobol method is only able to deal with non-correlated spaces', ProcName=ProcName)
@@ -697,14 +697,7 @@ contains
           exit
         end if
 
-        if (i /= This%NbBlocks) then
-          allocate(InputSection, source=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(), &
-                                        Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
-          call RestartUtility%Update(InputSection=InputSection, SectionChain=This%SectionChain)
-          deallocate(InputSection, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Deallocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
-        end if
+        if (i /= This%NbBlocks) call RestartUtility%Update(Input=RestartInput, SectionChain=This%SectionChain)
 
       end do
 
@@ -720,16 +713,9 @@ contains
       end do
     end if
 
-    allocate(InputSection, source=This%GetInput(Name='temp', Prefix=RestartUtility%GetPrefix(), &
-    Directory=RestartUtility%GetDirectory(SectionChain=This%SectionChain)), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
-    call RestartUtility%Update(InputSection=InputSection, SectionChain=This%SectionChain)
-    deallocate(InputSection, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
+    call RestartUtility%Update(Input=RestartInput, SectionChain=This%SectionChain)
 
-
-    if (present(OutputDirectory)) call This%WriteOutput(Directory=OutputDirectory, SampleSpace=SampleSpace,                    &
-                                                                                                             Responses=Responses)
+    if (present(OutputDirectory)) call This%WriteOutput(Directory=OutputDirectory, SampleSpace=SampleSpace, Responses=Responses)
 
     This%SamplesObtained = .false.
     This%SamplesRan = .false.
@@ -760,7 +746,27 @@ contains
     deallocate(NbCellsOutput, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc)
 
-    nullify(RestartGetInput)
+    nullify(RestartInput)
+
+    contains
+
+      !!--------------------------------------------------------------------------------------------------------------------------
+      function GetRestartInput(Name, Prefix, Directory)
+
+        type(InputSection_Type), allocatable                          ::    GetRestartInput
+
+        character(*), intent(in)                                      ::    Name
+        character(*), intent(in)                                      ::    Prefix
+        character(*), intent(in)                                      ::    Directory
+
+        character(*), parameter                                       ::    ProcName='Run'
+        integer                                                       ::    StatLoc=0
+
+        allocate(GetRestartInput, source= This%GetInput(Name=Name, Prefix=Prefix, Directory=Directory), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='GetRestartInput', ProcName=ProcName, stat=StatLoc)
+
+      end function
+      !!--------------------------------------------------------------------------------------------------------------------------
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
