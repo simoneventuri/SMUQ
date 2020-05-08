@@ -38,11 +38,11 @@ private
 public                                                                ::    LinSolverLAR_Type
 
 type, extends(LinSolverMethod_Type)                                   ::    LinSolverLAR_Type
-  real(rkp)                                                           ::    MinAbsCorr=1.0d-10
-  logical                                                             ::    Hybrid=.true.
-  logical                                                             ::    ModifiedLOO=.true.
-  logical                                                             ::    GetBest=.true.
-  logical                                                             ::    StopEarly=.true.
+  real(rkp)                                                           ::    MinAbsCorr
+  logical                                                             ::    Hybrid
+  logical                                                             ::    ModifiedCV
+  logical                                                             ::    GetBest
+  logical                                                             ::    StopEarly
   class(CVMethod_Type), allocatable                                   ::    CVError
 contains
   procedure, public                                                   ::    Initialize
@@ -103,9 +103,9 @@ subroutine SetDefaults(This)
 
   character(*), parameter                                             ::    ProcName='SetDefaults'
 
-  This%MinAbsCorr = 1.0d-10
+  This%MinAbsCorr = epsilon(This%MinAbsCorr)*100.0_rkp
   This%Hybrid = .true.
-  This%ModifiedLOO = .true.
+  This%ModifiedCV = .true.
   This%GetBest = .true.
   This%StopEarly = .true.
 
@@ -143,9 +143,9 @@ subroutine ConstructInput(This, Input, Prefix)
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%Hybrid = VarL0D
 
-  ParameterName = 'modified_selection_cv'
+  ParameterName = 'modified_cross_validation'
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-  if (Found) This%ModifiedLOO = VarL0D
+  if (Found) This%ModifiedCV = VarL0D
 
   ParameterName = 'get_best'
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
@@ -168,16 +168,23 @@ subroutine ConstructInput(This, Input, Prefix)
         call Error%Raise(Line='Something went wrong', ProcName=ProcName)
     end select
   end if
+
   This%Constructed = .true.
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine ConstructCase1(This, CVMethod, Hybrid, MinAbsCorr, GetBest, StopEarly, ModifiedLOO)
+subroutine ConstructCase1(This, CVMethod, Hybrid, MinAbsCorr, GetBest, StopEarly, ModifiedCV)
 
   class(LinSolverLAR_Type), intent(inout)                             ::    This
-  class()
+  class(CVMethod_Type), optional, intent(in)                          ::    CVMethod
+  logical, optional, intent(in)                                       ::    Hybrid
+  logical, optional, intent(in)                                       ::    GetBest
+  logical, optional, intent(in)                                       ::    StopEarly
+  logical, optional, intent(in)                                       ::    ModifiedCV
+  real(rkp), optional, intent(in)                                     ::    MinAbsCorr
+
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
@@ -192,7 +199,7 @@ subroutine ConstructCase1(This, CVMethod, Hybrid, MinAbsCorr, GetBest, StopEarly
 
   if (present(StopEarly)) This%StopEarly = StopEarly
 
-  if (present(ModifiedLOO)) This%ModifiedLOO = ModifiedLOO
+  if (present(ModifiedCV)) This%ModifiedCV = ModifiedCV
 
   if (present(CVMethod)) then
     allocate(This%CVError, source=CVMethod, stat=StatLoc)
@@ -242,7 +249,7 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddValue(Name='hybrid', Value=ConvertToString(Value=This%Hybrid))
   call GetInput%AddValue(Name='stop_early', Value=ConvertToString(Value=This%StopEarly))
   call GetInput%AddValue(Name='get_best', Value=ConvertToString(Value=This%GetBest))
-  call GetInput%AddValue(Name='modified_selection_cv', Value=ConvertToString(Value=This%ModifiedCVLOO))
+  call GetInput%AddValue(Name='modified_cross_validation', Value=ConvertToString(Value=This%ModifiedCV))
   call GetInput%AddValue(Name='minimum_correlation', Value=ConvertToString(Value=This%MinAbsCorr))
 
   SectionName = 'cross_validation'
@@ -260,30 +267,86 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
   real(rkp), dimension(:), intent(inout)                              ::    Coefficients
   real(rkp), optional, intent(out)                                    ::    CVError
 
-  character(*), parameter                                             ::    ProcName='SolveSparse'
+  character(*), parameter                                             ::    ProcName='Solve'
   integer                                                             ::    StatLoc=0
   procedure(CVFitTarget), pointer                                     ::    CVFit=>null()
+  integer                                                             ::    M
+  integer                                                             ::    N
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-  if (size(Coefficients,1) /= size(System,2)) call Error%Raise('Incompatible coefficients and system arrays', ProcName=ProcName)
+  M = size(System,1)
+  N = size(System,2)
+
+  if (size(Coefficients,1) /= N) call Error%Raise('Incompatible coefficients and system arrays', ProcName=ProcName)
 
   if (present(CVError)) then
     select type (CVMethod=>This%CVError)
       type is (CVLOO_Type)
-        call BuildMetaModel_QR(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, Hybrid=This%Hybrid, &
-                               GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
-                               ModifiedCVLOO=This%ModifiedCVLOO)
-        if (.not. CVMethod%IsNormalized) CVError = CVError * ComputeSampleVar(Values=Goal)
+        call BuildMetaModel_QR_LAR(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, Hybrid=This%Hybrid, &
+                                   GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
+                                   ModifiedCVLOO=This%ModifiedCV)
+        if (.not. CVMethod%IsNormalized .and. CVError < huge(One)) CVError = CVError * ComputeSampleVar(Values=Goal)
       class default
-        call BuildMetaModel_QR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid, GetBest=This%GetBest, &
-                               MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCVLOO)
+        CVFit => CVFitLAR
+        call BuildMetaModel_QR_LAR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid, GetBest=This%GetBest, &
+                                   MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
         CVError = CVMethod%Calculate(Fit=CVFit, Data=Goal)
+        if (This%ModifiedCV) CVError = CVError * ComputeCorrectionFactor(System=System, Coefficients=Coefficients)
+        nullify(CVFit)
     end select
   else
-    call BuildMetaModel_QR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid, GetBest=This%GetBest, &
-                           MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCVLOO)
+    call BuildMetaModel_QR_LAR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid, GetBest=This%GetBest, &
+                               MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
   end if
+
+  contains
+
+    !!----------------------------------------------------------------------------------------------------------------------------
+    subroutine CVFitLAR(Data, Prediction, DataIndices)
+
+      real(rkp), dimension(:), intent(inout)                          ::    Data
+      real(rkp), dimension(:), intent(inout)                          ::    Prediction
+      integer, dimension(:), intent(in)                               ::    DataIndices
+
+      character(*), parameter                                         ::    ProcName='SolveSparse'
+      integer                                                         ::    StatLoc=0
+      real(rkp), allocatable, dimension(:,:)                          ::    SystemLoc
+      real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
+      integer                                                         ::    NbDataLoc
+      integer                                                         ::    iLoc
+
+      NbDataLoc = size(Data,1)
+
+      allocate(CoefficientsLoc(N), stat=StatLoc)
+      if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
+      CoefficientsLoc = Zero
+
+      allocate(SystemLoc(NbDataLoc,N), stat=StatLoc)
+      if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
+      SystemLoc = Zero
+
+      iLoc = 1
+      do iLoc = 1, N
+        SystemLoc(:,iLoc) = System(DataIndices,iLoc)
+      end do
+
+      call This%Solve(System=SystemLoc, Goal=Data, Coefficients=CoefficientsLoc)
+
+      Prediction = Zero
+      iLoc = 1
+      do iLoc = 1, N
+        if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
+        Prediction = Prediction + CoefficientsLoc(iLoc)*SystemLoc(:,iLoc)
+      end do
+      
+      deallocate(SystemLoc, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
+
+      deallocate(CoefficientsLoc, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
+
+    end subroutine
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -308,7 +371,7 @@ impure elemental subroutine Copy(LHS, RHS)
         LHS%Hybrid = RHS%Hybrid
         LHS%MinAbsCorr = RHS%MinAbsCorr
         LHS%StopEarly = RHS%StopEarly
-        LHS%ModifiedCVLOO = RHS%ModifiedCVLOO
+        LHS%ModifiedCV = RHS%ModifiedCV
         LHS%GetBest = RHS%GetBest
       end if
     class default
@@ -333,7 +396,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBest, MinAbsCorr, StopEarly, ModifiedCVLOO)
+subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest, MinAbsCorr, StopEarly, ModifiedCVLOO)
 
   real(rkp), dimension(:,:), target, intent(inout)                    ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
@@ -344,17 +407,18 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
   logical, optional, intent(in)                                       ::    ModifiedCVLOO
   logical, optional, intent(in)                                       ::    StopEarly
 
-  character(*), parameter                                             ::    ProcName='BuildMetaModel_Gram'
+  character(*), parameter                                             ::    ProcName='BuildMetaModel_Gram_LAR'
   integer                                                             ::    StatLoc=0
   logical                                                             ::    HybridLoc
   logical                                                             ::    GetBestLoc
   logical                                                             ::    StopEarlyLoc
   real(rkp)                                                           ::    MinAbsCorrLoc
-  logical                                                             ::    ModifiGetBest=This%GetBestedCVLOOLoc
+  logical                                                             ::    ModifiedCVLOOLoc
   integer                                                             ::    N
   integer                                                             ::    M
   real(rkp)                                                           ::    Nreal
   real(rkp)                                                           ::    Mreal
+  integer                                                             ::    MaxNbRegressors
   integer                                                             ::    MaxNbIterations
   integer                                                             ::    ConstantIndex
   integer                                                             ::    i
@@ -415,30 +479,30 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
   ModifiedCVLOOLoc = .true.
   if (present(ModifiedCVLOO)) ModifiedCVLOOLoc=ModifiedCVLOO
 
-  MinAbsCorrLoc = 1.d-10
+  MinAbsCorrLoc = epsilon(MinAbsCorr)*100.0_rkp
   if(present(MinAbsCorr)) MinAbsCorrLoc = MinAbsCorr
 
-  N = size(System,1)
-  Nreal = real(N,rkp) 
-  M = size(System,2)
+  M = size(System,1)
   Mreal = real(M,rkp)
+  N = size(System,2)
+  Nreal = real(N,rkp) 
 
-  if (size(Coefficients,1) /= M) call Error%Raise('Incompatible coefficients array length', ProcName=ProcName)
+  if (size(Coefficients,1) /= N) call Error%Raise('Incompatible coefficients array length', ProcName=ProcName)
   Coefficients = Zero
 
   GoalMean = ComputeMean(Values=Goal)
   GoalVariance = ComputeSampleVar(Values=Goal, Mean=GoalMean)
 
-  if (M == 1) then
+  if (N == 1) then
     InvXtXScalar = One / dot_product(System(:,1),System(:,1))
     Coefficients(1) = dot_product(System(:,1),Goal)*InvXtXScalar
 
     CVLOOTempNonN = Zero
     i = 1
-    do i = 1, N 
+    do i = 1, M 
       CVLOOTempNonN = CVLOOTempNonN + ((Goal(i)-Coefficients(1)*System(i,1))/(One-System(i,1)**2*InvXtXScalar))**2
     end do
-    CVLOOTempNonN = CVLOOTempNonN / Nreal
+    CVLOOTempNonN = CVLOOTempNonN / Mreal
 
     if (GoalVariance > Zero) then
       CVLOOTemp = CVLOOTempNonN / GoalVariance
@@ -447,8 +511,8 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     end if
 
     if(ModifiedCVLOOLoc) then
-      if (N > 1) then
-        T = (realN / real(N-1,rkp))*(One+InvXtXScalar)
+      if (M > 1) then
+        T = (realM / real(M-1,rkp))*(One+InvXtXScalar)
         CVLOOTemp = CVLOOTemp * T
       else
         CVLOOTemp = huge(One)
@@ -459,23 +523,24 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     return
   end if
 
-  allocate(Skip(M), stat=StatLoc)
+  allocate(Skip(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Skip', ProcName=ProcName, stat=StatLoc)
   Skip = .false.
 
-  allocate(Mean(M), stat=StatLoc)
+  allocate(Mean(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Mean', ProcName=ProcName, stat=StatLoc)
   Mean = Zero
 
-  allocate(StD(M), stat=StatLoc)
+  allocate(StD(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='StD', ProcName=ProcName, stat=StatLoc)
   StD = Zero
 
   ConstantIndex = 0
 
   i = 1
-  do i = 1, M 
+  do i = 1, N 
     Skip(i) = IsArrayConstant(Array=System(:,i))
+    if (Skip(i) .and. .not. dabs(System(1,i)) > Zero) call Error%Raise('System has a column of zeros', ProcName=ProcName)
     Mean(i) = ComputeMean(Values=System(:,i))
     if (.not. Skip(i)) then
       StD(i) = ComputeSampleVar(Values=System(:,i), Mean=Mean(i))
@@ -494,14 +559,12 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
 
   VarR0D = Zero
 
-  BestCVLOO = huge(One)
-
   InterceptAdjustment = 0
   if (ConstantIndex /= 0) InterceptAdjustment = 1
 
-  MaxNbRegressors = min(N-InterceptAdjustment,M)
+  MaxNbRegressors = min(M-InterceptAdjustment,N)
 
-  allocate(Corr(M), stat=StatLoc)
+  allocate(Corr(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Corr', ProcName=ProcName, stat=StatLoc)
   Corr = Zero
 
@@ -520,7 +583,7 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
   ActiveIndices = 0
   NbActiveIndices = 0
 
-  allocate(Active(M), stat=StatLoc)
+  allocate(Active(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Inactive', ProcName=ProcName, stat=StatLoc)
   Active = .false.
 
@@ -536,11 +599,11 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
   if (StatLoc /= 0) call Error%Allocate(Name='u', ProcName=ProcName, stat=StatLoc)
   u = Zero
 
-  allocate(h(N), stat=StatLoc)
+  allocate(h(M), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='h', ProcName=ProcName, stat=StatLoc)
 
   allocate(CoefficientsLoc(MaxNbRegressors), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Coefficients'M ProcName=ProcName, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
   CoefficientsLoc = Zero
 
   allocate(BestCoefficients(MaxNbRegressors), stat=StatLoc)
@@ -563,6 +626,10 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     XtY = Zero
   end if
 
+  allocate(VarR1D(M), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+  VarR1D = Zero
+
   BestCVLOO = huge(One)
   BestCVLOONonN = huge(One)
   BestNbIndices = 0
@@ -572,24 +639,20 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
   iIteration = 0
   CVLOOTemp = huge(One)
   CVLOOTempNonN = huge(One)
-
-  allocate(VarR1D(N), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
-  VarR1D = Zero
-
+  CVLOOCounter = 0
+  T = Zero
   CVLOOTrip = max(nint(real(MaxNbIterations,rkp)*0.1),100)
-  CVLOOCounter = 1
 
   ! do ols for constant regressor solution if there is a constant regressor
   if (ConstantIndex /= 0) then
-    InvXtXScalar = One / (Nreal*Mean(ConstantIndex)**2)
+    InvXtXScalar = One / (Mreal*Mean(ConstantIndex)**2)
 
     CVLOOTempNonN = Zero
     i = 1
-    do i = 1, N 
-      CVLOOTempNonN = CVLOOTempNonN + (Goal(i)/(One-One/Nreal))**2
+    do i = 1, M 
+      CVLOOTempNonN = CVLOOTempNonN + (Goal(i)/(One-One/Mreal))**2
     end do
-    CVLOOTempNonN = CVLOOTempNonN / Nreal
+    CVLOOTempNonN = CVLOOTempNonN / Mreal
 
     if (GoalVariance > Zero) then
       CVLOOTemp = CVLOOTempNonN / GoalVariance
@@ -598,8 +661,8 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     end if
 
     if(ModifiedCVLOOLoc) then
-      if (N > 1) then
-        T = (realN / real(N-1,rkp))*(One+InvXtXScalar)
+      if (M > 1) then
+        T = (realM / real(M-1,rkp))*(One+InvXtXScalar)
         CVLOOTemp = CVLOOTemp * T
       else
         CVLOOTemp = huge(One)
@@ -618,7 +681,7 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     MaxAbsCorr = Zero
     MaxAbsCorrIndex = 0
     i = 1
-    do i = 1, M
+    do i = 1, N
       if (Active(i)) cycle
       if (Skip(i)) cycle
       Corr(i) = dot_product(System(:,i), Residual)
@@ -627,7 +690,7 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
       MaxAbsCorrIndex = i
     end do
 
-    if (.not. MaxCorr > MinAbsCorrLoc) exit
+    if (.not. MaxAbsCorr > MinAbsCorrLoc) exit
 
     ! Updating inverse locally to reduce memory requirements and alloc/dealloc times
     v => System(:,MaxAbsCorrIndex)
@@ -705,7 +768,7 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     gamma = huge(One)
     if (iIteration < NbMaxIterations) then
       i  = 1
-      do i = 1, M 
+      do i = 1, N 
         if (Active(i)) cycle
         if (Skip(i)) cycle
         aj = dot_product(System(:,i),u)
@@ -737,7 +800,7 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     ! first get leverage
     h = Zero
     i = 1
-    do i = 1, N
+    do i = 1, M
       VarR1D(1:NbActiveIndices) = System(i,ActiveIndices(1:NbActiveIndices))
       v => VarR1D(1:NbActiveIndices)
       ii = 1
@@ -748,23 +811,25 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     end do
   
     ! adjust for centralized regressors when intercept is present
-    if (ConstantIndex /= 0) h = h + One/Nreal
+    if (ConstantIndex /= 0) h = h + One/Mreal
   
     ! compute cv loo
     CVLOOTempNonN = Zero
     CVLOOTemp = Zero
     if (HybridLoc) then
+      VarR1D(1:M) = Zero
       i = 1
-      do i = 1, N
-        VarR1D(1:NbActiveIndices) = System(ActiveIndices(1:NbActiveIndices))
-        VarR0D = Goal - dot_product(VarR1D(1:NbActiveIndices),CoefficientsLoc(1:NbActiveIndices))
-        CVLOOTempNonN = CVLOOTempNonN + (VarR0D/(One-h(i)))**2
+      do i = 1, NbActiveIndices
+        VarR1D(1:M) = VarR1D(1:M) + CoefficientsLoc(i)*System(:,ActiveIndices(i))
       end do
-      CVLOOTempNonN = CVLOOTempNonN / Nreal
+      i = 1
+      do i = 1, M
+        CVLOOTempNonN = CVLOOTempNonN + ((Goal(i)-VarR1D(i))/(One-h(i)))**2
+      end do
+      CVLOOTempNonN = CVLOOTempNonN / Mreal
     else
-      VarR1D(1:N) = (Residual / (One-h))
-      VarR1D(1:N) = VarR1D(1:N)**2
-      CVLOOTempNonN = ComputeMean(Values=VarR1D(1:N))
+      VarR1D(1:M) = Residual / (One-h)
+      CVLOOTempNonN = dot_product(VarR1D(1:M), VarR1D(1:M)) / Mreal
     end if
   
     if (GoalVariance > Zero) then
@@ -774,8 +839,8 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     end if
 
     ! get correction factor if needed
-    if (ModifiedLOOLoc) then
-      if (N > NbActiveIndices + InterceptAdjustment) then
+    if (ModifiedCVLOOLoc) then
+      if (M > NbActiveIndices + InterceptAdjustment) then
         if (ConstantIndex /= 0) then
           T = Zero
           i = 1
@@ -785,22 +850,22 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
           i = 1
           do i = 1, NbActiveIndices
             ii = ActiveIndices(i)
-            VarR1D(i) = sum(System(:,ii)) + Nreal*Mean(ii)/StD(ii)
+            VarR1D(i) = sum(System(:,ii)) + Mreal*Mean(ii)/StD(ii)
           end do
           VarR0D = Zero
           i = 1
           do i = 1, NbActiveIndices
             VarR0D = VarR0D + dot_product(VarR1D(1:NbActiveIndices),InvXtX(1:NbActiveIndices,i))*VarR1D(i)
           end do
-          T = T + One/(Mean(ConstantIndex)**2*Nreal)  + One/(Mean(ConstantIndex)*Nreal)**2*VarR0D
+          T = T + One/(Mean(ConstantIndex)**2*Mreal)  + One/(Mean(ConstantIndex)*Mreal)**2*VarR0D
         else
           T = Zero
           i = 1
-          do i = 1, N
-            T = T + InvXtX(ii,ii)
+          do i = 1, NbActiveIndices
+            T = T + InvXtX(i,i)
           end do
         end if
-        T = (Nreal/real(N-NbActiveIndices-InterceptAdjustment,rkp))*(One+T)
+        T = (Mreal/real(M-NbActiveIndices-InterceptAdjustment,rkp))*(One+T)
         CVLOOTemp = CVLOOTemp*T
         ! test for NaN
         if (CVLOOTemp /= CVLOOTemp) CVLOOTemp = huge(One)
@@ -809,7 +874,7 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
       end if
     end if
   
-    if (CVLOOTempNonN < BestCVLOONonN) then
+    if (CVLOOTemp < BestCVLOO) then
       BestCVLOONonN = CVLOOTempNonN
       BestCVLOO = CVLOOTemp
       BestCoefficients(1:NbActiveIndices) = CoefficientsLoc(1:NbActiveIndices)
@@ -824,14 +889,14 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
 
   end do
 
-  if (ConstantIndex == 0 .and. BestNbIndices == 0) call Error%Raise('Something went wrong in LAR', ProcName=ProcName)
-
   if (GetBestLoc) then
+    if(present(CVLOO)) CVLOO = BestCVLOO
     i = 1
     do i = 1, BestNbIndices
       Coefficients(BestIndices(i)) = BestCoefficients(i) / StD(BestIndices(i))
     end do
   else
+    if(present(CVLOO)) CVLOO = CVLOOTemp
     i = 1
     do i = 1, NbActiveIndices
       Coefficients(ActiveIndices(i)) = CoefficientsLoc(i) / StD(ActiveIndices(i))
@@ -844,10 +909,16 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
   end if
 
   i = 1
-  do i = 1, M 
+  do i = 1, N
     System(:,i) = System(:,i)*StD(i)+Mean(i)
   end do
   Goal = Goal + GoalMean
+
+  deallocate(Q1, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(R, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='R', ProcName=ProcName, stat=StatLoc)
 
   deallocate(Mean, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='Mean', ProcName=ProcName, stat=StatLoc)
@@ -904,24 +975,24 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
   if (ConstantIndex == 0 .and. present(CVLOO)) then
     NbActiveIndices = count(dabs(Coefficients) > Zero)
 
-    allocate(Q1(N,NbActiveIndices), stat=StatLoc)
+    allocate(Q1(M,NbActiveIndices), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
-  
+    Q1 = Zero
+
+    allocate(R(NbActiveIndices,NbActiveIndices), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
+    R = Zero
+
     ii = 0
     i = 1
     do i = 1, N
-      if (.not. dabs(Coefficients(i) > Zero)) cycle
+      if (.not. dabs(Coefficients(i)) > Zero) cycle
       ii = ii + 1
       Q1(:,ii) = System(:,i) 
     end do
     if (NbActiveIndices /= ii) call Error%Raise('Something went wrong', ProcName=ProcName)
 
-    call ComputeQR(Q=Q1, R=R)
-
-    i = 1
-    do i = 1, NbActiveIndices-1
-      R(i+1:NbActiveIndices,i) = R(i,i+1:NbActiveIndices)
-    end do
+    call ComputeQR(Q=Q1, R=R, LowerR=.true.)
 
     ! get leverage from Q1
     h = sum(Q1**2,2)
@@ -930,17 +1001,17 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     Residual = Zero
     i = 1
     do i = 1, N
-      if (.not. dabs(Coefficients(i) > Zero)) cycle
+      if (.not. dabs(Coefficients(i)) > Zero) cycle
       Residual = Residual + Coefficients(i)*System(:,i)
     end do
 
     CVLOOTempNonN = Zero
     CVLOOTemp = Zero
     i = 1
-    do i = 1, N
+    do i = 1, M
       CVLOOTempNonN = CVLOOTempNonN + (Residual(i)/(One-h(i)))**2
     end do
-    CVLOOTempNonN = CVLOOTempNonN / Nreal
+    CVLOOTempNonN = CVLOOTempNonN / Mreal
     
     if (GoalVariance > Zero) then
       CVLOOTemp = CVLOOTempNonN / GoalVariance
@@ -949,7 +1020,7 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
     end if
 
     if (ModifiedCVLOOLoc) then
-      if (N > NbActiveIndices) then
+      if (M > NbActiveIndices) then
         call DTRTRI('L', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
         if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
                                             ProcName=ProcName)
@@ -958,24 +1029,23 @@ subroutine BuildMetaModel_Gram(System, Goal, Coefficients, CVLOO, Hybrid, GetBes
         do i = 1, NbActiveIndices
           T = T + dot_product(R(i:NbActiveIndices,i),R(i:NbActiveIndices,i))
         end do
-        T = (Nreal/real(N-NbActiveIndices,rkp))*(One+T)
+        T = (Mreal/real(M-NbActiveIndices,rkp))*(One+T)
         CVLOOTemp = CVLOOTemp*T
       else
         CVLOOTemp = huge(One)
       end if
     end if
-  end if
+    CVLOO = CVLOOTemp
 
-  if (present(CVLOO)) CVLOO = CVLOOTemp
+    deallocate(Q1, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
+  
+    deallocate(R, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='R', ProcName=ProcName, stat=StatLoc)
+  end if
 
   deallocate(h, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='h', ProcName=ProcName, stat=StatLoc)
-
-  deallocate(Q1, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
-
-  deallocate(R, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='R', ProcName=ProcName, stat=StatLoc)
 
   deallocate(Residual, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='Residual', ProcName=ProcName, stat=StatLoc)
@@ -984,7 +1054,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest, MinAbsCorr, StopEarly, ModifiedCVLOO)
+subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest, MinAbsCorr, StopEarly, ModifiedCVLOO)
 
   real(rkp), dimension(:,:), target, intent(inout)                    ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
@@ -995,7 +1065,7 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   logical, optional, intent(in)                                       ::    ModifiedCVLOO
   logical, optional, intent(in)                                       ::    StopEarly
 
-  character(*), parameter                                             ::    ProcName='BuildMetaModel_QR'
+  character(*), parameter                                             ::    ProcName='BuildMetaModel_QR_LAR'
   integer                                                             ::    StatLoc=0
   logical                                                             ::    HybridLoc
   logical                                                             ::    GetBestLoc
@@ -1006,6 +1076,7 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   integer                                                             ::    M
   real(rkp)                                                           ::    Nreal
   real(rkp)                                                           ::    Mreal
+  integer                                                             ::    MaxNbRegressors
   real(rkp), allocatable, dimension(:)                                ::    Mean
   real(rkp), allocatable, dimension(:)                                ::    StD
   real(rkp)                                                           ::    GoalMean
@@ -1038,7 +1109,6 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   real(rkp), allocatable, dimension(:)                                ::    Residual
   real(rkp), allocatable, dimension(:)                                ::    InvRInvRtS
   real(rkp)                                                           ::    InvRtS
-  real(rkp)                                                           ::    VarR0D
   integer                                                             ::    MaxNbIterations
   integer                                                             ::    iIteration
   real(rkp), allocatable, dimension(:,:)                              ::    Q1
@@ -1062,30 +1132,31 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   ModifiedCVLOOLoc = .true.
   if (present(ModifiedCVLOO)) ModifiedCVLOOLoc=ModifiedCVLOO
 
-  MinAbsCorrLoc = 1.d-10
+  MinAbsCorrLoc = epsilon(MinAbsCorr)*100.0_rkp
   if(present(MinAbsCorr)) MinAbsCorrLoc = MinAbsCorr
 
-  N = size(System,1)
-  Nreal = real(N,rkp) 
-  M = size(System,2)
+  M = size(System,1)
   Mreal = real(M,rkp)
+  N = size(System,2)
+  Nreal = real(N,rkp) 
 
-  if (size(Coefficients,1) /= M) call Error%Raise('Incompatible coefficients array length', ProcName=ProcName)
+
+  if (size(Coefficients,1) /= N) call Error%Raise('Incompatible coefficients array length', ProcName=ProcName)
   Coefficients = Zero
 
   GoalMean = ComputeMean(Values=Goal)
   GoalVariance = ComputeSampleVar(Values=Goal, Mean=GoalMean)
 
-  if (M == 1) then
+  if (N == 1) then
     InvXtXScalar = One / dot_product(System(:,1),System(:,1))
     Coefficients(1) = dot_product(System(:,1),Goal)*InvXtXScalar
 
     CVLOOTempNonN = Zero
     i = 1
-    do i = 1, N 
+    do i = 1, M 
       CVLOOTempNonN = CVLOOTempNonN + ((Goal(i)-Coefficients(1)*System(i,1))/(One-System(i,1)**2*InvXtXScalar))**2
     end do
-    CVLOOTempNonN = CVLOOTempNonN / Nreal
+    CVLOOTempNonN = CVLOOTempNonN / Mreal
 
     if (GoalVariance > Zero) then
       CVLOOTemp = CVLOOTempNonN / GoalVariance
@@ -1094,8 +1165,8 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
     end if
 
     if(ModifiedCVLOOLoc) then
-      if (N > 1) then
-        T = (realN / real(N-1,rkp))*(One+InvXtXScalar)
+      if (M > 1) then
+        T = (realM / real(M-1,rkp))*(One+InvXtXScalar)
         CVLOOTemp = CVLOOTemp * T
       else
         CVLOOTemp = huge(One)
@@ -1106,23 +1177,24 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
     return
   end if
 
-  allocate(Skip(M), stat=StatLoc)
+  allocate(Skip(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Skip', ProcName=ProcName, stat=StatLoc)
   Skip = .false.
 
-  allocate(Mean(M), stat=StatLoc)
+  allocate(Mean(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Mean', ProcName=ProcName, stat=StatLoc)
   Mean = Zero
 
-  allocate(StD(M), stat=StatLoc)
+  allocate(StD(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='StD', ProcName=ProcName, stat=StatLoc)
   StD = Zero
 
   ConstantIndex = 0
 
   i = 1
-  do i = 1, M 
+  do i = 1, N
     Skip(i) = IsArrayConstant(Array=System(:,i))
+    if (Skip(i) .and. .not. dabs(System(1,i)) > Zero) call Error%Raise('System has a column of zeros', ProcName=ProcName)
     Mean(i) = ComputeMean(Values=System(:,i))
     if (.not. Skip(i)) then
       StD(i) = ComputeSampleVar(Values=System(:,i), Mean=Mean(i))
@@ -1136,17 +1208,14 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
 
   if (ConstantIndex /= 0) Goal = Goal - GoalMean
 
-  T = Zero
-  CVLOOCounter = 0
-
   VarR0D = Zero
 
   InterceptAdjustment = 0
   if (ConstantIndex /= 0) InterceptAdjustment = 1
 
-  MaxNbRegressors = min(N-InterceptAdjustment,M)
+  MaxNbRegressors = min(M-InterceptAdjustment,N)
 
-  allocate(Corr(M), stat=StatLoc)
+  allocate(Corr(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Corr', ProcName=ProcName, stat=StatLoc)
   Corr = Zero
 
@@ -1155,7 +1224,7 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   ActiveIndices = 0
   NbActiveIndices = 0
 
-  allocate(Active(M), stat=StatLoc)
+  allocate(Active(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Inactive', ProcName=ProcName, stat=StatLoc)
   Active = .false.
 
@@ -1171,11 +1240,11 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   if (StatLoc /= 0) call Error%Allocate(Name='u', ProcName=ProcName, stat=StatLoc)
   u = Zero
 
-  allocate(h(N), stat=StatLoc)
+  allocate(h(M), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='h', ProcName=ProcName, stat=StatLoc)
   h = Zero
   hAdjustment = Zero
-  if (ConstantIndex /= 0) hAdjustment = One/Nreal
+  if (ConstantIndex /= 0) hAdjustment = One/Mreal
 
   allocate(CoefficientsLoc(MaxNbRegressors), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Coefficients'M ProcName=ProcName, stat=StatLoc)
@@ -1196,7 +1265,7 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   if (StatLoc /= 0) call Error%Allocate(Name='InvRInvRtS', ProcName=ProcName, stat=StatLoc)
   InvRInvRtS = Zero
 
-  allocate(Q1(N,MaxNbRegressors), stat=StatLoc)
+  allocate(Q1(M,MaxNbRegressors), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
   Q1 = Zero
 
@@ -1208,6 +1277,10 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   if (StatLoc /= 0) call Error%Allocate(Name='InvR', ProcName=ProcName, stat=StatLoc)
   InvR = Zero
 
+  allocate(VarR1D(M), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+  VarR1D = Zero
+
   BestCVLOO = huge(One)
   BestCVLOONonN = huge(One)
   BestNbIndices = 0
@@ -1217,26 +1290,22 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   iIteration = 0
   CVLOOTemp = huge(One)
   CVLOOTempNonN = huge(One)
+  T = Zero
+  CVLOOCounter = 0
   TSum = Zero
   c = Zero
-
-  allocate(VarR1D(N), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
-  VarR1D = Zero
-
   CVLOOTrip = max(nint(real(MaxNbIterations,rkp)*0.1),100)
-  CVLOOCounter = 1
 
   ! do ols for constant regressor solution if there is a constant regressor
   if (ConstantIndex /= 0) then
-    InvXtXScalar = One / (Nreal*Mean(ConstantIndex)**2)
+    InvXtXScalar = One / (Mreal*Mean(ConstantIndex)**2)
 
     CVLOOTempNonN = Zero
     i = 1
-    do i = 1, N 
-      CVLOOTempNonN = CVLOOTempNonN + (Goal(i)/(One-One/Nreal))**2
+    do i = 1, M
+      CVLOOTempNonN = CVLOOTempNonN + (Goal(i)/(One-One/Mreal))**2
     end do
-    CVLOOTempNonN = CVLOOTempNonN / Nreal
+    CVLOOTempNonN = CVLOOTempNonN / Mreal
 
     if (GoalVariance > Zero) then
       CVLOOTemp = CVLOOTempNonN / GoalVariance
@@ -1245,8 +1314,8 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
     end if
 
     if(ModifiedCVLOOLoc) then
-      if (N > 1) then
-        T = (realN / real(N-1,rkp))*(One+InvXtXScalar)
+      if (M > 1) then
+        T = (realM / real(M-1,rkp))*(One+InvXtXScalar)
         CVLOOTemp = CVLOOTemp * T
       else
         CVLOOTemp = huge(One)
@@ -1265,7 +1334,7 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
     MaxAbsCorr = Zero
     MaxAbsCorrIndex = 0
     i = 1
-    do i = 1, M
+    do i = 1, N
       if (Active(i)) cycle
       if (Skip(i)) cycle
       Corr(i) = dot_product(System(:,i), Residual)
@@ -1274,7 +1343,7 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
       MaxAbsCorrIndex = i
     end do
 
-    if (.not. MaxCorr > MinAbsCorrLoc) exit
+    if (.not. MaxAbsCorr > MinAbsCorrLoc) exit
 
     ! updating Q, R, and R inverse with the most correlated regressor
     ! taking advantage of inv(R') and Q' only changing last row with each iteration
@@ -1287,7 +1356,7 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
 
       ip1 = NbActiveIndices + 1
       i = 1
-      do i = 1, N
+      do i = 1, M
         Q1(i,ip1) = (System(i,MaxAbsCorrIndex) - sum(Q1(i,1:NbActiveIndices)*VarR1D(1:NbActiveIndices))) / VarR0D
       end do
 
@@ -1308,16 +1377,12 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
     end if
 
     if (.not. IsFinite(Q1(:,ip1))) call Error%Raise('Q1 is Nan or Inf', ProcName=ProcName)
-    if (.not. IsFinite(R(1:ip1,ip1))) call Error%Raise('R is Nan or Inf', ProcName=ProcName)
     if (.not. IsFinite(InvR(1:ip1,ip1))) call Error%Raise('Inverse of R is NaN or Inf', ProcName=ProcName)
     
     ! adding the most correlated regressor to the active set
     NbActiveIndices = NbActiveIndices + 1
     ActiveIndices(NbActiveIndices) = MaxAbsCorrIndex
     Active(MaxAbsCorrIndex) = .true.
-
-    if (.not. IsFinite(Values=InvR(1:NbActiveIndices,NbActiveIndices))) call Error%Raise('R i singular', ProcName=ProcName)
-    if (.not. IsFinite(Values=Q1(:,NbActiveIndices))) call Error%Raise('Q has Nan or Inf', ProcName=ProcName)
 
     ! s of active set
     s(NbActiveIndices) = sign(Corr(MaxAbsCorrIndex))
@@ -1347,7 +1412,7 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
     gamma = huge(One)
     if (iIteration < NbMaxIterations) then
       i  = 1
-      do i = 1, M 
+      do i = 1, N
         if (Active(i)) cycle
         if (Skip(i)) cycle
         aj = dot_product(System(:,i),u)
@@ -1381,17 +1446,19 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
     CVLOOTempNonN = Zero
     CVLOOTemp = Zero
     if (HybridLoc) then
+      VarR1D(1:M) = Zero
       i = 1
-      do i = 1, N
-        VarR1D(1:NbActiveIndices) = System(ActiveIndices(1:NbActiveIndices))
-        VarR0D = Goal - dot_product(VarR1D(1:NbActiveIndices),CoefficientsLoc(1:NbActiveIndices))
-        CVLOOTempNonN = CVLOOTempNonN + (VarR0D/(One-(h(i)+hAdjustment)))**2
+      do i = 1, NbActiveIndices
+        VarR1D(1:M) = VarR1D(1:M) + CoefficientsLoc(i)*System(:,ActiveIndices(i))
       end do
-      CVLOOTempNonN = CVLOOTempNonN / Nreal
+      i = 1
+      do i = 1, M
+        CVLOOTempNonN = CVLOOTempNonN + ((Goal(i)-VarR1D(i))/(One-(h(i)+hAdjustment)))**2
+      end do
+      CVLOOTempNonN = CVLOOTempNonN / Mreal
     else
-      VarR1D(1:N) = Residual / (One-(h+hAdjustment))
-      VarR1D(1:N) = VarR1D(1:N)**2
-      CVLOOTempNonN = ComputeMean(Values=VarR1D(1:N))
+      VarR1D(1:M) = Residual / (One-(h+hAdjustment))
+      CVLOOTempNonN = dot_product(VarR1D(1:M), VarR1D(1:M)) / MReal
     end if
   
     if (GoalVariance > Zero) then
@@ -1401,36 +1468,32 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
     end if
 
     ! get correction factor if needed
-    if (ModifiedLOOLoc) then
-      if (N > NbActiveIndices + InterceptAdjustment) then
+    if (ModifiedCVLOOLoc) then
+      if (M > NbActiveIndices + InterceptAdjustment) then
         if (ConstantIndex /= 0) then
           ! when intercept term is present, cv loo can be adjusted to be reflective of non-standardized problem
           T = Zero 
           ! taking advantage of the fact that only last colum/row of inv(R)/inv(R') changes with each loop
           i = 1
           do i = 1, NbActiveIndices 
-            TSum = TSum + InvR(NbActiveIndices,i)**2 / StD(ActiveIndices(i))**2
+            TSum = TSum + InvR(i,NbActiveIndices)**2 / StD(ActiveIndices(i))**2
           end do
           i = 1
           do i = 1, NbActiveIndices
             ii = ActiveIndices(i)
-            VarR1D(i) = sum(System(:,ii)) + Nreal*Mean(ii)/StD(ii)
+            VarR1D(i) = sum(System(:,ii)) + Mreal*Mean(ii)/StD(ii)
           end do
           VarR0D = Zero
           i = 1
           do i = 1, NbActiveIndices
             VarR0D = VarR0D + dot_product(VarR1D(1:i),InvR(1:i,i))**2
           end do
-          T = TSum + One/(Mean(ConstantIndex)**2*Nreal)  + One/(Mean(ConstantIndex)*Nreal)**2*VarR0D
+          T = TSum + One/(Mean(ConstantIndex)**2*Mreal)  + One/(Mean(ConstantIndex)*Mreal)**2*VarR0D
         else
-          T = Zero
-          i = 1
-          do i = 1, NbActiveIndices 
-            TSum = TSum + InvR(NbActiveIndices,i)**2
-          end do
+          TSum = TSum + dot_product(InvR(1:NbActiveIndices,NbActiveIndices))
           T = TSum
         end if
-        T = (Nreal/real(N-NbActiveIndices-InterceptAdjustment,rkp))*(One+T)
+        T = (Mreal/real(M-NbActiveIndices-InterceptAdjustment,rkp))*(One+T)
         CVLOOTemp = CVLOOTemp*T
         ! test for NaN
         if (CVLOOTemp /= CVLOOTemp) CVLOOTemp = huge(One)
@@ -1439,7 +1502,7 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
       end if
     end if
 
-    if (CVLOOTempNonN < BestCVLOONonN) then
+    if (CVLOOTemp < BestCVLOO) then
       BestCVLOONonN = CVLOOTempNonN
       BestCVLOO = CVLOOTemp
       BestCoefficients(1:NbActiveIndices) = CoefficientsLoc(1:NbActiveIndices)
@@ -1454,14 +1517,14 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
 
   end do
 
-  if (ConstantIndex == 0 .and. BestNbIndices == 0) call Error%Raise('Something went wrong in LAR', ProcName=ProcName)
-
   if (GetBestLoc) then
+    if (present(CVLOO)) CVLOO = BestCVLOO
     i = 1
     do i = 1, BestNbIndices
       Coefficients(BestIndices(i)) = BestCoefficients(i) / StD(BestIndices(i))
     end do
   else
+    if (present(CVLOO)) CVLOO = CVLOOTemp
     i = 1
     do i = 1, NbActiveIndices
       Coefficients(ActiveIndices(i)) = CoefficientsLoc(i) / StD(ActiveIndices(i))
@@ -1474,10 +1537,16 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   end if
 
   i = 1
-  do i = 1, M 
+  do i = 1, N 
     System(:,i) = System(:,i)*StD(i)+Mean(i)
   end do
   Goal = Goal + GoalMean
+
+  deallocate(Q1, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(R, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='R', ProcName=ProcName, stat=StatLoc)
 
   deallocate(Mean, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='Mean', ProcName=ProcName, stat=StatLoc)
@@ -1519,24 +1588,24 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
   if (ConstantIndex == 0 .and. present(CVLOO)) then
     NbActiveIndices = count(dabs(Coefficients) > Zero)
 
-    allocate(Q1(N,NbActiveIndices), stat=StatLoc)
+    allocate(Q1(M,NbActiveIndices), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
-  
+    Q1 = Zero
+
+    allocate(R(NbActiveIndices,NbActiveIndices), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
+    R = Zero
+
     ii = 0
     i = 1
     do i = 1, N
-      if (.not. dabs(Coefficients(i) > Zero)) cycle
+      if (.not. dabs(Coefficients(i)) > Zero) cycle
       ii = ii + 1
       Q1(:,ii) = System(:,i) 
     end do
     if (NbActiveIndices /= ii) call Error%Raise('Something went wrong', ProcName=ProcName)
 
-    call ComputeQR(Q=Q1, R=R)
-
-    i = 1
-    do i = 1, NbActiveIndices-1
-      R(i+1:NbActiveIndices,i) = R(i,i+1:NbActiveIndices)
-    end do
+    call ComputeQR(Q=Q1, R=R, LowerR=.true.)
 
     ! get leverage from Q1
     h = sum(Q1**2,2)
@@ -1545,17 +1614,17 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
     Residual = Zero
     i = 1
     do i = 1, N
-      if (.not. dabs(Coefficients(i) > Zero)) cycle
+      if (.not. dabs(Coefficients(i)) > Zero) cycle
       Residual = Residual + Coefficients(i)*System(:,i)
     end do
 
     CVLOOTempNonN = Zero
     CVLOOTemp = Zero
     i = 1
-    do i = 1, N
+    do i = 1, M
       CVLOOTempNonN = CVLOOTempNonN + (Residual(i)/(One-h(i)))**2
     end do
-    CVLOOTempNonN = CVLOOTempNonN / Nreal
+    CVLOOTempNonN = CVLOOTempNonN / Mreal
     
     if (GoalVariance > Zero) then
       CVLOOTemp = CVLOOTempNonN / GoalVariance
@@ -1564,7 +1633,7 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
     end if
 
     if (ModifiedCVLOOLoc) then
-      if (N > NbActiveIndices) then
+      if (M > NbActiveIndices) then
         call DTRTRI('L', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
         if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
                                             ProcName=ProcName)
@@ -1573,25 +1642,83 @@ subroutine BuildMetaModel_QR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest,
         do i = 1, NbActiveIndices
           T = T + dot_product(R(i:NbActiveIndices,i),R(i:NbActiveIndices,i))
         end do
-        T = (Nreal/real(N-NbActiveIndices,rkp))*(One+T)
+        T = (Mreal/real(M-NbActiveIndices,rkp))*(One+T)
         CVLOOTemp = CVLOOTemp*T
       else
         CVLOOTemp = huge(One)
       end if
     end if
-  end if
+    
+    CVLOO = CVLOOTemp
 
-  if(present(CVLOO)) CVLOO = CVLOOTemp
+    deallocate(Q1, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
+  
+    deallocate(R, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='R', ProcName=ProcName, stat=StatLoc)
+
+  end if
 
   deallocate(h, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='h', ProcName=ProcName, stat=StatLoc)
 
-  deallocate(Q1, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='Q1', ProcName=ProcName, stat=StatLoc)
-
-  deallocate(R, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='R', ProcName=ProcName, stat=StatLoc)
+  deallocate(Residual, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Residual', ProcName=ProcName, stat=StatLoc)
 
 end subroutine
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+function ComputeCorrectionFactor(System, Coefficients)
+
+  real(rkp)                                                           ::    ComputeCorrectionFactor
+
+  character(*), parameter                                             ::    ProcName='BuildMetaModel_QR_LAR'
+  integer                                                             ::    StatLoc=0
+  real(rkp), allocatable, dimension(:,:)                              ::    Q
+  real(rkp), allocatable, dimension(:,:)                              ::    InvRt 
+  integer                                                             ::    i
+  integer                                                             ::    ii
+  integer                                                             ::    N
+  integer                                                             ::    M
+  integer                                                             ::    NbIndices
+
+  M = size(System,1)
+  N = size(System,2)
+  NbIndices = count(dabs(Coefficients) > Zero)
+
+  allocate(Q(M,NbIndices), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Q', ProcName=ProcName, stat=StatLoc)
+  Q = Zero
+
+  allocate(InvRt(NbIndices,NbIndices), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='InvRt', ProcName=ProcName, stat=StatLoc)
+  InvRt = Zero
+
+  ii = 0
+  i = 1
+  do i = 1, N
+    if (.not. dabs(Coefficients(i)) > Zero) cycle
+    ii = ii + 1
+    Q(:,ii) = System(:,i)
+  end do
+
+  call ComputeQInvR(Q=Q, InvR=InvRt, LowerInvR=.true.)
+
+  ComputeCorrectionFactor = Zero
+  i = 1
+  do i = 1, NbIndices
+    ComputeCorrectionFactor = ComputeCorrectionFactor + dot_product(InvRt(i:NbIndices,i),InvRt(i:NbIndices,i))
+  end do
+  ComputeCorrectionFactor = (Mreal/real(M-NbIndices,rkp))*(One+T)
+
+  deallocate(Q, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Q', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(InvRt, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='R', ProcName=ProcName, stat=StatLoc)
+
+end function
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

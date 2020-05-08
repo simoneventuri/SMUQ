@@ -541,11 +541,8 @@ contains
     logical                                                           ::    StepExceededFlag=.false.
     logical                                                           ::    SilentLoc
     character(:), allocatable                                         ::    Line
-    real(rkp), allocatable, dimension(:,:)                            ::    QR
-    real(rkp), allocatable, dimension(:)                              ::    TAU
-    real(rkp), allocatable, dimension(:)                              ::    WORK
-    real(rkp), dimension(1)                                           ::    WORKSIZE=0
-    integer                                                           ::    LWORK
+    real(rkp), allocatable, dimension(:,:)                            ::    Q
+    real(rkp), allocatable, dimension(:,:)                            ::    InvR
     integer                                                           ::    NbSamples
     integer, allocatable, dimension(:)                                ::    NbCellsOutput
     integer                                                           ::    NbOutputs
@@ -787,9 +784,8 @@ contains
               iii = im1 + 1
               do iii = im1+1, im1+size(VarR2DPointer,1)
                 iv = iv + 1
-                call This%Cells(iii)%AppendRecord(Entry=VarR2DPointer(iv,1))
-              end do
-              im1 = im1 + size(VarR2DPointer,1)
+                call This%Cells(iii)%AppendRecord(Entry=VarR2DPointer(iv,1))        deallocate(TAU, stat=StatLoc)
+                if (StatLoc /= 0) call Error%Deallocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
               nullify(VarR2DPointer)
               call Outputs(ii,iRun)%Reset()
             end do
@@ -863,26 +859,15 @@ contains
         end do
 
         ! Computing qr decomposition of the design space seperately since itll be the same for each cell
+        allocate(Q(M,N), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='Q', ProcName=ProcName, stat=StatLoc)
+        Q = Zero
 
-        allocate(QR, source=DesignSpace, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='QR', ProcName=ProcName, stat=StatLoc)
-    
-        allocate(TAU(min(M,N)), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
+        allocate(InvR(M,N), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='InvR', ProcName=ProcName, stat=StatLoc)
+        InvR = Zero
 
-        call DGEQRF(M, N, QR, M, TAU, WORKSIZE, -1, StatLoc)
-        if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
-
-        LWORK = nint(WORKSIZE(1))
-
-        allocate(WORK(LWORK), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
-
-        call DGEQRF(M, N, QR, M, TAU, WORK, LWORK, StatLoc)
-        if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
-
-        deallocate(WORK, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
+        call ComputeQInvR(Matrix=DesignSpace, Q=Q, InvR=InvR)
 
         NbCells = 0
 
@@ -896,10 +881,12 @@ contains
 
           VarR1D = This%Cells(ii)%GetRecord()
 
-          call This%Solver%SolveSystemQR(System=DesignSpace, Goal=VarR1D, Coefficients=CoefficientsLoc, QR=QR, TAU=TAU,          &
-                                                                                                                 CVError=CVError)
+          call This%Solver
 
-          if (This%Cells(ii)%GetCVError() > CVError) call This%Cells(ii)%SetModel(Coefficients=CoefficientsLoc,                &
+          call This%Solver%SolveQInvR(System=DesignSpace, Goal=VarR1D, Coefficients=CoefficientsLoc, Q=Q, InvR=InvR, &
+                                                                                                                   CVError=CVError)
+
+          if (This%Cells(ii)%GetCVError() > CVError) call This%Cells(ii)%SetModel(Coefficients=CoefficientsLoc, &
                                                                  Indices=IndicesLoc, CVError=CVError, IndexOrder=This%IndexOrder)
 
           if (.not. SilentLoc) then
@@ -915,14 +902,14 @@ contains
         deallocate(CoefficientsLoc, stat=StatLoc)
         if (StatLoc /= 0) call Error%Deallocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
 
-        deallocate(TAU, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
-
         deallocate(VarR1D, stat=StatLoc)
         if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
-        deallocate(QR, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='QR', ProcName=ProcName, stat=StatLoc)
+        deallocate(Q, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(Name='Q', ProcName=ProcName, stat=StatLoc)
+
+        deallocate(InvR, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(Name='InvR', ProcName=ProcName, stat=StatLoc)
 
         deallocate(DesignSpace, stat=StatLoc)
         if (StatLoc /= 0) call Error%Deallocate(Name='DesignSpace', ProcName=ProcName, stat=StatLoc)

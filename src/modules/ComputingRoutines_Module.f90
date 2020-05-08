@@ -41,6 +41,7 @@ public                                                                ::    SQRT
 public                                                                ::    BinomialCoeff
 public                                                                ::    ComputeEigenvalues
 public                                                                ::    ComputeQR
+public                                                                ::    ComputeQInvR
 public                                                                ::    ComputeNorm
 public                                                                ::    ScrambleArray
 public                                                                ::    Transform
@@ -94,8 +95,13 @@ interface ComputeEigenvalues ! square matrices
 end interface
 
 interface ComputeQR
-  module procedure                                                    ::    ComputeQR_System
+  module procedure                                                    ::    ComputeQR_Matrix
   module procedure                                                    ::    ComputeQR_Q 
+end interface
+
+interface ComputeQInvR
+  module procedure                                                    ::    ComputeQInvR_Matrix
+  module procedure                                                    ::    ComputeQInvR_Q 
 end interface
 
 interface ComputeNorm
@@ -940,13 +946,46 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeQR_System(Matrix, Q, R)
+  subroutine ComputeQR_Matrix(Matrix, Q, R, LowerR)
 
     real(rkp), dimension(:,:), intent(in)                             ::    Matrix
-    real(rkp), allocatable, dimension(:,:), intent(out)               ::    Q
-    real(rkp), allocatable, dimension(:,:), intent(out)               ::    R
+    real(rkp), dimension(:,:), intent(inout)                          ::    Q
+    real(rkp), dimension(:,:), intent(inout)                          ::    R
+    logical, optional, intent(in)                                     ::    LowerR
 
-    character(*), parameter                                           ::    ProcName='ComputeQR_System'
+    character(*), parameter                                           ::    ProcName='ComputeQR_Matrix'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    M
+    integer                                                           ::    N
+    integer                                                           ::    i
+    logical                                                           ::    LowerRLoc
+
+    M = size(Matrix,1)
+    N = size(Matrix,2)
+
+    if (M < N) call Error%Raise(Line='This routine works only with tall matrices', ProcName=ProcName)
+
+    LowerRLoc = .false.
+    if (present(LowerR)) LowerRLoc = LowerR
+
+    if (size(Q,1) /= M .or. size(Q,2) /= N) call Error%Raise('Incompatible Q', ProcName=ProcName)
+    if (size(R,1) /= N .or. size(R,2) /= N) call Error%Raise('Incompatible R', ProcName=ProcName)
+
+    Q = Matrix
+
+    call ComputeQR(Q=Q, R=R, LowerR=LowerRLoc)
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ComputeQR_Q(Q, R, LowerR)
+
+    real(rkp), dimension(:,:), intent(inout)                          ::    Q
+    real(rkp), dimension(:,:), intent(inout)                          ::    R
+    logical, optional, intent(in)                                     ::    LowerR
+
+    character(*), parameter                                           ::    ProcName='ComputeQR_Q'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    M
     integer                                                           ::    N
@@ -955,18 +994,19 @@ contains
     real(rkp), dimension(1)                                           ::    WORKSIZE=0
     integer                                                           ::    LWORK
     integer                                                           ::    i
+    logical                                                           ::    LowerRLoc
 
-    M = size(Matrix,1)
-    N = size(Matrix,2)
+    M = size(Q,1)
+    N = size(Q,2)
 
     if (M < N) call Error%Raise(Line='This routine works only with tall matrices', ProcName=ProcName)
 
-    allocate(Q(M,N), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Q', ProcName=ProcName, stat=StatLoc)
-    Q = Matrix
+    LowerRLoc = .false.
+    if (present(LowerR)) LowerRLoc = LowerR
 
-    allocate(R(N,N), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
+    if (size(Q,1) /= M .or. size(Q,2) /= N) call Error%Raise('Incompatible Q', ProcName=ProcName)
+    if (size(R,1) /= N .or. size(R,2) /= N) call Error%Raise('Incompatible R', ProcName=ProcName)
+
     R = Zero
 
     allocate(TAU(min(M,N)), stat=StatLoc)
@@ -986,10 +1026,17 @@ contains
     deallocate(WORK, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
 
-    i = 1
-    do i = 1, N
-      R(1:i,i) = Q(1:i,i)
-    end do
+    if (LowerRLoc) then
+      i = 1
+      do i = 1, N 
+        R(N-i+1:N,N-i+1) = Q(1:i,i)
+      end do
+    else
+      i = 1
+      do i = 1, N
+        R(1:i,i) = Q(1:i,i)
+      end do
+    end if
 
     call DORGQR(M, N, N, Q, M, TAU, WORKSIZE, -1, StatLoc) 
     if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORMQR", ProcName=ProcName)
@@ -1008,66 +1055,64 @@ contains
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
+!!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ComputeQInvR_Matrix(Matrix, Q, InvR, LowerInvR)
+
+    real(rkp), dimension(:,:), intent(in)                             ::    Matrix
+    real(rkp), dimension(:,:), intent(inout)                          ::    Q
+    real(rkp), dimension(:,:), intent(inout)                          ::    InvR
+    logical, optional, intent(in)                                     ::    LowerInvR
+
+    character(*), parameter                                           ::    ProcName='ComputeQInvR_Matrix'
+    integer                                                           ::    StatLoc=0
+    integer                                                           ::    i
+    logical                                                           ::    LowerInvRLoc
+
+    LowerInvRLoc = .false.
+    if (present(LowerInvR)) LowerInvRLoc = LowerInvR
+
+    call ComputeQR(Matrix=Matrix, Q=Q, R=R, LowerR=LowerInvRLoc)
+
+    if (LowerInvRLoc) then
+      call DTRTRI('L', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
+      if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
+                                          ProcName=ProcName)
+    else
+      call DTRTRI('U', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
+      if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
+                                          ProcName=ProcName)
+    end if
+
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeQR_Q(Q, R)
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine ComputeQInvR_Q(Q, InvR, LowerInvR)
 
     real(rkp), dimension(:,:), intent(inout)                          ::    Q
-    real(rkp), allocatable, dimension(:,:), intent(out)               ::    R
+    real(rkp), dimension(:,:), intent(out)                            ::    InvR
+    logical, optional, intent(in)                                     ::    LowerInvR
 
-    character(*), parameter                                           ::    ProcName='ComputeQR_Q'
+    character(*), parameter                                           ::    ProcName='ComputeQInvR_Q'
     integer                                                           ::    StatLoc=0
-    integer                                                           ::    M
-    integer                                                           ::    N
-    real(rkp), allocatable, dimension(:)                              ::    TAU
-    real(rkp), allocatable, dimension(:)                              ::    WORK
-    real(rkp), dimension(1)                                           ::    WORKSIZE=0
-    integer                                                           ::    LWORK
+
     integer                                                           ::    i
+    logical                                                           ::    LowerInvRLoc
 
-    M = size(Matrix,1)
-    N = size(Matrix,2)
+    LowerInvRLoc = .false.
+    if (present(LowerInvR)) LowerInvRLoc = LowerInvR
 
-    if (M < N) call Error%Raise(Line='This routine works only with tall matrices', ProcName=ProcName)
+    call ComputeQR(Q=Q, R=R, LowerR=LowerInvRLoc)
 
-    allocate(R(N,N), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
-    R = Zero
-
-    allocate(TAU(min(M,N)), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
-
-    call DGEQRF(M, N, Q, M, TAU, WORKSIZE, -1, StatLoc)
-    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
-
-    LWORK = nint(WORKSIZE(1))
-
-    allocate(WORK(LWORK), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
-
-    call DGEQRF(M, N, Q, M, TAU, WORK, LWORK, StatLoc)
-    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DGEQRF", ProcName=ProcName)
-
-    deallocate(WORK, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
-
-    i = 1
-    do i = 1, N
-      R(1:i,i) = Q(1:i,i)
-    end do
-
-    call DORGQR(M, N, N, Q, M, TAU, WORKSIZE, -1, StatLoc) 
-    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORMQR", ProcName=ProcName)
-
-    LWORK = nint(WORKSIZE(1))
-
-    allocate(WORK(LWORK), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
-
-    call DORGQR(M, N, N, Q, M, TAU, WORK, LWORK, StatLoc) 
-    if (StatLoc /= 0) call Error%Raise(Line="Something went wrong in DORMQR", ProcName=ProcName)
-
-    deallocate(WORK, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc) 
+    if (LowerInvRLoc) then
+      call DTRTRI('L', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
+      if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
+                                          ProcName=ProcName)
+    else
+      call DTRTRI('U', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
+      if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
+                                          ProcName=ProcName)
+    end if
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
