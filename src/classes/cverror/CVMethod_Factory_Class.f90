@@ -16,23 +16,23 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module CVErrorMethod_Factory_class
+module CVMethod_Factory_class
 
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use CVErrorMethod_Class                                           ,only:    CVErrorMethod_Type
-use CVErrorLOO_Class                                              ,only:    CVErrorLOO_Type
-use CVErrorKFold_Class                                            ,only:    CVErrorKFold_Type
+use CVMethod_Class                                                ,only:    CVMethod_Type
+use CVLOO_Class                                                   ,only:    CVLOO_Type
+use CVKFold_Class                                                 ,only:    CVKFold_Type
 
 implicit none
 
 private
 
-public                                                                ::    CVErrorMethod_Factory
+public                                                                ::    CVMethod_Factory
 
-type                                                                  ::    CVErrorMethod_Factory_Type
+type                                                                  ::    CVMethod_Factory_Type
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D,          &
                                                                                                           Construct_Input
@@ -42,7 +42,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 end type
 
-type(CVErrorMethod_Factory_Type)                                      ::    CVErrorMethod_Factory
+type(CVMethod_Factory_Type)                                           ::    CVMethod_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -50,7 +50,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_C0D(Object, DesiredType)
 
-    class(CVErrorMethod_Type), allocatable, intent(inout)             ::    Object
+    class(CVMethod_Type), allocatable, intent(inout)                  ::    Object
     character(*), intent(in)                                          ::    DesiredType
 
     character(*), parameter                                           ::    ProcName='Construct_C0D'                                   
@@ -60,10 +60,10 @@ contains
     select case (LowerCase(DesiredType))
 
       case('loo')
-        allocate(CVErrorLOO_Type :: Object)
+        allocate(CVLOO_Type :: Object)
 
       case('kfold')
-        allocate(CVErrorKFold_Type :: Object)
+        allocate(CVKFold_Type :: Object)
 
       case default
         call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
@@ -80,8 +80,8 @@ contains
     
     use Input_Library
 
-    class(CVErrorMethod_Factory_Type), intent(in)                     ::    This
-    class(CVErrorMethod_Type), allocatable, intent(inout)             ::    Object
+    class(CVMethod_Factory_Type), intent(in)                          ::    This
+    class(CVMethod_Type), allocatable, intent(inout)                  ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -113,16 +113,16 @@ contains
 
     character(:), allocatable                                         ::    GetOption
 
-    class(CVErrorMethod_Type), intent(in)                             ::    Object                                             
+    class(CVMethod_Type), intent(in)                                  ::    Object                                             
 
     character(*), parameter                                           ::    ProcName='GetOption'
 
     select type (Object)
 
-      type is (CVErrorLOO_Type)
+      type is (CVLOO_Type)
         GetOption = 'loo'
 
-      type is (CVErrorKFold_Type)
+      type is (CVKFold_Type)
         GetOption = 'kfold'
 
       class default
@@ -140,8 +140,8 @@ contains
 
     type(InputSection_Type)                                           ::    GetObjectInput
 
-    class(CVErrorMethod_Factory_Type), intent(in)                     ::    This
-    class(CVErrorMethod_Type), intent(in)                             ::    Object
+    class(CVMethod_Factory_Type), intent(in)                          ::    This
+    class(CVMethod_Type), intent(in)                                  ::    Object
     character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory

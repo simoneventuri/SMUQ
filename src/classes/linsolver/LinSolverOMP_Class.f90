@@ -292,51 +292,62 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
 
   contains
 
-    !!----------------------------------------------------------------------------------------------------------------------------
-    subroutine CVFitOMP(Data, Prediction, DataIndices)
+  !!----------------------------------------------------------------------------------------------------------------------------
+  subroutine CVFitOMP(TrainingSet, TrainingSetIndices, ValidationSet, ValidationSetIndices, Residual)
 
-      real(rkp), dimension(:), intent(inout)                          ::    Data
-      real(rkp), dimension(:), intent(inout)                          ::    Prediction
-      integer, dimension(:), intent(in)                               ::    DataIndices
+    real(rkp), dimension(:), intent(inout)                          ::    TrainingSet
+    integer, dimension(:), intent(in)                               ::    TrainingSetIndices
+    real(rkp), dimension(:), intent(inout)                          ::    ValidationSet
+    integer, dimension(:), intent(in)                               ::    ValidationSetIndices
+    real(rkp), dimension(:), intent(inout)                          ::    Residual
 
-      character(*), parameter                                         ::    ProcName='SolveSparse'
-      integer                                                         ::    StatLoc=0
-      real(rkp), allocatable, dimension(:,:)                          ::    SystemLoc
-      real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
-      integer                                                         ::    NbDataLoc
-      integer                                                         ::    iLoc
+    character(*), parameter                                         ::    ProcName='CVFitOMP'
+    integer                                                         ::    StatLoc=0
+    real(rkp), allocatable, dimension(:,:)                          ::    SystemLoc
+    real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
+    integer                                                         ::    NbTraining
+    integer                                                         ::    NbValidation
+    integer                                                         ::    iLoc
+    integer                                                         ::    iiLoc
 
-      NbDataLoc = size(Data,1)
+    NbTraining = size(TrainingSet,1)
+    NbValidation = size(ValidationSet,1)
 
-      allocate(CoefficientsLoc(N), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
-      CoefficientsLoc = Zero
+    if (size(Residual,1) /= NbValidation) call Error%Raise('Incompatible residual and validation arrays', ProcName=ProcName)
 
-      allocate(SystemLoc(NbDataLoc,N), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
-      SystemLoc = Zero
+    allocate(CoefficientsLoc(N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
+    CoefficientsLoc = Zero
 
-      iLoc = 1
-      do iLoc = 1, N
-        SystemLoc(:,iLoc) = System(DataIndices,iLoc)
+    allocate(SystemLoc(NbTraining,N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
+    SystemLoc = Zero
+
+    iLoc = 1
+    do iLoc = 1, N
+      SystemLoc(:,iLoc) = System(TrainingSetIndices,iLoc)
+    end do
+
+    call This%Solve(System=SystemLoc, Goal=TrainingSet, Coefficients=CoefficientsLoc)
+
+    Residual = ValidationSet
+
+    iLoc = 1
+    do iLoc = 1, N
+      if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
+      iiLoc = 1
+      do iiLoc = 1, NbValidation
+        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(i)*System(ValidationIndices(iiLoc,iLoc))
       end do
+    end do
+    
+    deallocate(SystemLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
-      call This%Solve(System=SystemLoc, Goal=Data, Coefficients=CoefficientsLoc)
+    deallocate(CoefficientsLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
 
-      Prediction = Zero
-      iLoc = 1
-      do iLoc = 1, N
-        if (.not. dabs(Coefficients(i)) > Zero) cycle
-        Prediction = Prediction + CoefficientsLoc(iLoc)*SystemLoc(:,iLoc)
-      end do
-      
-      deallocate(SystemLoc, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
-
-      deallocate(CoefficientsLoc, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
-
-    end subroutine
+  end subroutine
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------

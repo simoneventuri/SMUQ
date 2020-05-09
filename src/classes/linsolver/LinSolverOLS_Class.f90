@@ -52,6 +52,7 @@ contains
   procedure, private                                                  ::    SolveUD
   procedure, private                                                  ::    SolveOD
   procedure, public                                                   ::    SolveQR
+  procedure, public                                                   ::    SolveQInvR
   procedure, private                                                  ::    ComputeCVLOOError
   procedure, private                                                  ::    ComputeCVLOOErrorQ1R
   procedure, public                                                   ::    Copy
@@ -340,40 +341,52 @@ subroutine SolveUD(This, System, Goal, Coefficients, CVError)
   contains
 
   !!----------------------------------------------------------------------------------------------------------------------------
-  subroutine CVFitOLS_UD(Data, Prediction, DataIndices)
+  subroutine CVFitOLS_UD(TrainingSet, TrainingSetIndices, ValidationSet, ValidationSetIndices, Residual)
 
-    real(rkp), dimension(:), intent(inout)                          ::    Data
-    real(rkp), dimension(:), intent(inout)                          ::    Prediction
-    integer, dimension(:), intent(in)                               ::    DataIndices
+    real(rkp), dimension(:), intent(inout)                          ::    TrainingSet
+    integer, dimension(:), intent(in)                               ::    TrainingSetIndices
+    real(rkp), dimension(:), intent(inout)                          ::    ValidationSet
+    integer, dimension(:), intent(in)                               ::    ValidationSetIndices
+    real(rkp), dimension(:), intent(inout)                          ::    Residual
 
     character(*), parameter                                         ::    ProcName='CVFitOLS_UD'
     integer                                                         ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                          ::    SystemLoc
     real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
-    integer                                                         ::    NbDataLoc
+    integer                                                         ::    NbTraining
+    integer                                                         ::    NbValidation
     integer                                                         ::    iLoc
+    integer                                                         ::    iiLoc
 
-    NbDataLoc = size(Data,1)
+    NbTraining = size(TrainingSet,1)
+    NbValidation = size(ValidationSet,1)
 
-    allocate(CoefficientsLoc(N)), stat=StatLoc)
+    if (size(Residual,1) /= NbValidation) call Error%Raise('Incompatible residual and validation arrays', ProcName=ProcName)
+
+    allocate(CoefficientsLoc(N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
     CoefficientsLoc = Zero
 
-    allocate(SystemLoc(NbDataLoc,N), stat=StatLoc)
+    allocate(SystemLoc(NbTraining,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
     SystemLoc = Zero
 
     iLoc = 1
     do iLoc = 1, N
-      SystemLoc(:,iLoc) = System(DataIndices,iLoc)
+      SystemLoc(:,iLoc) = System(TrainingSetIndices,iLoc)
     end do
 
-    call This%Solve(System=SystemLoc, Goal=Data, Coefficients=CoefficientsLoc)
+    call This%Solve(System=SystemLoc, Goal=TrainingSet, Coefficients=CoefficientsLoc)
 
-    Prediction = Zero
+    Residual = ValidationSet
+
     iLoc = 1
     do iLoc = 1, N
-      Prediction = Prediction + CoefficientsLoc(iLoc)*SystemLoc(:,iLoc)
+      if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
+      iiLoc = 1
+      do iiLoc = 1, NbValidation
+        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(i)*System(ValidationIndices(iiLoc,iLoc))
+      end do
     end do
     
     deallocate(SystemLoc, stat=StatLoc)
@@ -530,6 +543,7 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
         CVError = This%CVError%Calculate(Fit=CVFit, Data=Goal)
         nullify(CVFit)
     end select
+
     if (This%ModifiedCV) then
       if (M > N) then
         allocate(InvR, source=R, stat=StatLoc)
@@ -553,46 +567,60 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
       else
         CVError = huge(One)
       end if
+
     end if
+    
   end if
 
   contains
 
   !!----------------------------------------------------------------------------------------------------------------------------
-  subroutine CVFitOLS_OD(Data, Prediction, DataIndices)
+  subroutine CVFitOLS_OD(TrainingSet, TrainingSetIndices, ValidationSet, ValidationSetIndices, Residual)
 
-    real(rkp), dimension(:), intent(inout)                          ::    Data
-    real(rkp), dimension(:), intent(inout)                          ::    Prediction
-    integer, dimension(:), intent(in)                               ::    DataIndices
+    real(rkp), dimension(:), intent(inout)                          ::    TrainingSet
+    integer, dimension(:), intent(in)                               ::    TrainingSetIndices
+    real(rkp), dimension(:), intent(inout)                          ::    ValidationSet
+    integer, dimension(:), intent(in)                               ::    ValidationSetIndices
+    real(rkp), dimension(:), intent(inout)                          ::    Residual
 
-    character(*), parameter                                         ::    ProcName='CVFitOLS_OD'
+    character(*), parameter                                         ::    ProcName='CVFitOLS_UD'
     integer                                                         ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                          ::    SystemLoc
     real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
-    integer                                                         ::    NbDataLoc
+    integer                                                         ::    NbTraining
+    integer                                                         ::    NbValidation
     integer                                                         ::    iLoc
+    integer                                                         ::    iiLoc
 
-    NbDataLoc = size(Data,1)
+    NbTraining = size(TrainingSet,1)
+    NbValidation = size(ValidationSet,1)
+
+    if (size(Residual,1) /= NbValidation) call Error%Raise('Incompatible residual and validation arrays', ProcName=ProcName)
 
     allocate(CoefficientsLoc(N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
     CoefficientsLoc = Zero
 
-    allocate(SystemLoc(NbDataLoc,N), stat=StatLoc)
+    allocate(SystemLoc(NbTraining,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
     SystemLoc = Zero
 
     iLoc = 1
     do iLoc = 1, N
-      SystemLoc(:,iLoc) = System(DataIndices,iLoc)
+      SystemLoc(:,iLoc) = System(TrainingSetIndices,iLoc)
     end do
 
-    call This%Solve(System=SystemLoc, Goal=Data, Coefficients=CoefficientsLoc)
+    call This%Solve(System=SystemLoc, Goal=TrainingSet, Coefficients=CoefficientsLoc)
 
-    Prediction = Zero
+    Residual = ValidationSet
+
     iLoc = 1
     do iLoc = 1, N
-      Prediction = Prediction + CoefficientsLoc(iLoc)*SystemLoc(:,iLoc)
+      if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
+      iiLoc = 1
+      do iiLoc = 1, NbValidation
+        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(i)*System(ValidationIndices(iiLoc,iLoc))
+      end do
     end do
     
     deallocate(SystemLoc, stat=StatLoc)
@@ -708,6 +736,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
         CVError = This%CVError%Calculate(Fit=CVFit, Data=Goal)
         nullify(CVFit)
     end select
+
     if (This%ModifiedCV) then
       if (M > N) then
         T = Zero
@@ -720,46 +749,60 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
       else
         CVError = huge(One)
       end if
+
     end if
+
   end if
 
   contains
 
   !!----------------------------------------------------------------------------------------------------------------------------
-  subroutine CVFitOLS_OD(Data, Prediction, DataIndices)
+  subroutine CVFitOLS_UD(TrainingSet, TrainingSetIndices, ValidationSet, ValidationSetIndices, Residual)
 
-    real(rkp), dimension(:), intent(inout)                          ::    Data
-    real(rkp), dimension(:), intent(inout)                          ::    Prediction
-    integer, dimension(:), intent(in)                               ::    DataIndices
+    real(rkp), dimension(:), intent(inout)                          ::    TrainingSet
+    integer, dimension(:), intent(in)                               ::    TrainingSetIndices
+    real(rkp), dimension(:), intent(inout)                          ::    ValidationSet
+    integer, dimension(:), intent(in)                               ::    ValidationSetIndices
+    real(rkp), dimension(:), intent(inout)                          ::    Residual
 
-    character(*), parameter                                         ::    ProcName='CVFitOLS_OD'
+    character(*), parameter                                         ::    ProcName='CVFitOLS_UD'
     integer                                                         ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                          ::    SystemLoc
     real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
-    integer                                                         ::    NbDataLoc
+    integer                                                         ::    NbTraining
+    integer                                                         ::    NbValidation
     integer                                                         ::    iLoc
+    integer                                                         ::    iiLoc
 
-    NbDataLoc = size(Data,1)
+    NbTraining = size(TrainingSet,1)
+    NbValidation = size(ValidationSet,1)
+
+    if (size(Residual,1) /= NbValidation) call Error%Raise('Incompatible residual and validation arrays', ProcName=ProcName)
 
     allocate(CoefficientsLoc(N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
     CoefficientsLoc = Zero
 
-    allocate(SystemLoc(NbDataLoc,N), stat=StatLoc)
+    allocate(SystemLoc(NbTraining,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
     SystemLoc = Zero
 
     iLoc = 1
     do iLoc = 1, N
-      SystemLoc(:,iLoc) = System(DataIndices,iLoc)
+      SystemLoc(:,iLoc) = System(TrainingSetIndices,iLoc)
     end do
 
-    call This%Solve(System=SystemLoc, Goal=Data, Coefficients=CoefficientsLoc)
+    call This%Solve(System=SystemLoc, Goal=TrainingSet, Coefficients=CoefficientsLoc)
 
-    Prediction = Zero
+    Residual = ValidationSet
+
     iLoc = 1
     do iLoc = 1, N
-      Prediction = Prediction + CoefficientsLoc(iLoc)*SystemLoc(:,iLoc)
+      if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
+      iiLoc = 1
+      do iiLoc = 1, NbValidation
+        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(i)*System(ValidationIndices(iiLoc,iLoc))
+      end do
     end do
     
     deallocate(SystemLoc, stat=StatLoc)

@@ -867,6 +867,10 @@ contains
         if (StatLoc /= 0) call Error%Allocate(Name='InvR', ProcName=ProcName, stat=StatLoc)
         InvR = Zero
 
+        allocate(CoefficientsLoc(NbIndices), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
+        CoefficientsLoc = Zero
+
         call ComputeQInvR(Matrix=DesignSpace, Q=Q, InvR=InvR)
 
         NbCells = 0
@@ -884,7 +888,7 @@ contains
           call This%Solver
 
           call This%Solver%SolveQInvR(System=DesignSpace, Goal=VarR1D, Coefficients=CoefficientsLoc, Q=Q, InvR=InvR, &
-                                                                                                                   CVError=CVError)
+                                      CVError=CVError)
 
           if (This%Cells(ii)%GetCVError() > CVError) call This%Cells(ii)%SetModel(Coefficients=CoefficientsLoc, &
                                                                  Indices=IndicesLoc, CVError=CVError, IndexOrder=This%IndexOrder)
