@@ -21,9 +21,10 @@ module CVLOO_Class
 use Input_Library
 use Parameters_Library
 use StringRoutines_Module
+use StatisticsRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use CVMethod_Class                                                ,only:    CVMethod_Type
+use CVMethod_Class                                                ,only:    CVMethod_Type, FitTarget
 
 implicit none
 
@@ -86,7 +87,6 @@ subroutine SetDefaults(This)
 
   character(*), parameter                                             ::    ProcName='SetDefaults'
 
-  This%Corrected=.true.
   This%Normalized=.true.
 
 end subroutine
@@ -178,29 +178,73 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function Calculate(This, Data)
+function Calculate(This, Fit, FitData)
 
   real(rkp)                                                           ::    Calculate
 
   class(CVLOO_Type), intent(in)                                       ::    This
-  real(rkp), dimension(:), intent(in)                                 ::    Data
+  procedure(FitTarget), pointer                                       ::    Fit 
+  real(rkp), dimension(:), intent(in)                                 ::    FitData
 
   character(*), parameter                                             ::    ProcName='Calculate'
   integer                                                             ::    StatLoc=0
-  integer                                                             ::    
+  real(rkp)                                                           ::    MSESum
+  real(rkp), allocatable, dimension(:)                                ::    TrainingSet
+  integer, allocatable, dimension(:)                                  ::    TrainingSetIndices
+  real(rkp), dimension(1)                                             ::    ValidationSet
+  integer, dimension(1)                                               ::    ValidationSetIndices
+  real(rkp), dimension(1)                                             ::    Residual
+  integer                                                             ::    NbData
+  integer                                                             ::    i
+  real(rkp)                                                           ::    FitDataVariance
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  
+  NbData = size(FitData,1)
+
+  allocate(TrainingSet(NbData-1), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='TrainingSet', ProcName=ProcName, stat=StatLoc)
+
+  allocate(TrainingSetIndices(NbData-1), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='TrainingSetIndices', ProcName=ProcName, stat=StatLoc)
+
+  ValidationSet(1) = FitData(1)
+  ValidationSetIndices(1) = 1
+  TrainingSet = FitData(2:)
+
+  MSESum = Zero
+
+  i = 1
+  do i = 1, NbData
+    call Fit(TrainingSet=TrainingSet, TrainingSetIndices=TrainingSetIndices, ValidationSet=ValidationSet, &
+             ValidationSetIndices=ValidationSetIndices, Residual=Residual)
+    MSESum = MSESum + Residual(1)**2
+    if (i == NbData) exit
+    ValidationSet(1) = FitData(i+1)
+    ValidationSetIndices(1) = i+1
+    TrainingSetIndices(i) = i 
+    TrainingSet(i) = FitData(i)
+  end do
+
+  Calculate = MSESum / real(NbData,rkp)
+
+  if (This%Normalized) then
+    FitDataVariance = ComputeSampleVar(Values=FitData)
+    if (FitDataVariance > Zero) then
+      Calculate = Calculate / FitDataVariance
+    else
+      Calculate = Zero
+    end if
+  end if
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-impure elemental subroutine Copy(LHS, RHS)
+impure elemental subroutine Copy(LHS, RHS)ComputeSampleVar(Values=FitData)
 
-  class(CVLOO_Type), intent(out)                                 ::    LHS
-  class(CVMethod_Type), intent(in)                               ::    RHS
+  class(CVLOO_Type), intent(out)                                      ::    LHS
+  class(CVMethod_Type), intent(in)                                    ::    RHS
 
   character(*), parameter                                             ::    ProcName='Copy'
   integer                                                             ::    StatLoc=0
@@ -211,7 +255,6 @@ impure elemental subroutine Copy(LHS, RHS)
       LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
-        LHS%Corrected = RHS%Corrected
         LHS%Normalized = RHS%Normalized
       end if
     class default

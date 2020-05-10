@@ -291,7 +291,7 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
         CVFit => CVFitLAR
         call BuildMetaModel_QR_LAR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid, GetBest=This%GetBest, &
                                    MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
-        CVError = CVMethod%Calculate(Fit=CVFit, Data=Goal)
+        CVError = CVMethod%Calculate(Fit=CVFit, FitData=Goal)
         if (This%ModifiedCV) CVError = CVError * ComputeCorrectionFactor(System=System, Coefficients=Coefficients)
         nullify(CVFit)
     end select
@@ -1152,7 +1152,6 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
   real(rkp), allocatable, dimension(:,:)                              ::    Q1
   real(rkp), allocatable, dimension(:,:)                              ::    R
   real(rkp), allocatable, dimension(:,:)                              ::    InvR
-  real(rkp)                                                           ::    WNorm
   integer                                                             ::    i
   integer                                                             ::    ip1
   integer                                                             ::    ii
@@ -1386,32 +1385,58 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
     ! updating Q, R, and R inverse with the most correlated regressor
     ! taking advantage of inv(R') and Q' only changing last row with each iteration
     if (NbActiveIndices > 0) then
+      ip1 = NbActiveIndices + 1
+
+      ! Gram Schmidt Update (susceptible to round-off errors)
+      ! call DGEMV('T', M, NbActiveIndices, 1.d0, Q1(:,1:NbActiveIndices), M, System(:,MaxAbsCorrIndex), 1, 0.d0, &
+      !             VarR1D(1:NbActiveIndices), 1)
+      ! WNorm = ComputeNorm(Vector=VarR1D(1:NbActiveIndices), Norm=2)
+      ! VarR0D = dsqrt(One - WNorm**2)
+
+      ! i = 1
+      ! do i = 1, M
+      !   Q1(i,ip1) = (System(i,MaxAbsCorrIndex) - sum(Q1(i,1:NbActiveIndices)*VarR1D(1:NbActiveIndices))) / VarR0D
+      ! end do
+
+      ! ! actually updating transpose of R
+      ! R(ip1,ip1) = VarR0D
+      ! R(ip1,1:NbActiveIndices) = VarR1D(1:NbActiveIndices)
+
+      ! InvR(ip1,ip1) = One / R(ip1,ip1)
+      ! i = 1
+      ! do i = NbActiveIndices, 1, -1
+      !   InvR(i,ip1) = -dot_product(R(i+1:ip1,i),InvR(i+1:ip1,ip1)) / R(i,i)
+      ! end do
+
+      Q1(:,ip1) = System(:,MaxAbsCorrIndex)
 
       call DGEMV('T', M, NbActiveIndices, 1.d0, Q1(:,1:NbActiveIndices), M, System(:,MaxAbsCorrIndex), 1, 0.d0, &
-                  VarR1D(1:NbActiveIndices), 1)
-      WNorm = ComputeNorm(Vector=VarR1D(1:NbActiveIndices), Norm=2)
-      VarR0D = dsqrt(One - WNorm**2)
+                  R(1:NbActiveIndices), 1)
 
-      ip1 = NbActiveIndices + 1
       i = 1
-      do i = 1, M
-        Q1(i,ip1) = (System(i,MaxAbsCorrIndex) - sum(Q1(i,1:NbActiveIndices)*VarR1D(1:NbActiveIndices))) / VarR0D
+      do i = 1, NbActiveIndices
+        Q1(:,ip1) =  Q1(:,ip1) - Q1(:,i)*R(i,ip1)
       end do
 
-      ! actually updating transpose of R
-      R(ip1,ip1) = VarR0D
-      R(ip1,1:NbActiveIndices) = VarR1D(1:NbActiveIndices)
+      R(ip1,ip1) = ComputeNorm(Values=Q1(:,ip1), 2)
+      if (.not. dabs(R(ip1,ip1)) > Zero) call Error%Raise('Zero on the diagonal of R', ProcName=ProcName)
+
+      Q1(:,ip1) = Q1(:,ip1) / R(ip1,ip1)
 
       InvR(ip1,ip1) = One / R(ip1,ip1)
       i = 1
       do i = NbActiveIndices, 1, -1
-        InvR(i,ip1) = -dot_product(R(i+1:ip1,i),InvR(i+1:ip1,ip1)) / R(i,i)
+        ii = i+1
+        do ii = i+1, ip1
+          invR(i,ip1) = invR(i,ip1) + R(ii,i)*InvR(ii,ip1)
+        end do
+        InvR(i,ip1) = -InvR(i,ip1) / R(i,i)
       end do
-
     else
-      Q1(:,1) = System(:,MaxAbsCorrIndex)
-      R(1,1) = One
-      InvR(1,1) = One
+      R(1,1) = ComputeNorm(Values=System(:,MaxAbsCorrIndex),2)
+      if (.not. dabs(R(1,1)) > Zero) call Error%Raise('Zero on the diagonal of R', ProcName=ProcName)
+      Q1(:,1) = System(:,MaxAbsCorrIndex) / R(1,1)
+      InvR(1,1) = One / R(1,1)
     end if
 
     if (.not. IsFinite(Q1(:,ip1))) call Error%Raise('Q1 is Nan or Inf', ProcName=ProcName)

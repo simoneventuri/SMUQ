@@ -43,7 +43,6 @@ use SampleEnrichScheme_Class                                      ,only:    Samp
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
-use LinSolverSparse_Class                                         ,only:    LinSolverSparse_Type
 use LinSolverSparse_Factory_Class                                 ,only:    LinSolverSparse_Factory
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
@@ -110,7 +109,7 @@ type, extends(PolyChaosMethod_Type)                                   ::    Poly
   integer                                                             ::    CheckpointFreq
   type(Cell_Type), allocatable, dimension(:)                          ::    Cells  
   integer                                                             ::    NbCells
-  class(LinSolverSparse_Type), allocatable                            ::    Solver
+  class(LinSolver_Type), allocatable                                  ::    Solver
   real(rkp), allocatable, dimension(:,:)                              ::    ParamRecord
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
   class(SampleMethod_Type), allocatable                               ::    Sampler
@@ -556,11 +555,10 @@ contains
     real(rkp)                                                         ::    VarR0D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     real(rkp), pointer, dimension(:,:)                                ::    VarR2DPointer=>null()
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D_1, VarR1D_2
+    real(rkp), allocatable, dimension(:)                              ::    Goal
+    real(rkp), allocatable, dimension(:)                              ::    CoefficientsLoc
     real(rkp), dimension(:), pointer                                  ::    VarR1DPointer=>null()
     integer                                                           ::    VarI0D
-    integer, allocatable, dimension(:)                                ::    VarI1D
-    integer, allocatable, dimension(:,:)                              ::    VarI2D
     real(rkp)                                                         ::    CVError
     real(rkp)                                                         ::    CVErrorTrip
     integer                                                           ::    i, iStart, iEnd
@@ -893,7 +891,7 @@ contains
             call IndexSetPointer%GenerateIndices(Order=IndexOrder, TupleSize=NbDim, Indices=IndicesLoc)
 
             NbIndices = size(IndicesLoc,2)
-            VarR1D_1 = This%Cells(i)%GetRecord()
+            Goal = This%Cells(i)%GetRecord()
 
             ! Constructing design space
             allocate(DesignSpace(iEnd,NbIndices), stat=StatLoc)
@@ -906,16 +904,21 @@ contains
               DesignSpace(ii,:) = Basis%Eval(X=This%ParamRecord(:,ii), Indices=IndicesLoc)
             end do
 
-            call This%Solver%Solve(System=DesignSpace, Goal=VarR1D_1, ModelSet=VarI1D, CoefficientsSet=VarR1D_2, CVError=CVError)  
+            allocate(CoefficientsLoc(N), stat=StatLoc)
+            if (StatLoc /= 0) call Error%Allocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
+
+            call This%Solver%Solve(System=DesignSpace, Goal=Goal, Coefficients=CoefficientsLoc, CVError=CVError)  
 
             deallocate(DesignSpace, stat=StatLoc)
             if (StatLoc /= 0) call Error%Deallocate(Name='DesignSpace', ProcName=ProcName, stat=StatLoc)
 
             if (CVError < This%Cells(i)%GetCVError()) then
-              call This%Cells(i)%SetModel(Coefficients=VarR1D_2, Indices=IndicesLoc(:,VarI1D), CVError=CVError,                  &
-                                                                                                           IndexOrder=IndexOrder)
+              call This%Cells(i)%SetModel(Coefficients=CoefficientsLoc, Indices=IndicesLoc, CVError=CVError, IndexOrder=IndexOrder)
             end if
-            
+
+            deallocate(CoefficientsLoc, stat=StatLoc)
+            if (StatLoc /= 0) call Error%Deallocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
+
             if (.not. SilentLoc) then
               Line = '  Node ' // ConvertToString(Value=i) // ' -- CVError = ' // ConvertToString(Value=CVError)
               if (This%Cells(i)%GetCVError() <= This%StopError) Line = Line // ' -- Converged'
@@ -969,11 +972,8 @@ contains
       end if   
     end if
 
-    if (allocated(VarR1D_1)) deallocate(VarR1D_2, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D_1', ProcName=ProcName, stat=StatLoc)
-
-    if (allocated(VarR1D_2)) deallocate(VarR1D_1, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D_2', ProcName=ProcName, stat=StatLoc)
+    if (allocated(Goal)) deallocate(Goal, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Goal', ProcName=ProcName, stat=StatLoc)
 
     if (present(OutputDirectory)) call This%WriteOutput(Directory=OutputDirectory, Responses=Responses)
 
@@ -1691,8 +1691,14 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    VarI0D  
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    integer                                                           ::    i
+    integer                                                           ::    ii
+    integer                                                           ::    NbNonZero
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+    if (size(Coefficients,1) /= size(Indices,2)) call Error%Raise('Incompatible indices and coefficients arrays', &
+                                                                  ProcName=ProcName)
 
     This%IndexOrder = IndexOrder
     This%CVError = CVError
@@ -1703,11 +1709,15 @@ contains
     if (allocated(This%Indices)) deallocate(This%Indices, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='This%Indices', ProcName=ProcName, stat=StatLoc)
 
-    allocate(This%Coefficients, source=Coefficients, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%Coefficients', ProcName=ProcName, stat=StatLoc)
+    NbNonZero = count(dabs(Coefficients) > Zero)
 
-    allocate(This%Indices, source=Indices, stat=StatLoc)
+    allocate(This%Coefficients(NbNonZero), source=Coefficients, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Coefficients', ProcName=ProcName, stat=StatLoc)
+    This%Coefficients = Zero
+
+    allocate(This%Indices(size(Indices,1), NbNonZero), source=Indices, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Indices', ProcName=ProcName, stat=StatLoc)
+    This%Indices = 0
 
     if (allocated(This%SobolIndices)) then
       if (size(This%SobolIndices,1) /= size(This%Indices,1)) then
@@ -1722,6 +1732,17 @@ contains
       This%SobolIndices = Zero
     end if
 
+    i = 1
+    ii = 0
+    do i = 1, size(Coefficients,1)
+      if (.not. dabs(Coefficients(i)) > Zero) cycle
+      ii = ii + 1
+      This%Coefficients(ii) = Coefficients(i)
+      This%Indices(:,ii) = Indices(:,i)
+    end do
+
+    if (ii /= NbNonZero) call Error%Raise('Something went wrong when filtering out zero coefficients', ProcName=ProcName)
+
     VarI0D = This%OutputRecord%GetLength()
     call This%NbRunsHistory%Append(Value=VarI0D)
 
@@ -1735,7 +1756,7 @@ contains
     call This%OutputRecord%Get(Values=VarR1D)
     deallocate(VarR1D, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
-    call ComputeSobolIndices(Coefficients=Coefficients, Indices=Indices, SobolIndices=This%SobolIndices)
+    call ComputeSobolIndices(Coefficients=This%Coefficients, Indices=This%Indices, SobolIndices=This%SobolIndices)
 
     call This%SobolIndicesHistory%Append(Values=This%SobolIndices)
 

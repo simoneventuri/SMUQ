@@ -28,6 +28,7 @@ implicit none
 private
 
 public                                                                ::    CVMethod_Type
+public                                                                ::    FitTarget
 
 type, abstract                                                        ::    CVMethod_Type
   character(:), allocatable                                           ::    Name
@@ -95,13 +96,13 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Calculate_CVMethod(This, Fit, Data)
+  function Calculate_CVMethod(This, Fit, FitData)
     use Parameters_Library
     import                                                            ::    CVMethod_Type
     import                                                            ::    FitTarget
     class(CVMethod_Type), intent(in)                                  ::    This
     procedure(FitTarget), pointer                                     ::    Fit 
-    real(rkp), dimension(:), intent(in)                               ::    Data
+    real(rkp), dimension(:), intent(in)                               ::    FitData
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 

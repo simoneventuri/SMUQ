@@ -334,7 +334,7 @@ subroutine SolveUD(This, System, Goal, Coefficients, CVError)
 
   if (present(CVError)) then
     CVFit => CVFitOLS_UD
-    CVError = This%CVError%Calculate(Fit=CVFit, Data=Goal)
+    CVError = This%CVError%Calculate(Fit=CVFit, FitData=Goal)
     nullify(CVFit)
   end if
 
@@ -540,7 +540,7 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
 
       class default
         CVFit => CVFitOLS_UD
-        CVError = This%CVError%Calculate(Fit=CVFit, Data=Goal)
+        CVError = This%CVError%Calculate(Fit=CVFit, FitData=Goal)
         nullify(CVFit)
     end select
 
@@ -733,7 +733,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
 
       class default
         CVFit => CVFitOLS_UD
-        CVError = This%CVError%Calculate(Fit=CVFit, Data=Goal)
+        CVError = This%CVError%Calculate(Fit=CVFit, FitData=Goal)
         nullify(CVFit)
     end select
 
