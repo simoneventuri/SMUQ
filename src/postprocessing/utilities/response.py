@@ -1,5 +1,6 @@
 import os
 import utilities.general_utilities as gu
+import numpy as np
 
 class Response:
 
@@ -7,11 +8,21 @@ class Response:
 
         top_directory = gu.get_top_directory()
 
-        filename = top_directory + '/responses/' + response + '/coordinates.dat'
-        self.coords = []
+        filename = top_directory + '/responses/' + response \
+                   + '/coordinates.dat'
+        self.coords = np.genfromtxt(filename, dtype=float)
+        self.nb_coords = self.coords.shape[0]
+        self.nb_coords_dim = 1
+        if len(self.coords.shape) > 1:
+            self.nb_coords_dim = self.coords.shape[1]
+
+        filename = top_directory + '/responses/' + response \
+                   + '/coordinate_labels.dat'
+        self.coords_labels = []
         for line in open(filename,'r'):
-            self.coords.append(line.strip())
-        self.nb_coords = len(self.coords)
+            if (len(line.strip()) > 0):
+                self.coords_labels.append(line.strip())
+
 
         filename = top_directory + '/responses/' + response + '/name.dat'
         with open(filename,'r') as file_object:
@@ -23,14 +34,26 @@ class Response:
             label = file_object.readline()
         self.label = label.strip()
 
+    def get_coords(self):
+        return self.coords
+
     def get_nb_coords(self):
         return self.nb_coords
+
+    def get_nb_coords_dim(self):
+        return self.nb_coords_dim
 
     def get_name(self):
         return self.name
 
     def get_label(self):
         return self.label
+
+    def get_coords_labels(self):
+        return self.coords_labels
+
+    def get_coords_label(self, i_coord):
+        return self.coords_labels[i_coord]
 
 def get_responses():
     top_directory = gu.get_top_directory()

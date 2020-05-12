@@ -151,8 +151,8 @@ contains
 
     real(4), intent(in)                                               ::    Value
 
-    real(4), parameter                                                ::    Big=huge(0.0_r4)
-    real(4), parameter                                                ::    Small=huge(0.0_r4)
+    real(4), parameter                                                ::    Big=huge(0.0_4)
+    real(4), parameter                                                ::    Small=huge(0.0_4)
 
     IsFinite_R40D = .false.
     if (Value >= Small .and. Value <= Big .and. Value == Value) IsFinite_R40D = .true.
@@ -165,10 +165,10 @@ contains
 
     logical                                                           ::    IsFinite_R41D
 
-    real(4), dimension(:), intent(in)                                 ::    Value
+    real(4), dimension(:), intent(in)                                 ::    Values
 
-    real(4), parameter                                                ::    Big=huge(0.0_r4)
-    real(4), parameter                                                ::    Small=huge(0.0_r4)
+    real(4), parameter                                                ::    Big=huge(0.0_4)
+    real(4), parameter                                                ::    Small=huge(0.0_4)
     integer                                                           ::    i
 
     IsFinite_R41D = .true.
@@ -187,10 +187,10 @@ contains
 
     logical                                                           ::    IsFinite_R42D
 
-    real(4), dimension(:,:), intent(in)                               ::    Value
+    real(4), dimension(:,:), intent(in)                               ::    Values
 
-    real(4), parameter                                                ::    Big=huge(0.0_r4)
-    real(4), parameter                                                ::    Small=huge(0.0_r4)
+    real(4), parameter                                                ::    Big=huge(0.0_4)
+    real(4), parameter                                                ::    Small=huge(0.0_4)
     integer                                                           ::    i
     integer                                                           ::    j
     integer                                                           ::    M 
@@ -217,12 +217,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function IsFinite_R80D(Value)
 
-    logical                                                           ::    IsFinite_R40D
+    logical                                                           ::    IsFinite_R80D
 
     real(8), intent(in)                                               ::    Value
 
-    real(8), parameter                                                ::    Big=huge(0.0_r8)
-    real(8), parameter                                                ::    Small=huge(0.0_r8)
+    real(8), parameter                                                ::    Big=huge(0.0_8)
+    real(8), parameter                                                ::    Small=huge(0.0_8)
 
     IsFinite_R80D = .false.
     if (Value >= Small .and. Value <= Big .and. Value == Value) IsFinite_R80D = .true.
@@ -235,10 +235,10 @@ contains
 
     logical                                                           ::    IsFinite_R81D
 
-    real(4), dimension(:), intent(in)                                 ::    Value
+    real(8), dimension(:), intent(in)                                 ::    Values
 
-    real(4), parameter                                                ::    Big=huge(0.0_r8)
-    real(4), parameter                                                ::    Small=huge(0.0_r8)
+    real(8), parameter                                                ::    Big=huge(0.0_8)
+    real(8), parameter                                                ::    Small=huge(0.0_8)
     integer                                                           ::    i
 
     IsFinite_R81D = .true.
@@ -257,10 +257,10 @@ contains
 
     logical                                                           ::    IsFinite_R82D
 
-    real(4), dimension(:,:), intent(in)                               ::    Value
+    real(8), dimension(:,:), intent(in)                               ::    Values
 
-    real(4), parameter                                                ::    Big=huge(0.0_r8)
-    real(4), parameter                                                ::    Small=huge(0.0_r8)
+    real(8), parameter                                                ::    Big=huge(0.0_8)
+    real(8), parameter                                                ::    Small=huge(0.0_8)
     integer                                                           ::    i
     integer                                                           ::    j
     integer                                                           ::    M 
@@ -1067,18 +1067,21 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
     logical                                                           ::    LowerInvRLoc
+    integer                                                           ::    N
 
     LowerInvRLoc = .false.
     if (present(LowerInvR)) LowerInvRLoc = LowerInvR
 
-    call ComputeQR(Matrix=Matrix, Q=Q, R=R, LowerR=LowerInvRLoc)
+    N = size(Matrix,2)
+
+    call ComputeQR(Matrix=Matrix, Q=Q, R=InvR, LowerR=LowerInvRLoc)
 
     if (LowerInvRLoc) then
-      call DTRTRI('L', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
+      call DTRTRI('L', 'N', N, InvR, N, StatLoc)
       if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
                                           ProcName=ProcName)
     else
-      call DTRTRI('U', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
+      call DTRTRI('U', 'N', N, InvR, N, StatLoc)
       if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
                                           ProcName=ProcName)
     end if
@@ -1098,18 +1101,21 @@ contains
 
     integer                                                           ::    i
     logical                                                           ::    LowerInvRLoc
+    integer                                                           ::    N
 
     LowerInvRLoc = .false.
     if (present(LowerInvR)) LowerInvRLoc = LowerInvR
 
-    call ComputeQR(Q=Q, R=R, LowerR=LowerInvRLoc)
+    N = size(Q,2)
+    
+    call ComputeQR(Q=Q, R=InvR, LowerR=LowerInvRLoc)
 
     if (LowerInvRLoc) then
-      call DTRTRI('L', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
+      call DTRTRI('L', 'N', N, InvR, N, StatLoc)
       if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
                                           ProcName=ProcName)
     else
-      call DTRTRI('U', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
+      call DTRTRI('U', 'N', N, InvR, N, StatLoc)
       if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
                                           ProcName=ProcName)
     end if

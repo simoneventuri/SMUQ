@@ -1,6 +1,6 @@
 import os
 import sys
-import utilities.morris_utilities as mu
+import utilities.pce_utilities as pu
 import utilities.general_utilities as gu
 import utilities.variable as vc
 import utilities.response as rc
@@ -19,10 +19,7 @@ variables = vc.get_variables()
 
 for response in responses:
     if (response.get_nb_coords() > 1):
-        mu.plot_mu(response, variables)
-        mu.plot_mustar(response, variables)
-        mu.plot_sigma(response, variables)
+        pu.plot_sobol_indices(response, variables)
     else:
-        mu.plot_mu_sigma_single(response,0,variables)
-        mu.plot_mustar_sigma_single(response,0,variables)
+        pu.plot_sobol_indices_single(response,0,variables)
 plt.show()

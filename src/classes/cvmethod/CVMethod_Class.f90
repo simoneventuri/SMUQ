@@ -28,7 +28,7 @@ implicit none
 private
 
 public                                                                ::    CVMethod_Type
-public                                                                ::    FitTarget
+public                                                                ::    CVFitTarget
 
 type, abstract                                                        ::    CVMethod_Type
   character(:), allocatable                                           ::    Name
@@ -44,7 +44,7 @@ contains
   procedure(SetDefaults_CVMethod), deferred, public                   ::    SetDefaults
   procedure(ConstructInput_CVMethod), deferred, private               ::    ConstructInput
   procedure(GetInput_CVMethod), deferred, public                      ::    GetInput
-  procedure(ComputeError_CVMethod), deferred, public                  ::    Calculate
+  procedure(Calculate_CVMethod), deferred, public                     ::    Calculate
   procedure(Copy_CVMethod), deferred, public                          ::    Copy
 end type
 
@@ -99,9 +99,10 @@ abstract interface
   function Calculate_CVMethod(This, Fit, FitData)
     use Parameters_Library
     import                                                            ::    CVMethod_Type
-    import                                                            ::    FitTarget
+    import                                                            ::    CVFitTarget
+    real(rkp)                                                         ::    Calculate_CVMethod
     class(CVMethod_Type), intent(in)                                  ::    This
-    procedure(FitTarget), pointer                                     ::    Fit 
+    procedure(CVFitTarget), pointer                                   ::    Fit 
     real(rkp), dimension(:), intent(in)                               ::    FitData
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -115,7 +116,7 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!--------------------------------------------------------------------------------------------------------------------------------
-  subroutine FitTarget(TrainingSet, TrainingSetIndices, ValidationSet, ValidationSetIndices, Residual)
+  subroutine CVFitTarget(TrainingSet, TrainingSetIndices, ValidationSet, ValidationSetIndices, Residual)
     use Parameters_Library
     real(rkp), dimension(:), intent(inout)                            ::    TrainingSet
     integer, dimension(:), intent(in)                                 ::    TrainingSetIndices

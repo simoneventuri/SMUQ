@@ -104,7 +104,7 @@ subroutine SetDefaults(This)
 
   character(*), parameter                                             ::    ProcName='SetDefaults'
 
-  This%ModifiedLOO = .true.
+  This%ModifiedCV = .true.
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------

@@ -86,20 +86,20 @@ function IsArrayConstant_R41D(Array)
 
   logical                                                           ::    IsArrayConstant_R41D
 
-  real(4), dimension(:), intent(in)                                 ::    IsArrayConstant_R41D
+  real(4), dimension(:), intent(in)                                 ::    Array
 
   character(*), parameter                                           ::    ProcName='IsArrayConstant_R41D'
   integer                                                           ::    StatLoc=0
   integer                                                           ::    i
   integer                                                           ::    N
-  real(4), parameter                                                ::    ZeroLoc=0.0_r4
+  real(4), parameter                                                ::    ZeroLoc=0.0_4
  
   N = size(Array,1)
 
   isArrayConstant_R41D = .true.
   i = 2
   do i = 2, N
-    if (.not. abs(Array(i)-Array(i-1) > ZeroLoc)) cycle
+    if (.not. abs(Array(i)-Array(i-1)) > ZeroLoc) cycle
     IsArrayConstant_R41D = .false.
     exit
   end do
@@ -112,72 +112,23 @@ function IsArrayConstant_R81D(Array)
 
   logical                                                           ::    IsArrayConstant_R81D
 
-  real(8), dimension(:), intent(in)                                 ::    IsArrayConstant_R81D
+  real(8), dimension(:), intent(in)                                 ::    Array
 
   character(*), parameter                                           ::    ProcName='IsArrayConstant_R81D'
   integer                                                           ::    StatLoc=0
   integer                                                           ::    i
   integer                                                           ::    N
-  real(8), parameter                                                ::    ZeroLoc=0.0_r8
+  real(8), parameter                                                ::    ZeroLoc=0.0_8
  
   N = size(Array,1)
 
   isArrayConstant_R81D = .true.
   i = 2
   do i = 2, N
-    if (.not. abs(Array(i)-Array(i-1) > ZeroLoc)) cycle
+    if (.not. dabs(Array(i)-Array(i-1)) > ZeroLoc) cycle
     IsArrayConstant_R81D = .false.
     exit
   end do
-
-end function
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-function StrictTriangularR_R82D(M, N, UL)
-
-  real(8), dimension(:,:), allocatable                              ::    StrictTriangularR_R82D
-
-  integer(8), intent(in)                                            ::    M
-  integer(8), optional, intent(in)                                  ::    N
-  character(*), intent(in)                                          ::    UL
-
-  character(*), parameter                                           ::    ProcName='StrictTriangularR_R82D'
-  integer                                                           ::    StatLoc=0
-  integer(8)                                                        ::    i
-  integer(8)                                                        ::    imax
-  integer(8)                                                        ::    NLoc
-
-  NLoc = M
-  if (present(N)) NLoc = N
-
-  allocate(StrictTriangularR_R82D(M,NLoc), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='StrictTriangularR_R82D', ProcName=ProcName, stat=StatLoc)
-
-  StrictTriangularR_R82D = 0.0
-
-  if (UL == 'U') then
-    i = 2
-    do i = 2, NLoc
-      if (i > M) then
-        StrictTriangularR_R82D(:,i:) = 1.0
-        exit
-      end if
-      StrictTriangularR_R82D(1:i-1,i) = 1.0
-    end do
-  elseif (UL == 'L') then
-    if (M >= NLoc) then
-      imax = NLoc
-    else
-      imax = NLoc - 1
-    end if
-    i = 1
-    do i = 1, imax
-      StrictTriangularR_R82D(i+1:,i) = 1.0
-    end do
-  else
-    call Error%Raise('Upper or Lower option not recognized', ProcName=ProcName)
-  end if
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------

@@ -24,7 +24,7 @@ use StringRoutines_Module
 use StatisticsRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use CVMethod_Class                                                ,only:    CVMethod_Type, FitTarget
+use CVMethod_Class                                                ,only:    CVMethod_Type, CVFitTarget
 
 implicit none
 
@@ -183,7 +183,7 @@ function Calculate(This, Fit, FitData)
   real(rkp)                                                           ::    Calculate
 
   class(CVLOO_Type), intent(in)                                       ::    This
-  procedure(FitTarget), pointer                                       ::    Fit 
+  procedure(CVFitTarget), pointer                                     ::    Fit 
   real(rkp), dimension(:), intent(in)                                 ::    FitData
 
   character(*), parameter                                             ::    ProcName='Calculate'
@@ -241,7 +241,7 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-impure elemental subroutine Copy(LHS, RHS)ComputeSampleVar(Values=FitData)
+impure elemental subroutine Copy(LHS, RHS)
 
   class(CVLOO_Type), intent(out)                                      ::    LHS
   class(CVMethod_Type), intent(in)                                    ::    RHS

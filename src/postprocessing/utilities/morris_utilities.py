@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 from matplotlib.ticker import ScalarFormatter
 
+ncolumns = 4
+
 def get_mustar(response):
     top_directory = gu.get_top_directory()
     nb_coords = response.get_nb_coords()
@@ -19,10 +21,9 @@ def get_mustar(response):
     for i_coord in range(0,nb_coords):
         filename = top_directory + '/analysis/' + response_label + '/cell' \
                    + str(i_coord + 1) + '/mu_star.dat'
-        for i_variable, line in enumerate(open(filename,'r')):
-            mustar_coord[i_variable] = float(line.strip())
-        mustar[i_coord,:] = mustar_coord[:]
-    return mustar
+        mustar_coord = np.genfromtxt(filename, dtype=float)
+        mustar[i_coord,:] = np.nan_to_num(mustar_coord[:])
+    return np.nan_to_num(mustar)
 
 def get_mu(response):
     top_directory = gu.get_top_directory()
@@ -36,10 +37,9 @@ def get_mu(response):
     for i_coord in range(0,nb_coords):
         filename = top_directory + '/analysis/' + response_label + '/cell' \
                    + str(i_coord + 1) + '/mu.dat'
-        for i_variable, line in enumerate(open(filename,'r')):
-            mu_coord[i_variable] = float(line.strip())
+        mu_coord = np.genfromtxt(filename, dtype=float)
         mu[i_coord,:] = mu_coord[:]
-    return mu
+    return np.nan_to_num(mu)
 
 def get_sigma(response):
     top_directory = gu.get_top_directory()
@@ -53,43 +53,33 @@ def get_sigma(response):
     for i_coord in range(0,nb_coords):
         filename = top_directory + '/analysis/' + response_label + '/cell' \
                    + str(i_coord+1) + '/sigma.dat'
-        for i_variable, line in enumerate(open(filename,'r')):
-            sigma_coord[i_variable] = float(line.strip())
+        sigma_coord = np.genfromtxt(filename, dtype=float)
         sigma[i_coord,:] = sigma_coord[:]
-    return sigma
+    return np.nan_to_num(sigma)
 
 def get_mustar_single(response,i_cell):
     top_directory = gu.get_top_directory()
     response_label = response.get_label()
     filename = top_directory + '/analysis/' + response_label \
                + '/cell' + str(i_cell + 1) + '/mu_star.dat'
-    nb_variables = gu.file_len(filename)
-    mustar = np.zeros((nb_variables,))
-    for i, line in enumerate(open(filename,'r')):
-        mustar[i] = float(line.strip())
-    return mustar
+    mustar = np.genfromtxt(filename, dtype=float)
+    return np.nan_to_num(mustar)
 
 def get_mu_single(response,i_cell):
     top_directory = gu.get_top_directory()
     response_label = response.get_label()
     filename = top_directory + '/analysis/' + response_label \
                + '/cell' + str(i_cell + 1) + '/mu.dat'
-    nb_variables = gu.file_len(filename)
-    mu = np.zeros((nb_variables,))
-    for i, line in enumerate(open(filename,'r')):
-        mu[i] = float(line.strip())
-    return mu
+    mu = np.genfromtxt(filename, dtype=float)
+    return np.nan_to_num(mu)
 
 def get_sigma_single(response,i_cell):
     top_directory = gu.get_top_directory()
     response_label = response.get_label()
     filename = top_directory + '/analysis/' + response_label \
                + '/cell' + str(i_cell + 1) + '/sigma.dat'
-    nb_variables = gu.file_len(filename)
-    sigma = np.zeros((nb_variables,))
-    for i, line in enumerate(open(filename,'r')):
-        sigma[i] = float(line.strip())
-    return sigma
+    sigma = np.genfromtxt(filename, dtype=float)
+    return np.nan_to_num(sigma)
 
 def plot_mu_sigma_single(response, i_cell, variables):
     response_name = response.get_name()
@@ -105,18 +95,12 @@ def plot_mu_sigma_single(response, i_cell, variables):
 
     ax1.set_xlabel(r'$\mu$')
     ax1.set_ylabel(r'$\sigma$')
-    ax1.set_title(response_name)
-    ax1.set_aspect('auto')
+    #ax1.set_title(response_name)
     ax1.yaxis.set_major_formatter(ScalarFormatter())
-    ax1.yaxis.major.formatter._useMathText = True
     ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
     ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
     ratio = 1.0
     ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
-    ax1.xaxis.set_tick_params(top='off', direction='out', width=0)
-    ax1.yaxis.set_tick_params(right='off', direction='out', width=0)
-    ax1.xaxis.set_tick_params(direction='out', width=1, length=5)
-    ax1.yaxis.set_tick_params(direction='out', width=1, length=5)
 
 def plot_mustar_sigma_single(response, i_cell, variables):
     response_name = response.get_name()
@@ -124,6 +108,10 @@ def plot_mustar_sigma_single(response, i_cell, variables):
     response_sigma = get_sigma_single(response, i_cell)
 
     fig1, ax1 = plt.subplots()
+
+    mng = plt.get_current_fig_manager()
+    mng.resize(*mng.window.maxsize())
+
     ax1.scatter(response_mustar,response_sigma)
     for i, variable in enumerate(variables):
         ax1.annotate(variable.get_name(), xy=(response_mustar[i], \
@@ -134,24 +122,125 @@ def plot_mustar_sigma_single(response, i_cell, variables):
     ax1.set_ylabel(r'$\sigma$')
     ax1.set_xlim(left=0.0)
     ax1.set_ylim(bottom=0.0)
-    ax1.set_title(response_name)
-    ax1.set_aspect('auto')
+    #ax1.set_title(response_name)
     ax1.yaxis.set_major_formatter(ScalarFormatter())
-    ax1.yaxis.major.formatter._useMathText = True
     ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
     ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
     ratio = 1.0
     ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
-    ax1.xaxis.set_tick_params(top='off', direction='out', width=0)
-    ax1.yaxis.set_tick_params(right='off', direction='out', width=0)
-    ax1.xaxis.set_tick_params(direction='out', width=1, length=5)
-    ax1.yaxis.set_tick_params(direction='out', width=1, length=5)
 
 def plot_mu(response, variables):
-    exit()
+    response_name = response.get_name()
+    response_mu = get_mu(response)
+    xstop = response.get_nb_coords()
+
+    if (response.get_nb_coords_dim() > 1):
+        print('Response "' + response_name + '" specifies non-1D coordinates' \
+              + 'which current scripts do not natively support for ' \
+              + 'Morris method post-processing')
+        x = np.arange(start=1, stop=xstop, step=1)
+        xlabel = 'Cell'
+    else:
+        x = response.get_coords()
+        xlabel = response.get_coords_label(0)
+        
+    fig1, ax1 = plt.subplots()
+
+    mng = plt.get_current_fig_manager()
+    mng.resize(*mng.window.maxsize())
+
+    for i, variable in enumerate(variables):
+        ax1.plot(x, response_mu[:,i],\
+                 label=r'$'+variable.get_name()+r'$',\
+                 markevery=0.1)
+
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(r'$\mu$')
+    ax1.set_xlim(left=x[0], right=x[xstop-1])
+    ax1.set_ylim(bottom=response_mu.min())
+    #ax1.set_title(response_name)
+    ax1.yaxis.set_major_formatter(ScalarFormatter())
+    ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
+    ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
+    ratio = 1.0
+    ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
+    ax1.legend(ncol=ncolumns)
+    return
 
 def plot_mustar(response, variables):
-    exit()
+
+    response_name = response.get_name()
+    response_mustar = get_mustar(response)
+    xstop = response.get_nb_coords()
+
+    if (response.get_nb_coords_dim() > 1):
+        print('Response "' + response_name + '" specifies non-1D coordinates' \
+              + 'which current scripts do not natively support for ' \
+              + 'Morris method post-processing')
+        x = np.arange(start=1, stop=xstop, step=1)
+        xlabel = 'Cell'
+    else:
+        x = response.get_coords()
+        xlabel = response.get_coords_label(0)
+        
+    fig1, ax1 = plt.subplots()
+
+    mng = plt.get_current_fig_manager()
+    mng.resize(*mng.window.maxsize())
+
+    for i, variable in enumerate(variables):
+        ax1.plot(x, response_mustar[:,i],\
+                 label=r'$'+variable.get_name()+r'$',\
+                 markevery=0.1)
+
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(r'$\mu^{\ast}$')
+    ax1.set_xlim(left=x[0], right=x[xstop-1])
+    ax1.set_ylim(bottom=0.0)
+    #ax1.set_title(response_name)
+    ax1.yaxis.set_major_formatter(ScalarFormatter())
+    ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
+    ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
+    ratio = 1.0
+    ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
+    ax1.legend(ncol=ncolumns)
+    return
 
 def plot_sigma(response, variables):
-    exit()
+    response_name = response.get_name()
+    response_sigma = get_sigma(response)
+    xstop = response.get_nb_coords()
+
+    if (response.get_nb_coords_dim() > 1):
+        print('Response "' + response_name + '" specifies non-1D coordinates' \
+              + 'which current scripts do not natively support for ' \
+              + 'Morris method post-processing')
+        
+        x = np.arange(start=1, stop=xstop, step=1)
+        xlabel = 'Cell'
+    else:
+        x = response.get_coords()
+        xlabel = response.get_coords_label(0)
+        
+    fig1, ax1 = plt.subplots()
+
+    mng = plt.get_current_fig_manager()
+    mng.resize(*mng.window.maxsize())
+
+    for i, variable in enumerate(variables):
+        ax1.plot(x, response_sigma[:,i],
+                 label=r'$'+variable.get_name()+r'$',\
+                 markevery=0.1)
+
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel(r'$\sigma$')
+    ax1.set_xlim(left=x[0], right=x[xstop-1])
+    ax1.set_ylim(bottom=0.0)
+    #ax1.set_title(response_name)
+    ax1.yaxis.set_major_formatter(ScalarFormatter())
+    ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
+    ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
+    ratio = 1.0
+    ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
+    ax1.legend(ncol=ncolumns)
+    return

@@ -25,7 +25,7 @@ module CVKFold_Class
   use ComputingRoutines_Module
   use Logger_Class                                                  ,only:    Logger
   use Error_Class                                                   ,only:    Error
-  use CVMethod_Class                                                ,only:    CVMethod_Type, FitTarget
+  use CVMethod_Class                                                ,only:    CVMethod_Type, CVFitTarget
   
   implicit none
   
@@ -196,7 +196,7 @@ module CVKFold_Class
     real(rkp)                                                           ::    Calculate
   
     class(CVKFold_Type), intent(in)                                     ::    This
-    procedure(FitTarget), pointer                                       ::    Fit 
+    procedure(CVFitTarget), pointer                                     ::    Fit 
     real(rkp), dimension(:), intent(in)                                 ::    FitData
   
     character(*), parameter                                             ::    ProcName='Calculate'
@@ -210,6 +210,7 @@ module CVKFold_Class
     real(rkp), allocatable, dimension(:)                                ::    Residual
     integer                                                             ::    NbData
     integer                                                             ::    FoldSize
+    integer                                                             ::    MaxFoldSize
     integer                                                             ::    FoldSizeLoc
     integer                                                             ::    TrainingSizeLoc
     integer                                                             ::    FoldSizeRemainder
@@ -314,11 +315,29 @@ module CVKFold_Class
       end if
     end if
   
+    deallocate(TrainingSet, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='TrainingSet', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(TrainingSetIndices, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='TrainingSetIndices', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(ValidationSet, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='ValidationSet', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(ValidationSetIndices, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='ValidationSetIndices', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(Residual, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Residual', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(ScrambledIndices, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='ScrambledIndices', ProcName=ProcName, stat=StatLoc)
+
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
   
   !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)ComputeSampleVar(Values=FitData)
+  impure elemental subroutine Copy(LHS, RHS)
   
     class(CVKFold_Type), intent(out)                                    ::    LHS
     class(CVMethod_Type), intent(in)                                    ::    RHS
