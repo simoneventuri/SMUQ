@@ -80,7 +80,7 @@ subroutine Construct_Input(This, Object, Input, Prefix)
   use Input_Library
 
   class(LinSolverSparse_Factory_Type), intent(in)                   ::    This
-  class(LinSolverSparse_Type), allocatable, intent(inout)           ::    Object
+  class(LinSolverMethod_Type), allocatable, intent(inout)           ::    Object
   type(InputSection_Type), intent(in)                               ::    Input
   character(*), optional, intent(in)                                ::    Prefix
 

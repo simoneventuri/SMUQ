@@ -24,6 +24,7 @@ use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use StringRoutines_Module
 use CommandRoutines_Module
+use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use PolyChaosMethod_Class                                         ,only:    PolyChaosMethod_Type, ComputeSobolIndices
@@ -784,8 +785,9 @@ contains
               iii = im1 + 1
               do iii = im1+1, im1+size(VarR2DPointer,1)
                 iv = iv + 1
-                call This%Cells(iii)%AppendRecord(Entry=VarR2DPointer(iv,1))        deallocate(TAU, stat=StatLoc)
-                if (StatLoc /= 0) call Error%Deallocate(Name='TAU', ProcName=ProcName, stat=StatLoc)
+                call This%Cells(iii)%AppendRecord(Entry=VarR2DPointer(iv,1))
+              end do
+              im1 = im1 + size(VarR2DPointer,1)
               nullify(VarR2DPointer)
               call Outputs(ii,iRun)%Reset()
             end do
@@ -884,8 +886,6 @@ contains
           if (This%Cells(ii)%GetCVError() <= This%StopError) cycle
 
           VarR1D = This%Cells(ii)%GetRecord()
-
-          call This%Solver
 
           call This%Solver%SolveQInvR(System=DesignSpace, Goal=VarR1D, Coefficients=CoefficientsLoc, Q=Q, InvR=InvR, &
                                       CVError=CVError)

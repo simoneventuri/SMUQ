@@ -1128,9 +1128,9 @@ contains
 
     use ieee_arithmetic
 
-    real(rkp)                                                         ::    ComputeNorm_R1D_8    
+    real(8)                                                         ::    ComputeNorm_R1D_8    
 
-    real(rkp), dimension(:), intent(in)                               ::    Vector
+    real(8), dimension(:), intent(in)                                 ::    Vector
     integer, intent(in)                                               ::    Norm
     
     character(*), parameter                                           ::    ProcName='ComputeQR'

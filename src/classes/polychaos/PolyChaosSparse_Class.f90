@@ -44,6 +44,7 @@ use SampleSpace_Class                                             ,only:    Samp
 use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
 use LinSolverSparse_Factory_Class                                 ,only:    LinSolverSparse_Factory
+use LinSolverMethod_Class                                         ,only:    LinSolverMethod_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
 use Restart_Class                                                 ,only:    RestartUtility, RestartTarget
@@ -109,7 +110,7 @@ type, extends(PolyChaosMethod_Type)                                   ::    Poly
   integer                                                             ::    CheckpointFreq
   type(Cell_Type), allocatable, dimension(:)                          ::    Cells  
   integer                                                             ::    NbCells
-  class(LinSolver_Type), allocatable                                  ::    Solver
+  class(LinSolverMethod_Type), allocatable                            ::    Solver
   real(rkp), allocatable, dimension(:,:)                              ::    ParamRecord
   real(rkp), allocatable, dimension(:,:)                              ::    ParamSample
   class(SampleMethod_Type), allocatable                               ::    Sampler

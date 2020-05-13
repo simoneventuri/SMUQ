@@ -53,8 +53,6 @@ contains
   procedure, private                                                  ::    SolveOD
   procedure, public                                                   ::    SolveQR
   procedure, public                                                   ::    SolveQInvR
-  procedure, private                                                  ::    ComputeCVLOOError
-  procedure, private                                                  ::    ComputeCVLOOErrorQ1R
   procedure, public                                                   ::    Copy
 end type
 
@@ -139,7 +137,7 @@ subroutine ConstructInput(This, Input, Prefix)
   SectionName = 'cross_validation'
   if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call CVErrorMethod_Factory%Construct(Object=This%CVError, Input=InputSection, Prefix=PrefixLoc)
+    call CVMethod_Factory%Construct(Object=This%CVError, Input=InputSection, Prefix=PrefixLoc)
   else
     allocate(CVLOO_Type :: This%CVError)
     select type (CVMethod => This%CVError)
@@ -159,7 +157,7 @@ end subroutine
 subroutine ConstructCase1(This, CVMethod, ModifiedCV)
 
   class(LinSolverOLS_Type), intent(inout)                             ::    This
-  class(CVMethod_Type), optional, intent(in)                          ::    CVErrorMethod
+  class(CVMethod_Type), optional, intent(in)                          ::    CVMethod
   logical, optional, intent(in)                                       ::    ModifiedCV
 
   character(*), parameter                                             ::    ProcName='ConstructCase1'
@@ -174,10 +172,10 @@ subroutine ConstructCase1(This, CVMethod, ModifiedCV)
     allocate(This%CVError, source=CVMethod, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%CVErrorMethod', ProcName=ProcName, stat=StatLoc)
   else
-    allocate(CVLOO_Type   :: This%CVError)
+    allocate(CVLOO_Type :: This%CVError)
     select type (CVError => This%CVError)
       type is (CVLOO_Type)
-        call CVError%Construct(Corrected=.true.)
+        call CVError%Construct(Normalized=.true.)
       class default
         call Error%Raise(Line='Something went wrong', ProcName=ProcName)
     end select
@@ -218,10 +216,10 @@ function GetInput(This, Name, Prefix, Directory)
 
   call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-  call GetInput%AddValue(Name='modified_cross_validation', Value=ConvertToString(Value=This%ModifiedCV))
+  call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%ModifiedCV))
 
   SectionName = 'cross_validation'
-  GetInput = CVMethod_Factory%GetObjectInput(Object=This%LARMethod, Name=SectionName, Prefix=PrefixLoc, Directory=DirectoryLoc)
+  GetInput = CVMethod_Factory%GetObjectInput(Object=This%CVError, Name=SectionName, Prefix=PrefixLoc, Directory=DirectoryLoc)
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -232,7 +230,7 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
   class(LinSolverOLS_Type), intent(in)                                ::    This
   real(rkp), dimension(:,:), intent(inout)                            ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
-  real(rkp), allocatable, dimension(:), intent(out)                   ::    Coefficients
+  real(rkp), dimension(:), intent(inout)                              ::    Coefficients
   real(rkp), optional, intent(out)                                    ::    CVError
 
   character(*), parameter                                             ::    ProcName='Solve'
@@ -271,7 +269,7 @@ subroutine SolveUD(This, System, Goal, Coefficients, CVError)
   class(LinSolverOLS_Type), intent(in)                                ::    This
   real(rkp), dimension(:,:), intent(inout)                            ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
-  real(rkp), allocatable, dimension(:), intent(out)                   ::    Coefficients
+  real(rkp), dimension(:), intent(inout)                              ::    Coefficients
   real(rkp), optional, intent(out)                                    ::    CVError
 
   character(*), parameter                                             ::    ProcName='SolveUD'
@@ -294,6 +292,8 @@ subroutine SolveUD(This, System, Goal, Coefficients, CVError)
 
   M = size(System,1)
   N = size(System,2)
+
+  if (size(Coefficients,1) /= N) call Error%Raise('Incompatible coefficients array supplied', ProcName=ProcName)
 
   Coefficients = Zero
 
@@ -385,7 +385,7 @@ subroutine SolveUD(This, System, Goal, Coefficients, CVError)
       if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
       iiLoc = 1
       do iiLoc = 1, NbValidation
-        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(i)*System(ValidationIndices(iiLoc,iLoc))
+        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
       end do
     end do
     
@@ -406,7 +406,7 @@ subroutine SolveOD(This, System, Goal, Coefficients, CVError)
   class(LinSolverOLS_Type), intent(in)                                ::    This
   real(rkp), dimension(:,:), intent(inout)                            ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
-  real(rkp), allocatable, dimension(:), intent(out)                   ::    Coefficients
+  real(rkp), dimension(:), intent(inout)                              ::    Coefficients
   real(rkp), optional, intent(out)                                    ::    CVError
 
   character(*), parameter                                             ::    ProcName='SolveOD'
@@ -421,6 +421,8 @@ subroutine SolveOD(This, System, Goal, Coefficients, CVError)
   M = size(System,1)
   N = size(System,2)
 
+  if (size(Coefficients,1) /= N) call Error%Raise('Incompatible coefficients array supplied', ProcName=ProcName)
+
   allocate(Q(M,N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Q', ProcName=ProcName, stat=StatLoc)
   Q = Zero
@@ -432,9 +434,9 @@ subroutine SolveOD(This, System, Goal, Coefficients, CVError)
   call ComputeQR(Matrix=System, Q=Q, R=R)
 
   if (present(CVError)) then
-    call SolveQR(System=System, Goal=Goal, Coefficients=Coefficients, Q=Q, R=R, CVError=CVError)
+    call This%SolveQR(System=System, Goal=Goal, Coefficients=Coefficients, Q=Q, R=R, CVError=CVError)
   else
-    call SolveQR(System=System, Goal=Goal, Coefficients=Coefficients, Q=Q, R=R)
+    call This%SolveQR(System=System, Goal=Goal, Coefficients=Coefficients, Q=Q, R=R)
   end if
 
   deallocate(Q, stat=StatLoc)
@@ -467,11 +469,15 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
   procedure(CVFitTarget), pointer                                     ::    CVFit=>null()
   real(rkp)                                                           ::    GoalVariance
   real(rkp)                                                           ::    T
+  integer                                                             ::    M
+  integer                                                             ::    N
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
   M = size(System,1)
   N = size(System,2)
+
+  if (size(Coefficients,1) /= N) call Error%Raise('Incompatible coefficients array supplied', ProcName=ProcName)
 
   if (M < N) call Error%Raise('Procedure only meant for tall arrays', ProcName=ProcName)
 
@@ -494,7 +500,7 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
 
   if ( present(CVError)) then
-    select type (CVMethod=>This%CVMethod)
+    select type (CVMethod=>This%CVError)
       type is (CVLOO_Type)
 
         allocate(h(M), stat=StatLoc)
@@ -511,7 +517,7 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
         Residual = Zero
         i = 1
         do i = 1, N
-          if (.not. dabs(Coefficients(i) > Zero)) cycle
+          if (.not. dabs(Coefficients(i)) > Zero) cycle
           Residual = Residual + Coefficients(i)*System(:,i)
         end do
         Residual = Goal - Residual
@@ -539,7 +545,7 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
         if (StatLoc /= 0) call Error%Deallocate(Name='Residual', ProcName=ProcName, stat=StatLoc)
 
       class default
-        CVFit => CVFitOLS_UD
+        CVFit => CVFitOLS_OD
         CVError = This%CVError%Calculate(Fit=CVFit, FitData=Goal)
         nullify(CVFit)
     end select
@@ -583,7 +589,7 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
     integer, dimension(:), intent(in)                               ::    ValidationSetIndices
     real(rkp), dimension(:), intent(inout)                          ::    Residual
 
-    character(*), parameter                                         ::    ProcName='CVFitOLS_UD'
+    character(*), parameter                                         ::    ProcName='CVFitOLS_OD'
     integer                                                         ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                          ::    SystemLoc
     real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
@@ -616,10 +622,10 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
 
     iLoc = 1
     do iLoc = 1, N
-      if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
+      if (.not. dabs(Coefficients(iLoc)) > Zero) cycle
       iiLoc = 1
       do iiLoc = 1, NbValidation
-        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(i)*System(ValidationIndices(iiLoc,iLoc))
+        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
       end do
     end do
     
@@ -655,11 +661,15 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
   procedure(CVFitTarget), pointer                                     ::    CVFit=>null()
   real(rkp)                                                           ::    GoalVariance
   real(rkp)                                                           ::    T
+  integer                                                             ::    M
+  integer                                                             ::    N
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
   M = size(System,1)
   N = size(System,2)
+
+  if (size(Coefficients,1) /= N) call Error%Raise('Incompatible coefficients array supplied', ProcName=ProcName)
 
   if (M < N) call Error%Raise('Procedure only meant for tall arrays', ProcName=ProcName)
 
@@ -667,12 +677,12 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
 
   Coefficients = Zero
 
-  allocate(VarR1D(N,1), stat=StatLoc)
+  allocate(VarR1D(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   i = 1
   do i = 1, N 
-    VarR1D(i,1) = dot_product(Q(:,i), Goal)
+    VarR1D(i) = dot_product(Q(:,i), Goal)
   end do
 
   i = 1
@@ -687,7 +697,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   if ( present(CVError)) then
-    select type (CVMethod=>This%CVMethod)
+    select type (CVMethod=>This%CVError)
       type is (CVLOO_Type)
 
         allocate(h(M), stat=StatLoc)
@@ -704,7 +714,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
         Residual = Zero
         i = 1
         do i = 1, N
-          if (.not. dabs(Coefficients(i) > Zero)) cycle
+          if (.not. dabs(Coefficients(i)) > Zero) cycle
           Residual = Residual + Coefficients(i)*System(:,i)
         end do
         Residual = Goal - Residual
@@ -732,7 +742,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
         if (StatLoc /= 0) call Error%Deallocate(Name='Residual', ProcName=ProcName, stat=StatLoc)
 
       class default
-        CVFit => CVFitOLS_UD
+        CVFit => CVFitOLS_QInvR
         CVError = This%CVError%Calculate(Fit=CVFit, FitData=Goal)
         nullify(CVFit)
     end select
@@ -742,7 +752,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
         T = Zero
         i = 1
         do i = 1, N
-          T = T + dot_product(InvR(i:NbActiveIndices,i),InvR(i:NbActiveIndices,i))
+          T = T + dot_product(InvR(i:N,i),InvR(i:N,i))
         end do
         T = (real(M,rkp)/real(M-N,rkp))*(One+T)
         CVError = CVError*T
@@ -757,7 +767,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
   contains
 
   !!----------------------------------------------------------------------------------------------------------------------------
-  subroutine CVFitOLS_UD(TrainingSet, TrainingSetIndices, ValidationSet, ValidationSetIndices, Residual)
+  subroutine CVFitOLS_QInvR(TrainingSet, TrainingSetIndices, ValidationSet, ValidationSetIndices, Residual)
 
     real(rkp), dimension(:), intent(inout)                          ::    TrainingSet
     integer, dimension(:), intent(in)                               ::    TrainingSetIndices
@@ -765,7 +775,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
     integer, dimension(:), intent(in)                               ::    ValidationSetIndices
     real(rkp), dimension(:), intent(inout)                          ::    Residual
 
-    character(*), parameter                                         ::    ProcName='CVFitOLS_UD'
+    character(*), parameter                                         ::    ProcName='CVFitOLS_QInvR'
     integer                                                         ::    StatLoc=0
     real(rkp), allocatable, dimension(:,:)                          ::    SystemLoc
     real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
@@ -801,7 +811,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
       if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
       iiLoc = 1
       do iiLoc = 1, NbValidation
-        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(i)*System(ValidationIndices(iiLoc,iLoc))
+        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
       end do
     end do
     
@@ -832,8 +842,7 @@ impure elemental subroutine Copy(LHS, RHS)
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then
-        allocate(LHS%ModifiedCV, source=RHS%ModifiedCV, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='LHS%ModifiedCV', ProcName=ProcName, stat=StatLoc)
+        LHS%ModifiedCV = RHS%ModifiedCV
         allocate(LHS%CVError, source=RHS%CVError, stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='LHS%CVError', ProcName=ProcName, stat=StatLoc)
       end if

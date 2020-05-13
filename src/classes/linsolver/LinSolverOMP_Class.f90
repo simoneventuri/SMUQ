@@ -152,7 +152,7 @@ subroutine ConstructInput(This, Input, Prefix)
   SectionName = 'cross_validation'
   if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call CVErrorMethod_Factory%Construct(Object=This%CVError, Input=InputSection, Prefix=PrefixLoc)
+    call CVMethod_Factory%Construct(Object=This%CVError, Input=InputSection, Prefix=PrefixLoc)
   else
     allocate(CVLOO_Type :: This%CVError)
     select type (CVMethod => This%CVError)
@@ -199,7 +199,7 @@ subroutine ConstructCase1(This, CVMethod, MinAbsCorr, GetBest, StopEarly, Modifi
     allocate(CVLOO_Type :: This%CVError)
     select type (CVError => This%CVError)
       type is (CVLOO_Type)
-        call CVError%Construct(Corrected=.true.)
+        call CVError%Construct(Normalized=.true.)
       class default
         call Error%Raise(Line='Something went wrong', ProcName=ProcName)
     end select
@@ -237,13 +237,13 @@ function GetInput(This, Name, Prefix, Directory)
 
   if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-  call GetInput%AddValue(Name='stop_early', Value=ConvertToString(Value=This%StopEarly))
-  call GetInput%AddValue(Name='get_best', Value=ConvertToString(Value=This%GetBest))
-  call GetInput%AddValue(Name='modified_cross_validation', Value=ConvertToString(Value=This%ModifiedCV))
-  call GetInput%AddValue(Name='minimum_correlation', Value=ConvertToString(Value=This%MinAbsCorr))
+  call GetInput%AddParameter(Name='stop_early', Value=ConvertToString(Value=This%StopEarly))
+  call GetInput%AddParameter(Name='get_best', Value=ConvertToString(Value=This%GetBest))
+  call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%ModifiedCV))
+  call GetInput%AddParameter(Name='minimum_correlation', Value=ConvertToString(Value=This%MinAbsCorr))
 
   SectionName = 'cross_validation'
-  GetInput = CVMethod_Factory%GetObjectInput(Object=This%LARMethod, Name=SectionName, Prefix=PrefixLoc, Directory=DirectoryLoc)
+  GetInput = CVMethod_Factory%GetObjectInput(Object=This%CVError, Name=SectionName, Prefix=PrefixLoc, Directory=DirectoryLoc)
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -273,21 +273,21 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
   if (present(CVError)) then
     select type (CVMethod=>This%CVError)
       type is (CVLOO_Type)
-        call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, Hybrid=This%Hybrid, &
-                               GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
-                               ModifiedCVLOO=This%ModifiedCV)
-        if (.not. CVMethod%IsNormalized .and. CVError < huge(One)) CVError = CVError * ComputeSampleVar(Values=Goal)
+        call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, &
+                                   GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
+                                   ModifiedCVLOO=This%ModifiedCV)
+        if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeSampleVar(Values=Goal)
       class default
         CVFit => CVFitOMP
-        call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid, GetBest=This%GetBest, &
-                               MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
+        call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, GetBest=This%GetBest, &
+                                   MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
         CVError = CVMethod%Calculate(Fit=CVFit, FitData=Goal)
         if (This%ModifiedCV) CVError = CVError * ComputeCorrectionFactor(System=System, Coefficients=Coefficients)
         nullify(CVFit)
     end select
   else
-    call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid, GetBest=This%GetBest, &
-                           MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
+    call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, GetBest=This%GetBest, &
+                               MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
   end if
 
   contains
@@ -337,7 +337,7 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
       if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
       iiLoc = 1
       do iiLoc = 1, NbValidation
-        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(i)*System(ValidationIndices(iiLoc,iLoc))
+        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
       end do
     end do
     
@@ -400,9 +400,10 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
 
   real(rkp), dimension(:,:), target, intent(inout)                    ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
-  real(rkp), intent(inout)                                            ::    Coefficients
+  real(rkp), dimension(:), intent(inout)                              ::    Coefficients
   real(rkp), optional, intent(out)                                    ::    CVLOO
   logical, optional, intent(in)                                       ::    GetBest
+  real(rkp), optional, intent(in)                                     ::    MinAbsCorr
   logical, optional, intent(in)                                       ::    ModifiedCVLOO
   logical, optional, intent(in)                                       ::    StopEarly
 
@@ -455,7 +456,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
   real(rkp)                                                           ::    ResidualNorm
 
   StopEarlyLoc = .true.
-  if (present(StopEarly )) StopEarly Loc=StopEarly 
+  if (present(StopEarly )) StopEarlyLoc=StopEarly 
 
   GetBestLoc = .true.
   if (present(GetBest)) GetBestLoc=GetBest
@@ -514,7 +515,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
   i = 1
   do i = 1, N 
     if (.not. any(dabs(System(:,1))>Zero)) call Error%Raise('System has a column of zeros', ProcName=ProcName)
-    Norm(i) = ComputeNorm(Values=System(:,i), Norm=2)
+    Norm(i) = ComputeNorm(Vector=System(:,i), Norm=2)
   end do
 
   VarR0D = Zero
@@ -594,13 +595,13 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
     ! finding most correlated regressor from inactive and non-constant list
     MaxAbsCorr = Zero
     MaxAbsCorrIndex = 0
-    ResidualNorm = ComputeNorm(Values=Residual, Norm=2)
+    ResidualNorm = ComputeNorm(Vector=Residual, Norm=2)
     i = 1
     do i = 1, N
       if (Active(i)) cycle
       if (Skip(i)) cycle
       VarR0D = dabs(dot_product(System(:,i), Residual)/(Norm(i)*ResidualNorm))
-      if (VarR0D < MaxCorr) cycle
+      if (VarR0D < MaxAbsCorr) cycle
       MaxAbsCorr = VarR0D
       MaxAbsCorrIndex = i
     end do
@@ -617,15 +618,19 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
         cycle
       end if
     else
+      u1 = Zero
       i = 1
       do i = 1, NbActiveIndices
         u1(i) = dot_product(System(:,ActiveIndices(i)), v)
       end do
   
+      u2(1:NbActiveIndices) = Zero
       i = 1
       do i = 1, NbActiveIndices
-        VarR1D(1:NbActivesIndices) = InvXtX(i,1:NbActiveIndices)
-        u2(i) = dot_product(VarR1D, u1(1:NbActiveIndices))
+        ii = 1
+        do ii = 1, NbActiveIndices
+          u2(i) = u2(i) + InvXtX(i,ii)*u1(ii)
+        end do
       end do
   
       d = One / (dot_product(v,v) - dot_product(u1(1:NbActiveIndices), u2(1:NbActiveIndices)))
@@ -640,12 +645,12 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
       end if
 
       i = 1
-      do i = NbActiveIndices
+      do i = 1, NbActiveIndices
         InvXtX(1:NbActiveIndices,i) = InvXtX(1:NbActiveIndices,i) + d*VarR0D
       end do
       InvXtX(1:NbActiveIndices,NbActiveIndices+1) = -d*u2(1:NbActiveIndices)
-      InvXtX(NbActivesIndices+1,1:NbActiveIndices) = -d*u2(1:NbActiveIndices)
-      InvXtX(NbActivesIndices+1,NbActivesIndices+1) = d
+      InvXtX(NbActiveIndices+1,1:NbActiveIndices) = -d*u2(1:NbActiveIndices)
+      InvXtX(NbActiveIndices+1,NbActiveIndices+1) = d
     end if
     nullify(v)
 
@@ -676,7 +681,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
       VarR1D(1:NbActiveIndices) = System(i,ActiveIndices(1:NbActiveIndices))
       v => VarR1D(1:NbActiveIndices)
       ii = 1
-      do ii = 1:NbActiveIndices
+      do ii = 1,NbActiveIndices
         h(i) = h(i) + dot_product(v,InvXtX(1:NbActiveIndices,ii))*v(ii)
       end do
       nullify(v)
@@ -784,9 +789,10 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
 
   real(rkp), dimension(:,:), target, intent(inout)                    ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
-  real(rkp), intent(inout)                                            ::    Coefficients
+  real(rkp), dimension(:), intent(inout)                              ::    Coefficients
   real(rkp), optional, intent(out)                                    ::    CVLOO
   logical, optional, intent(in)                                       ::    GetBest
+  real(rkp), optional, intent(in)                                     ::    MinAbsCorr
   logical, optional, intent(in)                                       ::    ModifiedCVLOO
   logical, optional, intent(in)                                       ::    StopEarly
 
@@ -829,12 +835,15 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   integer                                                             ::    ip1
   integer                                                             ::    ii
   real(rkp)                                                           ::    ResidualNorm
-
-  HybridLoc = .true.
-  if (present(Hybrid)) HybridLoc=Hybrid
+  real(rkp), allocatable, dimension(:)                                ::    BestCoefficients
+  integer, allocatable, dimension(:)                                  ::    BestIndices
+  integer                                                             ::    BestNbIndices
+  real(rkp)                                                           ::    BestCVLOO
+  real(rkp)                                                           ::    BestCVLOONonN
+  real(rkp), allocatable, dimension(:)                                ::    CoefficientsLoc
 
   StopEarlyLoc = .true.
-  if (present(StopEarly )) StopEarly Loc=StopEarly 
+  if (present(StopEarly )) StopEarlyLoc=StopEarly 
 
   GetBestLoc = .true.
   if (present(GetBest)) GetBestLoc=GetBest
@@ -893,7 +902,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   i = 1
   do i = 1, N
     if (.not. any(dabs(System(:,1))>Zero)) call Error%Raise('System has a column of zeros', ProcName=ProcName)
-    Norm(i) = ComputeNorm(Values=System(:,i), Norm=2)
+    Norm(i) = ComputeNorm(Vector=System(:,i), Norm=2)
   end do
 
   VarR0D = Zero
@@ -956,7 +965,6 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   T = Zero
   CVLOOCounter = 0
   TSum = Zero
-  c = Zero
   CVLOOTrip = max(nint(real(MaxNbIterations,rkp)*0.1),100)
 
   do
@@ -966,12 +974,12 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
     ! finding most correlated regressor from inactive and non-constant list
     MaxAbsCorr = Zero
     MaxAbsCorrIndex = 0
-    ResidualNorm = ComputeNorm(Values=Residual, Norm=2)
+    ResidualNorm = ComputeNorm(Vector=Residual, Norm=2)
     i = 1
     do i = 1, N
       if (Active(i)) cycle
       VarR0D = dabs(dot_product(System(:,i), Residual)/(Norm(i)*ResidualNorm))
-      if (VarR0D < MaxCorr) cycle
+      if (VarR0D < MaxAbsCorr) cycle
       MaxAbsCorr = VarR0D
       MaxAbsCorrIndex = i
     end do
@@ -1007,14 +1015,14 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
       Q1(:,ip1) = System(:,MaxAbsCorrIndex)
 
       call DGEMV('T', M, NbActiveIndices, 1.d0, Q1(:,1:NbActiveIndices), M, System(:,MaxAbsCorrIndex), 1, 0.d0, &
-                  R(1:NbActiveIndices), 1)
+                  R(1:NbActiveIndices, ip1), 1)
 
       i = 1
       do i = 1, NbActiveIndices
         Q1(:,ip1) =  Q1(:,ip1) - Q1(:,i)*R(i,ip1)
       end do
 
-      R(ip1,ip1) = ComputeNorm(Values=Q1(:,ip1), 2)
+      R(ip1,ip1) = ComputeNorm(Vector=Q1(:,ip1), Norm=2)
       if (.not. dabs(R(ip1,ip1)) > Zero) call Error%Raise('Zero on the diagonal of R', ProcName=ProcName)
 
       Q1(:,ip1) = Q1(:,ip1) / R(ip1,ip1)
@@ -1029,7 +1037,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
         InvR(i,ip1) = -InvR(i,ip1) / R(i,i)
       end do
     else
-      R(1,1) = ComputeNorm(Values=System(:,MaxAbsCorrIndex),2)
+      R(1,1) = ComputeNorm(Vector=System(:,MaxAbsCorrIndex), Norm=2)
       if (.not. dabs(R(1,1)) > Zero) call Error%Raise('Zero on the diagonal of R', ProcName=ProcName)
       Q1(:,1) = System(:,MaxAbsCorrIndex) / R(1,1)
       InvR(1,1) = One / R(1,1)
@@ -1072,7 +1080,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
     if (ModifiedCVLOOLoc) then
       if (M > NbActiveIndices) then
         ! taking advantage of the fact that only last colum/row of inv(R)/inv(R') changes with each loop
-        TSum = TSum + dot_product(InvR(1:NbActiveIndices,NbActiveIndices))
+        TSum = TSum + dot_product(InvR(1:NbActiveIndices,NbActiveIndices), InvR(1:NbActiveIndices,NbActiveIndices))
         T = TSum
         T = (Mreal/real(M-NbActiveIndices,rkp))*(One+T)
         CVLOOTemp = CVLOOTemp*T
@@ -1141,10 +1149,13 @@ function ComputeCorrectionFactor(System, Coefficients)
 
   real(rkp)                                                           ::    ComputeCorrectionFactor
 
+  real(rkp), dimension(:,:), intent(in)                               ::    System
+  real(rkp), dimension(:), intent(in)                                 ::    Coefficients
+
   character(*), parameter                                             ::    ProcName='BuildMetaModel_QR_OMP'
   integer                                                             ::    StatLoc=0
   real(rkp), allocatable, dimension(:,:)                              ::    Q
-  real(rkp), allocatable, dimension(:,:)                              ::    InvR 
+  real(rkp), allocatable, dimension(:,:)                              ::    InvRt
   integer                                                             ::    i
   integer                                                             ::    ii
   integer                                                             ::    N
@@ -1177,9 +1188,9 @@ function ComputeCorrectionFactor(System, Coefficients)
   ComputeCorrectionFactor = Zero
   i = 1
   do i = 1, NbIndices
-    ComputeCorrectionFactor = ComputeCorrectionFactor + dot_product(R(i:NbIndices,i),R(i:NbIndices,i))
+    ComputeCorrectionFactor = ComputeCorrectionFactor + dot_product(InvRt(i:NbIndices,i),InvRt(i:NbIndices,i))
   end do
-  ComputeCorrectionFactor = (Mreal/real(M-NbIndices,rkp))*(One+T)
+  ComputeCorrectionFactor = (real(M,rkp)/real(M-NbIndices,rkp))*(One+ComputeCorrectionFactor)
 
   deallocate(Q, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='Q', ProcName=ProcName, stat=StatLoc)
