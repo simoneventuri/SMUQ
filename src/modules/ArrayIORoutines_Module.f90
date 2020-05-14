@@ -24,6 +24,8 @@ interface WriteArray
   module procedure                                                    ::    WriteArray_L1D
   module procedure                                                    ::    WriteArray_I42D
   module procedure                                                    ::    WriteArray_I82D
+  module procedure                                                    ::    WriteArray_R41D
+  module procedure                                                    ::    WriteArray_R81D
   module procedure                                                    ::    WriteArray_R42D
   module procedure                                                    ::    WriteArray_R82D
 end interface
@@ -175,6 +177,58 @@ contains
       do i = 1, size(Array,2)
         write(*,*) Array(:,i)
       end do
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+ !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteArray_R41D(Array, RowMajor)
+
+    real(4), dimension(:), intent(in)                                 ::    Array
+    logical, optional, intent(in)                                     ::    RowMajor
+
+    character(*), parameter                                           ::    ProcName='WriteArray_R41D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    logical                                                           ::    RowMajorLoc
+
+    RowMajorLoc = .true.
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+
+    if (RowMajorLoc) then
+      i = 1
+      do i = 1, size(Array,1)
+        write(*,*) Array(i)
+      end do
+    else
+      write(*,*) Array
+    end if
+
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine WriteArray_R81D(Array, RowMajor)
+
+    real(8), dimension(:), intent(in)                                 ::    Array
+    logical, optional, intent(in)                                     ::    RowMajor
+
+    character(*), parameter                                           ::    ProcName='WriteArray_R81D'
+    integer                                                           ::    StatLoc
+    integer                                                           ::    i
+    logical                                                           ::    RowMajorLoc
+
+    RowMajorLoc = .true.
+    if (present(RowMajor)) RowMajorLoc = RowMajor
+
+    if (RowMajorLoc) then
+      i = 1
+      do i = 1, size(Array,1)
+        write(*,*) Array(i)
+      end do
+    else  
+        write(*,*) Array
     end if
 
   end subroutine

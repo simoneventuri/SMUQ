@@ -646,7 +646,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
 
       i = 1
       do i = 1, NbActiveIndices
-        InvXtX(1:NbActiveIndices,i) = InvXtX(1:NbActiveIndices,i) + d*VarR0D
+        InvXtX(1:NbActiveIndices,i) = InvXtX(1:NbActiveIndices,i) + d*u2(i)*u2(1:NbActiveIndices)
       end do
       InvXtX(1:NbActiveIndices,NbActiveIndices+1) = -d*u2(1:NbActiveIndices)
       InvXtX(NbActiveIndices+1,1:NbActiveIndices) = -d*u2(1:NbActiveIndices)
@@ -663,7 +663,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
     XtY(NbActiveIndices) = dot_product(System(:,ActiveIndices(NbActiveIndices)),Goal)
     i = 1
     do i = 1, NbActiveIndices
-      CoefficientsLoc(1:NbActiveIndices) = CoefficientsLoc(1:NbActiveIndices) + XtY(i) * InvXtX(:,i)
+      CoefficientsLoc(1:NbActiveIndices) = CoefficientsLoc(1:NbActiveIndices) + XtY(i) * InvXtX(1:NbActiveIndices,i)
     end do
 
     ! update residual
@@ -1032,7 +1032,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
       do i = NbActiveIndices, 1, -1
         ii = i+1
         do ii = i+1, ip1
-          invR(i,ip1) = invR(i,ip1) + R(ii,i)*InvR(ii,ip1)
+          invR(i,ip1) = invR(i,ip1) + R(i,ii)*InvR(ii,ip1)
         end do
         InvR(i,ip1) = -InvR(i,ip1) / R(i,i)
       end do

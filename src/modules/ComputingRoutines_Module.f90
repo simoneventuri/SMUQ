@@ -152,7 +152,7 @@ contains
     real(4), intent(in)                                               ::    Value
 
     real(4), parameter                                                ::    Big=huge(0.0_4)
-    real(4), parameter                                                ::    Small=huge(0.0_4)
+    real(4), parameter                                                ::    Small=-huge(0.0_4)
 
     IsFinite_R40D = .false.
     if (Value >= Small .and. Value <= Big .and. Value == Value) IsFinite_R40D = .true.
@@ -168,7 +168,7 @@ contains
     real(4), dimension(:), intent(in)                                 ::    Values
 
     real(4), parameter                                                ::    Big=huge(0.0_4)
-    real(4), parameter                                                ::    Small=huge(0.0_4)
+    real(4), parameter                                                ::    Small=-huge(0.0_4)
     integer                                                           ::    i
 
     IsFinite_R41D = .true.
@@ -190,7 +190,7 @@ contains
     real(4), dimension(:,:), intent(in)                               ::    Values
 
     real(4), parameter                                                ::    Big=huge(0.0_4)
-    real(4), parameter                                                ::    Small=huge(0.0_4)
+    real(4), parameter                                                ::    Small=-huge(0.0_4)
     integer                                                           ::    i
     integer                                                           ::    j
     integer                                                           ::    M 
@@ -222,7 +222,7 @@ contains
     real(8), intent(in)                                               ::    Value
 
     real(8), parameter                                                ::    Big=huge(0.0_8)
-    real(8), parameter                                                ::    Small=huge(0.0_8)
+    real(8), parameter                                                ::    Small=-huge(0.0_8)
 
     IsFinite_R80D = .false.
     if (Value >= Small .and. Value <= Big .and. Value == Value) IsFinite_R80D = .true.
@@ -238,11 +238,10 @@ contains
     real(8), dimension(:), intent(in)                                 ::    Values
 
     real(8), parameter                                                ::    Big=huge(0.0_8)
-    real(8), parameter                                                ::    Small=huge(0.0_8)
+    real(8), parameter                                                ::    Small=-huge(0.0_8)
     integer                                                           ::    i
 
     IsFinite_R81D = .true.
-
     i = 1
     do i = 1, size(Values,1)
       if (Values(i) >= Small .and. Values(i) <= Big .and. Values(i) == Values(i)) cycle
@@ -260,7 +259,7 @@ contains
     real(8), dimension(:,:), intent(in)                               ::    Values
 
     real(8), parameter                                                ::    Big=huge(0.0_8)
-    real(8), parameter                                                ::    Small=huge(0.0_8)
+    real(8), parameter                                                ::    Small=-huge(0.0_8)
     integer                                                           ::    i
     integer                                                           ::    j
     integer                                                           ::    M 

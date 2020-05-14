@@ -1712,11 +1712,11 @@ contains
 
     NbNonZero = count(dabs(Coefficients) > Zero)
 
-    allocate(This%Coefficients(NbNonZero), source=Coefficients, stat=StatLoc)
+    allocate(This%Coefficients(NbNonZero), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Coefficients', ProcName=ProcName, stat=StatLoc)
     This%Coefficients = Zero
 
-    allocate(This%Indices(size(Indices,1), NbNonZero), source=Indices, stat=StatLoc)
+    allocate(This%Indices(size(Indices,1), NbNonZero), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Indices', ProcName=ProcName, stat=StatLoc)
     This%Indices = 0
 
