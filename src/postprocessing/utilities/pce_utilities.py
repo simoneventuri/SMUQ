@@ -118,13 +118,12 @@ def plot_sobol_indices_single(response, i_cell, variables):
 
     mng = plt.get_current_fig_manager()
     mng.resize(*mng.window.maxsize())
-
-    ax1.barh(response_sobol_total, tick_label=variable_names, align='center')
+    y_pos = np.arange(len(variables))
+    ax1.barh(y=y_pos , width=response_sobol_total, \
+             tick_label=variable_names, align='center')
     ax1.invert_yaxis()
+    ax1.set_xlim(left=0.0, right=1.0)
     ax1.set_xlabel(r'$S_T$')
-    ax1.yaxis.set_major_formatter(ScalarFormatter())
-    ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
-    ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
     ratio = 1.0
     ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
 
@@ -133,12 +132,11 @@ def plot_sobol_indices_single(response, i_cell, variables):
     mng = plt.get_current_fig_manager()
     mng.resize(*mng.window.maxsize())
 
-    ax2.barh(response_sobol_first, tick_label=variable_names, align='center')
+    ax2.barh(y=y_pos, width=response_sobol_first, \
+             tick_label=variable_names, align='center')
     ax2.invert_yaxis()
+    ax2.set_xlim(left=0.0, right=1.0)
     ax2.set_xlabel(r'$S_i$')
-    ax2.yaxis.set_major_formatter(ScalarFormatter())
-    ax2.yaxis.set_minor_locator(AutoMinorLocator(5))
-    ax2.xaxis.set_minor_locator(AutoMinorLocator(5))
     ratio = 1.0
     ax2.set_aspect(1.0/ax2.get_data_ratio()*ratio)
 

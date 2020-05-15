@@ -21,5 +21,5 @@ for response in responses:
     if (response.get_nb_coords() > 1):
         pu.plot_sobol_indices(response, variables)
     else:
-        pu.plot_sobol_indices_single(response,0,variables)
+        pu.plot_sobol_indices_single(response,1,variables)
 plt.show()

@@ -252,7 +252,7 @@ module CVKFold_Class
     if (StatLoc /= 0) call Error%Allocate(Name='ValidationSetIndices', ProcName=ProcName, stat=StatLoc)
     ValidationSetIndices = 0
 
-    allocate(Residual(NbData-FoldSize), stat=StatLoc)
+    allocate(Residual(MaxFoldSize), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Resiidual', ProcName=ProcName, stat=StatLoc)
     Residual = Zero
 
@@ -314,7 +314,7 @@ module CVKFold_Class
         Calculate = Zero
       end if
     end if
-  
+
     deallocate(TrainingSet, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='TrainingSet', ProcName=ProcName, stat=StatLoc)
 

@@ -38,7 +38,7 @@ private
 public                                                                ::    LinSolverOLS_Type
 
 type, extends(LinSolverMethod_Type)                                   ::    LinSolverOLS_Type
-  logical                                                             ::    ModifiedCV
+  logical                                                             ::    CorrectedCV
   class(CVMethod_Type), allocatable                                   ::    CVError
 contains
   procedure, public                                                   ::    Initialize
@@ -102,7 +102,7 @@ subroutine SetDefaults(This)
 
   character(*), parameter                                             ::    ProcName='SetDefaults'
 
-  This%ModifiedCV = .true.
+  This%CorrectedCV = .true.
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -132,7 +132,7 @@ subroutine ConstructInput(This, Input, Prefix)
 
   ParameterName = 'modified_cross_validation'
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-  if (Found) This%ModifiedCV = VarL0D
+  if (Found) This%CorrectedCV = VarL0D
 
   SectionName = 'cross_validation'
   if (Input%HasSection(SubSectionName=SectionName)) then
@@ -154,11 +154,11 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine ConstructCase1(This, CVMethod, ModifiedCV)
+subroutine ConstructCase1(This, CVMethod, CorrectedCV)
 
   class(LinSolverOLS_Type), intent(inout)                             ::    This
   class(CVMethod_Type), optional, intent(in)                          ::    CVMethod
-  logical, optional, intent(in)                                       ::    ModifiedCV
+  logical, optional, intent(in)                                       ::    CorrectedCV
 
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
@@ -166,7 +166,7 @@ subroutine ConstructCase1(This, CVMethod, ModifiedCV)
   if (This%Constructed) call This%Reset()
   if (.not. This%Initialized) call This%Initialize()
 
-  if (present(ModifiedCV)) This%ModifiedCV = ModifiedCV
+  if (present(CorrectedCV)) This%CorrectedCV = CorrectedCV
 
   if (present(CVMethod)) then
     allocate(This%CVError, source=CVMethod, stat=StatLoc)
@@ -216,7 +216,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-  call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%ModifiedCV))
+  call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%CorrectedCV))
 
   SectionName = 'cross_validation'
   GetInput = CVMethod_Factory%GetObjectInput(Object=This%CVError, Name=SectionName, Prefix=PrefixLoc, Directory=DirectoryLoc)
@@ -550,7 +550,7 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
         nullify(CVFit)
     end select
 
-    if (This%ModifiedCV) then
+    if (This%CorrectedCV) then
       if (M > N) then
         allocate(InvR, source=R, stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='InvR', ProcName=ProcName, stat=StatLoc)
@@ -747,7 +747,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
         nullify(CVFit)
     end select
 
-    if (This%ModifiedCV) then
+    if (This%CorrectedCV) then
       if (M > N) then
         T = Zero
         i = 1
@@ -842,7 +842,7 @@ impure elemental subroutine Copy(LHS, RHS)
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then
-        LHS%ModifiedCV = RHS%ModifiedCV
+        LHS%CorrectedCV = RHS%CorrectedCV
         allocate(LHS%CVError, source=RHS%CVError, stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='LHS%CVError', ProcName=ProcName, stat=StatLoc)
       end if

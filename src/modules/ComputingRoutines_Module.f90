@@ -1028,7 +1028,7 @@ contains
     if (LowerRLoc) then
       i = 1
       do i = 1, N 
-        R(N-i+1:N,N-i+1) = Q(1:i,i)
+        R(i,1:i) = Q(1:i,i)
       end do
     else
       i = 1

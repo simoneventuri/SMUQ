@@ -53,7 +53,7 @@ contains
     if (StatLoc /= 0) call Error%Allocate(Name='Coefficients', ProcName=ProcName, stat=StatLoc)
     Coefficients = Zero
 
-    call Solver%Construct(Hybrid=.false., GetBest=.false., ModifiedCV=.true., MetaModelMethod='gram')
+    call Solver%Construct(Hybrid=.false., GetBest=.false., CorrectedCV=.true., MetaModelMethod='gram')
 
     call Solver%Solve(System=System(:,2:), Goal=Goal, Coefficients=Coefficients(2:), CVError=CVError)
 write(*,*) '++++++++++++++++++++++++++'

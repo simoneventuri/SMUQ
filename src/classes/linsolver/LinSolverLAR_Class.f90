@@ -41,7 +41,7 @@ public                                                                ::    LinS
 type, extends(LinSolverMethod_Type)                                   ::    LinSolverLAR_Type
   real(rkp)                                                           ::    MinAbsCorr
   logical                                                             ::    Hybrid
-  logical                                                             ::    ModifiedCV
+  logical                                                             ::    CorrectedCV
   logical                                                             ::    GetBest
   logical                                                             ::    StopEarly
   class(CVMethod_Type), allocatable                                   ::    CVError
@@ -107,7 +107,7 @@ subroutine SetDefaults(This)
 
   This%MinAbsCorr = epsilon(This%MinAbsCorr)*100.0_rkp
   This%Hybrid = .true.
-  This%ModifiedCV = .true.
+  This%CorrectedCV = .true.
   This%GetBest = .true.
   This%StopEarly = .true.
   This%MetaModelMethod = 1
@@ -147,9 +147,9 @@ subroutine ConstructInput(This, Input, Prefix)
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%Hybrid = VarL0D
 
-  ParameterName = 'modified_cross_validation'
+  ParameterName = 'corrected_cross_validation'
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-  if (Found) This%ModifiedCV = VarL0D
+  if (Found) This%CorrectedCV = VarL0D
 
   ParameterName = 'get_best'
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
@@ -192,14 +192,14 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine ConstructCase1(This, CVMethod, Hybrid, MinAbsCorr, GetBest, StopEarly, ModifiedCV, MetaModelMethod)
+subroutine ConstructCase1(This, CVMethod, Hybrid, MinAbsCorr, GetBest, StopEarly, CorrectedCV, MetaModelMethod)
 
   class(LinSolverLAR_Type), intent(inout)                             ::    This
   class(CVMethod_Type), optional, intent(in)                          ::    CVMethod
   logical, optional, intent(in)                                       ::    Hybrid
   logical, optional, intent(in)                                       ::    GetBest
   logical, optional, intent(in)                                       ::    StopEarly
-  logical, optional, intent(in)                                       ::    ModifiedCV
+  logical, optional, intent(in)                                       ::    CorrectedCV
   real(rkp), optional, intent(in)                                     ::    MinAbsCorr
   character(*), optional, intent(in)                                  ::    MetaModelMethod
 
@@ -217,7 +217,7 @@ subroutine ConstructCase1(This, CVMethod, Hybrid, MinAbsCorr, GetBest, StopEarly
 
   if (present(StopEarly)) This%StopEarly = StopEarly
 
-  if (present(ModifiedCV)) This%ModifiedCV = ModifiedCV
+  if (present(CorrectedCV)) This%CorrectedCV = CorrectedCV
 
   if (present(MetaModelMethod)) then
     select case (MetaModelMethod)
@@ -278,7 +278,7 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddParameter(Name='hybrid', Value=ConvertToString(Value=This%Hybrid))
   call GetInput%AddParameter(Name='stop_early', Value=ConvertToString(Value=This%StopEarly))
   call GetInput%AddParameter(Name='get_best', Value=ConvertToString(Value=This%GetBest))
-  call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%ModifiedCV))
+  call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%CorrectedCV))
   call GetInput%AddParameter(Name='minimum_correlation', Value=ConvertToString(Value=This%MinAbsCorr))
   select case (This%MetaModelMethod)
     case(1)
@@ -324,20 +324,20 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
         type is (CVLOO_Type)
           call BuildMetaModel_QR_LAR(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, Hybrid=This%Hybrid, &
                                      GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
-                                     ModifiedCVLOO=This%ModifiedCV)
+                                     CorrectedCV=This%CorrectedCV)
           if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeSampleVar(Values=Goal)
         class default
           CVFit => CVFitLAR
           call BuildMetaModel_QR_LAR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid,  &
                                      GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
-                                     ModifiedCVLOO=This%ModifiedCV)
+                                     CorrectedCV=This%CorrectedCV)
           CVError = CVMethod%Calculate(Fit=CVFit, FitData=Goal)
-          if (This%ModifiedCV) CVError = CVError * ComputeCorrectionFactor(System=System, Coefficients=Coefficients)
+          if (This%CorrectedCV) CVError = CVError * ComputeCorrectionFactor(System=System, Coefficients=Coefficients)
           nullify(CVFit)
       end select
     else
       call BuildMetaModel_QR_LAR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid, GetBest=This%GetBest, &
-                                 MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
+                                 MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, CorrectedCV=This%CorrectedCV)
     end if
   elseif ( This%MetaModelMethod == 2) then
     if (present(CVError)) then
@@ -345,20 +345,20 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
         type is (CVLOO_Type)
           call BuildMetaModel_Gram_LAR(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, Hybrid=This%Hybrid, &
                                      GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
-                                     ModifiedCVLOO=This%ModifiedCV)
+                                     CorrectedCV=This%CorrectedCV)
           if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeSampleVar(Values=Goal)
         class default
           CVFit => CVFitLAR
           call BuildMetaModel_Gram_LAR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid,  &
                                      GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
-                                     ModifiedCVLOO=This%ModifiedCV)
+                                     CorrectedCV=This%CorrectedCV)
           CVError = CVMethod%Calculate(Fit=CVFit, FitData=Goal)
-          if (This%ModifiedCV) CVError = CVError * ComputeCorrectionFactor(System=System, Coefficients=Coefficients)
+          if (This%CorrectedCV) CVError = CVError * ComputeCorrectionFactor(System=System, Coefficients=Coefficients)
           nullify(CVFit)
       end select
     else
       call BuildMetaModel_Gram_LAR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid, GetBest=This%GetBest, &
-                                 MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
+                                 MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, CorrectedCV=This%CorrectedCV)
     end if
   else
     call Error%Raise('Something went wrong', ProcName=ProcName)
@@ -414,37 +414,10 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
         Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
       end do
     end do
-    
+
     deallocate(SystemLoc, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
-    allocate(SystemLoc(NbTraining,N), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
-    SystemLoc = Zero
-
-    iLoc = 1
-    do iLoc = 1, N
-      SystemLoc(:,iLoc) = System(TrainingSetIndices,iLoc)
-    end do
-
-    call This%Solve(System=SystemLoc, Goal=TrainingSet, Coefficients=CoefficientsLoc)
-
-    Residual = ValidationSet
-
-    iLoc = 1
-    do iLoc = 1, N
-      if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
-      iiLoc = 1
-      do iiLoc = 1, NbValidation
-        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
-      end do
-    end do
-    
-    deallocate(SystemLoc, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
-
-    deallocate(CoefficientsLoc, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
     deallocate(CoefficientsLoc, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='CoefficientsLoc', ProcName=ProcName, stat=StatLoc)
 
@@ -473,7 +446,7 @@ impure elemental subroutine Copy(LHS, RHS)
         LHS%Hybrid = RHS%Hybrid
         LHS%MinAbsCorr = RHS%MinAbsCorr
         LHS%StopEarly = RHS%StopEarly
-        LHS%ModifiedCV = RHS%ModifiedCV
+        LHS%CorrectedCV = RHS%CorrectedCV
         LHS%GetBest = RHS%GetBest
       end if
     class default
@@ -498,7 +471,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest, MinAbsCorr, StopEarly, ModifiedCVLOO)
+subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest, MinAbsCorr, StopEarly, CorrectedCV)
 
   real(rkp), dimension(:,:), target, intent(inout)                    ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
@@ -507,7 +480,7 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
   logical, optional, intent(in)                                       ::    Hybrid
   logical, optional, intent(in)                                       ::    GetBest
   real(rkp), optional, intent(in)                                     ::    MinAbsCorr
-  logical, optional, intent(in)                                       ::    ModifiedCVLOO
+  logical, optional, intent(in)                                       ::    CorrectedCV
   logical, optional, intent(in)                                       ::    StopEarly
 
   character(*), parameter                                             ::    ProcName='BuildMetaModel_Gram_LAR'
@@ -516,7 +489,7 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
   logical                                                             ::    GetBestLoc
   logical                                                             ::    StopEarlyLoc
   real(rkp)                                                           ::    MinAbsCorrLoc
-  logical                                                             ::    ModifiedCVLOOLoc
+  logical                                                             ::    CorrectedCVLoc
   integer                                                             ::    N
   integer                                                             ::    M
   real(rkp)                                                           ::    Nreal
@@ -579,8 +552,8 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
   GetBestLoc = .true.
   if (present(GetBest)) GetBestLoc=GetBest
 
-  ModifiedCVLOOLoc = .true.
-  if (present(ModifiedCVLOO)) ModifiedCVLOOLoc=ModifiedCVLOO
+  CorrectedCVLoc = .true.
+  if (present(CorrectedCV)) CorrectedCVLoc=CorrectedCV
 
   MinAbsCorrLoc = epsilon(MinAbsCorr)*100.0_rkp
   if(present(MinAbsCorr)) MinAbsCorrLoc = MinAbsCorr
@@ -613,7 +586,7 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
       CVLOOTemp = Zero
     end if
 
-    if(ModifiedCVLOOLoc) then
+    if(CorrectedCVLoc) then
       if (M > 1) then
         T = (Mreal / real(M-1,rkp))*(One+InvXtXScalar)
         CVLOOTemp = CVLOOTemp * T
@@ -765,7 +738,7 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
       CVLOOTemp = Zero
     end if
 
-    if(ModifiedCVLOOLoc) then
+    if(CorrectedCVLoc) then
       if (M > 1) then
         T = (Mreal / real(M-1,rkp))*(One+InvXtXScalar)
         CVLOOTemp = CVLOOTemp * T
@@ -947,7 +920,7 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
     end if
 
     ! get correction factor if needed
-    if (ModifiedCVLOOLoc) then
+    if (CorrectedCVLoc) then
       if (M > NbActiveIndices + InterceptAdjustment) then
         if (ConstantIndex /= 0) then
           T = Zero
@@ -1122,7 +1095,7 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
       CVLOOTemp = Zero
     end if
 
-    if (ModifiedCVLOOLoc) then
+    if (CorrectedCVLoc) then
       if (M > NbActiveIndices) then
         call DTRTRI('L', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
         if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
@@ -1157,7 +1130,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest, MinAbsCorr, StopEarly, ModifiedCVLOO)
+subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetBest, MinAbsCorr, StopEarly, CorrectedCV)
 
   real(rkp), dimension(:,:), target, intent(inout)                    ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
@@ -1165,7 +1138,7 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
   real(rkp), optional, intent(out)                                    ::    CVLOO
   logical, optional, intent(in)                                       ::    Hybrid
   logical, optional, intent(in)                                       ::    GetBest
-  logical, optional, intent(in)                                       ::    ModifiedCVLOO
+  logical, optional, intent(in)                                       ::    CorrectedCV
   real(rkp), optional, intent(in)                                     ::    MinAbsCorr
   logical, optional, intent(in)                                       ::    StopEarly
 
@@ -1175,7 +1148,7 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
   logical                                                             ::    GetBestLoc
   logical                                                             ::    StopEarlyLoc
   real(rkp)                                                           ::    MinAbsCorrLoc
-  logical                                                             ::    ModifiedCVLOOLoc
+  logical                                                             ::    CorrectedCVLoc
   integer                                                             ::    N
   integer                                                             ::    M
   real(rkp)                                                           ::    Nreal
@@ -1239,8 +1212,8 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
   GetBestLoc = .true.
   if (present(GetBest)) GetBestLoc=GetBest
 
-  ModifiedCVLOOLoc = .true.
-  if (present(ModifiedCVLOO)) ModifiedCVLOOLoc=ModifiedCVLOO
+  CorrectedCVLoc = .true.
+  if (present(CorrectedCV)) CorrectedCVLoc=CorrectedCV
 
   MinAbsCorrLoc = epsilon(MinAbsCorr)*100.0_rkp
   if(present(MinAbsCorr)) MinAbsCorrLoc = MinAbsCorr
@@ -1273,7 +1246,7 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
       CVLOOTemp = Zero
     end if
 
-    if(ModifiedCVLOOLoc) then
+    if(CorrectedCVLoc) then
       if (M > 1) then
         T = (Mreal / real(M-1,rkp))*(One+InvXtXScalar)
         CVLOOTemp = CVLOOTemp * T
@@ -1424,7 +1397,7 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
       CVLOOTemp = Zero
     end if
 
-    if(ModifiedCVLOOLoc) then
+    if(CorrectedCVLoc) then
       if (M > 1) then
         T = (Mreal / real(M-1,rkp))*(One+InvXtXScalar)
         CVLOOTemp = CVLOOTemp * T
@@ -1607,7 +1580,7 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
     end if
 
     ! get correction factor if needed
-    if (ModifiedCVLOOLoc) then
+    if (CorrectedCVLoc) then
       if (M > NbActiveIndices + InterceptAdjustment) then
         if (ConstantIndex /= 0) then
           ! when intercept term is present, cv loo can be adjusted to be reflective of non-standardized problem
@@ -1772,7 +1745,7 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
       CVLOOTemp = Zero
     end if
 
-    if (ModifiedCVLOOLoc) then
+    if (CorrectedCVLoc) then
       if (M > NbActiveIndices) then
         call DTRTRI('L', 'N', NbActiveIndices, R, NbActiveIndices, StatLoc)
         if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
@@ -1853,6 +1826,7 @@ function ComputeCorrectionFactor(System, Coefficients)
   do i = 1, NbIndices
     ComputeCorrectionFactor = ComputeCorrectionFactor + dot_product(InvRt(i:NbIndices,i),InvRt(i:NbIndices,i))
   end do
+
   ComputeCorrectionFactor = (real(M,rkp)/real(M-NbIndices,rkp))*(One+ComputeCorrectionFactor)
 
   deallocate(Q, stat=StatLoc)

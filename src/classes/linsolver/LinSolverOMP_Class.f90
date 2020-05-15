@@ -39,7 +39,7 @@ public                                                                ::    LinS
 
 type, extends(LinSolverMethod_Type)                                   ::    LinSolverOMP_Type
   real(rkp)                                                           ::    MinAbsCorr
-  logical                                                             ::    ModifiedCV
+  logical                                                             ::    CorrectedCV
   logical                                                             ::    GetBest
   logical                                                             ::    StopEarly
   class(CVMethod_Type), allocatable                                   ::    CVError
@@ -103,7 +103,7 @@ subroutine SetDefaults(This)
   character(*), parameter                                             ::    ProcName='SetDefaults'
 
   This%MinAbsCorr = epsilon(This%MinAbsCorr)*100.0_rkp
-  This%ModifiedCV = .true.
+  This%CorrectedCV = .true.
   This%GetBest = .true.
   This%StopEarly = .true.
 
@@ -137,9 +137,9 @@ subroutine ConstructInput(This, Input, Prefix)
   call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%MinAbsCorr = VarR0D
 
-  ParameterName = 'modified_cross_validation'
+  ParameterName = 'corrected_cross_validation'
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-  if (Found) This%ModifiedCV = VarL0D
+  if (Found) This%CorrectedCV = VarL0D
 
   ParameterName = 'get_best'
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
@@ -169,13 +169,13 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine ConstructCase1(This, CVMethod, MinAbsCorr, GetBest, StopEarly, ModifiedCV)
+subroutine ConstructCase1(This, CVMethod, MinAbsCorr, GetBest, StopEarly, CorrectedCV)
 
   class(LinSolverOMP_Type), intent(inout)                             ::    This
   class(CVMethod_Type), optional, intent(in)                          ::    CVMethod
   logical, optional, intent(in)                                       ::    GetBest
   logical, optional, intent(in)                                       ::    StopEarly
-  logical, optional, intent(in)                                       ::    ModifiedCV
+  logical, optional, intent(in)                                       ::    CorrectedCV
   real(rkp), optional, intent(in)                                     ::    MinAbsCorr
 
   character(*), parameter                                             ::    ProcName='ConstructCase1'
@@ -190,7 +190,7 @@ subroutine ConstructCase1(This, CVMethod, MinAbsCorr, GetBest, StopEarly, Modifi
 
   if (present(StopEarly)) This%StopEarly = StopEarly
 
-  if (present(ModifiedCV)) This%ModifiedCV = ModifiedCV
+  if (present(CorrectedCV)) This%CorrectedCV = CorrectedCV
 
   if (present(CVMethod)) then
     allocate(This%CVError, source=CVMethod, stat=StatLoc)
@@ -239,7 +239,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   call GetInput%AddParameter(Name='stop_early', Value=ConvertToString(Value=This%StopEarly))
   call GetInput%AddParameter(Name='get_best', Value=ConvertToString(Value=This%GetBest))
-  call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%ModifiedCV))
+  call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%CorrectedCV))
   call GetInput%AddParameter(Name='minimum_correlation', Value=ConvertToString(Value=This%MinAbsCorr))
 
   SectionName = 'cross_validation'
@@ -275,19 +275,19 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
       type is (CVLOO_Type)
         call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, &
                                    GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
-                                   ModifiedCVLOO=This%ModifiedCV)
+                                   CorrectedCV=This%CorrectedCV)
         if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeSampleVar(Values=Goal)
       class default
         CVFit => CVFitOMP
         call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, GetBest=This%GetBest, &
-                                   MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
+                                   MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, CorrectedCV=This%CorrectedCV)
         CVError = CVMethod%Calculate(Fit=CVFit, FitData=Goal)
-        if (This%ModifiedCV) CVError = CVError * ComputeCorrectionFactor(System=System, Coefficients=Coefficients)
+        if (This%CorrectedCV) CVError = CVError * ComputeCorrectionFactor(System=System, Coefficients=Coefficients)
         nullify(CVFit)
     end select
   else
     call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, GetBest=This%GetBest, &
-                               MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, ModifiedCVLOO=This%ModifiedCV)
+                               MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, CorrectedCV=This%CorrectedCV)
   end if
 
   contains
@@ -371,7 +371,7 @@ impure elemental subroutine Copy(LHS, RHS)
         if (StatLoc /= 0) call Error%Allocate(Name='LHS%CVError', ProcName=ProcName, stat=StatLoc)
         LHS%MinAbsCorr = RHS%MinAbsCorr
         LHS%StopEarly = RHS%StopEarly
-        LHS%ModifiedCV = RHS%ModifiedCV
+        LHS%CorrectedCV = RHS%CorrectedCV
         LHS%GetBest = RHS%GetBest
       end if
     class default
@@ -396,7 +396,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, MinAbsCorr, StopEarly, ModifiedCVLOO)
+subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, MinAbsCorr, StopEarly, CorrectedCV)
 
   real(rkp), dimension(:,:), target, intent(inout)                    ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
@@ -404,7 +404,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
   real(rkp), optional, intent(out)                                    ::    CVLOO
   logical, optional, intent(in)                                       ::    GetBest
   real(rkp), optional, intent(in)                                     ::    MinAbsCorr
-  logical, optional, intent(in)                                       ::    ModifiedCVLOO
+  logical, optional, intent(in)                                       ::    CorrectedCV
   logical, optional, intent(in)                                       ::    StopEarly
 
   character(*), parameter                                             ::    ProcName='BuildMetaModel_Gram_OMP'
@@ -412,7 +412,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
   logical                                                             ::    GetBestLoc
   logical                                                             ::    StopEarlyLoc
   real(rkp)                                                           ::    MinAbsCorrLoc
-  logical                                                             ::    ModifiedCVLOOLoc
+  logical                                                             ::    CorrectedCVLoc
   integer                                                             ::    N
   integer                                                             ::    M
   real(rkp)                                                           ::    Nreal
@@ -461,8 +461,8 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
   GetBestLoc = .true.
   if (present(GetBest)) GetBestLoc=GetBest
 
-  ModifiedCVLOOLoc = .true.
-  if (present(ModifiedCVLOO)) ModifiedCVLOOLoc=ModifiedCVLOO
+  CorrectedCVLoc = .true.
+  if (present(CorrectedCV)) CorrectedCVLoc=CorrectedCV
 
   MinAbsCorrLoc = epsilon(MinAbsCorr)*100.0_rkp
   if(present(MinAbsCorr)) MinAbsCorrLoc = MinAbsCorr
@@ -495,7 +495,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
       CVLOOTemp = Zero
     end if
 
-    if(ModifiedCVLOOLoc) then
+    if(CorrectedCVLoc) then
       if (M > 1) then
         T = (Mreal / real(M-1,rkp))*(One+InvXtXScalar)
         CVLOOTemp = CVLOOTemp * T
@@ -700,7 +700,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
     end if
 
     ! get correction factor if needed
-    if (ModifiedCVLOOLoc) then
+    if (CorrectedCVLoc) then
       if (M > NbActiveIndices) then
         T = Zero
         i = 1
@@ -785,7 +785,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, MinAbsCorr, StopEarly, ModifiedCVLOO)
+subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, MinAbsCorr, StopEarly, CorrectedCV)
 
   real(rkp), dimension(:,:), target, intent(inout)                    ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
@@ -793,7 +793,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   real(rkp), optional, intent(out)                                    ::    CVLOO
   logical, optional, intent(in)                                       ::    GetBest
   real(rkp), optional, intent(in)                                     ::    MinAbsCorr
-  logical, optional, intent(in)                                       ::    ModifiedCVLOO
+  logical, optional, intent(in)                                       ::    CorrectedCV
   logical, optional, intent(in)                                       ::    StopEarly
 
   character(*), parameter                                             ::    ProcName='BuildMetaModel_QR_OMP'
@@ -801,7 +801,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   logical                                                             ::    GetBestLoc
   logical                                                             ::    StopEarlyLoc
   real(rkp)                                                           ::    MinAbsCorrLoc
-  logical                                                             ::    ModifiedCVLOOLoc
+  logical                                                             ::    CorrectedCVLoc
   integer                                                             ::    N
   integer                                                             ::    M
   real(rkp)                                                           ::    Nreal
@@ -848,8 +848,8 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   GetBestLoc = .true.
   if (present(GetBest)) GetBestLoc=GetBest
 
-  ModifiedCVLOOLoc = .true.
-  if (present(ModifiedCVLOO)) ModifiedCVLOOLoc=ModifiedCVLOO
+  CorrectedCVLoc = .true.
+  if (present(CorrectedCV)) CorrectedCVLoc=CorrectedCV
 
   MinAbsCorrLoc = epsilon(MinAbsCorr)*100.0_rkp
   if(present(MinAbsCorr)) MinAbsCorrLoc = MinAbsCorr
@@ -882,7 +882,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
       CVLOOTemp = Zero
     end if
 
-    if(ModifiedCVLOOLoc) then
+    if(CorrectedCVLoc) then
       if (M > 1) then
         T = (Mreal / real(M-1,rkp))*(One+InvXtXScalar)
         CVLOOTemp = CVLOOTemp * T
@@ -1077,7 +1077,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
       CVLOOTemp = Zero
     end if
 
-    if (ModifiedCVLOOLoc) then
+    if (CorrectedCVLoc) then
       if (M > NbActiveIndices) then
         ! taking advantage of the fact that only last colum/row of inv(R)/inv(R') changes with each loop
         TSum = TSum + dot_product(InvR(1:NbActiveIndices,NbActiveIndices), InvR(1:NbActiveIndices,NbActiveIndices))
