@@ -201,6 +201,7 @@ function Calculate(This, Fit, FitData)
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
   NbData = size(FitData,1)
+  if (NbData < 2) call Error%Raise('Need to have at least 2 data points for cross validation', ProcName=ProcName)
 
   allocate(TrainingSet(NbData-1), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='TrainingSet', ProcName=ProcName, stat=StatLoc)

@@ -268,9 +268,13 @@ contains
     end if
 
     SectionName = 'solver'
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call This%Solver%Construct(Input=InputSection, Prefix=PrefixLoc)
-    nullify(InputSection)
+    if (Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call This%Solver%Construct(Input=InputSection, Prefix=PrefixLoc)
+      nullify(InputSection)
+    else
+      call This%Solver%Construct()
+    end if
 
     SectionName = 'restart'
     if (Input%HasSection(SubSectionName=SectionName)) then

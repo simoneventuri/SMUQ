@@ -123,6 +123,7 @@ module CVKFold_Class
     ParameterName = 'nb_folds'
     call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
     if(Found) This%NbFolds = VarI0D
+    if (This%NbFolds < 1) call Error%Raise('Have to specify at least 1 fold', ProcName=ProcName)
 
     This%Constructed = .true.
   
@@ -148,6 +149,7 @@ module CVKFold_Class
     if(present(Normalized)) This%Normalized = Normalized
   
     if(present(NbFolds)) This%NbFolds = NbFolds
+    if (This%NbFolds < 1) call Error%Raise('Have to specify at least 1 fold', ProcName=ProcName)
 
     This%Constructed = .true.
   
@@ -228,8 +230,10 @@ module CVKFold_Class
 
     NbData = size(FitData,1)
     if (NbData < NbFoldsLoc) NbFoldsLoc = NbData
+    if (NbData < 2) call Error%Raise('Need to have at least 2 data points for cross validation', ProcName=ProcName)
 
     FoldSize = NbData / NbFoldsLoc
+    if (NbFoldsLoc == 1) FoldSize = nint(real(NbData,rkp)/Two)
 
     FoldSizeRemainder = mod(NbData,NbFoldsLoc)
 
