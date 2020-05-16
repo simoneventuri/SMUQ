@@ -1003,11 +1003,11 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
       CVLOOCounter = CVLOOCounter + 1
     end if
 
-    if (CVLOOCounter >= CVLOOTrip) exit
+    if (StopEarlyLoc .and. CVLOOCounter >= CVLOOTrip) exit
 
     CVLOOIncCounter = CVLOOIncCounter + 1
     if (CVLOOTemp < CVLOOM1) CVLOOIncCounter = 0
-    if (CVLOOIncCounter >= NbCVErrorIncLoc) exit
+    if (StopEarlyLoc .and. CVLOOIncCounter >= NbCVErrorIncLoc) exit
     CVLOOM1 = CVLOOTemp
 
   end do
@@ -1682,11 +1682,11 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
       CVLOOCounter = CVLOOCounter + 1
     end if
 
-    if (CVLOOCounter >= CVLOOTrip) exit
+    if (StopEarlyLoc .and. CVLOOCounter >= CVLOOTrip) exit
 
     CVLOOIncCounter = CVLOOIncCounter + 1
     if (CVLOOTemp < CVLOOM1) CVLOOIncCounter = 0
-    if (CVLOOIncCounter >= NbCVErrorIncLoc) exit
+    if (StopEarlyLoc .and. CVLOOIncCounter >= NbCVErrorIncLoc) exit
     CVLOOM1 = CVLOOTemp
 
   end do

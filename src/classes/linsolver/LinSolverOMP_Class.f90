@@ -823,11 +823,11 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
       CVLOOCounter = CVLOOCounter + 1
     end if
 
-    if (CVLOOCounter >= CVLOOTrip) exit
+    if (StopEarlyLoc .and. CVLOOCounter >= CVLOOTrip) exit
 
     CVLOOIncCounter = CVLOOIncCounter + 1
     if (CVLOOTemp < CVLOOM1) CVLOOIncCounter = 0
-    if (CVLOOIncCounter >= NbCVErrorIncLoc) exit
+    if (StopEarlyLoc .and. CVLOOIncCounter >= NbCVErrorIncLoc) exit
     CVLOOM1 = CVLOOTemp
 
   end do
@@ -1212,11 +1212,11 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
       CVLOOCounter = CVLOOCounter + 1
     end if
 
-    if (CVLOOCounter >= CVLOOTrip) exit
+    if (StopEarlyLoc .and. CVLOOCounter >= CVLOOTrip) exit
 
     CVLOOIncCounter = CVLOOIncCounter + 1
     if (CVLOOTemp < CVLOOM1) CVLOOIncCounter = 0
-    if (CVLOOIncCounter >= NbCVErrorIncLoc) exit
+    if (StopEarlyLoc .and. CVLOOIncCounter >= NbCVErrorIncLoc) exit
     CVLOOM1 = CVLOOTemp
 
   end do
