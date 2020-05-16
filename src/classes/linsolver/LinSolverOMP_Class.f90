@@ -832,7 +832,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
 
   if (GetBestLoc) then
     if(present(CVLOO)) CVLOO = BestCVLOO
-    Coefficients(BestIndices(1:NbActiveIndices)) = BestCoefficients(1:NbActiveIndices)
+    Coefficients(BestIndices(1:BestNbIndices)) = BestCoefficients(1:BestNbIndices)
   else
     if(present(CVLOO)) CVLOO = CVLOOTemp
     Coefficients(ActiveIndices(1:NbActiveIndices)) = CoefficientsLoc(1:NbActiveIndices)
