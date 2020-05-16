@@ -41,6 +41,7 @@ use SampleSpace_CLass                                             ,only:    Samp
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use SampleMethod_Factory_Class                                    ,only:    SampleMethod_Factory
 use SampleLHS_Class                                               ,only:    SampleLHS_Type
+use SampleQuasiMC_Class                                           ,only:    SampleQuasiMC_Type
 use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
@@ -257,9 +258,9 @@ contains
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
       call SampleMethod_Factory%Construct(Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc)
     else
-      allocate(SampleLHS_Type :: This%Sampler)
+      allocate(SampleQuasiMC_Type :: This%Sampler)
       select type (Object => This%Sampler)
-        type is (SampleLHS_Type)
+        type is (SampleQuasiMC_Type)
           call Object%Construct()
         class default
           call Error%Raise(Line='Something went wrong', ProcName=ProcName)
@@ -686,7 +687,7 @@ contains
         if (.not. allocated(This%ParamRecord)) then
           if (.not. SilentLoc) then
             Line = 'Initial population of the linear system'
-            write(*,'(A)') '' 
+            write(*,'(A)')
             write(*,'(A)') Line
           end if
           This%ParamSample = SampleSpace%Draw(Sampler=This%Sampler, NbSamples=ReqNbSamples)
@@ -698,10 +699,10 @@ contains
           if (size(This%ParamRecord,2) < ReqNbSamples) then
             if (.not. SilentLoc) then
               Line = 'Performing enrichment'
-              write(*,'(A)') '' 
+              write(*,'(A)')
               write(*,'(A)') Line
             end if
-            VarI0D = ReqNbSamples - size(This%ParamSample,2)
+            VarI0D = ReqNbSamples - size(This%ParamRecord,2)
             call SampleSpace%Enrich(Sampler=This%Sampler, NbEnrichmentSamples=VarI0D, Samples=This%ParamRecord,                  &
                                                                                               EnrichmentSamples=This%ParamSample)
             This%SamplesRan = .false.
@@ -712,13 +713,13 @@ contains
             if (This%ModelRunCounter /= 0) then               
               if (.not. SilentLoc) then
                 Line = 'Reusing samples with increased truncation order'
-                write(*,'(A)') '' 
+                write(*,'(A)') 
                 write(*,'(A)') Line
               end if
             else
               if (.not. SilentLoc) then
                 Line = 'Processing precomputed samples'
-                write(*,'(A)') '' 
+                write(*,'(A)')
                 write(*,'(A)') Line
               end if
             end if
@@ -830,8 +831,6 @@ contains
 
         This%ParamSampleStep = 0
 
-        if (.not. SilentLoc) write(*,*)
-
       end if
      
       iEnd = size(This%ParamRecord,2)
@@ -844,6 +843,7 @@ contains
 
         if (.not. SilentLoc) then
           Line = 'Computing PCE coefficients for each node'
+          write(*,*) 
           write(*,'(A)') Line
         end if
 
@@ -865,7 +865,7 @@ contains
         if (StatLoc /= 0) call Error%Allocate(Name='Q', ProcName=ProcName, stat=StatLoc)
         Q = Zero
 
-        allocate(InvR(M,N), stat=StatLoc)
+        allocate(InvR(N,N), stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='InvR', ProcName=ProcName, stat=StatLoc)
         InvR = Zero
 
@@ -946,7 +946,7 @@ contains
     if (.not. ConvergedFlag) then
       if (.not. SilentLoc) then
         Line = 'Some nodes did not converge.'
-        write(*,'(A)') '' 
+        write(*,'(A)')
         write(*,'(A)') Line
       end if   
     end if
