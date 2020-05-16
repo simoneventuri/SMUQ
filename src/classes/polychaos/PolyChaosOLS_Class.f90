@@ -664,8 +664,8 @@ contains
       end if
 
       ! Checks if all cells reached maximum truncation order
-      OrderExceededFlag = .true.
-      if (size(This%ParamRecord,2) > 0 .and. This%IndexOrder < IndexMaxOrder) OrderExceededFlag = .false.
+      OrderExceededFlag = .false.
+      if (size(This%ParamRecord,2) > 0 .and. This%IndexOrder >= IndexMaxOrder) OrderExceededFlag = .true.
 
       if (OrderExceededFlag) then
         if (.not. SilentLoc) then
