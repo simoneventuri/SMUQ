@@ -24,6 +24,7 @@ module LinSolverOMP_Class
   use ComputingRoutines_Module
   use QRUpdate_Library
   use StringRoutines_Module
+  use ArrayIORoutines_Module
   use Logger_Class                                                  ,only:    Logger
   use Error_Class                                                   ,only:    Error
   use LinSolverMethod_Class                                         ,only:    LinSolverMethod_Type
@@ -658,6 +659,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
 
   allocate(InvXtX(MaxNbRegressors,MaxNbRegressors), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='InvXtX', ProcName=ProcName, stat=StatLoc)
+  InvXtX = Zero
 
   allocate(XtY(MaxnbRegressors), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='XtY', ProcName=ProcName, stat=StatLoc)

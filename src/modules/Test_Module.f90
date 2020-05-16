@@ -10,6 +10,7 @@ use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use LinSolverLAR_Class                                            ,only:    LinSolverLAR_Type
+use LinSolverOMP_Class                                            ,only:    LinSolverOMP_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 
 implicit none
@@ -36,7 +37,7 @@ contains
     character(:), allocatable                                         ::    FileName
     real(rkp), allocatable, dimension(:,:)                            ::    System
     real(rkp), allocatable, dimension(:)                              ::    Goal
-    type(LinSolverLAR_Type)                                           ::    Solver
+    type(LinSolverOMP_Type)                                           ::    Solver
     real(rkp), allocatable, dimension(:)                              ::    Coefficients
     real(rkp)                                                         ::    CVerror
     integer                                                           ::    i
@@ -53,9 +54,9 @@ contains
     if (StatLoc /= 0) call Error%Allocate(Name='Coefficients', ProcName=ProcName, stat=StatLoc)
     Coefficients = Zero
 
-    call Solver%Construct(Hybrid=.false., GetBest=.false., CorrectedCV=.true., MetaModelMethod='gram')
+    call Solver%Construct(MetaModelMethod='qr')
 
-    call Solver%Solve(System=System(:,2:), Goal=Goal, Coefficients=Coefficients(2:), CVError=CVError)
+    call Solver%Solve(System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError)
 write(*,*) '++++++++++++++++++++++++++'
 write(*,*) Coefficients
 write(*,*) CVError

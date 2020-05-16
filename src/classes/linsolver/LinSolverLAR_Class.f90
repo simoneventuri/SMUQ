@@ -815,6 +815,7 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
         cycle
       end if
     else
+      u1 = Zero
       i = 1
       do i = 1, NbActiveIndices
         u1(i) = dot_product(System(:,ActiveIndices(i)), v)
