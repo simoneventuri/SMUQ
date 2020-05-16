@@ -219,7 +219,8 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%CorrectedCV))
 
   SectionName = 'cross_validation'
-  GetInput = CVMethod_Factory%GetObjectInput(Object=This%CVError, Name=SectionName, Prefix=PrefixLoc, Directory=DirectoryLoc)
+  call GetInput%AddSection(Section=CVMethod_Factory%GetObjectInput(Object=This%CVError, Name=SectionName, Prefix=PrefixLoc, &
+                           Directory=DirectoryLoc))
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------

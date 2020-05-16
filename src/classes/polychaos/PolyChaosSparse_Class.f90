@@ -881,8 +881,8 @@ contains
             IndexOrder = IndexStartOrder
           else
             IndexOrder = This%Cells(i)%GetTruncationOrder()
+            if (IndexOrder >= IndexMaxOrder) cycle
           end if
-          if (IndexOrder >= IndexMaxOrder) cycle
 
           CVErrorTrip = huge(VarR0D)
 
@@ -1881,7 +1881,6 @@ contains
     integer                                                           ::    StatLoc=0    
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-    if (This%CVErrorHistory%GetLength() < 1) call Error%Raise(Line='Outputs not yet supplied', ProcName=ProcName)
 
     call This%CVErrorHistory%Get(Values=GetCVErrorHistory_Cell)
 
@@ -1899,7 +1898,6 @@ contains
     integer                                                           ::    StatLoc=0    
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-    if (This%NbRunsHistory%GetLength() < 1) call Error%Raise(Line='Outputs not yet supplied', ProcName=ProcName)
 
     call This%NbRunsHistory%Get(Values=GetNbRunsHistory_Cell)
 
@@ -1917,7 +1915,6 @@ contains
     integer                                                           ::    StatLoc=0    
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-    if (This%OrderHistory%GetLength() < 1) call Error%Raise(Line='Outputs not yet supplied', ProcName=ProcName)
 
     call This%OrderHistory%Get(Values=GetOrderHistory_Cell)
 
@@ -1935,7 +1932,6 @@ contains
     integer                                                           ::    StatLoc=0    
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-    if (This%CardinalityHistory%GetLength() < 1) call Error%Raise(Line='Outputs not yet supplied', ProcName=ProcName)
 
     call This%CardinalityHistory%Get(Values=GetCardinalityHistory_Cell)
 
@@ -1953,7 +1949,6 @@ contains
     integer                                                           ::    StatLoc=0    
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-    if (This%SobolIndicesHistory%GetLength() < 1) call Error%Raise(Line='Outputs not yet supplied', ProcName=ProcName)
 
     call This%SobolIndicesHistory%Get(Values=GetSobolIndicesHistory_Cell)
 
