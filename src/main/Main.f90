@@ -25,7 +25,7 @@ program SMUQ
   character(:), allocatable                                             ::    SectionChain
   type(SMUQString_Type)                                                 ::    SMUQTask
   logical                                                               ::    VarL0D
-  
+
   write(*,*)
   write(*,'(A)') "|=================================================================================|"
   write(*,'(A)') "|                 __________                          _______                     |"
@@ -53,10 +53,10 @@ program SMUQ
   !! Getting Running DIrectory
   !!--------------------------------------------------------------------------------------------------------------------------------
   call GetCurrentDirectoryPath(Path=RunDirectory)
+  write(*,*)
   write(*,'(A)') 'Running SMUQ in :'
   write(*,'(A)') '  ' // RunDirectory
-  write(*,*)
-  
+
   !!--------------------------------------------------------------------------------------------------------------------------------
   !! Reading in command line arguments
   !!--------------------------------------------------------------------------------------------------------------------------------
@@ -64,12 +64,12 @@ program SMUQ
   call CMDArgsSection%AddCommandLineArguments()
   
   call ProgramDefs%Construct(Input=CMDArgsSection, Prefix=RunDirectory)
-         
+       
   !!--------------------------------------------------------------------------------------------------------------------------------                                                                             , 
   !! Setting up run environment
   !!--------------------------------------------------------------------------------------------------------------------------------
-  write(*,'(A)') 'Setting up the run environment'
   write(*,*)
+  write(*,'(A)') 'Setting up the run environment'
   if (len_trim(ProgramDefs%GetSuppliedCaseDir()) /= 0) then
     FileName = ProgramDefs%GetSuppliedCaseDir() // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
     inquire(File=FileName, Exist=VarL0D)
@@ -80,7 +80,7 @@ program SMUQ
     if (.not. VarL0D) call Error%Raise('Did not find the case directory in the run directory and no external alternative was ' //&
                                           'supplied', ProcName=ProcName)
   end if
-  
+
   write(*,'(A)') '  Creating the output directory : ' 
   write(*,'(A)') '    ' // ProgramDefs%GetOutputDir()
   call MakeDirectory(Path=ProgramDefs%GetOutputDir(), Options='-p')
@@ -107,8 +107,7 @@ program SMUQ
   
   write(*,*)
   write(*,'(A)') 'Run environment set-up complete'
-  write(*,*)
-  
+
   !!--------------------------------------------------------------------------------------------------------------------------------
   !! Initializing logger with log file
   !!--------------------------------------------------------------------------------------------------------------------------------
@@ -118,23 +117,23 @@ program SMUQ
   !!--------------------------------------------------------------------------------------------------------------------------------
   !! Reading in input
   !!--------------------------------------------------------------------------------------------------------------------------------
-  write(*,'(A)') 'Reading in input'
   write(*,*)
+  write(*,'(A)') 'Reading in input'
   FileName = ProgramDefs%GetInputFilePath()
   call Input%Read(FileName=FileName)
   
   call Input%Write(Logger=Logger)
   
   SMUQTask = Input%GetName()
-  
+
   !!--------------------------------------------------------------------------------------------------------------------------------
   !! Constructing from input and running analysis
   !!--------------------------------------------------------------------------------------------------------------------------------
   
   select case (SMUQTask%Lower())
     case('main')
-      write(*,'(A)') 'Constructing objects from input and creating necessary temporary work directories'
       write(*,*)
+      write(*,'(A)') 'Constructing objects from input and creating necessary temporary work directories'
       SectionChain = 'main'
       call Root%Construct(Input=Input, SectionChain=SectionChain, Prefix=ProgramDefs%GetCaseDir())
       call RestartUtility%Construct(Input=Root%GetInput(Name='main', Prefix=ProgramDefs%GetRestartDir(),                &

@@ -102,7 +102,7 @@ abstract interface
     import                                                            ::    IScalarValue_Type  
     real(rkp)                                                         ::    GetValue_IScalarValue
     class(IScalarValue_Type), intent(in)                              ::    This
-    type(Input_Type, intent(in)                                       ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -113,7 +113,7 @@ abstract interface
     import                                                            ::    IScalarValue_Type
     character(:), allocatable                                         ::    GetCharValue_IScalarValue
     class(IScalarValue_Type), intent(in)                              ::    This
-    type(Input_Type, intent(in)                                       ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     character(*), optional, intent(in)                                ::    Format
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

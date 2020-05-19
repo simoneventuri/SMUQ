@@ -2,7 +2,7 @@ SubModule(InputSection_Class) InputSection_AddParameter_SubClass
 
   use Logger_Class          ,only:  Logger
   use Utilities_Library     ,only:  GetOptArgValue
-  use InputParameter_Class  ,only:  InputParameter_Type
+  !use InputParameter_Class  ,only:  InputParameter_Type
 
   implicit none
 

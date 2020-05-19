@@ -119,7 +119,7 @@ if ( CMAKE_Fortran_COMPILER_ID STREQUAL "GNU" )
 #     AddFortranFlags( "-Wno-uninitialized" )
   endif ()
   if ( CMAKE_BUILD_TYPE STREQUAL "Release" )
-    AddFortranFlags( "-O3" )
+    AddFortranFlags( "-O2" )
   endif ()
 
 

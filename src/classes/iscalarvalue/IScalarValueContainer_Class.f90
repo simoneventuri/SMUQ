@@ -114,7 +114,7 @@ contains
     type(IScalarValueContainer_Type), intent(inout)                   ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc
+    integer                                                           ::    StatLoc=0
 
     if (allocated(This%Object)) deallocate(This%Object, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(name='This%Object', ProcName=ProcName, stat=StatLoc)

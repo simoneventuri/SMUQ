@@ -22,7 +22,6 @@ use Input_Library
 use Parameters_Library
 use StatisticsRoutines_Module
 use ComputingRoutines_Module
-use QRUpdate_Library
 use StringRoutines_Module
 use ArrayRoutines_Module
 use Logger_Class                                                  ,only:    Logger

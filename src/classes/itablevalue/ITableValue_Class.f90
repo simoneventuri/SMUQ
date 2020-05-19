@@ -103,7 +103,7 @@ abstract interface
     import                                                            ::    ITableValue_Type  
     real(rkp), allocatable, dimension(:)                              ::    GetValue_ITableValue
     class(ITableValue_Type), intent(in)                               ::    This
-    type(Input_Type, intent(in)                                       ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -116,7 +116,7 @@ abstract interface
     import                                                            ::    SMUQString_Type
     type(SMUQString_Type), allocatable, dimension(:)                  ::    GetCharValue_ITableValue
     class(ITableValue_Type), intent(in)                               ::    This
-    type(Input_Type, intent(in)                                       ::    Input
+    type(Input_Type), intent(in)                                      ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
     character(*), optional, intent(in)                                ::    Format
   end function

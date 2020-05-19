@@ -187,7 +187,7 @@ contains
 
     ParameterName = 'case'
     call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
-    This%SuppliedCaseDir = VarC0D
+    if (Found) This%SuppliedCaseDir = VarC0D
 
     This%Constructed = .true.
     

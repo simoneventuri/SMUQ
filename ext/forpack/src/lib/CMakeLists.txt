@@ -1,7 +1,7 @@
 #########################
 # Adding the components #
 #########################
-add_subdirectory( CoarrayCollective )         # -
+#add_subdirectory( CoarrayCollective )         # -
 add_subdirectory( Algebra     )               # Dependencies: -
 add_subdirectory( PhysParam   )               # Dependencies: -
 add_subdirectory( DateAndTime )               # Dependencies: -
@@ -21,14 +21,14 @@ add_subdirectory( Status      )               # Dependencies: Utilities, String,
 add_subdirectory( Comparator  )               # Dependencies: PhysParam, Logger, String
 add_subdirectory( Timer       )               # Dependencies: Logger, String
 add_subdirectory( Memory      )               # Dependencies: String, Error, Logger, Table
-add_subdirectory( Checker     )               # Dependencies: String, Error, Logger, Object
+#add_subdirectory( Checker     )               # Dependencies: String, Error, Logger, Object
 #add_subdirectory( Fitter      )               # Dependencies: Utilities String, Error, Logger
 add_subdirectory( Command     )               # Dependencies: Logger, Utilities, Error, String, File
 #add_subdirectory( Plotter     )               # Dependencies: Logger, Command
 add_subdirectory( Directory   )               # Dependencies: Utilities, String, Object, File, Command
 #add_subdirectory( Todo/url    )               # Dependencies: Utilities, String, Logger
 add_subdirectory( InputParser )               # Dependencies: Utilities, Logger, String, Error, CommandLineInterface
-add_subdirectory( Application )               # Dependencies: Utilities, Logger, String, File, Error, Input, CommandLineInterface
+#add_subdirectory( Application )               # Dependencies: Utilities, Logger, String, File, Error, Input, CommandLineInterface
 #add_subdirectory( Tecplot     )               # Dependencies: ...
 # add_subdirectory( Todo/SourceLocation )
 

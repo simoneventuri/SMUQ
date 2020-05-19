@@ -22,7 +22,6 @@ module LinSolverOMP_Class
   use Parameters_Library
   use StatisticsRoutines_Module
   use ComputingRoutines_Module
-  use QRUpdate_Library
   use StringRoutines_Module
   use ArrayIORoutines_Module
   use Logger_Class                                                  ,only:    Logger

@@ -37,9 +37,9 @@ endif()
 ######################################################
 set( AllowableBuildTypes Debug Release )
 set_property( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug;Release" )
-if ( NOT $<CONFIG> )
+if ( NOT CMAKE_BUILD_TYPE )
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
-elseif ( NOT $<CONFIG> IN_LIST AllowableBuildTypes )
+elseif ( NOT CMAKE_BUILD_TYPE IN_LIST AllowableBuildTypes )
   message( FATAL_ERROR
     "    ERROR:
     Build type must be one of the following: ${AllowableBuildTypes}"
@@ -67,34 +67,22 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     "-ffixed-line-length-none"
     "-frealloc-lhs"
     "-frecursive"
+    $<$<CONFIG:Debug>:-O0>
+    $<$<CONFIG:Debug>:-g>
+    $<$<CONFIG:Debug>:-fcheck=all>
+    $<$<CONFIG:Debug>:-fdump-core>
+    $<$<CONFIG:Debug>:-fbacktrace>
+    $<$<CONFIG:Debug>:-ggdb>
+    $<$<CONFIG:Debug>:-pg>
+    $<$<CONFIG:Debug>:-Wall>
+    $<$<CONFIG:Debug>:-Wno-unused-dummy-argument>
+    $<$<CONFIG:Debug>:-Wno-unused-function>
+    $<$<CONFIG:Debug>:-Wno-uninitialized>
+    $<$<CONFIG:Debug>:-Wno-maybe-uninitialized> 
+    $<$<CONFIG:Debug>:-Wno-unused-variable>
+    $<$<CONFIG:Debug>:-Wno-tabs>
+    $<$<CONFIG:Release>:-O2>
   )
-
-  if ( $<CONFIG:Debug> )
-    target_compile_options( mt64
-      PRIVATE
-      "-O0" 
-      "-g" 
-      "-fbounds-check" 
-      "-fbacktrace" 
-      "-fdump-core" 
-      "-ggdb" 
-      "-pg" 
-      "-Wall" 
-      "-fcheck-array-temporaries" 
-      "-fcheck=all" 
-      "-Wno-unused-dummy-argument" 
-      "-Wno-unused-function" 
-      "-Wno-uninitialized" 
-      "-Wno-maybe-uninitialized" 
-      "-Wno-unused-variable" 
-      "-Wno-tabs" 
-    )
-  elseif ( $<CONFIG:Release> )
-    target_compile_options( mt64
-      PRIVATE
-      "-O3"
-    )
-  endif()
 
 else()
   message( FATAL_ERROR 

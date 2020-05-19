@@ -1,3 +1,2 @@
- - correct if clause generator expression mistake in external library cmakes
  - change formating of source code to at best follow 79 line width and at most stay below 132
  - have sobol indices be 0 when variance is 0

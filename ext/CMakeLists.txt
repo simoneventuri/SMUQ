@@ -6,7 +6,7 @@ ExternalProject_Add( quadpackExt
                      BINARY_DIR ${SMUQ_BINARY_DIR}/ext/quadpack
                      INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/quadpack
                      CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} 
-                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
+                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR} -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 add_library( quadpack STATIC IMPORTED GLOBAL )
@@ -31,7 +31,7 @@ ExternalProject_Add( probExt
                      BINARY_DIR ${SMUQ_BINARY_DIR}/ext/prob
                      INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/prob
                      CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} 
-                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
+                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR} -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 add_library( prob STATIC IMPORTED GLOBAL )
 
@@ -55,7 +55,7 @@ ExternalProject_Add( sobolExt
                      BINARY_DIR ${SMUQ_BINARY_DIR}/ext/sobol
                      INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/sobol
                      CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} 
-                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
+                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR} -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 add_library( sobol STATIC IMPORTED GLOBAL )
 
@@ -72,31 +72,6 @@ add_dependencies( smuqApp sobol sobolExt )
 target_link_libraries( smuqApp sobol )
 
 ######################################################
-# Linking QRUpdate to smuqApp #
-######################################################
-ExternalProject_Add( qrupdateExt
-                     SOURCE_DIR ${SMUQ_SOURCE_DIR}/ext/qrupdate
-                     BINARY_DIR ${SMUQ_BINARY_DIR}/ext/qrupdate
-                     INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/qrupdate
-                     CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} 
-                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-add_library( qrupdate STATIC IMPORTED GLOBAL )
-
-set_property( TARGET qrupdate 
-              PROPERTY IMPORTED_LOCATION "${SMUQ_BINARY_DIR}/ext_install/qrupdate/${CMAKE_INSTALL_LIBDIR}/libqrupdate.a"
-)
-
-target_include_directories( smuqApp 
-                            PRIVATE "${SMUQ_BINARY_DIR}/ext_install/qrupdate/${CMAKE_INSTALL_INCLUDEDIR}"
-)
-
-add_dependencies( smuqApp qrupdate qrupdateExt )
-
-target_link_libraries( smuqApp qrupdate )
-
-######################################################
 # Linking MT64 to smuqApp #
 ######################################################
 ExternalProject_Add( mt64Ext
@@ -104,7 +79,7 @@ ExternalProject_Add( mt64Ext
                      BINARY_DIR ${SMUQ_BINARY_DIR}/ext/mt64
                      INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/mt64
                      CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} 
-                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
+                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR} -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 add_library( mt64 STATIC IMPORTED GLOBAL )
@@ -129,7 +104,7 @@ ExternalProject_Add( glmnetExt
                      BINARY_DIR ${SMUQ_BINARY_DIR}/ext/glmnet
                      INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/glmnet
                      CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} 
-                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
+                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR} -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 add_library( glmnet STATIC IMPORTED GLOBAL )
@@ -154,7 +129,7 @@ ExternalProject_Add( cdfExt
                      BINARY_DIR ${SMUQ_BINARY_DIR}/ext/cdf
                      INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/cdf
                      CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} 
-                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
+                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR} -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 add_library( cdf STATIC IMPORTED GLOBAL )
@@ -172,31 +147,6 @@ add_dependencies( smuqApp cdf cdfExt )
 target_link_libraries( smuqApp cdf )
 
 ######################################################
-# Linking ODEPack to smuqApp #
-######################################################
-ExternalProject_Add( odepackExt
-                     SOURCE_DIR ${SMUQ_SOURCE_DIR}/ext/odepack
-                     BINARY_DIR ${SMUQ_BINARY_DIR}/ext/odepack
-                     INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/odepack
-                     CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} 
-                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-add_library( odepack STATIC IMPORTED GLOBAL )
-
-set_property( TARGET odepack 
-              PROPERTY IMPORTED_LOCATION "${SMUQ_BINARY_DIR}/ext_install/odepack/${CMAKE_INSTALL_LIBDIR}/libodepack.a"
-)
-
-target_include_directories( smuqApp 
-                            PRIVATE "${SMUQ_BINARY_DIR}/ext_install/odepack/${CMAKE_INSTALL_INCLUDEDIR}"
-)
-
-add_dependencies( smuqApp odepack odepackExt )
-
-target_link_libraries( smuqApp odepack )
-
-######################################################
 # Linking Brent to smuqApp #
 ######################################################
 ExternalProject_Add( brentExt
@@ -204,7 +154,7 @@ ExternalProject_Add( brentExt
                      BINARY_DIR ${SMUQ_BINARY_DIR}/ext/brent
                      INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/brent
                      CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} 
-                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
+                                -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR} -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 add_library( brent STATIC IMPORTED GLOBAL )
@@ -228,7 +178,7 @@ ExternalProject_Add( forpackExt
                      SOURCE_DIR ${SMUQ_SOURCE_DIR}/ext/forpack
                      BINARY_DIR ${SMUQ_BINARY_DIR}/ext/forpack
                      INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/forpack
-                     CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+                     CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 )
 
 add_library( forpack STATIC IMPORTED GLOBAL )
@@ -260,7 +210,7 @@ if ( NOT (${LAPACK_FOUND} AND ${BLAS_FOUND}) )
                        BINARY_DIR ${SMUQ_BINARY_DIR}/ext/lapack
                        INSTALL_DIR ${SMUQ_BINARY_DIR}/ext_install/lapack
                        CMAKE_ARGS -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR> -D CMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} 
-                                  -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR}
+                                  -D CMAKE_INSTALL_INCLUDEDIR=${CMAKE_INSTALL_INCLUDEDIR} -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
   )
 
   add_library( lapack STATIC IMPORTED GLOBAL )
