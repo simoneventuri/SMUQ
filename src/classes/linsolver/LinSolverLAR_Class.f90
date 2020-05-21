@@ -313,7 +313,8 @@ end function
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Solve(This, System, Goal, Coefficients, CVError)
-
+use SMUQFile_Class ,only: SMUQFile_TYpe
+use ArrayIORoutines_Module
   class(LinSolverLAR_Type), intent(in)                                ::    This
   real(rkp), dimension(:,:), intent(inout)                            ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
@@ -325,6 +326,8 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
   procedure(CVFitTarget), pointer                                     ::    CVFit=>null()
   integer                                                             ::    M
   integer                                                             ::    N
+  character(:), allocatable :: FileName
+  type(SMUQFile_TYpe) :: File
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
