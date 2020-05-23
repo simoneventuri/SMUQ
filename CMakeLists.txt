@@ -81,7 +81,9 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     $<$<CONFIG:Debug>:-Wno-maybe-uninitialized> 
     $<$<CONFIG:Debug>:-Wno-unused-variable>
     $<$<CONFIG:Debug>:-Wno-tabs>
-    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Debug>:-Warray-temporaries> 
+    $<$<CONFIG:Release>:-O3>
+    $<$<CONFIG:Release>:-Warray-temporaries> 
   )
 else()
   message( FATAL_ERROR 

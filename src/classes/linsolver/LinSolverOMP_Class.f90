@@ -511,8 +511,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
   real(rkp)                                                           ::    GoalMean
   real(rkp)                                                           ::    GoalVariance
   integer                                                             ::    iIteration
-  logical, allocatable, dimension(:)                                  ::    Active
-  logical, allocatable, dimension(:)                                  ::    Skip
+  logical, allocatable, dimension(:)                                  ::    InActive
   real(rkp)                                                           ::    MaxAbsCorr 
   integer                                                             ::    MaxAbsCorrIndex
   integer, allocatable, dimension(:)                                  ::    ActiveIndices
@@ -543,6 +542,9 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
   real(rkp), allocatable, dimension(:)                                ::    XtY
   real(rkp), dimension(:), pointer                                    ::    v=>null()
   real(rkp)                                                           ::    ResidualNorm
+  real(rkp), allocatable, dimension(:)                                ::    Corr
+  real(rkp), allocatable, dimension(:,:)                              ::    SystemTemp
+  real(rkp), allocatable, dimension(:,:)                              ::    VarR2D
 
   NbCVErrorIncLoc = 6
   if (present(NbCVErrorInc)) NbCVErrorIncLoc = NbCVErrorInc
@@ -574,12 +576,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
     InvXtXScalar = One / dot_product(System(:,1),System(:,1))
     Coefficients(1) = dot_product(System(:,1),Goal)*InvXtXScalar
 
-    CVLOOTempNonN = Zero
-    i = 1
-    do i = 1, M
-      CVLOOTempNonN = CVLOOTempNonN + ((Goal(i)-Coefficients(1)*System(i,1))/(One-System(i,1)**2*InvXtXScalar))**2
-    end do
-    CVLOOTempNonN = CVLOOTempNonN / Mreal
+    CVLOOTempNonN = sum(((Goal-Coefficients(1)*System(:,1))/(One-System(:,1)**2*InvXtXScalar))**2) / Mreal
 
     if (GoalVariance > Zero) then
       CVLOOTemp = CVLOOTempNonN / GoalVariance
@@ -600,20 +597,17 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
     return
   end if
 
-  allocate(Norm(N), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Norm', ProcName=ProcName, stat=StatLoc)
-  Norm = Zero
-
-  i = 1
-  do i = 1, N 
-    if (.not. any(dabs(System(:,1))>Zero)) call Error%Raise('System has a column of zeros', ProcName=ProcName)
-    Norm(i) = ComputeNorm(Vector=System(:,i), Norm=2)
-  end do
+  Norm = dsqrt(sum(System**2,1))
+  if (.not. all(Norm > Zero)) call Error%Raise('System has a column of zeros', ProcName=ProcName)
 
   VarR0D = Zero
 
   MaxNbIterations = min(M,N)
   MaxNbRegressors = MaxNbIterations
+
+  allocate(SystemTemp(M,MaxNbRegressors), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='SystemTemp', ProcName=ProcName, stat=StatLoc)
+  SystemTemp = Zero 
 
   allocate(u1(MaxNbRegressors), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='u1', ProcName=ProcName, stat=StatLoc)
@@ -630,13 +624,13 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
   ActiveIndices = 0
   NbActiveIndices = 0
 
-  allocate(Active(N), stat=StatLoc)
+  allocate(InActive(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Inactive', ProcName=ProcName, stat=StatLoc)
-  Active = .false.
+  InActive = .true.
 
-  allocate(Skip(N), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Skip', ProcName=ProcName, stat=StatLoc)
-  Skip = .false.
+  allocate(Corr(N), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Corr', ProcName=ProcName, stat=StatLoc)
+  Corr = Zero
 
   allocate(h(M), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='h', ProcName=ProcName, stat=StatLoc)
@@ -688,53 +682,33 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
     if (iIteration > MaxNbIterations) exit
 
     ! finding most correlated regressor from inactive and non-constant list
-    MaxAbsCorr = Zero
-    MaxAbsCorrIndex = 0
-    ResidualNorm = ComputeNorm(Vector=Residual, Norm=2)
-    i = 1
-    do i = 1, N
-      if (Active(i)) cycle
-      if (Skip(i)) cycle
-      VarR0D = dabs(dot_product(System(:,i), Residual)/(Norm(i)*ResidualNorm))
-      if (VarR0D < MaxAbsCorr) cycle
-      MaxAbsCorr = VarR0D
-      MaxAbsCorrIndex = i
-    end do
+    ResidualNorm = dsqrt(sum(Residual**2))
+    Corr(1:N) = matmul(Residual,System)/(Norm*ResidualNorm)
+    MaxAbsCorrIndex = maxloc(dabs(Corr),1,InActive)
+    MaxAbsCorr = dabs(Corr(MaxAbsCorrIndex))
 
     if (.not. MaxAbsCorr > MinAbsCorrLoc) exit
+    InActive(MaxAbsCorrIndex) = .false.
 
     ! Updating inverse locally to reduce memory requirements and alloc/dealloc times
     v => System(:,MaxAbsCorrIndex)
     if (NbActiveIndices == 0) then
-      InvXtX(1,1) = One / dot_product(v,v)
+      InvXtX(1,1) = One / sum(v**2) 
       if (.not. IsFinite(Value=InvXtX(1,1))) then
-        Skip(MaxAbsCorrIndex) = .true.
         write(*,'(A)') 'Warning: Ignoring regressor ' // ConvertToString(Value=MaxAbsCorrIndex) // 'due to instability'
         cycle
       end if
     else
-      u1 = Zero
-      i = 1
-      do i = 1, NbActiveIndices
-        u1(i) = dot_product(System(:,ActiveIndices(i)), v)
-      end do
+      u1(1:NbActiveIndices) = matmul(v, SystemTemp(:,1:NbActiveIndices))
+
+      u2(1:NbActiveIndices) = matmul(InvXtX(1:NbActiveIndices,1:NbActiveIndices),u1(1:NbActiveIndices))
+
+      d = One / (sum(v**2)  - dot_product(u1(1:NbActiveIndices), u2(1:NbActiveIndices)))
   
-      u2(1:NbActiveIndices) = Zero
-      i = 1
-      do i = 1, NbActiveIndices
-        ii = 1
-        do ii = 1, NbActiveIndices
-          u2(i) = u2(i) + InvXtX(i,ii)*u1(ii)
-        end do
-      end do
-  
-      d = One / (dot_product(v,v) - dot_product(u1(1:NbActiveIndices), u2(1:NbActiveIndices)))
-  
-      VarR0D = dot_product(u2(1:NbActiveIndices), u2(1:NbActiveIndices))
+      VarR0D = sum(u2(1:NbActiveIndices)**2)
   
       if ((.not. IsFinite(Values=u1)) .or. (.not. IsFinite(Values=u2)) .or. (.not. IsFinite(Value=d)) &
             .or. (.not. IsFinite(Value=VarR0D))) then
-        Skip(MaxAbsCorrIndex) = .true.
         write(*,'(A)') 'Warning: Ignoring regressor ' // ConvertToString(Value=MaxAbsCorrIndex) // 'due to instability'
         cycle
       end if
@@ -747,46 +721,26 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
       InvXtX(NbActiveIndices+1,1:NbActiveIndices) = -d*u2(1:NbActiveIndices)
       InvXtX(NbActiveIndices+1,NbActiveIndices+1) = d
     end if
-    nullify(v)
 
     NbActiveIndices = NbActiveIndices + 1
     ActiveIndices(NbActiveIndices) = MaxAbsCorrIndex
-    Active(MaxAbsCorrIndex) = .true.
+    SystemTemp(:,NbActiveIndices) = v
+    nullify(v)
 
     ! updating coefficient values
-    CoefficientsLoc(1:NbActiveIndices) = Zero
     XtY(NbActiveIndices) = dot_product(System(:,ActiveIndices(NbActiveIndices)),Goal)
-    i = 1
-    do i = 1, NbActiveIndices
-      CoefficientsLoc(1:NbActiveIndices) = CoefficientsLoc(1:NbActiveIndices) + XtY(i) * InvXtX(1:NbActiveIndices,i)
-    end do
+    CoefficientsLoc(1:NbActiveIndices) = matmul(InvXtx(1:NbActiveIndices,1:NbActiveIndices),XtY(1:NbActiveIndices))
 
     ! update residual
-    Residual = Goal
-    i = 1
-    do i = 1, NbActiveIndices
-      Residual = Residual - CoefficientsLoc(i)*System(:,ActiveIndices(i))
-    end do
+    Residual = matmul(SystemTemp(:,1:NbActiveIndices),CoefficientsLoc(1:NbActiveIndices))
+    Residual = Goal - Residual
 
     ! compute LOO cv error
     ! first get leverage
-    h = Zero
-    i = 1
-    do i = 1, M
-      VarR1D(1:NbActiveIndices) = System(i,ActiveIndices(1:NbActiveIndices))
-      v => VarR1D(1:NbActiveIndices)
-      ii = 1
-      do ii = 1,NbActiveIndices
-        h(i) = h(i) + dot_product(v,InvXtX(1:NbActiveIndices,ii))*v(ii)
-      end do
-      nullify(v)
-    end do
-  
-    CVLOOTempNonN = Zero
-    CVLOOTemp = Zero
+    VarR2D = matmul(SystemTemp(:,1:NbActiveIndices),InvXtx(1:NbActiveIndices,1:NbActiveIndices))
+    h = sum(VarR2D*SystemTemp(:,1:NbActiveIndices),2)
 
-    VarR1D(1:M) = Residual / (One-h)
-    CVLOOTempNonN = dot_product(VarR1D(1:M), VarR1D(1:M)) / MReal
+    CVLOOTempNonN = sum((Residual / (One-h))**2) / MReal
   
     if (GoalVariance > Zero) then
       CVLOOTemp = CVLOOTempNonN / GoalVariance
@@ -839,14 +793,20 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
     Coefficients(ActiveIndices(1:NbActiveIndices)) = CoefficientsLoc(1:NbActiveIndices)
   end if
 
+  if (allocated(VarR2D)) deallocate(VarR2D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(SystemTemp, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='SystemTemp', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(Corr, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Corr', ProcName=ProcName, stat=StatLoc)
+
   deallocate(Norm, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='Norm', ProcName=ProcName, stat=StatLoc)
 
-  deallocate(Active, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='Active', ProcName=ProcName, stat=StatLoc)
-
-  deallocate(Skip, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='Skip', ProcName=ProcName, stat=StatLoc)
+  deallocate(InActive, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='InActive', ProcName=ProcName, stat=StatLoc)
 
   deallocate(ActiveIndices, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='ActiveIndices', ProcName=ProcName, stat=StatLoc)
@@ -925,7 +885,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   integer                                                             ::    CVLOOTrip
   real(rkp)                                                           ::    T
   real(rkp)                                                           ::    TSum
-  logical, allocatable, dimension(:)                                  ::    Active
+  logical, allocatable, dimension(:)                                  ::    InActive
   integer, allocatable, dimension(:)                                  ::    ActiveIndices
   integer                                                             ::    NbActiveIndices
   real(rkp)                                                           ::    MaxAbsCorr 
@@ -946,6 +906,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   real(rkp)                                                           ::    BestCVLOO
   real(rkp)                                                           ::    BestCVLOONonN
   real(rkp), allocatable, dimension(:)                                ::    CoefficientsLoc
+  real(rkp), allocatable, dimension(:)                                ::    Corr
 
   NbCVErrorIncLoc = 6
   if (present(NbCVErrorInc)) NbCVErrorIncLoc = NbCVErrorInc
@@ -977,12 +938,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
     InvXtXScalar = One / dot_product(System(:,1),System(:,1))
     Coefficients(1) = dot_product(System(:,1),Goal)*InvXtXScalar
 
-    CVLOOTempNonN = Zero
-    i = 1
-    do i = 1, M
-      CVLOOTempNonN = CVLOOTempNonN + ((Goal(i)-Coefficients(1)*System(i,1))/(One-System(i,1)**2*InvXtXScalar))**2
-    end do
-    CVLOOTempNonN = CVLOOTempNonN / Mreal
+    CVLOOTempNonN = sum(((Goal-Coefficients(1)*System(:,1))/(One-System(:,1)**2*InvXtXScalar))**2) / Mreal
 
     if (GoalVariance > Zero) then
       CVLOOTemp = CVLOOTempNonN / GoalVariance
@@ -1005,13 +961,8 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
 
   allocate(Norm(N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Norm', ProcName=ProcName, stat=StatLoc)
-  Norm = Zero
-
-  i = 1
-  do i = 1, N
-    if (.not. any(dabs(System(:,1))>Zero)) call Error%Raise('System has a column of zeros', ProcName=ProcName)
-    Norm(i) = ComputeNorm(Vector=System(:,i), Norm=2)
-  end do
+  Norm = dsqrt(sum(System**2,1))
+  if (.not. all(Norm > Zero)) call Error%Raise('System has a column of zeros', ProcName=ProcName)
 
   VarR0D = Zero
 
@@ -1023,9 +974,9 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   ActiveIndices = 0
   NbActiveIndices = 0
 
-  allocate(Active(N), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Inactive', ProcName=ProcName, stat=StatLoc)
-  Active = .false.
+  allocate(InActive(N), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='InActive', ProcName=ProcName, stat=StatLoc)
+  InActive = .true.
 
   allocate(h(M), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='h', ProcName=ProcName, stat=StatLoc)
@@ -1058,9 +1009,13 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   if (StatLoc /= 0) call Error%Allocate(Name='InvR', ProcName=ProcName, stat=StatLoc)
   InvR = Zero
 
-  allocate(VarR1D(M), stat=StatLoc)
+  allocate(VarR1D(max(M,N)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
   VarR1D = Zero
+
+  allocate(Corr(N), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Corr', ProcName=ProcName, stat=StatLoc)
+  Corr = Zero 
 
   BestCVLOO = huge(One)
   BestCVLOONonN = huge(One)
@@ -1082,72 +1037,35 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
     if (iIteration > MaxNbIterations) exit
 
     ! finding most correlated regressor from inactive and non-constant list
-    MaxAbsCorr = Zero
-    MaxAbsCorrIndex = 0
-    ResidualNorm = ComputeNorm(Vector=Residual, Norm=2)
-    i = 1
-    do i = 1, N
-      if (Active(i)) cycle
-      VarR0D = dabs(dot_product(System(:,i), Residual)/(Norm(i)*ResidualNorm))
-      if (VarR0D < MaxAbsCorr) cycle
-      MaxAbsCorr = VarR0D
-      MaxAbsCorrIndex = i
-    end do
+    ResidualNorm = dsqrt(sum(Residual**2))
+    Corr(1:N) = matmul(Residual,System)/(Norm*ResidualNorm)
+    MaxAbsCorrIndex = maxloc(dabs(Corr),1,InActive)
+    MaxAbsCorr = dabs(Corr(MaxAbsCorrIndex))
 
     if (.not. MaxAbsCorr > MinAbsCorrLoc) exit
+    InActive(MaxAbsCorrIndex) = .false.
 
     ! updating Q, R, and R inverse with the most correlated regressor
     ! taking advantage of inv(R') and Q' only changing last row with each iteration
     if (NbActiveIndices > 0) then
       ip1 = NbActiveIndices + 1
 
-      ! Gram Schmidt Update (susceptible to round-off errors)
-      ! call DGEMV('T', M, NbActiveIndices, 1.d0, Q1(:,1:NbActiveIndices), M, System(:,MaxAbsCorrIndex), 1, 0.d0, &
-      !             VarR1D(1:NbActiveIndices), 1)
-      ! WNorm = ComputeNorm(Vector=VarR1D(1:NbActiveIndices), Norm=2)
-      ! VarR0D = dsqrt(One - WNorm**2)
-
-      ! i = 1
-      ! do i = 1, M
-      !   Q1(i,ip1) = (System(i,MaxAbsCorrIndex) - sum(Q1(i,1:NbActiveIndices)*VarR1D(1:NbActiveIndices))) / VarR0D
-      ! end do
-
-      ! ! actually updating transpose of R
-      ! R(ip1,ip1) = VarR0D
-      ! R(ip1,1:NbActiveIndices) = VarR1D(1:NbActiveIndices)
-
-      ! InvR(ip1,ip1) = One / R(ip1,ip1)
-      ! i = 1
-      ! do i = NbActiveIndices, 1, -1
-      !   InvR(i,ip1) = -dot_product(R(i+1:ip1,i),InvR(i+1:ip1,ip1)) / R(i,i)
-      ! end do
-
-      Q1(:,ip1) = System(:,MaxAbsCorrIndex)
-
-      call DGEMV('T', M, NbActiveIndices, 1.d0, Q1(:,1:NbActiveIndices), M, System(:,MaxAbsCorrIndex), 1, 0.d0, &
-                  R(1:NbActiveIndices, ip1), 1)
-
-      i = 1
-      do i = 1, NbActiveIndices
-        Q1(:,ip1) =  Q1(:,ip1) - Q1(:,i)*R(i,ip1)
-      end do
-
-      R(ip1,ip1) = ComputeNorm(Vector=Q1(:,ip1), Norm=2)
+      R(1:NbActiveIndices,ip1) = matmul(System(:,MaxAbsCorrIndex),Q1(:,1:NbActiveIndices))
+      VarR1D(1:M) = matmul(Q1(:,1:NbActiveIndices),R(1:NbActiveIndices,ip1))
+      Q1(:,ip1) = System(:,MaxAbsCorrIndex) - VarR1D(1:M)
+      R(ip1,ip1) = dsqrt(sum(Q1(:,ip1)**2))
       if (.not. dabs(R(ip1,ip1)) > Zero) call Error%Raise('Zero on the diagonal of R', ProcName=ProcName)
-
       Q1(:,ip1) = Q1(:,ip1) / R(ip1,ip1)
+      VarR1D(1:NbActiveIndices) = R(1:NbActiveIndices,ip1)
+      R(ip1,1:NbActiveIndices) = VarR1D(1:NbActiveIndices)
 
       InvR(ip1,ip1) = One / R(ip1,ip1)
       i = 1
       do i = NbActiveIndices, 1, -1
-        ii = i+1
-        do ii = i+1, ip1
-          invR(i,ip1) = invR(i,ip1) + R(i,ii)*InvR(ii,ip1)
-        end do
-        InvR(i,ip1) = -InvR(i,ip1) / R(i,i)
+        InvR(i,ip1) = -dot_product(R(i+1:ip1,i),InvR(i+1:ip1,ip1)) / R(i,i)
       end do
     else
-      R(1,1) = ComputeNorm(Vector=System(:,MaxAbsCorrIndex), Norm=2)
+      R(1,1) = dsqrt(sum(System(:,MaxAbsCorrIndex)**2))
       if (.not. dabs(R(1,1)) > Zero) call Error%Raise('Zero on the diagonal of R', ProcName=ProcName)
       Q1(:,1) = System(:,MaxAbsCorrIndex) / R(1,1)
       InvR(1,1) = One / R(1,1)
@@ -1156,7 +1074,6 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
     ! adding the most correlated regressor to the active set
     NbActiveIndices = NbActiveIndices + 1
     ActiveIndices(NbActiveIndices) = MaxAbsCorrIndex
-    Active(MaxAbsCorrIndex) = .true.
 
     if (.not. IsFinite(Q1(:,NbActiveIndices))) call Error%Raise('Q1 is Nan or Inf', ProcName=ProcName)
     if (.not. IsFinite(InvR(1:NbActiveIndices,NbActiveIndices))) call Error%Raise('Inverse of R is NaN or Inf', ProcName=ProcName)
@@ -1165,7 +1082,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
     ! take advantage of the fact that only last columns of inv(R) and Q change
     VarR1D(1:NbActiveIndices) = InvR(1:NbActiveIndices,NbActiveIndices)*dot_product(Q1(:,NbActiveIndices),Goal)
     CoefficientsLoc(1:NbActiveIndices) = CoefficientsLoc(1:NbActiveIndices) + VarR1D(1:NbActiveIndices)
-    
+
     ! compute cv loo
     ! compute residual
     i = 1
@@ -1178,8 +1095,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
     h = h + Q1(:,NbActiveIndices)**2
 
     ! get cv loo
-    VarR1D(1:M) = Residual / (One-h)
-    CVLOOTempNonN = dot_product(VarR1D(1:M), VarR1D(1:M)) / MReal
+    CVLOOTempNonN = sum((Residual / (One-h))**2) / MReal
 
     if (GoalVariance > Zero) then
       CVLOOTemp = CVLOOTempNonN / GoalVariance
@@ -1190,7 +1106,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
     if (CorrectedCVLoc) then
       if (M > NbActiveIndices) then
         ! taking advantage of the fact that only last colum/row of inv(R)/inv(R') changes with each loop
-        TSum = TSum + dot_product(InvR(1:NbActiveIndices,NbActiveIndices), InvR(1:NbActiveIndices,NbActiveIndices))
+        TSum = TSum + sum(InvR(1:NbActiveIndices,NbActiveIndices)**2)
         T = TSum
         T = (Mreal/real(M-NbActiveIndices,rkp))*(One+T)
         CVLOOTemp = CVLOOTemp*T
@@ -1228,6 +1144,9 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
     Coefficients(ActiveIndices(1:NbActiveIndices)) = CoefficientsLoc(1:NbActiveIndices)
   end if
 
+  deallocate(Corr, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Corr', ProcName=ProcName, stat=StatLoc)
+
   deallocate(Norm, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='Norm', ProcName=ProcName, stat=StatLoc)
 
@@ -1237,8 +1156,8 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   deallocate(h, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='h', ProcName=ProcName, stat=StatLoc)
 
-  deallocate(Active, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='Active', ProcName=ProcName, stat=StatLoc)
+  deallocate(InActive, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='InActive', ProcName=ProcName, stat=StatLoc)
 
   deallocate(ActiveIndices, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='ActiveIndices', ProcName=ProcName, stat=StatLoc)

@@ -28,9 +28,9 @@ public                                                                ::    Stop
 
 type                                                                  ::    StopWatch_Type
   logical                                                             ::    On=.false.
-  integer(8), dimension(8)                                            ::    StartTime
-  integer(8), dimension(8)                                            ::    LapTime
-  integer(8), dimension(8)                                            ::    StopTime
+  real(8)                                                             ::    StartTime
+  real(8)                                                             ::    LapTime
+  real(8)                                                             ::    StopTime
 contains
   procedure, public                                                   ::    Start                   =>    StartTimer
   procedure, public                                                   ::    Stop                    =>    StopTimer
@@ -38,176 +38,96 @@ contains
   procedure, public                                                   ::    Restart                 =>    RestartTimer
   procedure, public                                                   ::    Lap                     =>    LapTimer
   procedure, public                                                   ::    Elapsed                 =>    ElapsedTimer
-  procedure, nopass, private                                          ::    ConvertToSeconds
-  procedure, nopass, private                                          ::    SecondsInMonth
-  procedure, nopass, private                                          ::    IsLeapYear
 end type
 
 type(Stopwatch_Type)                                                  ::    Stopwatch
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine StartTimer(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine StartTimer(This)
 
-    class(StopWatch_Type), intent(inout)                              ::    This
+  class(StopWatch_Type), intent(inout)                                ::    This
 
-    if (.not. This%On) then
-      This%On = .true.
-      call date_and_time(values=This%StartTime)
-      This%LapTime = This%StartTime
-    else
-      call date_and_time(values=This%StartTime)
-      This%LapTime = This%StartTime
-    end if
+  if (.not. This%On) This%On = .true.
+  call cpu_time(This%StartTime)
+  This%LapTime = This%StartTime
+  This%StopTime = This%StartTime
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine StopTimer(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine StopTimer(This)
 
-    class(StopWatch_Type), intent(inout)                              ::    This
+  class(StopWatch_Type), intent(inout)                                ::    This
 
-    if (This%On) then
-      call date_and_time(values=This%StopTime)
-      This%On = .false.
-    end if
+  if (This%On) then
+    call cpu_time(This%StopTime)
+    This%LapTime = This%StopTime
+    This%On = .false.
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ResetTimer(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ResetTimer(This)
 
-    class(StopWatch_Type), intent(inout)                              ::    This
+  class(StopWatch_Type), intent(inout)                                ::    This
 
-    This%StartTime = 0
-    This%LapTime = 0
-    This%StopTime = 0
-    call This%Stop()
+  call This%Stop()
+  This%StartTime = 0.0
+  This%LapTime = 0.0
+  This%StopTime = 0.0
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine RestartTimer(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine RestartTimer(This)
 
-    class(StopWatch_Type), intent(inout)                              ::    This
+  class(StopWatch_Type), intent(inout)                                ::    This
 
-    call This%Reset()
-    call This%Start()
+  call This%Reset()
+  call This%Start()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function LapTimer(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function LapTimer(This)
 
-    real(rkp)                                                         ::    LapTimer
+  real(8)                                                             ::    LapTimer
 
-    class(StopWatch_Type), intent(inout)                              ::    This
-    integer(8), dimension(8)                                          ::    CurrentTime
-    real(rkp)                                                         ::    OneHundred=100.
+  class(StopWatch_Type), intent(inout)                                ::    This
 
-    if (This%On) then
-      call date_and_time(values=CurrentTime)
-      LapTimer = ConvertToSeconds(Time=CurrentTime) - ConvertToSeconds(Time=This%LapTime)
-      This%LapTime = CurrentTime
-    else
-      LapTimer = ConvertToSeconds(Time=This%StopTime) - ConvertToSeconds(Time=This%LapTime)
-    end if
+  if (This%On) then
+    call cpu_time(LapTimer)
+    LapTimer = LapTimer - This%LapTime
+    This%LapTime = LapTimer
+  else
+    LapTimer = This%StopTime - This%LapTime
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ElapsedTimer(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function ElapsedTimer(This)
 
-    real(rkp)                                                         ::    ElapsedTimer
+  real(8)                                                             ::    ElapsedTimer
 
-    class(StopWatch_Type), intent(in)                                 ::    This
+  class(StopWatch_Type), intent(in)                                   ::    This
 
-    integer(8), dimension(8)                                          ::    CurrentTime
-    real(rkp)                                                         ::    OneHundred=100.
+  if (This%On) then
+    call cpu_time(ElapsedTimer)
+    ElapsedTimer = ElapsedTimer - This%StartTime
+  else
+    ElapsedTimer = This%StopTime - This%LapTime
+  end if
 
-    if (This%On) then
-      call date_and_time(values=CurrentTime)
-      ElapsedTimer = ConvertToSeconds(Time=CurrentTime) - ConvertToSeconds(Time=This%StartTime)
-    else
-      ElapsedTimer = ConvertToSeconds(Time=This%StopTime) - ConvertToSeconds(Time=This%StartTime)
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ConvertToSeconds(Time)
-
-    real(rkp)                                                         ::    ConvertToSeconds
-
-    integer(8), dimension(8), intent(in)                              ::    Time
-
-    integer                                                           ::    i
-    integer                                                           ::    CurrentMonthm1
-
-    ConvertToSeconds = 0
-    i = 1
-    CurrentMonthm1 = int(Time(2)-1,4)
-    do i = 1, CurrentMonthm1
-      ConvertToSeconds = ConvertToSeconds + real(SecondsInMonth(Month=i, LeapYear=IsLeapYear(Time(1))),rkp)
-    end do
-
-    ConvertToSeconds = ConvertToSeconds + real(Time(3)*86400 + Time(5)*3600 + Time(6)*60 + Time(7),rkp) +                 &
-                                                                                                           real(Time(8),rkp)*0.001
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function SecondsInMonth(Month, LeapYear)
-
-    integer(8)                                                        ::    SecondsInMonth
-
-    integer, intent(in)                                               ::    Month
-    logical, intent(in)                                               ::    LeapYear
-
-    select case (Month)
-
-      case (1,3,5,7,8,10,12) !31 days
-        SecondsInMonth = 2678400
-      case (4,6,9,11) ! 30 days
-        SecondsInMonth = 2592000
-      case (2)
-        if (LeapYear) then ! 28 or 29 days
-          SecondsInMonth = 2505600
-        else
-          SecondsInMonth = 2419200
-        end if        
-      case default
-        SecondsInMonth = 0
-
-    end select
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsLeapYear(Year)
-
-    logical                                                           ::    IsLeapYear
-
-    integer(8), intent(in)                                            ::    Year
-
-    integer(8)                                                        ::    Four=4
-
-    if (mod(Year,Four) == 0) then
-      IsLeapYear = .true.
-    else
-      IsLeapYear = .false.
-    end if      
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

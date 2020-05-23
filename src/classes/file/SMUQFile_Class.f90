@@ -687,7 +687,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='ReadRecord'
     integer                                                           ::    StatLoc=0
-    character(10000)                                                  ::    Buffer
+    character(100000)                                                 ::    Buffer
     logical                                                           ::    Trip
     integer                                                           ::    ReadSize
 
@@ -701,7 +701,7 @@ contains
 !    end do
 !    Record = trim(adjustl(Record))
 
-    read (unit=Unit,fmt='(A10000)', iostat=StatLoc) Buffer
+    read (unit=Unit,fmt='(A100000)', iostat=StatLoc) Buffer
     if (StatLoc == 0) Record = trim(adjustl(Buffer))
     if (present(Stat)) Stat=StatLoc
 
