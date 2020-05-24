@@ -609,7 +609,7 @@ end subroutine
 
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
-use ArrayIORoutines_Module
+
   class(LinSolverOLS_Type), intent(in)                                ::    This
   real(rkp), dimension(:,:), intent(inout)                            ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
