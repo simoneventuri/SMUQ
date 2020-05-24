@@ -509,7 +509,6 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
         Residual = Goal - Residual
 
         CVError = sum((Residual/(One-h))**2) / real(M,rkp)
-        
         if (This%CVError%IsNormalized()) then
           GoalVariance = ComputeSampleVar(Values=Goal)
           if (GoalVariance > Zero) then
@@ -518,7 +517,6 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
             CVError = Zero
           end if  
         end if
-
         deallocate(h, stat=StatLoc)
         if (StatLoc /= 0) call Error%Deallocate(Name='h', ProcName=ProcName, stat=StatLoc)
 
@@ -551,7 +549,6 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
       else
         CVError = huge(One)
       end if
-
     end if
     
   end if
@@ -612,7 +609,7 @@ end subroutine
 
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
-
+use ArrayIORoutines_Module
   class(LinSolverOLS_Type), intent(in)                                ::    This
   real(rkp), dimension(:,:), intent(inout)                            ::    System
   real(rkp), dimension(:), intent(inout)                              ::    Goal
@@ -654,7 +651,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
   Coefficients = Zero
   i = 1
   do i = 1, N 
-    Coefficients(1:i) = Coefficients(1:i) + InvR(1:i,i)*VarR1D(1:i)
+    Coefficients(1:i) = Coefficients(1:i) + InvR(1:i,i)*VarR1D(i)
   end do
 
   deallocate(VarR1D, stat=StatLoc)

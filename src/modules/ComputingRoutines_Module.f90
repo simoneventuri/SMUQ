@@ -1106,7 +1106,7 @@ contains
     if (present(LowerInvR)) LowerInvRLoc = LowerInvR
 
     N = size(Q,2)
-    
+
     call ComputeQR(Q=Q, R=InvR, LowerR=LowerInvRLoc)
 
     if (LowerInvRLoc) then
