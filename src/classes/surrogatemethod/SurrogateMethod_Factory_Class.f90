@@ -23,7 +23,7 @@ use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SurrogateMethod_Class                                         ,only:    SurrogateMethod_Type
-use SurrogatePolyChaos_Class                                      ,only:    SurrogatePolyChaos_Type
+use SurrogatePCE_Class                                            ,only:    SurrogatePCE_Type
 
 implicit none
 
@@ -58,8 +58,8 @@ contains
 
     select case (LowerCase(DesiredType))
 
-      case('polychaos')
-        allocate(SurrogatePolyChaos_Type :: Object)
+      case('pce')
+        allocate(SurrogatePCE_Type :: Object)
 
       case default
         call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
@@ -116,8 +116,8 @@ contains
 
     select type (Object)
 
-      type is (SurrogatePolyChaos_Type)
-        GetOption = 'polychaos'
+      type is (SurrogatePCE_Type)
+        GetOption = 'pce'
 
       class default
         call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)

@@ -355,8 +355,6 @@ subroutine SolveUD(This, System, Goal, Coefficients, CVError)
     real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
     integer                                                         ::    NbTraining
     integer                                                         ::    NbValidation
-    integer                                                         ::    iLoc
-    integer                                                         ::    iiLoc
 
     NbTraining = size(TrainingSet,1)
     NbValidation = size(ValidationSet,1)
@@ -369,26 +367,20 @@ subroutine SolveUD(This, System, Goal, Coefficients, CVError)
 
     allocate(SystemLoc(NbTraining,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
-    SystemLoc = Zero
-
-    iLoc = 1
-    do iLoc = 1, N
-      SystemLoc(:,iLoc) = System(TrainingSetIndices,iLoc)
-    end do
+    SystemLoc = System(TrainingSetIndices,:)
 
     call This%Solve(System=SystemLoc, Goal=TrainingSet, Coefficients=CoefficientsLoc)
 
-    Residual = ValidationSet
+    deallocate(SystemLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
-    iLoc = 1
-    do iLoc = 1, N
-      if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
-      iiLoc = 1
-      do iiLoc = 1, NbValidation
-        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
-      end do
-    end do
-    
+    allocate(SystemLoc(NbValidation,N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
+    SystemLoc = System(ValidationSetIndices,:)
+
+    Residual = matmul(SystemLoc,CoefficientsLoc)
+    Residual = ValidationSet - Residual
+
     deallocate(SystemLoc, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
@@ -461,7 +453,7 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
 
   character(*), parameter                                             ::    ProcName='SolveSystemQR'
   integer                                                             ::    StatLoc=0
-  real(rkp), allocatable, dimension(:,:)                              ::    VarR2D
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
   integer                                                             ::    i
   real(rkp), allocatable, dimension(:)                                ::    h
   real(rkp), allocatable, dimension(:)                                ::    Residual
@@ -484,20 +476,19 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
   if (size(Coefficients,1) /= N) call Error%Raise('Incompatible coefficients array', ProcName=ProcName)
   Coefficients = Zero
 
-  allocate(VarR2D(N,1), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
+  allocate(VarR1D(M), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
+  VarR1D = matmul(Goal,Q)
+
+  Coefficients(N) = VarR1D(N) / R(N,N)
   i = 1
-  do i = 1, N
-    VarR2D(i,1) = dot_product(Q(:,i), Goal)
+  do i = N-1, 1, -1
+    Coefficients(i) = (VarR1D(i)-dot_product(R(i,i+1:N),Coefficients(i+1:N))) / R(i,i)
   end do
 
-  call DTRTRS( 'U', 'N', 'N', N, 1, R, N, VarR2D, N, StatLoc )
-
-  Coefficients = VarR2D(:,1)
-
-  deallocate(VarR2D, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
+  deallocate(VarR1D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   if ( present(CVError)) then
     select type (CVMethod=>This%CVError)
@@ -514,20 +505,10 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
         h = sum(Q**2,2)
 
         ! get cv loo
-        Residual = Zero
-        i = 1
-        do i = 1, N
-          if (.not. dabs(Coefficients(i)) > Zero) cycle
-          Residual = Residual + Coefficients(i)*System(:,i)
-        end do
+        Residual = matmul(System,Coefficients)
         Residual = Goal - Residual
 
-        CVError = Zero
-        i = 1
-        do i = 1, M
-          CVError = CVError + (Residual(i)/(One-h(i)))**2
-        end do
-        CVError = CVError / real(M,rkp)
+        CVError = sum((Residual/(One-h))**2) / real(M,rkp)
         
         if (This%CVError%IsNormalized()) then
           GoalVariance = ComputeSampleVar(Values=Goal)
@@ -554,17 +535,14 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
       if (M > N) then
         allocate(InvR, source=R, stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='InvR', ProcName=ProcName, stat=StatLoc)
-        i = 1
-        do i = 1, N-1
-          InvR(i+1:N,i) = R(i,i+1:N)
-        end do
-        call DTRTRI('L', 'N', N, InvR, N, StatLoc)
+
+        call DTRTRI('U', 'N', N, InvR, N, StatLoc)
         if (StatLoc /= 0) call Error%Raise('Something went wrong in DTRTRI : ' // ConvertToString(Value=StatLoc), &
                                             ProcName=ProcName)
         T = Zero
         i = 1
         do i = 1, N
-          T = T + dot_product(InvR(i:N,i),InvR(i:N,i))
+          T = T + sum(InvR(1:i,i)**2)
         end do
         T = (real(M,rkp)/real(M-N,rkp))*(One+T)
         CVError = CVError*T
@@ -595,8 +573,6 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
     real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
     integer                                                         ::    NbTraining
     integer                                                         ::    NbValidation
-    integer                                                         ::    iLoc
-    integer                                                         ::    iiLoc
 
     NbTraining = size(TrainingSet,1)
     NbValidation = size(ValidationSet,1)
@@ -609,26 +585,20 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
 
     allocate(SystemLoc(NbTraining,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
-    SystemLoc = Zero
-
-    iLoc = 1
-    do iLoc = 1, N
-      SystemLoc(:,iLoc) = System(TrainingSetIndices,iLoc)
-    end do
+    SystemLoc = System(TrainingSetIndices,:)
 
     call This%Solve(System=SystemLoc, Goal=TrainingSet, Coefficients=CoefficientsLoc)
 
-    Residual = ValidationSet
+    deallocate(SystemLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
-    iLoc = 1
-    do iLoc = 1, N
-      if (.not. dabs(Coefficients(iLoc)) > Zero) cycle
-      iiLoc = 1
-      do iiLoc = 1, NbValidation
-        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
-      end do
-    end do
-    
+    allocate(SystemLoc(NbValidation,N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
+    SystemLoc = System(ValidationSetIndices,:)
+
+    Residual = matmul(SystemLoc,CoefficientsLoc)
+    Residual = ValidationSet - Residual
+
     deallocate(SystemLoc, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
@@ -674,25 +644,19 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
   if (M < N) call Error%Raise('Procedure only meant for tall arrays', ProcName=ProcName)
 
   if (size(Coefficients,1) /= N) call Error%Raise('Incompatible coefficients array', ProcName=ProcName)
-
   Coefficients = Zero
 
-  allocate(VarR1D(N), stat=StatLoc)
+  allocate(VarR1D(M), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
+  VarR1D = matmul(Goal,Q)
+
+  Coefficients = Zero
   i = 1
   do i = 1, N 
-    VarR1D(i) = dot_product(Q(:,i), Goal)
+    Coefficients(1:i) = Coefficients(1:i) + InvR(1:i,i)*VarR1D(1:i)
   end do
 
-  i = 1
-  do i = 1,N 
-    ii = 1
-    do ii = i, N
-      Coefficients(i) = Coefficients(i) + VarR1D(ii)*InvR(i,ii)
-    end do
-  end do
-  
   deallocate(VarR1D, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
@@ -711,20 +675,10 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
         h = sum(Q**2,2)
 
         ! get cv loo
-        Residual = Zero
-        i = 1
-        do i = 1, N
-          if (.not. dabs(Coefficients(i)) > Zero) cycle
-          Residual = Residual + Coefficients(i)*System(:,i)
-        end do
+        Residual = matmul(System,Coefficients)
         Residual = Goal - Residual
 
-        CVError = Zero
-        i = 1
-        do i = 1, M
-          CVError = CVError + (Residual(i)/(One-h(i)))**2
-        end do
-        CVError = CVError / real(M,rkp)
+        CVError = sum((Residual/(One-h))**2) / real(M,rkp)
         
         if (This%CVError%IsNormalized()) then
           GoalVariance = ComputeSampleVar(Values=Goal)
@@ -752,7 +706,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
         T = Zero
         i = 1
         do i = 1, N
-          T = T + dot_product(InvR(i:N,i),InvR(i:N,i))
+          T = T + sum(InvR(1:i,i)**2)
         end do
         T = (real(M,rkp)/real(M-N,rkp))*(One+T)
         CVError = CVError*T
@@ -795,26 +749,20 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
 
     allocate(SystemLoc(NbTraining,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
-    SystemLoc = Zero
-
-    iLoc = 1
-    do iLoc = 1, N
-      SystemLoc(:,iLoc) = System(TrainingSetIndices,iLoc)
-    end do
+    SystemLoc = System(TrainingSetIndices,:)
 
     call This%Solve(System=SystemLoc, Goal=TrainingSet, Coefficients=CoefficientsLoc)
 
-    Residual = ValidationSet
+    deallocate(SystemLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
-    iLoc = 1
-    do iLoc = 1, N
-      if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
-      iiLoc = 1
-      do iiLoc = 1, NbValidation
-        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
-      end do
-    end do
-    
+    allocate(SystemLoc(NbValidation,N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
+    SystemLoc = System(ValidationSetIndices,:)
+
+    Residual = matmul(SystemLoc,CoefficientsLoc)
+    Residual = ValidationSet - Residual
+
     deallocate(SystemLoc, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 

@@ -27,7 +27,7 @@ use Error_Class                                                   ,only:    Erro
 use Model_Class                                                   ,only:    Model_Type
 use ModelInternal_Class                                           ,only:    ModelInternal_Type
 use Output_Class                                                  ,only:    Output_Type
-use PolyChaosModel_Class                                          ,only:    PolyChaosModel_Type
+use PCEModel_Class                                                ,only:    PCEModel_Type
 use Input_Class                                                   ,only:    Input_Type
 use List1DAllocChar_Class                                         ,only:    List1DAllocChar_Type
 use InputProcessor_Class                                          ,only:    InputProcessor_Type
@@ -40,7 +40,7 @@ private
 public                                                                ::    PCESM_Type
 
 type, extends(ModelInternal_Type)                                     ::    PCESM_Type
-  type(PolyChaosModel_Type), allocatable, dimension(:)                ::    PCEModels
+  type(PCEModel_Type), allocatable, dimension(:)                      ::    PCEModels
   integer                                                             ::    NbModels=0
   type(InputProcessor_Type)                                           ::    InputProcessor
 contains

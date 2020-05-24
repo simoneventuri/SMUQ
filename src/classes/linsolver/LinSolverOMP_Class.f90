@@ -389,8 +389,6 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
     real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
     integer                                                         ::    NbTraining
     integer                                                         ::    NbValidation
-    integer                                                         ::    iLoc
-    integer                                                         ::    iiLoc
 
     NbTraining = size(TrainingSet,1)
     NbValidation = size(ValidationSet,1)
@@ -403,26 +401,20 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
 
     allocate(SystemLoc(NbTraining,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
-    SystemLoc = Zero
-
-    iLoc = 1
-    do iLoc = 1, N
-      SystemLoc(:,iLoc) = System(TrainingSetIndices,iLoc)
-    end do
+    SystemLoc = System(TrainingSetIndices,:)
 
     call This%Solve(System=SystemLoc, Goal=TrainingSet, Coefficients=CoefficientsLoc)
 
-    Residual = ValidationSet
+    deallocate(SystemLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
-    iLoc = 1
-    do iLoc = 1, N
-      if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
-      iiLoc = 1
-      do iiLoc = 1, NbValidation
-        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
-      end do
-    end do
-    
+    allocate(SystemLoc(NbValidation,N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
+    SystemLoc = System(ValidationSetIndices,:)
+
+    Residual = matmul(SystemLoc,CoefficientsLoc)
+    Residual = ValidationSet - Residual
+
     deallocate(SystemLoc, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
@@ -683,7 +675,8 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
 
     ! finding most correlated regressor from inactive and non-constant list
     ResidualNorm = dsqrt(sum(Residual**2))
-    Corr(1:N) = matmul(Residual,System)/(Norm*ResidualNorm)
+    Corr = matmul(Residual,System)
+    Corr = Corr / (Norm*ResidualNorm)
     MaxAbsCorrIndex = maxloc(dabs(Corr),1,InActive)
     MaxAbsCorr = dabs(Corr(MaxAbsCorrIndex))
 
@@ -873,7 +866,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   real(rkp)                                                           ::    GoalMean
   real(rkp)                                                           ::    GoalVariance
   real(rkp)                                                           ::    InvXtXScalar
-  real(rkp), allocatable, dimension(:), target                        ::    VarR1D
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
   real(rkp)                                                           ::    VarR0D
   real(rkp), allocatable, dimension(:)                                ::    h
   real(rkp)                                                           ::    CVLOOTempNonN
@@ -1038,7 +1031,8 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
 
     ! finding most correlated regressor from inactive and non-constant list
     ResidualNorm = dsqrt(sum(Residual**2))
-    Corr(1:N) = matmul(Residual,System)/(Norm*ResidualNorm)
+    Corr = matmul(Residual,System)
+    Corr = Corr / (Norm*ResidualNorm)
     MaxAbsCorrIndex = maxloc(dabs(Corr),1,InActive)
     MaxAbsCorr = dabs(Corr(MaxAbsCorrIndex))
 

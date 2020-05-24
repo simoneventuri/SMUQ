@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module PolyChaosModel_Class
+module PCEModel_Class
 
 use Input_Library
 use Parameters_Library
@@ -45,7 +45,7 @@ implicit none
 
 private
 
-public                                                                ::    PolyChaosModel_Type
+public                                                                ::    PCEModel_Type
 
 type                                                                  ::    Cell_Type
   logical                                                             ::    Initialized=.false.
@@ -72,7 +72,7 @@ contains
   final                                                               ::    Finalizer_Cell  
 end type
 
-type, extends(ModelInternal_Type)                                     ::    PolyChaosModel_Type
+type, extends(ModelInternal_Type)                                     ::    PCEModel_Type
   type(OrthoMultiVar_Type)                                            ::    Basis
   class(TransfSampleSpace_Type), allocatable                          ::    TransformedSpace
   integer                                                             ::    NbDim=0
@@ -117,12 +117,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize(This)
 
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
     if (.not. This%Initialized) then
-      This%Name = 'polychaosmodel'
+      This%Name = 'PCEmodel'
       This%Initialized = .true.
       call This%SetDefaults()
     end if
@@ -133,7 +133,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset(This)
 
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
@@ -163,12 +163,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults(This)
 
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
     This%OutputLabel = '<undefined>'
-    This%Label = 'polychaos'
+    This%Label = 'PCE'
     This%NbOutputs = 1
 
   end subroutine
@@ -179,7 +179,7 @@ contains
 
     use StringRoutines_Module
 
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
     class(InputSection_Type), intent(in)                              ::    Input
     character(*), optional, intent(in)                                ::    Prefix
 
@@ -276,7 +276,7 @@ contains
 
     use StringRoutines_Module
 
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
     character(*), optional, intent(in)                                ::    Prefix
 
     character(*), parameter                                           ::    ProcName='ConstructInput2'
@@ -369,7 +369,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructCase1(This, Response, TransformedSpace, Basis, Coefficients, Indices, CVErrors, Silent)
 
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
     type(Response_Type), intent(in)                                   ::    Response
     class(TransfSampleSpace_Type), intent(in)                         ::    TransformedSpace
     type(OrthoMultiVar_Type), intent(in)                              ::    Basis
@@ -469,7 +469,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(PolyChaosModel_Type), intent(in)                            ::    This
+    class(PCEModel_Type), intent(in)                                  ::    This
     character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -523,7 +523,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Run_0D(This, Input, Output, Stat)
     
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
     type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), dimension(:), intent(inout)                    ::    Output
     integer, optional, intent(out)                                    ::    Stat 
@@ -546,7 +546,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Run_0D_Single(This, Input, Output, Stat)
     
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
     type(Input_Type), intent(in)                                      ::    Input
     type(Output_Type), intent(inout)                                  ::    Output
     integer, optional, intent(out)                                    ::    Stat 
@@ -603,7 +603,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ReplaceInputLabel_Char(This, Old, New)
 
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    Old
     character(*), intent(in)                                          ::    New
 
@@ -629,7 +629,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ReplaceInputLabel_String(This, Old, New)
 
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
     type(SMUQString_Type), intent(in)                                 ::    Old
     type(SMUQString_Type), intent(in)                                 ::    New
 
@@ -658,7 +658,7 @@ contains
 
     integer                                                           ::    GetNbInputs
 
-    class(PolyChaosModel_Type), intent(in)                            ::    This
+    class(PCEModel_Type), intent(in)                                  ::    This
 
     character(*), parameter                                           ::    ProcName='GetNbInputs'
 
@@ -674,7 +674,7 @@ contains
 
     integer                                                           ::    GetNbNodes
 
-    class(PolyChaosModel_Type), intent(in)                            ::    This
+    class(PCEModel_Type), intent(in)                                  ::    This
 
     character(*), parameter                                           ::    ProcName='GetNbNodes'
 
@@ -690,7 +690,7 @@ contains
 
     real(rkp), dimension(:), pointer                                  ::    GetCoefficientsPointer
 
-    class(PolyChaosModel_Type), intent(in)                            ::    This
+    class(PCEModel_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Node
 
     character(*), parameter                                           ::    ProcName='GetCoefficientsPointer'
@@ -708,7 +708,7 @@ contains
 
     integer, dimension(:,:), pointer                                  ::    GetIndicesPointer
 
-    class(PolyChaosModel_Type), intent(in)                            ::    This
+    class(PCEModel_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Node
 
     character(*), parameter                                           ::    ProcName='GetIndicesPointer'
@@ -726,7 +726,7 @@ contains
 
     real(rkp)                                                         ::    GetCVError
 
-    class(PolyChaosModel_Type), intent(in)                            ::    This
+    class(PCEModel_Type), intent(in)                                  ::    This
     integer, intent(in)                                               ::    Node
 
     character(*), parameter                                           ::    ProcName='GetCVError'
@@ -742,7 +742,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ReplaceOutputLabel_Char(This, New)
 
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
     character(*), intent(in)                                          ::    New
 
     character(*), parameter                                           ::    ProcName='ReplaceOutputLabel_Char'
@@ -757,7 +757,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ReplaceOutputLabel_String(This, New)
 
-    class(PolyChaosModel_Type), intent(inout)                         ::    This
+    class(PCEModel_Type), intent(inout)                               ::    This
     type(SMUQString_Type), intent(in)                                 ::    New
 
     character(*), parameter                                           ::    ProcName='ReplaceOutputLabel_String'
@@ -772,7 +772,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy(LHS, RHS)
 
-    class(PolyChaosModel_Type), intent(out)                           ::    LHS
+    class(PCEModel_Type), intent(out)                                 ::    LHS
     class(Model_Type), intent(in)                                     ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
@@ -780,7 +780,7 @@ contains
     integer                                                           ::    StatLoc=0
 
     select type (RHS)
-      type is (PolyChaosModel_Type)
+      type is (PCEModel_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -809,7 +809,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer(This)
 
-    type(PolyChaosModel_Type), intent(inout)                          ::    This
+    type(PCEModel_Type), intent(inout)                                ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0

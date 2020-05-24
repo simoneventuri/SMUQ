@@ -16,23 +16,22 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module PolyChaosMethod_Factory_Class
+module PCEMethod_Factory_Class
 
 use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use PolyChaosMethod_Class                                         ,only:    PolyChaosMethod_Type
-use PolyChaosOLS_Class                                            ,only:    PolyChaosOLS_Type
-use PolyChaosSparse_Class                                         ,only:    PolyChaosSparse_Type
+use PCEMethod_Class                                               ,only:    PCEMethod_Type
+use PCERegression_Class                                           ,only:    PCERegression_Type
 
 implicit none
 
 private
 
-public                                                                ::    PolyChaosMethod_Factory
+public                                                                ::    PCEMethod_Factory
 
-type                                                                  ::    PolyChaosMethod_Factory_Type
+type                                                                  ::    PCEMethod_Factory_Type
 contains
   generic, public                                                     ::    Construct               =>    Construct_C0D,          &
                                                                                                           Construct_Input
@@ -42,7 +41,7 @@ contains
   procedure, public                                                   ::    GetObjectInput
 end Type
 
-type(PolyChaosMethod_Factory_Type)                                    ::    PolyChaosMethod_Factory
+type(PCEMethod_Factory_Type)                                          ::    PCEMethod_Factory
 logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
@@ -50,7 +49,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_C0D(Object, DesiredType)
 
-    class(PolyChaosMethod_Type), allocatable, intent(inout)           ::    Object                                            
+    class(PCEMethod_Type), allocatable, intent(inout)                 ::    Object                                            
     character(*), intent(in)                                          ::    DesiredType                                               
 
     character(*), parameter                                           ::    ProcName='Construct_C0D' 
@@ -59,11 +58,8 @@ contains
 
     select case (LowerCase(DesiredType))
 
-      case('ols')
-        allocate(PolyChaosOLS_Type :: Object)
-
-      case('sparse')
-        allocate(PolyChaosSparse_Type :: Object)
+      case('regression')
+        allocate(PCERegression_Type :: Object)
 
       case default
         call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
@@ -78,8 +74,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Construct_Input(This, Object, Input, SectionChain, Prefix)
 
-    class(PolyChaosMethod_Factory_Type), intent(in)                   ::    This
-    class(PolyChaosMethod_Type), allocatable, intent(inout)           ::    Object
+    class(PCEMethod_Factory_Type), intent(in)                         ::    This
+    class(PCEMethod_Type), allocatable, intent(inout)                 ::    Object
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
@@ -112,17 +108,14 @@ contains
 
     character(:), allocatable                                         ::    GetOption
 
-    class(PolyChaosMethod_Type), intent(in)                           ::    Object                                                                                            
+    class(PCEMethod_Type), intent(in)                                 ::    Object                                                                                            
 
     character(*), parameter                                           ::    ProcName='GetOption' 
 
     select type (Object)
 
-      type is (PolyChaosOLS_Type)
-        GetOption = 'ols'
-
-      type is (PolyChaosSparse_Type)
-        GetOption = 'sparse'
+      type is (PCERegression_Type)
+        GetOption = 'regression'
 
       class default
         call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
@@ -139,8 +132,8 @@ contains
 
     type(InputSection_Type)                                           ::    GetObjectInput
 
-    class(PolyChaosMethod_Factory_Type), intent(in)                   ::    This
-    class(PolyChaosMethod_Type), intent(inout)                        ::    Object
+    class(PCEMethod_Factory_Type), intent(in)                         ::    This
+    class(PCEMethod_Type), intent(inout)                              ::    Object
     character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory

@@ -31,6 +31,7 @@ use CVMethod_Factory_Class                                        ,only:    CVMe
 use CVMethod_Class                                                ,only:    CVMethod_Type, CVFitTarget
 use CVLOO_Class                                                   ,only:    CVLOO_Type
 use ArrayIORoutines_Module
+
 implicit none
 
 private
@@ -401,8 +402,6 @@ use ArrayIORoutines_Module
     real(rkp), allocatable, dimension(:)                            ::    CoefficientsLoc
     integer                                                         ::    NbTraining
     integer                                                         ::    NbValidation
-    integer                                                         ::    iLoc
-    integer                                                         ::    iiLoc
 
     NbTraining = size(TrainingSet,1)
     NbValidation = size(ValidationSet,1)
@@ -415,25 +414,19 @@ use ArrayIORoutines_Module
 
     allocate(SystemLoc(NbTraining,N), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
-    SystemLoc = Zero
-
-    iLoc = 1
-    do iLoc = 1, N
-      SystemLoc(:,iLoc) = System(TrainingSetIndices,iLoc)
-    end do
+    SystemLoc = System(TrainingSetIndices,:)
 
     call This%Solve(System=SystemLoc, Goal=TrainingSet, Coefficients=CoefficientsLoc)
 
-    Residual = ValidationSet
+    deallocate(SystemLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
 
-    iLoc = 1
-    do iLoc = 1, N
-      if (.not. dabs(CoefficientsLoc(iLoc)) > Zero) cycle
-      iiLoc = 1
-      do iiLoc = 1, NbValidation
-        Residual(iiLoc) = Residual(iiLoc) - CoefficientsLoc(iLoc)*System(ValidationSetIndices(iiLoc),iLoc)
-      end do
-    end do
+    allocate(SystemLoc(NbValidation,N), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
+    SystemLoc = System(ValidationSetIndices,:)
+
+    Residual = matmul(SystemLoc,CoefficientsLoc)
+    Residual = ValidationSet - Residual
 
     deallocate(SystemLoc, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)

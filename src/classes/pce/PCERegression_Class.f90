@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module PolyChaosSparse_Class
+module PCERegression_Class
 
 use Input_Library
 use Parameters_Library
@@ -28,7 +28,7 @@ use CommandRoutines_Module
 use StatisticsRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use PolyChaosMethod_Class                                         ,only:    PolyChaosMethod_Type, ComputeSobolIndices
+use PCEMethod_Class                                               ,only:    PCEMethod_Type, ComputeSobolIndices
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
 use LinkedList1D_Class                                            ,only:    LinkedList1D_Type
 use LinkedList2D_Class                                            ,only:    LinkedList2D_Type
@@ -43,8 +43,9 @@ use SampleEnrichScheme_Class                                      ,only:    Samp
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use Input_Class                                                   ,only:    Input_Type
 use Output_Class                                                  ,only:    Output_Type
-use LinSolverSparse_Factory_Class                                 ,only:    LinSolverSparse_Factory
+use LinSolverMethod_Factory_Class                                 ,only:    LinSolverMethod_Factory
 use LinSolverMethod_Class                                         ,only:    LinSolverMethod_Type
+use LinSolverLAR_Class                                            ,only:    LinSolverLAR_Type
 use ModelInterface_Class                                          ,only:    ModelInterface_Type
 use Response_Class                                                ,only:    Response_Type
 use Restart_Class                                                 ,only:    RestartUtility, RestartTarget
@@ -56,7 +57,7 @@ implicit none
 
 private
 
-public                                                                ::    PolyChaosSparse_Type
+public                                                                ::    PCERegression_Type
 
 type                                                                  ::    Cell_Type
   logical                                                             ::    Initialized=.false.
@@ -102,7 +103,7 @@ contains
   final                                                               ::    Finalizer_Cell  
 end type
 
-type, extends(PolyChaosMethod_Type)                                   ::    PolyChaosSparse_Type
+type, extends(PCEMethod_Type)                                         ::    PCERegression_Type
   logical                                                             ::    Silent
   real(rkp)                                                           ::    StopError
   integer                                                             ::    ModelRunCounter
@@ -141,7 +142,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize(This)
 
-    class(PolyChaosSparse_Type), intent(inout)                        ::    This
+    class(PCERegression_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
 
@@ -157,7 +158,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset(This)
 
-    class(PolyChaosSparse_Type), intent(inout)                        ::    This
+    class(PCERegression_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc = 0
@@ -192,7 +193,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults(This)
 
-    class(PolyChaosSparse_Type), intent(inout)                        ::    This
+    class(PCERegression_Type), intent(inout)                          ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
@@ -214,7 +215,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, SectionChain, Prefix)
 
-    class(PolyChaosSparse_Type), intent(inout)                        ::    This
+    class(PCERegression_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
@@ -294,9 +295,19 @@ contains
     if (Found) This%StopError = VarR0D
 
     SectionName = "solver"
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call LinSolverSparse_Factory%Construct(Object=This%Solver, Input=InputSection, Prefix=PrefixLoc)
-    nullify(InputSection)
+    if (Input%HasSection(SubSectionName=SectionName)) then
+      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+      call LinSolverMethod_Factory%Construct(Object=This%Solver, Input=InputSection, Prefix=PrefixLoc)
+      nullify(InputSection)
+    else 
+      allocate(LinSolverLAR_Type :: This%Solver)
+      select type (Object => This%Solver)
+        type is (LinSolverLAR_Type)
+          call Object%Construct()
+        class default
+          call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+      end select
+    end if
 
     SectionName = 'restart'
     if (Input%HasSection(SubSectionName=SectionName)) then
@@ -382,7 +393,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(PolyChaosSparse_Type), intent(inout)                        ::    This
+    class(PCERegression_Type), intent(inout)                          ::    This
     character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -432,7 +443,7 @@ contains
 
     if (ExternalFlag) DirectorySub = DirectoryLoc // '/sparse_solver'
     SectionName='solver'
-    call GetInput%AddSection(Section=LinSolverSparse_Factory%GetObjectInput(Object=This%Solver, Name=SectionName,  &
+    call GetInput%AddSection(Section=LinSolverMethod_Factory%GetObjectInput(Object=This%Solver, Name=SectionName,  &
                                                                                      Prefix=PrefixLoc, Directory=DirectorySub))
 
     if (This%ModelRunCounter > 0) then
@@ -531,7 +542,7 @@ contains
   subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme, Coefficients, Indices, CVErrors,              &
                                                                                     OutputDirectory, InputSamples, OutputSamples)
 
-    class(PolyChaosSparse_Type), intent(inout)                        ::    This
+    class(PCERegression_Type), intent(inout)                          ::    This
     type(OrthoMultiVar_Type), intent(inout)                           ::    Basis
     class(SampleSpace_Type), intent(inout)                            ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
@@ -802,7 +813,7 @@ contains
             ii = 1
             do ii = 1, NbOutputs
               VarR2DPointer => Outputs(ii,iRun)%GetValuesPointer()
-              if (Outputs(ii,iRun)%GetNbDegen() > 1) call Error%Raise('Polychaos procedure cant deal with stochastic ' //      &
+              if (Outputs(ii,iRun)%GetNbDegen() > 1) call Error%Raise('PCE procedure cant deal with stochastic ' //      &
                                                                                                   'responses', ProcName=ProcName)
               iv = 0
               iii = im1 + 1
@@ -1035,7 +1046,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine WriteOutput(This, Directory, Responses)
 
-    class(PolyChaosSparse_Type), intent(inout)                        ::    This
+    class(PCERegression_Type), intent(inout)                          ::    This
     character(*), intent(in)                                          ::    Directory
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
 
@@ -1148,8 +1159,8 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy(LHS, RHS)
 
-    class(PolyChaosSparse_Type), intent(out)                          ::    LHS
-    class(PolyChaosMethod_Type), intent(in)                           ::    RHS
+    class(PCERegression_Type), intent(out)                            ::    LHS
+    class(PCEMethod_Type), intent(in)                                 ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i
@@ -1157,7 +1168,7 @@ contains
 
     select type (RHS)
   
-      type is (PolyChaosSparse_Type)
+      type is (PCERegression_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -1186,7 +1197,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer(This)
 
-    type(PolyChaosSparse_Type), intent(inout)                         ::    This
+    type(PCERegression_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0

@@ -16,7 +16,7 @@
 !!
 !!--------------------------------------------------------------------------------------------------------------------------------
 
-module SurrogatePolyChaos_Class
+module SurrogatePCE_Class
 
 use Input_Library
 use Parameters_Library
@@ -35,10 +35,10 @@ use OrthoLegendre_Class                                           ,only:    Orth
 use OrthoLaguerre_Class                                           ,only:    OrthoLaguerre_Type
 use OrthoHermite_Class                                            ,only:    OrthoHermite_Type
 use IndexSetScheme_Class                                          ,only:    IndexSetScheme_Type
-use PolyChaosMethod_Factory_Class                                 ,only:    PolyChaosMethod_Factory
-use PolyChaosMethod_Class                                         ,only:    PolyChaosMethod_Type
+use PCEMethod_Factory_Class                                       ,only:    PCEMethod_Factory
+use PCEMethod_Class                                               ,only:    PCEMethod_Type
 use Response_Class                                                ,only:    Response_Type
-use PolyChaosModel_Class                                          ,only:    PolyChaosModel_Type
+use PCEModel_Class                                                ,only:    PCEModel_Type
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use TransfSampleSpace_Class                                       ,only:    TransfSampleSpace_Type
 use TransfSampleSpace_Factory_Class                               ,only:    TransfSampleSpace_Factory
@@ -66,11 +66,11 @@ implicit none
 
 private
 
-public                                                                ::    SurrogatePolyChaos_Type
+public                                                                ::    SurrogatePCE_Type
 
-type, extends(SurrogateMethod_Type)                                   ::    SurrogatePolyChaos_Type
+type, extends(SurrogateMethod_Type)                                   ::    SurrogatePCE_Type
   type(IndexSetScheme_Type)                                           ::    IndexSetScheme
-  class(PolyChaosMethod_Type), allocatable                            ::    PolyChaosMethod
+  class(PCEMethod_Type), allocatable                                  ::    PCEMethod
   logical                                                             ::    Silent=.false.
   character(:), allocatable                                           ::    BasisScheme
   type(SMUQString_Type), allocatable, dimension(:)                    ::    InputSamplesLabels
@@ -102,14 +102,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Initialize(This)
 
-    class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
+    class(SurrogatePCE_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Initialize'
     integer(8)                                                        ::    SysTimeCount
 
     if (.not. This%Initialized) then
       This%Initialized = .true.
-      This%Name = 'polychaos'
+      This%Name = 'PCE'
 
       call This%SetDefaults()
     end if
@@ -120,7 +120,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset(This)
 
-    class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
+    class(SurrogatePCE_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='Reset'
     integer                                                           ::    StatLoc=0
@@ -128,8 +128,8 @@ contains
     This%Initialized=.false.
     This%Constructed=.false.
 
-    if (allocated(This%PolyChaosMethod)) deallocate(This%PolyChaosMethod, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%PolyChaosMethod', ProcName=ProcName, stat=StatLoc)
+    if (allocated(This%PCEMethod)) deallocate(This%PCEMethod, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%PCEMethod', ProcName=ProcName, stat=StatLoc)
 
     call This%IndexSetScheme%Reset()
 
@@ -147,7 +147,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine SetDefaults(This)
 
-    class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
+    class(SurrogatePCE_Type), intent(inout)                           ::    This
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
@@ -161,7 +161,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput (This, Input, SectionChain, Prefix)
 
-    class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
+    class(SurrogatePCE_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    SectionChain
     character(*), optional, intent(in)                                ::    Prefix
@@ -210,7 +210,7 @@ contains
 
     SectionName = 'method'
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call PolyChaosMethod_Factory%Construct(Object=This%PolyChaosMethod, Input=InputSection,                                      &
+    call PCEMethod_Factory%Construct(Object=This%PCEMethod, Input=InputSection,                                      &
                                                                    SectionChain=This%SectionChain // '>method', Prefix=PrefixLoc)
     nullify(InputSection)
 
@@ -282,7 +282,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
+    class(SurrogatePCE_Type), intent(inout)                           ::    This
     character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory
@@ -318,7 +318,7 @@ contains
 
     SectionName = 'method'
     if (ExternalFlag) DirectorySub = DirectoryLoc // '/method'
-    call GetInput%AddSection(Section=PolyChaosMethod_Factory%GetObjectInput(Object=This%PolyChaosMethod,                          &
+    call GetInput%AddSection(Section=PCEMethod_Factory%GetObjectInput(Object=This%PCEMethod,                          &
                                                                        Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
 
   end function
@@ -327,7 +327,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Run(This, SampleSpace, Responses, Model, SurrogateModel, OutputDirectory)
 
-    class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
+    class(SurrogatePCE_Type), intent(inout)                           ::    This
     class(SampleSpace_Type), intent(in)                               ::    SampleSpace
     type(Response_Type), dimension(:), intent(in)                     ::    Responses
     class(Model_Type), intent(inout)                                  ::    Model
@@ -342,7 +342,7 @@ contains
     type(LinkedList0D_Type), allocatable, dimension(:)                ::    CVErrors
     type(LinkedList1D_Type), allocatable, dimension(:)                ::    Coefficients
     type(LinkedList2D_Type), allocatable, dimension(:)                ::    Indices
-    type(PolyChaosModel_Type), dimension(:), allocatable              ::    PolyChaosModelLoc
+    type(PCEModel_Type), dimension(:), allocatable                    ::    PCEModelLoc
     character(:), allocatable                                         ::    OutputDirectoryLoc
     real(rkp), allocatable, dimension(:,:)                            ::    InputSamplesLoc
     type(List2D_Type), allocatable, dimension(:)                      ::    OutputSamplesLoc
@@ -419,11 +419,11 @@ contains
         OutputSamplesLoc(i) = This%OutputSamples(iii)
       end do
       if (present(OutputDirectory)) then
-        call This%PolyChaosMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
+        call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
              IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
              OutputDirectory=OutputDirectoryLoc, InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc)
       else
-        call This%PolyChaosMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
+        call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
              IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
              InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc)
       end if
@@ -433,17 +433,17 @@ contains
       if (StatLoc /= 0) call Error%Deallocate(Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc)
     else
       if (present(OutputDirectory)) then
-        call This%PolyChaosMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
+        call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
              IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
              OutputDirectory=OutputDirectoryLoc)
       else
-        call This%PolyChaosMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
+        call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
              IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors)
       end if
     end if
 
-    allocate(PolyChaosModelLoc(size(Responses,1)), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='PolyChaosModelLoc', ProcName=ProcName, stat=StatLoc)
+    allocate(PCEModelLoc(size(Responses,1)), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='PCEModelLoc', ProcName=ProcName, stat=StatLoc)
 
     if (.not. This%Silent) then
       Line = 'Building polynomial chaos model input packages'
@@ -453,7 +453,7 @@ contains
 
     i = 1
     do i = 1, size(Responses,1)
-      call PolyChaosModelLoc(i)%Construct(Response=Responses(i), TransformedSpace=SpaceTransform, Basis=Basis,                   &
+      call PCEModelLoc(i)%Construct(Response=Responses(i), TransformedSpace=SpaceTransform, Basis=Basis,                   &
                                                           Coefficients=Coefficients(i), Indices=Indices(i), CVErrors=CVErrors(i))
       if (present(OutputDirectory)) then
         if (.not. This%Silent) then
@@ -463,7 +463,7 @@ contains
           write(*,'(A)') Line
         end if
         OutputDirectoryLoc = OutputDirectory // '/pce_models/' // Responses(i)%GetLabel()
-        call This%WriteOutput(PolyChaosModel=PolyChaosModelLoc(i), Directory=OutputDirectoryLoc)
+        call This%WriteOutput(PCEModel=PCEModelLoc(i), Directory=OutputDirectoryLoc)
       end if
       call Coefficients(i)%Purge()
       call Indices(i)%Purge()
@@ -478,12 +478,12 @@ contains
     if (StatLoc /= 0) call Error%Deallocate(Name='CVErrors', ProcName=ProcName, stat=StatLoc)
 
     if (present(SurrogateModel)) then
-      allocate(SurrogateModel, source=PolyChaosModelLoc, stat=StatLoc)
+      allocate(SurrogateModel, source=PCEModelLoc, stat=StatLoc)
       if (StatLoc /= 0) call Error%Allocate(Name='SurrogateModel', ProcName=ProcName, stat=StatLoc)
     end if
 
-    deallocate(PolyChaosModelLoc, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='PolyChaosModelLoc', ProcName=ProcName, stat=StatLoc)
+    deallocate(PCEModelLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='PCEModelLoc', ProcName=ProcName, stat=StatLoc)
 
     deallocate(SpaceTransform, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
@@ -492,15 +492,15 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput(This, PolyChaosModel, Directory)
+  subroutine WriteOutput(This, PCEModel, Directory)
 
     use CommandRoutines_Module
     use StringRoutines_Module
     use ArrayRoutines_Module
     use SMUQFile_Class                                            ,only:    SMUQFile_Type
 
-    class(SurrogatePolyChaos_Type), intent(inout)                     ::    This
-    type(PolyChaosModel_Type), intent(inout)                          ::    PolyChaosModel
+    class(SurrogatePCE_Type), intent(inout)                           ::    This
+    type(PCEModel_Type), intent(inout)                                ::    PCEModel
     character(*), intent(in)                                          ::    Directory
 
     character(*), parameter                                           ::    ProcName='WriteOutput'
@@ -526,7 +526,7 @@ contains
       PrefixLoc = Directory // '/PCModelPackage'
       DirectoryLoc = '/PCModelInput'
 
-      Input = PolyChaosModel%GetInput(Name='polychaos_model', Prefix=PrefixLoc, Directory=DirectoryLoc)
+      Input = PCEModel%GetInput(Name='PCE_model', Prefix=PrefixLoc, Directory=DirectoryLoc)
       
       FileName = '/PCModelInput.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
@@ -675,7 +675,7 @@ contains
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), allocatable                                 ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPolyContainer_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    type(OrthoPolyContainer_Type), allocatable, dimension(:)          ::    OrthoPolyVec
     type(DistNorm_Type), allocatable, dimension(:)                    ::    DistNormal
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
@@ -738,10 +738,10 @@ contains
     character(*), parameter                                           ::    ProcName='ConstructAskeyNumericalScheme'
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), allocatable                                 ::    DistProb
-    type(DistProbContainer_Type), allocatable, dimension(:)                ::    DistProbVec
+    type(DistProbContainer_Type), allocatable, dimension(:)           ::    DistProbVec
     class(DistProb_Type), pointer                                     ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPolyContainer_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    type(OrthoPolyContainer_Type), allocatable, dimension(:)          ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
 
@@ -877,7 +877,7 @@ contains
     integer                                                           ::    StatLoc=0
     class(DistProb_Type), pointer                                     ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPolyContainer_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    type(OrthoPolyContainer_Type), allocatable, dimension(:)          ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
 
@@ -1010,7 +1010,7 @@ contains
     class(DistProb_Type), allocatable                                 ::    DistProb
     class(DistProb_Type), pointer                                     ::    DistProbPointer
     class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPolyContainer_Type), allocatable, dimension(:)               ::    OrthoPolyVec
+    type(OrthoPolyContainer_Type), allocatable, dimension(:)          ::    OrthoPolyVec
     integer                                                           ::    NbDim=0
     integer                                                           ::    i
 
@@ -1061,7 +1061,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Copy(LHS, RHS)
 
-    class(SurrogatePolyChaos_Type), intent(out)                       ::    LHS
+    class(SurrogatePCE_Type), intent(out)                             ::    LHS
     class(SurrogateMethod_Type), intent(in)                           ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
@@ -1069,7 +1069,7 @@ contains
 
     select type (RHS)
 
-      type is (SurrogatePolyChaos_Type)
+      type is (SurrogatePCE_Type)
         call LHS%Reset()
         LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
@@ -1078,8 +1078,8 @@ contains
           LHS%BasisScheme = RHS%BasisScheme
           LHS%Silent = RHS%Silent
           LHS%IndexSetScheme = RHS%IndexSetScheme
-          allocate(LHS%PolyChaosMethod, source=RHS%PolyChaosMethod, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%PolyChaosMethod', ProcName=ProcName, stat=StatLoc)
+          allocate(LHS%PCEMethod, source=RHS%PCEMethod, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Allocate(Name='LHS%PCEMethod', ProcName=ProcName, stat=StatLoc)
         end if
       
       class default
@@ -1093,13 +1093,13 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   impure elemental subroutine Finalizer(This)
 
-    type(SurrogatePolyChaos_Type), intent(inout)                      ::    This
+    type(SurrogatePCE_Type), intent(inout)                            ::    This
 
     character(*), parameter                                           ::    ProcName='Finalizer'
     integer                                                           ::    StatLoc=0
 
-    if (allocated(This%PolyChaosMethod)) deallocate(This%PolyChaosMethod, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%PolyChaosMethod', ProcName=ProcName, stat=StatLoc)
+    if (allocated(This%PCEMethod)) deallocate(This%PCEMethod, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='This%PCEMethod', ProcName=ProcName, stat=StatLoc)
 
     call This%IndexSetScheme%Reset()
 

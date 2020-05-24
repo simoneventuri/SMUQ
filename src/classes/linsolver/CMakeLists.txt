@@ -3,6 +3,5 @@ add_target_sources (smuqApp
   LinSolverLAR_Class.f90
   LinSolverOMP_Class.f90
   LinSolverMethod_Class.f90
-  LinSolverSparse_Factory_Class.f90
   LinSolverMethod_Factory_Class.f90
 )
