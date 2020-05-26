@@ -1553,7 +1553,7 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
         CVLOOTemp = huge(One)
       end if
     end if
-    
+
     if (CVLOOTemp < BestCVLOO) then
       BestCVLOONonN = CVLOOTempNonN
       BestCVLOO = CVLOOTemp

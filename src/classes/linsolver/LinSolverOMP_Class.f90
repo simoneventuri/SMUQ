@@ -757,7 +757,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
         CVLOOTemp = huge(One)
       end if
     end if
-  
+
     if (CVLOOTemp < BestCVLOO) then
       BestCVLOONonN = CVLOOTempNonN
       BestCVLOO = CVLOOTemp
@@ -1110,6 +1110,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
         CVLOOTemp = huge(One)
       end if
     end if
+
     if (CVLOOTemp < BestCVLOO) then
       BestCVLOONonN = CVLOOTempNonN
       BestCVLOO = CVLOOTemp

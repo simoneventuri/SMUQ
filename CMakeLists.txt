@@ -40,7 +40,7 @@ endif()
 set( AllowableBuildTypes Debug Release )
 set_property( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug;Release" )
 if ( NOT CMAKE_BUILD_TYPE )
-  set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
 elseif ( NOT CMAKE_BUILD_TYPE IN_LIST AllowableBuildTypes )
   message( FATAL_ERROR
     "    ERROR:
@@ -83,7 +83,6 @@ if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     $<$<CONFIG:Debug>:-Wno-tabs>
     $<$<CONFIG:Debug>:-Warray-temporaries> 
     $<$<CONFIG:Release>:-O3>
-    $<$<CONFIG:Release>:-Warray-temporaries> 
   )
 else()
   message( FATAL_ERROR 
