@@ -375,7 +375,6 @@ contains
     DirectorySub = DirectoryLoc
 
     if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
-
     if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
     call GetInput%SetName(SectionName = trim(adjustl(Name)))

@@ -22,6 +22,7 @@ use Input_Library
 use Parameters_Library
 use StatisticsRoutines_Module
 use ComputingRoutines_Module
+use CommandRoutines_Module
 use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -212,14 +213,16 @@ function GetInput(This, Name, Prefix, Directory)
   DirectorySub = DirectoryLoc
 
   if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
   call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
   call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%CorrectedCV))
 
   SectionName = 'cross_validation'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // '/cross_validation'
   call GetInput%AddSection(Section=CVMethod_Factory%GetObjectInput(Object=This%CVError, Name=SectionName, Prefix=PrefixLoc, &
-                           Directory=DirectoryLoc))
+                           Directory=DirectorySub))
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------

@@ -22,6 +22,7 @@ use Input_Library
 use Parameters_Library
 use StringRoutines_Module
 use ArrayIORoutines_Module
+use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use MFileInput_Class                                              ,only:    MFileInput_Type
@@ -539,11 +540,11 @@ contains
     if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
     call GetInput_FP%SetName(SectionName = trim(adjustl(Name)))
-    
+    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
+
     SectionName = 'file'
     if (ExternalFlag) DirectorySub = DirectoryLoc // '/file'
-    call GetInput_FP%AddSection(Section=This%ModelFile%GetInput(Name=SectionName, Prefix=PrefixLoc,                   &
-                                                                                                         Directory=DirectorySub))
+    call GetInput_FP%AddSection(Section=This%ModelFile%GetInput(Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
 
     SectionName = 'template'
     call GetInput_FP%AddSection(SectionName=SectionName)

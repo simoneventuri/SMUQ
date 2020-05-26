@@ -297,11 +297,14 @@ contains
     call GetInput%AddParameter(Name='nb_concurrent_evaluations', Value=ConvertToString(Value=This%NbConcurrentEvaluations))
     call GetInput%AddParameter(Name='nb_concurrent_subevaluations', Value=ConvertToString(Value=This%NbConcurrentSubEvaluations))
 
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/parameter_writer'
     call GetInput%AddSection(Section=This%ParameterWriter(1)%GetInput(Name='parameter_writer', Prefix=PrefixLoc,      &
                                                                                                          Directory=DirectorySub))
+    if (ExternalFlag) DirectorySub = DirectoryLoc // '/output_reader'                                                                                                     
     call GetInput%AddSection(Section=This%OutputReader(1)%GetInput(Name='output_reader', Prefix=PrefixLoc,            &
                                                                                                          Directory=DirectorySub))
     if (allocated(This%PathWriter)) then
+      if (ExternalFlag) DirectorySub = DirectoryLoc // '/path_writer'
       call GetInput%AddSection(Section=This%PathWriter(1)%GetInput(Name='path_writer', Prefix=PrefixLoc,              &
                                                                                                          Directory=DirectorySub))
     end if
