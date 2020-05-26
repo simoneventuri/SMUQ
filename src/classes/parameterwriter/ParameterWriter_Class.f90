@@ -604,6 +604,9 @@ contains
     deallocate(Workstrings2, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='Workstrings2', ProcName=ProcName, stat=StatLoc)
 
+    deallocate(Workstrings1, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Workstrings2', ProcName=ProcName, stat=StatLoc)
+
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

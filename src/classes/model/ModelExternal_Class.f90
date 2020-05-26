@@ -393,12 +393,12 @@ contains
         end if
 
         Transcript(iLine) = '(cd ' // This%FullWorkDirectory // '/' // ConvertToString(Value=1) &
-                            // This%SubModelCaseDirectory(iSubModel) // ' \ '
+                            // This%SubModelCaseDirectory(iSubModel) // ' \'
         iLine = iLine + 1
-        Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel) // ' \ '
+        Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel) // ' \'
         iLine = iLine + 1
         if (.not. This%Silent) then
-          Transcript(iLine) = 'echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
+          Transcript(iLine) = 'echo "  Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \'
           iLine = iLine + 1
         end if
 
@@ -512,6 +512,7 @@ contains
       i = 1
       do i = 1, This%NbConcurrentEvaluations
         if (iInput > NbInputs) exit
+
         iSubModel = NbCompletedSubModels + 1
 
         if (iSubModel == 1) call This%ParameterWriter(i)%WriteInput(Input=Input(iInput))
@@ -528,13 +529,13 @@ contains
           end if
 
           Transcript(iLine) = '(cd ' // This%FullWorkDirectory // '/' // ConvertToString(Value=i) &
-                              // This%SubModelCaseDirectory(iSubModel) // ' \ '
+                              // This%SubModelCaseDirectory(iSubModel) // ' \'
           iLine = iLine + 1
-          Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel) // ' \ '
+          Transcript(iLine) = ' && ' // This%SubModelRunCommand(iSubModel) // ' \'
           iLine = iLine + 1
 
           if (.not. This%Silent) then
-            Transcript(iLine) = 'echo "    Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \ '
+            Transcript(iLine) = 'echo "    Evaluation ' // ConvertToString(Value=iRun) // ' : Complete" \'
             iLine = iLine + 1
           end if
 

@@ -276,9 +276,11 @@ function Replace_Char(This, Old, New)
   integer                                                             ::    iIndex
 
   Replace_Char = This%Value
+  LengthOld = len(Old)
 
   do
-    iIndex = index(This%Value,Old)
+    iIndex = index(Replace_Char,Old)
+    if (iIndex == 0) exit
     if (iIndex+LengthOld-1 /= len(Replace_Char)) then
       Replace_Char = Replace_Char(1:iIndex-1) // New // Replace_Char(iIndex+LengthOld:)
     else

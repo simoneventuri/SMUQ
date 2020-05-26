@@ -296,12 +296,12 @@ contains
 
     i = 1
     do i = 1, This%NbMParams
-      MParamPointer => This%MParam(i)%GetPointer()       
+      MParamPointer => This%MParam(i)%GetPointer()
       ii = 1
       do ii = 1, LineLog(i)%GetLength()
         call LineLog(i)%Get(Node=ii, Value=IndexLoc)
-        VarC0D = ProcessedTemplate(IndexLoc)%Replace(Old='{' // This%ParamIdentifier(i) // '}',                                    &
-                                                     New=MParamPointer%GetCharValue(Input=Input, Format=This%ParamFormat(i)%Get()))
+        VarC0D = ProcessedTemplate(IndexLoc)%Replace(Old='{' // This%ParamIdentifier(i) // '}', &
+                                                    New=MParamPointer%GetCharValue(Input=Input, Format=This%ParamFormat(i)%Get()))
         ProcessedTemplate(IndexLoc) = VarC0D
       end do
       nullify(MParamPointer)
