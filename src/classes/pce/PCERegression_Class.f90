@@ -695,11 +695,10 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
 
     ! Checks if all cells converged during last iteration
     ConvergedFlag = .true.
-    OrderExceededFlag = .true.
     EarlyExitFlag = .true.
     i = 1
     do i = 1, This%NbCells
-      NotCoverged = This%Cells(i)%GetCVError() > This%StopError
+      NotConverged = This%Cells(i)%GetCVError() > This%StopError
       NotOrderExceeded = This%Cells(i)%GetTruncationOrder() < IndexMaxOrder
       if (NotConverged .and. ConvergedFlag) ConvergedFlag = .false.
       if (NotConverged .and. NotOrderExceeded) EarlyExitFlag = .false.
@@ -973,7 +972,7 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
 
   if (.not. ConvergedFlag) then
     if (.not. SilentLoc) then
-      Line = 'Some nodes did not converge.'
+      Line = 'Some nodes did not converge'
       write(*,'(A)') '' 
       write(*,'(A)') Line
     end if   
