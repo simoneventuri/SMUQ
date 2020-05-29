@@ -19,6 +19,7 @@
 module StatisticsRoutines_Module
 
 use Parameters_Library
+use ArrayRoutines_Module
 use Logger_Class                  ,only: Logger
 use Error_Class                   ,only: Error
 
@@ -27,74 +28,113 @@ implicit none
 private
 
 public                                                                ::    ComputeMean
-public                                                                ::    ComputeSampleVar
-public                                                                ::    ComputePopulationVar
+public                                                                ::    ComputeVariance
 
 logical, parameter                                                    ::    DebugGlobal = .false.
 
+interface ComputeMean
+  module procedure                                                    ::    ComputeMean_R41D
+  module procedure                                                    ::    ComputeMean_R81D
+end interface
+
+interface ComputeVariance
+  module procedure                                                    ::    ComputeVariance_R41D
+  module procedure                                                    ::    ComputeVariance_R81D
+end interface
+
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMean(Values)
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeMean_R41D(Values)
 
-    real(rkp)                                                         ::    ComputeMean
-    real(rkp), dimension(:), intent(in)                               ::    Values 
+  real(4)                                                             ::    ComputeMean_R41D
+  real(4), dimension(:), intent(in)                                   ::    Values 
 
-    character(*), parameter                                           ::    ProcName='ComputeMean'
+  character(*), parameter                                             ::    ProcName='ComputeMean_R41D'
 
-    ComputeMean = sum(Values/real(size(Values,1),rkp))
+  ComputeMean_R41D = sum(Values/real(size(Values,1),rkp))
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeSampleVar(Values, Mean)
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeMean_R81D(Values)
 
-    real(rkp)                                                         ::    ComputeSampleVar
-    real(rkp), dimension(:), intent(in)                               ::    Values
-    real(rkp), optional, intent(in)                                   ::    Mean 
+  real(8)                                                             ::    ComputeMean_R81D
+  real(8), dimension(:), intent(in)                                   ::    Values 
 
-    character(*), parameter                                           ::    ProcName='ComputeSampleVar'
-    real(rkp)                                                         ::    Mean_Loc
-    integer(ikp)                                                      ::    i, iMax
+  character(*), parameter                                             ::    ProcName='ComputeMean_R81D'
 
-    if (size(Values,1)>1) then
-      if (present(Mean)) then
-        Mean_Loc = Mean
-      else
-        Mean_Loc = ComputeMean(Values)
-      end if
-      ComputeSampleVar = sum((Values - Mean_Loc)**2) / real(size(Values)-1,rkp)
+  ComputeMean_R81D = sum(Values/real(size(Values,1),rkp))
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeVariance_R41D(Values, Mean, Population)
+
+  real(4)                                                             ::    ComputeVariance_R41D
+  real(4), dimension(:), intent(in)                                   ::    Values
+  real(4), optional, intent(in)                                       ::    Mean 
+  logical, optional, intent(in)                                       ::    Population
+
+  character(*), parameter                                             ::    ProcName='ComputeVariance_R41D'
+  real(4)                                                             ::    MeanLoc
+  logical                                                             ::    PopulationLoc
+
+  PopulationLoc = .false.
+  if (present(Population)) PopulationLoc = Population 
+
+  if (.not. IsArrayConstant(Array=Values)) then
+    if (present(Mean)) then
+      MeanLoc = Mean
     else
-      ComputeSampleVar = Zero
+      MeanLoc = ComputeMean(Values)
     end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputePopulationVar(Values, Mean)
-
-    real(rkp)                                                         ::    ComputePopulationVar
-    real(rkp), dimension(:), intent(in)                               ::    Values
-    real(rkp), optional, intent(in)                                   ::    Mean 
-
-    character(*), parameter                                           ::    ProcName='ComputePopulationVar'
-    real(rkp)                                                         ::    Mean_Loc
-    integer(ikp)                                                      ::    i, iMax
-
-    if (size(Values,1)>1) then
-      if (present(Mean)) then
-        Mean_Loc = Mean
-      else
-        Mean_Loc = ComputeMean(Values)
-      end if
-      ComputePopulationVar = sum((Values - Mean_Loc)**2) / real(size(Values),rkp)
+    if (PopulationLoc) then
+      ComputeVariance_R41D = sum((Values - MeanLoc)**2) / real(size(Values),rkp)
     else
-      ComputePopulationVar = Zero
+      ComputeVariance_R41D = sum((Values - MeanLoc)**2) / real(size(Values)-1,rkp)
     end if
+  else
+    ComputeVariance_R41D = Zero
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeVariance_R81D(Values, Mean, Population)
+
+  real(8)                                                             ::    ComputeVariance_R81D
+  real(8), dimension(:), intent(in)                                   ::    Values
+  real(8), optional, intent(in)                                       ::    Mean 
+  logical, optional, intent(in)                                       ::    Population
+
+  character(*), parameter                                             ::    ProcName='ComputeVariance_R81D'
+  real(8)                                                             ::    MeanLoc
+  logical                                                             ::    PopulationLoc
+
+  PopulationLoc = .false.
+  if (present(Population)) PopulationLoc = Population 
+
+  if (.not. IsArrayConstant(Array=Values)) then
+    if (present(Mean)) then
+      MeanLoc = Mean
+    else
+      MeanLoc = ComputeMean(Values)
+    end if
+    if (PopulationLoc) then
+      ComputeVariance_R81D = sum((Values - MeanLoc)**2) / real(size(Values),rkp)
+    else
+      ComputeVariance_R81D = sum((Values - MeanLoc)**2) / real(size(Values)-1,rkp)
+    end if
+  else
+    ComputeVariance_R81D = Zero
+  end if
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
 
 end module

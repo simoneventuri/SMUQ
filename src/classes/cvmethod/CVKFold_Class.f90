@@ -311,7 +311,7 @@ module CVKFold_Class
     Calculate = MSESum / real(NbFoldsLoc,rkp)
 
     if (This%Normalized) then
-      FitDataVariance = ComputeSampleVar(Values=FitData)
+      FitDataVariance = ComputeVariance(Values=FitData)
       if (FitDataVariance > Zero) then
         Calculate = Calculate / FitDataVariance
       else

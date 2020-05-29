@@ -347,7 +347,7 @@ use ArrayIORoutines_Module
           call BuildMetaModel_QR_LAR(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, Hybrid=This%Hybrid, &
                                      GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
                                      CorrectedCV=This%CorrectedCV, NbCVErrorInc=This%NbCVErrorInc)
-          if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeSampleVar(Values=Goal)
+          if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeVariance(Values=Goal)
         class default
           CVFit => CVFitLAR
           call BuildMetaModel_QR_LAR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid,  &
@@ -369,7 +369,7 @@ use ArrayIORoutines_Module
           call BuildMetaModel_Gram_LAR(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, Hybrid=This%Hybrid, &
                                      GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
                                      CorrectedCV=This%CorrectedCV, NbCVErrorInc=This%NbCVErrorInc)
-          if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeSampleVar(Values=Goal)
+          if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeVariance(Values=Goal)
         class default
           CVFit => CVFitLAR
           call BuildMetaModel_Gram_LAR(System=System, Goal=Goal, Coefficients=Coefficients, Hybrid=This%Hybrid,  &
@@ -598,7 +598,7 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
   Coefficients = Zero
 
   GoalMean = ComputeMean(Values=Goal)
-  GoalVariance = ComputeSampleVar(Values=Goal, Mean=GoalMean)
+  GoalVariance = ComputeVariance(Values=Goal, Mean=GoalMean)
 
   if (N == 1) then
     InvXtXScalar = One / dot_product(System(:,1),System(:,1))
@@ -645,7 +645,7 @@ subroutine BuildMetaModel_Gram_LAR(System, Goal, Coefficients, CVLOO, Hybrid, Ge
     if (.not. InActive(i) .and. .not. dabs(System(1,i)) > Zero) call Error%Raise('System has a column of zeros', ProcName=ProcName)
     Mean(i) = ComputeMean(Values=System(:,i))
     if (InActive(i)) then
-      StD(i) = dsqrt(ComputeSampleVar(Values=System(:,i), Mean=Mean(i)))
+      StD(i) = dsqrt(ComputeVariance(Values=System(:,i), Mean=Mean(i)))
       System(:,i) = (System(:,i) - Mean(i)) / StD(i)
     else
       if (ConstantIndex == 0) ConstantIndex = i
@@ -1225,7 +1225,7 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
   Coefficients = Zero
 
   GoalMean = ComputeMean(Values=Goal)
-  GoalVariance = ComputeSampleVar(Values=Goal, Mean=GoalMean)
+  GoalVariance = ComputeVariance(Values=Goal, Mean=GoalMean)
 
   if (N == 1) then
     InvXtXScalar = One / dot_product(System(:,1),System(:,1))
@@ -1272,7 +1272,7 @@ subroutine BuildMetaModel_QR_LAR(System, Goal, Coefficients, CVLOO, Hybrid, GetB
     if (.not. InActive(i) .and. .not. dabs(System(1,i)) > Zero) call Error%Raise('System has a column of zeros', ProcName=ProcName)
     Mean(i) = ComputeMean(Values=System(:,i))
     if (InActive(i)) then
-      StD(i) = dsqrt(ComputeSampleVar(Values=System(:,i), Mean=Mean(i)))
+      StD(i) = dsqrt(ComputeVariance(Values=System(:,i), Mean=Mean(i)))
       System(:,i) = (System(:,i) - Mean(i)) / StD(i)
     else
       if (ConstantIndex == 0) ConstantIndex = i

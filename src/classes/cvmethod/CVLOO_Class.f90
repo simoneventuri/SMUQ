@@ -230,7 +230,7 @@ function Calculate(This, Fit, FitData)
   Calculate = MSESum / real(NbData,rkp)
 
   if (This%Normalized) then
-    FitDataVariance = ComputeSampleVar(Values=FitData)
+    FitDataVariance = ComputeVariance(Values=FitData)
     if (FitDataVariance > Zero) then
       Calculate = Calculate / FitDataVariance
     else

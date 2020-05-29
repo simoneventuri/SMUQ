@@ -334,7 +334,7 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
           call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, &
                                     GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
                                     CorrectedCV=This%CorrectedCV, NbCVErrorInc=This%NbCVErrorInc)
-          if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeSampleVar(Values=Goal)
+          if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeVariance(Values=Goal)
         class default
           CVFit => CVFitOMP
           call BuildMetaModel_QR_OMP(System=System, Goal=Goal, Coefficients=Coefficients, GetBest=This%GetBest, &
@@ -356,7 +356,7 @@ subroutine Solve(This, System, Goal, Coefficients, CVError)
           call BuildMetaModel_Gram_OMP(System=System, Goal=Goal, Coefficients=Coefficients, CVLOO=CVError, &
                                     GetBest=This%GetBest, MinAbsCorr=This%MinAbsCorr, StopEarly=This%StopEarly, &
                                     CorrectedCV=This%CorrectedCV, NbCVErrorInc=This%NbCVErrorInc)
-          if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeSampleVar(Values=Goal)
+          if (.not. CVMethod%IsNormalized() .and. CVError < huge(One)) CVError = CVError * ComputeVariance(Values=Goal)
         class default
           CVFit => CVFitOMP
           call BuildMetaModel_Gram_OMP(System=System, Goal=Goal, Coefficients=Coefficients, GetBest=This%GetBest, &
@@ -565,7 +565,7 @@ subroutine BuildMetaModel_Gram_OMP(System, Goal, Coefficients, CVLOO, GetBest, M
   Coefficients = Zero
 
   GoalMean = ComputeMean(Values=Goal)
-  GoalVariance = ComputeSampleVar(Values=Goal, Mean=GoalMean)
+  GoalVariance = ComputeVariance(Values=Goal, Mean=GoalMean)
 
   if (N == 1) then
     InvXtXScalar = One / dot_product(System(:,1),System(:,1))
@@ -928,7 +928,7 @@ subroutine BuildMetaModel_QR_OMP(System, Goal, Coefficients, CVLOO, GetBest, Min
   Coefficients = Zero
 
   GoalMean = ComputeMean(Values=Goal)
-  GoalVariance = ComputeSampleVar(Values=Goal, Mean=GoalMean)
+  GoalVariance = ComputeVariance(Values=Goal, Mean=GoalMean)
 
   if (N == 1) then
     InvXtXScalar = One / dot_product(System(:,1),System(:,1))

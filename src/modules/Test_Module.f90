@@ -5,6 +5,7 @@ use Parameters_Library
 use StringRoutines_Module
 use StatisticsRoutines_Module
 use ArrayIORoutines_Module
+use ArrayRoutines_Module
 use ComputingRoutines_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
@@ -38,62 +39,15 @@ subroutine Test(Input, Prefix)
   real(rkp), dimension(8,2)                                           ::    Response
   type(SMUQFile_Type)                                                 ::    File
   character(:), allocatable                                           ::    FileName
-  real(rkp), allocatable, dimension(:,:)                              ::    VarR2D
-  real(rkp), allocatable, dimension(:,:)                              ::    System
-  real(rkp), allocatable, dimension(:)                                ::    Goal
-  type(LinSolverOLS_Type)                                             ::    Solver
-  real(rkp), allocatable, dimension(:)                                ::    Coefficients
-  real(rkp)                                                           ::    CVerror
-  integer                                                             ::    i
-  type(StopWatch_Type)                                                ::    MainStopWatch
-  real(rkp), allocatable, dimension(:,:)                              ::    Q
-  real(rkp), allocatable, dimension(:,:)                              ::    R
-  real(rkp), allocatable, dimension(:,:)                              ::    InvR
-  type(CVKFold_Type)                                                  ::    CV
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
 
-  FileName = '/home/rstkwsk2/workspace/runs/tests/ols_verification/case/longley.dat'
+
+  FileName = '/home/rstkwsk2/workspace/runs/tests/variance_test/case/output.dat'
   call File%Construct(File=FileName)
-  call ImportArray(File=File, Array=VarR2D, RowMajor=.true.)
+  call ImportArray(File=File, Array=VarR1D)
 
-  System = VarR2D(:,1:size(VarR2D,2)-1)
-
-  Goal = VarR2D(:,size(VarR2D,2))
-
-  allocate(Coefficients(size(System,2)), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Coefficients', ProcName=ProcName, stat=StatLoc)
-  Coefficients = Zero
-
-  call CV%Construct(NbFolds=1000)
-
-  call Solver%Construct(CVMethod=CV)
-
-  call Solver%Solve(System=System, Goal=Goal, Coefficients=Coefficients, CVError=CVError)
-
-  write(*,*) Coefficients
-  write(*,*) CVError
-
-  Q = System
-  
-  allocate(R(size(System,2),size(System,2)), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='R', ProcName=ProcName, stat=StatLoc)
-  R = Zero 
-  InvR = R
-
-  call ComputeQR(Q=Q, R=R)
-  Q = System
-  call computeQInvR(Q=Q, InvR=InvR)
-
-
-  call Solver%SolveQR(System=System, Goal=Goal, Q=Q, R=R, Coefficients=Coefficients, CVError=CVError)
-
-  write(*,*) Coefficients
-  write(*,*) CVError
-
-  call Solver%SolveQInvR(System=System, Goal=Goal, Q=Q, InvR=InvR, Coefficients=Coefficients, CVError=CVError)
-
-  write(*,*) Coefficients
-  write(*,*) CVError
-
+  write(*,*) ComputeVariance(Values=VarR1D)
+  write(*,*) IsArrayConstant(Array=VarR1D)
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 

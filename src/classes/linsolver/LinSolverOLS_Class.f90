@@ -301,7 +301,7 @@ subroutine SolveUD(This, System, Goal, Coefficients, CVError)
   Coefficients = Zero
 
   GoalMean = ComputeMean(Values=Goal)
-  GoalVariance = ComputeSampleVar(Values=Goal)
+  GoalVariance = ComputeVariance(Values=Goal)
 
   allocate(SystemLoc(M,N), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='SystemLoc', ProcName=ProcName, stat=StatLoc)
@@ -513,7 +513,7 @@ subroutine SolveQR(This, System, Goal, Coefficients, Q, R, CVError)
 
         CVError = sum((Residual/(One-h))**2) / real(M,rkp)
         if (This%CVError%IsNormalized()) then
-          GoalVariance = ComputeSampleVar(Values=Goal)
+          GoalVariance = ComputeVariance(Values=Goal)
           if (GoalVariance > Zero) then
             CVError = CVError / GoalVariance
           else
@@ -681,7 +681,7 @@ subroutine SolveQInvR(This, System, Goal, Coefficients, Q, InvR, CVError)
         CVError = sum((Residual/(One-h))**2) / real(M,rkp)
         
         if (This%CVError%IsNormalized()) then
-          GoalVariance = ComputeSampleVar(Values=Goal)
+          GoalVariance = ComputeVariance(Values=Goal)
           if (GoalVariance > Zero) then
             CVError = CVError / GoalVariance
           else
