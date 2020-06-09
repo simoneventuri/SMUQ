@@ -367,7 +367,7 @@ contains
     VarR1D = LinSequence(SeqStart=0, SeqEnd=VarI0D)
     VarR1D = VarR1D / real(VarI0D,rkp)
 
-    VarR2D = This%Sampler%Draw(NbSamples=NbTrajectories, NbDim=NbDim)
+    call This%Sampler%Draw(NbSamples=NbTrajectories, NbDim=NbDim, Samples=VarR2D)
 
     allocate(VarI2D(NbDim, NbTrajectories) , stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='VarI2D', ProcName=ProcName, stat=StatLoc)

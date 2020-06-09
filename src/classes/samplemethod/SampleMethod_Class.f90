@@ -36,19 +36,19 @@ type, abstract                                                        ::    Samp
 contains
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    assignment(=)           =>    Copy
-  generic, public                                                     ::    Draw                    =>    Draw_0D,                &
-                                                                                                          Draw_1D
-  generic, public                                                     ::    Enrich                  =>    Enrich_0D,              &
-                                                                                                          Enrich_1D
+  generic, public                                                     ::    Draw                    =>    Draw0D,                &
+                                                                                                          Draw1D
+  generic, public                                                     ::    Enrich                  =>    Enrich0D,              &
+                                                                                                          Enrich1D
   procedure(Initialize_SampleMethod), deferred, public                ::    Initialize
   procedure(Reset_SampleMethod), deferred, public                     ::    Reset
   procedure(SetDefaults_SampleMethod), deferred, public               ::    SetDefaults
   procedure(ConstructInput_SampleMethod), deferred, private           ::    ConstructInput
   procedure(GetInput_SampleMethod), deferred, public                  ::    GetInput
-  procedure(DrawSamples_0D_SampleMethod), deferred, private           ::    Draw_0D
-  procedure(DrawSamples_1D_SampleMethod), deferred, private           ::    Draw_1D
-  procedure(Enrich_0D_SampleMethod), deferred, private                ::    Enrich_0D
-  procedure(Enrich_1D_SampleMethod), deferred, private                ::    Enrich_1D
+  procedure(Draw0D_SampleMethod), deferred, private                   ::    Draw0D
+  procedure(Draw1D_SampleMethod), deferred, private                   ::    Draw1D
+  procedure(Enrich0D_SampleMethod), deferred, private                 ::    Enrich0D
+  procedure(Enrich1D_SampleMethod), deferred, private                 ::    Enrich1D
   procedure(Copy_SampleMethod), deferred, public                      ::    Copy
 end type
 
@@ -100,47 +100,45 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function DrawSamples_0D_SampleMethod(This, NbSamples)
-    use Parameters_Library
-    import                                                            ::    SampleMethod_Type
-    real(rkp), allocatable, dimension(:)                              ::    DrawSamples_0D_SampleMethod   
-    class(SampleMethod_Type), intent(inout)                           ::    This
-    integer, intent(in)                                               ::    NbSamples                                         
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function DrawSamples_1D_SampleMethod(This, NbDim, NbSamples)
-    use Parameters_Library
-    import                                                            ::    SampleMethod_Type
-    real(rkp), allocatable, dimension(:,:)                            ::    DrawSamples_1D_SampleMethod  
-    class(SampleMethod_Type), intent(inout)                           ::    This
-    integer, intent(in)                                               ::    NbDim
-    integer, intent(in)                                               ::    NbSamples                                                                                   
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_0D_SampleMethod(This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized)
+  subroutine Draw0D_SampleMethod(This, Samples, NbSamples)
     use Parameters_Library
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(inout)                           ::    This
-    real(rkp), dimension(:),intent(in)                                ::    Samples
-    real(rkp), dimension(:), allocatable, intent(out)                 ::    EnrichmentSamples
-    integer, intent(in)                                               ::    NbEnrichmentSamples
-    logical, optional, intent(out)                                    ::    ReqNormalized                                             
+    integer, intent(in)                                               ::    NbSamples
+    real(rkp), allocatable, dimension(:), intent(inout)               ::    Samples                                     
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich_1D_SampleMethod(This, Samples, NbEnrichmentSamples, EnrichmentSamples, ReqNormalized)
+  subroutine Draw1D_SampleMethod(This, Samples, NbSamples, NbDim)
+    use Parameters_Library
+    import                                                            ::    SampleMethod_Type
+    class(SampleMethod_Type), intent(inout)                           ::    This
+    integer, intent(in)                                               ::    NbSamples
+    integer, intent(in)                                               ::    NbDim
+    real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Samples                                     
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Enrich0D_SampleMethod(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
+    use Parameters_Library
+    import                                                            ::    SampleMethod_Type
+    class(SampleMethod_Type), intent(inout)                           ::    This
+    real(rkp), dimension(:),intent(in)                                ::    Samples
+    real(rkp), dimension(:), allocatable, intent(inout)               ::    EnrichmentSamples
+    integer, intent(in)                                               ::    NbEnrichmentSamples
+  end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  subroutine Enrich1D_SampleMethod(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
     use Parameters_Library
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(inout)                           ::    This
     real(rkp), dimension(:,:), intent(in)                             ::    Samples
-    real(rkp), dimension(:,:), allocatable, intent(out)               ::    EnrichmentSamples
+    real(rkp), dimension(:,:), allocatable, intent(inout)             ::    EnrichmentSamples
     integer, intent(in)                                               ::    NbEnrichmentSamples
-    logical, optional, intent(out)                                    ::    ReqNormalized                                             
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

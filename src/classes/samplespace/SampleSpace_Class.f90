@@ -59,23 +59,19 @@ contains
   generic, public                                                     ::    GetDistribution         =>    GetDist0D_LabelString,  &
                                                                                                           GetDist0D_LabelChar,    &
                                                                                                           GetDist0D_Num,          &
-                                                                                                          GetDist1D
+  procedure, public                                                   ::    GetDistributions        =>    GetDist1D
   procedure, private                                                  ::    GetDist0D_LabelString
   procedure, private                                                  ::    GetDist0D_LabelChar
   procedure, private                                                  ::    GetDist0D_Num
-  procedure, private                                                  ::    GetDist1D
-  generic, public                                                     ::    GetLabel                =>    GetLabel0D,             &
-                                                                                                          GetLabel1D
-  procedure, private                                                  ::    GetLabel0D
-  procedure, private                                                  ::    GetLabel1D
+  procedure, public                                                   ::    GetLabel                =>    GetLabel0D
+  procedure, public                                                   ::    GetLabels               =>    GetLabel1D
   generic, public                                                     ::    GetName                 =>    GetName0D_LabelChar,    &
                                                                                                           GetName0D_LabelString,  &
-                                                                                                          GetName0D_Num,          &
-                                                                                                          GetName1D
+                                                                                                          GetName0D_Num
+  procedure, public                                                   ::    GetNames                =>    GetName1D
   procedure, private                                                  ::    GetName0D_LabelString
   procedure, private                                                  ::    GetName0D_LabelChar
   procedure, private                                                  ::    GetName0D_Num
-  procedure, private                                                  ::    GetName1D
   generic, public                                                     ::    GetDistributionPointer  =>    GetDistPtr_LabelChar,   &
                                                                                                           GetDistPtr_LabelString, &
                                                                                                           GetDistPtr_Num
@@ -87,6 +83,7 @@ contains
   procedure, public                                                   ::    Draw
   procedure, public                                                   ::    Enrich
   procedure, nopass, public                                           ::    DrawMVarNormal
+  procedure, nopass, public                                           ::    DrawMVarNormalLt
   procedure, public                                                   ::    WriteInfo
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure(Copy_SampleSpace), deferred, public                       ::    Copy
@@ -151,596 +148,603 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName0D_Num(This, Num)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetName0D_Num(This, Num)
 
-    character(:), allocatable                                         ::    GetName0D_Num
-    class(SampleSpace_Type), intent(in)                               ::    This
-    integer, intent(in)                                               ::    Num
+  character(:), allocatable                                           ::    GetName0D_Num
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  integer, intent(in)                                                 ::    Num
 
-    character(*), parameter                                           ::    ProcName='GetName0D_Num'
+  character(*), parameter                                             ::    ProcName='GetName0D_Num'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
-    if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
+  if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
+  if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
 
-    GetName0D_Num = This%ParamName(Num)%Get()
+  GetName0D_Num = This%ParamName(Num)%Get()
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName0D_LabelChar(This, Label)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetName0D_LabelChar(This, Label)
 
-    character(:), allocatable                                         ::    GetName0D_LabelChar
-    class(SampleSpace_Type), intent(in)                               ::    This
-    character(*), intent(in)                                          ::    Label
+  character(:), allocatable                                           ::    GetName0D_LabelChar
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  character(*), intent(in)                                            ::    Label
 
-    character(*), parameter                                           ::    ProcName='GetName0D_LabelChar'
-    integer                                                           ::    i
-    integer                                                           ::    ii
+  character(*), parameter                                             ::    ProcName='GetName0D_LabelChar'
+  integer                                                             ::    i
+  integer                                                             ::    ii
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    i = 1
-    ii = 0
-    do i = 1, This%NbDim
-      if (This%Label(i) /= Label) cycle
-      ii = i
-      exit
-    end do
+  i = 1
+  ii = 0
+  do i = 1, This%NbDim
+    if (This%Label(i) /= Label) cycle
+    ii = i
+    exit
+  end do
 
-    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+  if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-    GetName0D_LabelChar = This%ParamName(ii)%Get()      
+  GetName0D_LabelChar = This%ParamName(ii)%Get()      
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName0D_LabelString(This, Label)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetName0D_LabelString(This, Label)
 
-    character(:), allocatable                                         ::    GetName0D_LabelString
-    class(SampleSpace_Type), intent(in)                               ::    This
-    type(SMUQString_Type), intent(in)                                 ::    Label
+  character(:), allocatable                                           ::    GetName0D_LabelString
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  type(SMUQString_Type), intent(in)                                   ::    Label
 
-    character(*), parameter                                           ::    ProcName='GetName0D_LabelString'
-    integer                                                           ::    i
-    integer                                                           ::    ii
+  character(*), parameter                                             ::    ProcName='GetName0D_LabelString'
+  integer                                                             ::    i
+  integer                                                             ::    ii
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    i = 1
-    ii = 0
-    do i = 1, This%NbDim
-      if (This%Label(i) /= Label) cycle
-      ii = i
-      exit
-    end do
+  i = 1
+  ii = 0
+  do i = 1, This%NbDim
+    if (This%Label(i) /= Label) cycle
+    ii = i
+    exit
+  end do
 
-    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+  if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-    GetName0D_LabelString = This%ParamName(ii)%Get()      
+  GetName0D_LabelString = This%ParamName(ii)%Get()      
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName1D(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetName1D(This, Names)
 
-    type(SMUQString_Type), allocatable, dimension(:)                      ::    GetName1D
-    class(SampleSpace_Type), intent(in)                               ::    This
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  type(SMUQString_Type), allocatable, dimension(:), intent(inout)     ::    Names
 
-    character(*), parameter                                           ::    ProcName='GetName1D'
-    integer                                                           ::    i
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='GetName1D'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    allocate(GetName1D, source=This%ParamName, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetName1D', ProcName=ProcName, stat=StatLoc)
+  if (allocated(Names)) deallocate(Names, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Names', ProcName=ProcName, stat=StatLoc)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  allocate(Names, source=This%ParamName, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Names', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel0D(This, Num)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(:), allocatable                                         ::    GetLabel0D
-    class(SampleSpace_Type), intent(in)                               ::    This
-    integer, intent(in)                                               ::    Num
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetLabel0D(This, Num)
 
-    character(*), parameter                                           ::    ProcName='GetLabel0D'
+  character(:), allocatable                                           ::    GetLabel0D
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  integer, intent(in)                                                 ::    Num
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetLabel0D'
 
-    GetLabel0D = This%Label(Num)%Get()
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  GetLabel0D = This%Label(Num)%Get()
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel1D(This)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    type(SMUQString_Type), allocatable, dimension(:)                  ::    GetLabel1D
-    class(SampleSpace_Type), intent(in)                               ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetLabel1D(This, Labels)
 
-    character(*), parameter                                           ::    ProcName='GetLabel1D'
-    integer                                                           ::    i
-    integer                                                           ::    StatLoc=0
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  type(SMUQString_Type), allocatable, dimension(:), intent(inout)     ::    Labels
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetLabel1D'
+  integer                                                             ::    StatLoc=0
 
-    allocate(GetLabel1D, source=This%Label, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetLabel1D', ProcName=ProcName, stat=StatLoc)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(Labels)) deallocate(Labels, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDist0D_Num(This, Num)
+  allocate(Labels, source=This%Label, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
 
-    class(DistProb_Type), allocatable                                 ::    GetDist0D_Num
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(SampleSpace_Type), intent(in)                               ::    This
-    integer, intent(in)                                               ::    Num
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetDist0D_Num(This, Num)
 
-    character(*), parameter                                           ::    ProcName='GetDist0D_Num'
-    integer                                                           ::    StatLoc=0
+  class(DistProb_Type), allocatable                                   ::    GetDist0D_Num
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  integer, intent(in)                                                 ::    Num
 
-    if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
-    if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetDist0D_Num'
+  integer                                                             ::    StatLoc=0
 
-    allocate(GetDist0D_Num, source=This%DistProb(Num)%GetPointer(), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetDist0D_Num', ProcName=ProcName, stat=StatLoc)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
+  if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDist0D_LabelChar(This, Label)
+  allocate(GetDist0D_Num, source=This%DistProb(Num)%GetPointer(), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='GetDist0D_Num', ProcName=ProcName, stat=StatLoc)
 
-    class(DistProb_Type), allocatable                                 ::    GetDist0D_LabelChar
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(SampleSpace_Type), intent(in)                               ::    This
-    character(*), intent(in)                                          ::    Label
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetDist0D_LabelChar(This, Label)
 
-    character(*), parameter                                           ::    ProcName='GetDist0D_LabelChar'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    ii
+  class(DistProb_Type), allocatable                                   ::    GetDist0D_LabelChar
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  character(*), intent(in)                                            ::    Label
 
-    i = 1
-    ii = 0
-    do i = 1, This%NbDim
-      if (This%Label(i) /= Label) cycle
-      ii = i
-      exit
-    end do
+  character(*), parameter                                             ::    ProcName='GetDist0D_LabelChar'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  integer                                                             ::    ii
 
-    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    allocate(GetDist0D_LabelChar, source=This%DistProb(ii)%GetPointer(), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetDist0D_Num', ProcName=ProcName, stat=StatLoc)
+  i = 1
+  ii = 0
+  do i = 1, This%NbDim
+    if (This%Label(i) /= Label) cycle
+    ii = i
+    exit
+  end do
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDist0D_LabelString(This, Label)
+  allocate(GetDist0D_LabelChar, source=This%DistProb(ii)%GetPointer(), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='GetDist0D_Num', ProcName=ProcName, stat=StatLoc)
 
-    class(DistProb_Type), allocatable                                 ::    GetDist0D_LabelString
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(SampleSpace_Type), intent(in)                               ::    This
-    type(SMUQString_Type), intent(in)                                 ::    Label
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetDist0D_LabelString(This, Label)
 
-    character(*), parameter                                           ::    ProcName='GetDist0D_LabelString'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    ii
+  class(DistProb_Type), allocatable                                   ::    GetDist0D_LabelString
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  type(SMUQString_Type), intent(in)                                   ::    Label
 
-    i = 1
-    ii = 0
-    do i = 1, This%NbDim
-      if (This%Label(i) /= Label) cycle
-      ii = i
-      exit
-    end do
+  character(*), parameter                                             ::    ProcName='GetDist0D_LabelString'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  integer                                                             ::    ii
 
-    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    allocate(GetDist0D_LabelString, source=This%DistProb(ii)%GetPointer(), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetDist0D_Num', ProcName=ProcName, stat=StatLoc)
+  i = 1
+  ii = 0
+  do i = 1, This%NbDim
+    if (This%Label(i) /= Label) cycle
+    ii = i
+    exit
+  end do
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDist1D(This)
+  allocate(GetDist0D_LabelString, source=This%DistProb(ii)%GetPointer(), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='GetDist0D_Num', ProcName=ProcName, stat=StatLoc)
 
-    type(DistProbContainer_Type), allocatable, dimension(:)           ::    GetDist1D
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(SampleSpace_Type), intent(in)                               ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetDist1D(This, Distributions)
 
-    character(*), parameter                                           ::    ProcName='GetDist1D'
-    integer                                                           ::    i
-    integer                                                           ::    StatLoc=0
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  type(DistProbContainer_Type), allocatable, dimension(:), intent(inout)   ::    Distributions
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetDist1D'
+  integer                                                             ::    i
+  integer                                                             ::    StatLoc=0
 
-    allocate(GetDist1D, source=This%DistProb, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetDist1D', ProcName=ProcName, stat=StatLoc)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(Distributions)) deallocate(Distributions, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Distributions', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistPtr_LabelChar(This, Label)
+  allocate(Distributions, source=This%DistProb, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Distributions', ProcName=ProcName, stat=StatLoc)
 
-    class(DistProb_Type), pointer                                     ::    GetDistPtr_LabelChar
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(SampleSpace_Type), intent(in)                               ::    This
-    character(*), intent(in)                                          ::    Label
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetDistPtr_LabelChar(This, Label)
 
-    character(*), parameter                                           ::    ProcName='GetDistPtr_LabelChar'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    ii
+  class(DistProb_Type), pointer                                       ::    GetDistPtr_LabelChar
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  character(*), intent(in)                                            ::    Label
 
-    i = 1
-    ii = 0
-    do i = 1, This%NbDim
-      if (This%Label(i) /= Label) cycle
-      ii = i
-      exit
-    end do
+  character(*), parameter                                             ::    ProcName='GetDistPtr_LabelChar'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  integer                                                             ::    ii
 
-    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetDistPtr_LabelChar => This%DistProb(ii)%GetPointer()
+  i = 1
+  ii = 0
+  do i = 1, This%NbDim
+    if (This%Label(i) /= Label) cycle
+    ii = i
+    exit
+  end do
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistPtr_LabelString(This, Label)
+  GetDistPtr_LabelChar => This%DistProb(ii)%GetPointer()
 
-    class(DistProb_Type), pointer                                     ::    GetDistPtr_LabelString
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(SampleSpace_Type), intent(in)                               ::    This
-    type(SMUQString_Type), intent(in)                                 ::    Label
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetDistPtr_LabelString(This, Label)
 
-    character(*), parameter                                           ::    ProcName='GetDistPtr_LabelString'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    ii
+  class(DistProb_Type), pointer                                       ::    GetDistPtr_LabelString
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  type(SMUQString_Type), intent(in)                                   ::    Label
 
-    i = 1
-    ii = 0
-    do i = 1, This%NbDim
-      if (This%Label(i) /= Label) cycle
-      ii = i
-      exit
-    end do
+  character(*), parameter                                             ::    ProcName='GetDistPtr_LabelString'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  integer                                                             ::    ii
 
-    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetDistPtr_LabelString => This%DistProb(ii)%GetPointer()
+  i = 1
+  ii = 0
+  do i = 1, This%NbDim
+    if (This%Label(i) /= Label) cycle
+    ii = i
+    exit
+  end do
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistPtr_Num(This, Num)
+  GetDistPtr_LabelString => This%DistProb(ii)%GetPointer()
 
-    class(DistProb_Type), pointer                                     ::    GetDistPtr_Num
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(SampleSpace_Type), intent(in)                               ::    This
-    integer, intent(in)                                               ::    Num
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetDistPtr_Num(This, Num)
 
-    character(*), parameter                                           ::    ProcName='GetDistPtr_Num'
-    integer                                                           ::    StatLoc=0
+  class(DistProb_Type), pointer                                       ::    GetDistPtr_Num
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  integer, intent(in)                                                 ::    Num
 
-    if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
-    if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetDistPtr_Num'
+  integer                                                             ::    StatLoc=0
 
-    GetDistPtr_Num => This%DistProb(Num)%GetPointer()
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
+  if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCorrMat(This)
+  GetDistPtr_Num => This%DistProb(Num)%GetPointer()
 
-    real(rkp), allocatable, dimension(:,:)                            ::    GetCorrMat
-    class(SampleSpace_Type), intent(in)                               ::    This
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetCorrMat'
-    integer                                                           ::    StatLoc=0
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetCorrMat(This. CorrMat)
 
-    allocate(GetCorrMat, source=This%CorrMat, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetCorrMat', ProcName=ProcName, stat=StatLoc)
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  real(rkp), allocatable, dimension(:,:), intent(inout)               ::    CorrMat
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetCorrMat'
+  integer                                                             ::    StatLoc=0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCorrMatPointer(This)
+  if (allocated(CorrMat)) deallocate(CorrMat, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='CorrMat', ProcName=ProcName, stat=StatLoc)
 
-    real(rkp), pointer, dimension(:,:)                                ::    GetCorrMatPointer
-    class(SampleSpace_Type), target, intent(in)                       ::    This
+  allocate(GetCorrMat, source=This%CorrMat, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='GetCorrMat', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='GetCorrMatPointer'
-    integer                                                           ::    StatLoc=0
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    GetCorrMatPointer => This%CorrMat
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetCorrMatPointer(This)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  real(rkp), pointer, dimension(:,:)                                  ::    GetCorrMatPointer
+  class(SampleSpace_Type), target, intent(in)                         ::    This
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+  character(*), parameter                                             ::    ProcName='GetCorrMatPointer'
+  integer                                                             ::    StatLoc=0
 
-    character(:), allocatable                                         ::    GetName
-    class(SampleSpace_Type), intent(in)                               ::    This
+  GetCorrMatPointer => This%CorrMat
 
-    character(*), parameter                                           ::    ProcName='GetName'
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetNbDim(This)
 
-    GetName = This%Name
+  integer                                                             ::    GetNbDim
+  class(SampleSpace_Type), intent(in)                                 ::    This
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetNbDim'
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDim(This)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    integer                                                           ::    GetNbDim
-    class(SampleSpace_Type), intent(in)                               ::    This
+  GetNbDim = This%NbDim
 
-    character(*), parameter                                           ::    ProcName='GetNbDim'
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+function IsCorrelated(This)
 
-    GetNbDim = This%NbDim
+  logical                                                             ::    IsCorrelated
+  class(SampleSpace_Type), intent(in)                                 ::    This
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='IsCorrelated'
+  integer                                                             ::    StatLoc=0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsCorrelated(This)
+  IsCorrelated = This%Correlated
 
-    logical                                                           ::    IsCorrelated
-    class(SampleSpace_Type), intent(in)                               ::    This
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='IsCorrelated'
-    integer                                                           ::    StatLoc=0
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Draw(This, Sampler, NbSamples, Samples)
 
-    IsCorrelated = This%Correlated
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  class(SampleMethod_Type), intent(inout)                             ::    Sampler
+  integer, intent(in)                                                 ::    NbSamples
+  real(rkp), allocatable, dimension(:,:), intent(inout)               ::    Samples
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='Draw'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    NbDim
+  integer                                                             ::    i, ii
+  class(DistProb_Type), pointer                                       ::    DistProb=>null()
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
+  real(rkp), dimension(:,:), allocatable                              ::    Lt
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function Draw(This, Sampler, NbSamples)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    real(rkp), allocatable, dimension(:,:)                            ::    Draw
+  NbDim = This%NbDim
 
-    class(SampleSpace_Type), intent(in)                               ::    This
-    class(SampleMethod_Type), intent(inout)                           ::    Sampler
-    integer, intent(in)                                               ::    NbSamples
+  call Sampler%Draw(NbDim=NbDim, NbSamples=NbSamples, Samples=Samples)
 
-    character(*), parameter                                           ::    ProcName='Draw'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    NbDim
-    integer                                                           ::    i, ii
-    class(DistProb_Type), pointer                                     ::    DistProb=>null()
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    NbDim = This%NbDim
-
-    Draw = Sampler%Draw(NbDim=NbDim, NbSamples=NbSamples)
-
-    if (.not. This%Correlated) then
-      ii = 1
-      do ii = 1, NbSamples
-        i = 1
-        do i = 1, NbDim
-          DistProb => This%DistProb(i)%GetPointer()
-          Draw(i,ii) = DistProb%InvCDF(P=Draw(i,ii))
-          nullify(DistProb)
-        end do
-      end do
-    else
-      allocate(VarR1D(NbDim), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
-
+  if (.not. This%Correlated) then
+    ii = 1
+    do ii = 1, NbSamples
       i = 1
-      ii = 0
       do i = 1, NbDim
         DistProb => This%DistProb(i)%GetPointer()
-        select type (DistProb)
-          type is (DistNorm_Type)
-            VarR1D(i) = DistProb%GetMu()
-            ii = ii + 1
-          class default
-            exit
-        end select
+        Samples(i,ii) = DistProb%InvCDF(P=Samples(i,ii))
+        nullify(DistProb)
       end do
-  
-      if (ii < NbDim) call Error%Raise(Line='Sampling of correlated non normal multivariate spaces is not yet supported',      &
-                                                                                                               ProcName=ProcName)
-
-      i = 1
-      do i  = 1, NbSamples
-        Draw(:,i) = This%DrawMVarNormal(Mu=VarR1D, Cov=This%CorrMat, PVec=Draw(:,i))
-      end do
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Enrich(This, Sampler, NbEnrichmentSamples, Samples, EnrichmentSamples)
-
-    class(SampleSpace_Type), intent(in)                               ::    This
-    class(SampleMethod_Type), intent(inout)                           ::    Sampler
-    real(rkp), dimension(:,:), target, intent(in)                     ::    Samples
-    integer, intent(in)                                               ::    NbEnrichmentSamples
-    real(rkp), allocatable, dimension(:,:), intent(out)               ::    EnrichmentSamples
-
-    character(*), parameter                                           ::    ProcName='Enrich'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    NbDim
-    integer                                                           ::    i, ii
-    class(DistProb_Type), pointer                                     ::    DistProb=>null()
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
-    integer                                                           ::    NbSamples
-    integer                                                           ::    NbEnrichSamples
-    logical                                                           ::    ReqNormalized
-    real(rkp), target, allocatable, dimension(:,:)                    ::    NormalizedSamples
-    real(rkp), pointer, dimension(:,:)                                ::    SamplesPointer=>null()
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    NbDim = This%NbDim
-
-    call Sampler%Enrich(Samples=Samples, NbEnrichmentSamples=NbEnrichmentSamples, EnrichmentSamples=EnrichmentSamples,           &
-                                                                                                     ReqNormalized=ReqNormalized)
-
-    if (ReqNormalized) then
-      if (.not. This%Correlated) then
-        allocate(NormalizedSamples, source=Samples, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='NormalizedSamples', ProcName=ProcName, stat=StatLoc)
-        NbSamples = size(Samples,2)
-        i = 1
-        do i = 1, NbSamples
-          ii = 1
-          do ii = 1, NbDim
-            DistProb => This%DistProb(ii)%GetPointer()
-            NormalizedSamples(ii,i) = DistProb%CDF(X=Samples(ii,i))
-            nullify(DistProb)
-          end do
-        end do
-        SamplesPointer => NormalizedSamples
-      else
-        call Error%Raise(Line='Enrichment of samples from correlated spaces with methods that require normalized, ' //           &
-                                                                       'independent values not yet supported', ProcName=ProcName)
-      end if
-    else
-      SamplesPointer => Samples
-    end if
-
-    call Sampler%Enrich(Samples=SamplesPointer, NbEnrichmentSamples=NbEnrichmentSamples, EnrichmentSamples=EnrichmentSamples)
-
-    NbEnrichSamples = size(EnrichmentSamples,2)
-
-    if (.not. This%Correlated) then
-      i = 1
-      do i = 1, NbEnrichSamples
-        ii = 1
-        do ii = 1, NbDim
-          DistProb => This%DistProb(ii)%GetPointer()
-          EnrichmentSamples(ii,i) = DistProb%InvCDF(P=EnrichmentSamples(ii,i))
-          nullify(DistProb)
-        end do
-      end do
-    else
-      allocate(VarR1D(NbDim), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
-
-      i = 1
-      ii = 0
-      do i = 1, NbDim
-        DistProb => This%DistProb(i)%GetPointer()
-        select type (DistProb)
-          type is (DistNorm_Type)
-            VarR1D(i) = DistProb%GetMu()
-            ii = ii + 1
-          class default
-            exit
-        end select
-      end do
-  
-      if (ii < NbDim) call Error%Raise(Line='Sampling of correlated non normal multivariate spaces is not yet supported',  &
-                                                                                                           ProcName=ProcName)
-
-      do i = 1, NbEnrichSamples
-        EnrichmentSamples(:,i) = This%DrawMVarNormal(Mu=VarR1D, Cov=This%CorrMat, PVec=EnrichmentSamples(:,i))
-      end do
-
-      deallocate(VarR1D, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
-    end if
-
-    nullify(SamplesPointer)
-
-    if (allocated(NormalizedSamples)) deallocate(NormalizedSamples, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='NormalizedSamples', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  ! Draw a vector of real(rkp) random numbers from a Multivariate Normal distribution N~[Mu,Cov] where Mu is a vector of means and 
-  ! Cov is the covariance matrix
-  function DrawMVarNormal(Mu, Cov, PVec)
-
-    real(rkp), dimension(:), allocatable                              ::    DrawMVarNormal
-
-    real(rkp), dimension(:), intent(in)                               ::    Mu
-    real(rkp), dimension(:,:), intent(in)                             ::    Cov
-    real(rkp), dimension(:), intent(in)                               ::    PVec
-
-    character(*), parameter                                           ::    ProcName='DrawMVarNormal'
-    integer                                                           ::    StatLoc=0
-    real(rkp), dimension(:,:), allocatable                            ::    CovLoc
-    real(rkp), dimension(:), allocatable                              ::    VarR1D
-!    real(rkp)                                                         ::    Rand1, Rand2
-    integer                                                           ::    NbDim
-    integer                                                           ::    i, ii, imax
-    type(DistNorm_Type)                                               ::    DistNormal
-
-    if (size(Cov,1) /= size(Cov,2)) call Error%Raise(Line='Covariance matrix is not a square matrix', ProcName=ProcName)
-
-    NbDim = size(Mu,1)
-    if (size(Cov,1) /= NbDim) call Error%Raise(Line='Leading dimension of Cov larger than number of means', ProcName=ProcName)
-
-    allocate(CovLoc, source=Cov, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='CovLoc', ProcName=ProcName, stat=StatLoc)
-
-    call DPOTRF('U', NbDim, CovLoc, NbDim, StatLoc)
-
-    if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DPOTRF', ProcName=ProcName)
-
-    allocate(DrawMVarNormal(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='DrawMVarNormal', ProcName=ProcName, stat=StatLoc)
-
+    end do
+  else
     allocate(VarR1D(NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
-    call DistNormal%Construct(Mu=Zero, Sigma=One)
+    i = 1
+    ii = 0
+    do i = 1, NbDim
+      DistProb => This%DistProb(i)%GetPointer()
+      select type (DistProb)
+        type is (DistNorm_Type)
+          VarR1D(i) = DistProb%GetMu()
+          ii = ii + 1
+        class default
+          exit
+      end select
+    end do
+    if(associated(DistProb)) nullify(DistProb)
+    if (ii < NbDim) call Error%Raise(Line='Sampling of correlated non normal multivariate spaces is not yet supported',      &
+                                                                                                              ProcName=ProcName)
+
+    allocate(Lt, source=This%CorrMat, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Lt', ProcName=ProcName, stat=StatLoc)
+
+    call DPOTRF('U', NbDim, Lt, NbDim, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DPOTRF', ProcName=ProcName)
+
+    i = 1    if (allocated(Samples)) deallocate(Samples, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
+    end do
+
+    deallocate(Lt, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Lt', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(VarR1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+
+  end if
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Enrich(This, Sampler, NbEnrichmentSamples, Samples, EnrichmentSamples)
+
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  class(SampleMethod_Type), intent(inout)                             ::    Sampler
+  real(rkp), dimension(:,:), intent(in)                               ::    Samples
+  integer, intent(in)                                                 ::    NbEnrichmentSamples
+  real(rkp), allocatable, dimension(:,:), intent(inout)               ::    EnrichmentSamples
+
+  character(*), parameter                                             ::    ProcName='Enrich'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    NbDim
+  integer                                                             ::    i, ii
+  class(DistProb_Type), pointer                                       ::    DistProb=>null()
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
+  integer                                                             ::    NbSamples
+  integer                                                             ::    NbEnrichSamplesLoc
+  real(rkp), allocatable, dimension(:,:)                              ::    NormalizedSamples
+  real(rkp), dimension(:,:), allocatable                              ::    Lt
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  NbDim = This%NbDim
+
+  if (.not. This%Correlated) then
+    allocate(NormalizedSamples, source=Samples, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='NormalizedSamples', ProcName=ProcName, stat=StatLoc)
+    NbSamples = size(Samples,2)
+    i = 1
+    do i = 1, NbSamples
+      ii = 1
+      do ii = 1, NbDim
+        DistProb => This%DistProb(ii)%GetPointer()
+        NormalizedSamples(ii,i) = DistProb%CDF(X=Samples(ii,i))
+        nullify(DistProb)
+      end do
+    end do
+  else
+    call Error%Raise(Line='Enrichment of samples from correlated spaces with methods that require normalized, ' //           &
+                                                                    'independent values not yet supported', ProcName=ProcName)
+  end if
+
+  call Sampler%Enrich(Samples=NormalizedSamples, NbEnrichmentSamples=NbEnrichmentSamples, EnrichmentSamples=EnrichmentSamples)
+
+  deallocate(NormalizedSamples, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='NormalizedSamples', ProcName=ProcName, stat=StatLoc)
+
+  NbEnrichSamplesLoc = size(EnrichmentSamples,2)
+
+  if (.not. This%Correlated) then
+    i = 1
+    do i = 1, NbEnrichSamplesLoc
+      ii = 1
+      do ii = 1, NbDim
+        DistProb => This%DistProb(ii)%GetPointer()
+        EnrichmentSamples(ii,i) = DistProb%InvCDF(P=EnrichmentSamples(ii,i))
+        nullify(DistProb)
+      end do
+    end do
+  else
+    allocate(VarR1D(NbDim), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
     i = 1
+    ii = 0
     do i = 1, NbDim
-      VarR1D(i) = DistNormal%InvCDF(P=PVec(i))
+      DistProb => This%DistProb(i)%GetPointer()
+      select type (DistProb)
+        type is (DistNorm_Type)
+          VarR1D(i) = DistProb%GetMu()
+          ii = ii + 1
+        class default
+          exit
+      end select
     end do
+    if (associated(DistProb)) nullify(DistProb)
+    if (ii < NbDim) call Error%Raise(Line='Sampling of correlated non normal multivariate spaces is not yet supported',  &
+                                                                                                          ProcName=ProcName)
+
+    allocate(Lt, source=This%CorrMat, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Lt', ProcName=ProcName, stat=StatLoc)
+
+    call DPOTRF('U', NbDim, Lt, NbDim, StatLoc)
+    if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DPOTRF', ProcName=ProcName)
+
+    do i = 1, NbEnrichSamplesLoc
+      call This%DrawMVarNormalLt(Mu=VarR1D, Lt=Lt, Samples=EnrichmentSamples(:,i))
+    end do
+
+    deallocate(Lt, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Lt', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(VarR1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+  end if
+
+  if (allocated(NormalizedSamples)) deallocate(NormalizedSamples, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='NormalizedSamples', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+! Draw a vector of real(rkp) random numbers from a Multivariate Normal distribution N~[Mu,Cov] where Mu is a vector of means and 
+! Cov is the covariance matrix
+subroutine DrawMVarNormal(Mu, Cov, Samples)
+
+  real(rkp), dimension(:), intent(in)                                 ::    Mu
+  real(rkp), dimension(:,:), intent(in)                               ::    Cov
+  real(rkp), dimension(:), intent(inout)                              ::    Samples
+
+  character(*), parameter                                             ::    ProcName='DrawMVarNormal'
+  integer                                                             ::    StatLoc=0
+  real(rkp), dimension(:,:), allocatable                              ::    CovLoc
+  real(rkp), dimension(:), allocatable                                ::    VarR1D
+!    real(rkp)                                                           ::    Rand1, Rand2
+  integer                                                             ::    NbDim
+  integer                                                             ::    i, ii, imax
+  type(DistNorm_Type)                                                 ::    DistNormal
+
+  if (size(Cov,1) /= size(Cov,2)) call Error%Raise(Line='Covariance matrix is not a square matrix', ProcName=ProcName)
+
+  NbDim = size(Mu,1)
+  if (size(Cov,1) /= NbDim) call Error%Raise(Line='Leading dimension of Cov larger than number of means', ProcName=ProcName)
+
+  if (NbDim /= size(Samples,1)) call Error%Raise('Incompatible samples vector', ProcName=ProcName)
+
+  if (any(Samples < Zero)) call Error%Raise('Values in samples vector below 0', ProcName=ProcName)
+  if (any(Samples > One)) call Error%Raise('Values in samples vector above 1', ProcName=ProcName)
+
+  allocate(CovLoc, source=Cov, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='CovLoc', ProcName=ProcName, stat=StatLoc)
+
+  call DPOTRF('U', NbDim, CovLoc, NbDim, StatLoc)
+
+  if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DPOTRF', ProcName=ProcName)
+
+  allocate(VarR1D(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+
+  call DistNormal%Construct(Mu=Zero, Sigma=One)
+
+  i = 1
+  do i = 1, NbDim
+    VarR1D(i) = DistNormal%InvCDF(P=Samples(i))
+  end do
 
 !    ! Box-Muller for independent standard normal random numbers
 
@@ -760,73 +764,139 @@ contains
 !      if (ii >= NbDim) exit
 !    end do
 
+  i = 1
+  do i = 1, NbDim
+    Samples(i) = dot_product(VarR1D(1:i),CovLoc(1:i,i)) + Mu(i)
+  end do
+
+  deallocate(VarR1D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(CovLoc, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='CovLoc', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+! Draw a vector of real(rkp) random numbers from a Multivariate Normal distribution N~[Mu,Cov] where Mu is a vector of means and 
+! Lt is the transpose of the cholesky factor of the covariance matrix
+subroutine DrawMVarNormalLt(Mu, Lt, Samples)
+
+  real(rkp), dimension(:), intent(in)                                 ::    Mu
+  real(rkp), dimension(:,:), intent(in)                               ::    Lt
+  real(rkp), dimension(:), intent(inout)                              ::    Samples
+
+  character(*), parameter                                             ::    ProcName='DrawMVarNormalLt'
+  integer                                                             ::    StatLoc=0
+  real(rkp), dimension(:), allocatable                                ::    VarR1D
+!    real(rkp)                                                           ::    Rand1, Rand2
+  integer                                                             ::    NbDim
+  integer                                                             ::    i, ii, imax
+  type(DistNorm_Type)                                                 ::    DistNormal
+
+  if (size(Lt,1) /= size(Lt,2)) call Error%Raise(Line='Covariance matrix is not a square matrix', ProcName=ProcName)
+
+  NbDim = size(Mu,1)
+  if (size(Lt,1) /= NbDim) call Error%Raise(Line='Leading dimension of Cov larger than number of means', ProcName=ProcName)
+
+  if (NbDim /= size(Samples,1)) call Error%Raise('Incompatible samples vector', ProcName=ProcName)
+
+  if (any(Samples < Zero)) call Error%Raise('Values in samples vector below 0', ProcName=ProcName)
+  if (any(Samples > One)) call Error%Raise('Values in samples vector above 1', ProcName=ProcName)
+
+  allocate(VarR1D(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+
+  call DistNormal%Construct(Mu=Zero, Sigma=One)
+
+  i = 1
+  do i = 1, NbDim
+    VarR1D(i) = DistNormal%InvCDF(P=Samples(i))
+  end do
+
+!    ! Box-Muller for independent standard normal random numbers
+
+!    allocate(RandVal(NbDim), stat=StatLoc)
+!    if (StatLoc /= 0) call Error%Allocate(Name='RandVal', ProcName=ProcName, stat=StatLoc)
+
+!    i = 1
+!    ii = 0
+!    do i = 1, NbDim
+!      Rand1 = This%RNG%Draw()
+!      Rand2 = This%RNG%Draw()
+!      ii = ii + 1
+!      RandVal(ii) = dsqrt(real(-Two*dlog(Rand1),8))*dcos(real(Two*pi*Rand2,8))
+!      if (ii >= NbDim) exit
+!      ii = ii + 1
+!      RandVal(ii) = dsqrt(real(-Two*dlog(Rand1),8))*dsin(real(Two*pi*Rand2,8))
+!      if (ii >= NbDim) exit
+!    end do
+
+  i = 1
+  do i = 1, NbDim
+    Samples(i) = dot_product(VarR1D(1:i),Lt(1:i,i)) + Mu(i)
+  end do
+
+  deallocate(VarR1D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine WriteInfo(This, Directory)
+
+  class(SampleSpace_Type), intent(in)                                 ::    This
+  character(*), intent(in)                                            ::    Directory
+
+  character(*), parameter                                             ::    ProcName='WriteInfo'
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    i
+  type(SMUQFile_Type)                                                 ::    File
+  class(DistProb_Type), pointer                                       ::    DistProb=>null()
+  character(:), allocatable                                           ::    FileName
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  if (len_trim(Directory) /= 0) then
+
+    call MakeDirectory(Path=Directory, Options='-p')
+
+    PrefixLoc = Directory
+
+    FileName = '/variables.dat'
+    call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+    call ExportArray(Array=This%Label, File=File)
+
+    FileName = '/covariance.dat'
+    call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+    call ExportArray(Array=This%CorrMat, File=File)
+
     i = 1
-    do i = 1, NbDim
-      DrawMVarNormal(i) = dot_product(VarR1D(1:i),CovLoc(1:i,i)) + Mu(i)
+    do i = 1, This%NbDim
+      PrefixLoc = Directory // '/' // This%Label(i)
+      call MakeDirectory(Path=PrefixLoc, Options='-p')
+      
+      FileName = '/name.dat'
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call File%Export(String=This%ParamName(i))
+
+      FileName = '/label.dat'
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call File%Export(String=This%Label(i))
+
+      FileName = '/distribution.dat'
+      DistProb => This%DistProb(i)%GetPointer()
+      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+      call DistProb%WriteInfo(File=File)
+      nullify(DistProb)
     end do
 
-    deallocate(VarR1D, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+  end if
 
-    deallocate(CovLoc, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='CovLoc', ProcName=ProcName, stat=StatLoc)
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo(This, Directory)
-
-    class(SampleSpace_Type), intent(in)                               ::    This
-    character(*), intent(in)                                          ::    Directory
-
-    character(*), parameter                                           ::    ProcName='WriteInfo'
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    i
-    type(SMUQFile_Type)                                               ::    File
-    class(DistProb_Type), pointer                                     ::    DistProb=>null()
-    character(:), allocatable                                         ::    FileName
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    if (len_trim(Directory) /= 0) then
-
-      call MakeDirectory(Path=Directory, Options='-p')
-
-      PrefixLoc = Directory
-
-      FileName = '/variables.dat'
-      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-      call ExportArray(Array=This%Label, File=File)
-
-      FileName = '/covariance.dat'
-      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-      call ExportArray(Array=This%CorrMat, File=File)
-
-      i = 1
-      do i = 1, This%NbDim
-        PrefixLoc = Directory // '/' // This%Label(i)
-        call MakeDirectory(Path=PrefixLoc, Options='-p')
-        
-        FileName = '/name.dat'
-        call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call File%Export(String=This%ParamName(i))
-
-        FileName = '/label.dat'
-        call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call File%Export(String=This%Label(i))
-
-        FileName = '/distribution.dat'
-        DistProb => This%DistProb(i)%GetPointer()
-        call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call DistProb%WriteInfo(File=File)
-        nullify(DistProb)
-      end do
-
-    end if
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

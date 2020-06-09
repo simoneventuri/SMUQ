@@ -539,7 +539,7 @@ contains
         write(*,'(A)') Line
       end if
 
-      This%ParamSample = SampleSpace%Draw(Sampler=This%Sampler, NbSamples=This%NbSamples)
+      call SampleSpace%Draw(Sampler=This%Sampler, NbSamples=This%NbSamples, Samples=This%ParamSamples)
 
       allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
       if (StatLoc /= 0) call Error%Allocate(Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc)

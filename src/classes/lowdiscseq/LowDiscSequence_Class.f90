@@ -36,23 +36,15 @@ type, abstract                                                        ::    LowD
 contains
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    assignment(=)           =>    Copy
-  generic, public                                                     ::    Get                     =>    Get_0D,                 &
-                                                                                                          Get_1D
-  generic, public                                                     ::    GetPoint                =>    GetPoint_0D,            &
-                                                                                                          GetPoint_1D
-  generic, public                                                     ::    GetPoints               =>    GetPoints_0D,           &
-                                                                                                          GetPoints_1D
+  generic, public                                                     ::    GetSequence             =>    Get0D, &
+                                                                                                          Get1D                   
   procedure(Initialize_LowDiscSequence), deferred, public             ::    Initialize
   procedure(Reset_LowDiscSequence), deferred, public                  ::    Reset
   procedure(SetDefaults_LowDiscSequence), deferred, public            ::    SetDefaults
   procedure(ConstructInput_LowDiscSequence), deferred, private        ::    ConstructInput
   procedure(GetInput_LowDiscSequence), deferred, public               ::    GetInput
-  procedure(Get_0D_LowDiscSequence), deferred, public                 ::    Get_0D
-  procedure(Get_1D_LowDiscSequence), deferred, public                 ::    Get_1D
-  procedure(GetPoint_0D_LowDiscSequence), deferred, public            ::    GetPoint_0D
-  procedure(GetPoint_1D_LowDiscSequence), deferred, public            ::    GetPoint_1D
-  procedure(GetPoints_0D_LowDiscSequence), deferred, public           ::    GetPoints_0D
-  procedure(GetPoints_1D_LowDiscSequence), deferred, public           ::    GetPoints_1D
+  procedure(Get0D_LowDiscSequence), deferred, private                 ::    Get0D
+  procedure(Get1D_LowDiscSequence), deferred, private                 ::    Get1D
   procedure(Copy_LowDiscSequence), deferred, public                   ::    Copy
 end type
 
@@ -104,68 +96,23 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Get_0D_LowDiscSequence(This, NbPoints)
+  subroutine Get0D_LowDiscSequence(This, Sequence, Offset)
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
-    real(rkp), allocatable, dimension(:)                              ::    Get_0D_LowDiscSequence
-    integer, intent(in)                                               ::    NbPoints 
-    class(LowDiscSequence_Type), intent(in)                           ::    This                                             
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function Get_1D_LowDiscSequence(This, NbPoints, NbDim)
-    use Parameters_Library
-    import                                                            ::    LowDiscSequence_Type
-    real(rkp), allocatable, dimension(:,:)                            ::    Get_1D_LowDiscSequence  
+    real(rkp), dimension(:), intent(inout)                            ::    Sequence
     class(LowDiscSequence_Type), intent(in)                           ::    This
-    integer, intent(in)                                               ::    NbPoints
-    integer, intent(in)                                               ::    NbDim                                             
-  end function
+    integer, optional, intent(in)                                     ::    Offset                                          
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoint_0D_LowDiscSequence(This, Point)
+  subroutine Get1D_LowDiscSequence(This, Sequence, Offset)
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
-    real(rkp)                                                         ::    GetPoint_0D_LowDiscSequence
-    integer, intent(in)                                               ::    Point
-    class(LowDiscSequence_Type), intent(in)                           ::    This                                             
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoint_1D_LowDiscSequence(This, Point, NbDim)
-    use Parameters_Library
-    import                                                            ::    LowDiscSequence_Type
-    real(rkp), allocatable, dimension(:)                              ::    GetPoint_1D_LowDiscSequence  
     class(LowDiscSequence_Type), intent(in)                           ::    This
-    integer, intent(in)                                               ::    Point
-    integer, intent(in)                                               ::    NbDim                                             
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoints_0D_LowDiscSequence(This, SeqStart, SeqEnd)
-    use Parameters_Library
-    import                                                            ::    LowDiscSequence_Type
-    real(rkp), allocatable, dimension(:)                              ::    GetPoints_0D_LowDiscSequence
-    integer, intent(in)                                               ::    SeqStart
-    integer, intent(in)                                               ::    SeqEnd
-    class(LowDiscSequence_Type), intent(in)                           ::    This                                             
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPoints_1D_LowDiscSequence(This, SeqStart, SeqEnd, NbDim)
-    use Parameters_Library
-    import                                                            ::    LowDiscSequence_Type
-    real(rkp), allocatable, dimension(:,:)                            ::    GetPoints_1D_LowDiscSequence  
-    class(LowDiscSequence_Type), intent(in)                           ::    This
-    integer, intent(in)                                               ::    SeqStart
-    integer, intent(in)                                               ::    SeqEnd
-    integer, intent(in)                                               ::    NbDim                                             
-  end function
+    real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Sequence
+    integer, optional, intent(in)                                     ::    Offset                                          
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -180,18 +127,18 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetName(This)
 
-    character(:), allocatable                                         ::    GetName
+  character(:), allocatable                                           ::    GetName
 
-    class(LowDiscSequence_Type), intent(inout)                        ::    This
+  class(LowDiscSequence_Type), intent(inout)                          ::    This
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  character(*), parameter                                             ::    ProcName='GetName'
 
-    GetName = This%Name
+  GetName = This%Name
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

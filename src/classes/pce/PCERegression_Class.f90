@@ -716,7 +716,7 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
 
     if (EarlyExitFlag) then
       if (.not. SilentLoc) then
-        Line = 'All cells have either converged or reached maximum truncation order'
+        Line = 'MMaximum truncation order reached for non-converged nodes'
         write(*,'(A)') '' 
         write(*,'(A)') Line
       end if   
@@ -733,7 +733,7 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
           write(*,'(A)') Line
           write(*,'(A)') '' 
         end if
-        This%ParamSample = SampleSpace%Draw(Sampler=This%Sampler, NbSamples=This%NbSamples)
+        call SampleSpace%Draw(Sampler=This%Sampler, NbSamples=This%NbSamples, Samples=This%ParamSample)
         This%iStage = 0
       else
         if (.not. SilentLoc) then

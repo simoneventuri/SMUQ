@@ -294,7 +294,7 @@ contains
                                                                                     'array of incorrect size', ProcName=ProcName)
 
     Blocks = Zero
-    XStar = This%Sampler%Draw(NbSamples=NbBlocks+This%AuxilaryShift, NbDim=NbDimTwo)
+    call This%Sampler%Draw(NbSamples=NbBlocks+This%AuxilaryShift, NbDim=NbDimTwo, Samples=XStar)
 
     ! generating lager sample size if auxillary points do not differ from non-auxillary ones in any dimension
     do
@@ -319,7 +319,7 @@ contains
       if (iv == NbBlocks) exit
       deallocate(XStar, stat=StatLoc)
       if (StatLoc /= 0) call Error%Deallocate(Name='XStar', ProcName=ProcName, stat=StatLoc)
-      XStar = This%Sampler%Draw(NbSamples=NbBlocks+This%AuxilaryShift+iOffset, NbDim=NbDimTwo)
+      call This%Sampler%Draw(NbSamples=NbBlocks+This%AuxilaryShift+iOffset, NbDim=NbDimTwo, Samples=XStar)
     end do
 
     iOffset = 0

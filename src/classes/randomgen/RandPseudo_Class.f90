@@ -46,14 +46,17 @@ contains
   procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
-  generic, public                                                     ::    Construct               =>    ConstructInput,         &
+  generic, public                                                     ::    Construct               =>    ConstructInput, &
                                                                                                           ConstructCase1
   procedure, public                                                   ::    ConstructInput
   procedure, public                                                   ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  procedure, public                                                   ::    Draw
-  procedure, public                                                   ::    DrawVec
-  procedure, public                                                   ::    DrawMat
+  generic, public                                                     ::    Draw                    =>    DrawScalar, &
+                                                                                                          DrawVec, &
+                                                                                                          DrawMat
+  procedure, private                                                  ::    DrawScalar
+  procedure, private                                                  ::    DrawVec
+  procedure, private                                                  ::    DrawMat
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
@@ -63,328 +66,381 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize(This)
+!!----------------------------------------------------------------------------------------------------------------------------!!
+subroutine Initialize(This)
 
-    class(RandPseudo_Type), intent(inout)                             ::    This
+  class(RandPseudo_Type), intent(inout)                               ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
-    integer(8)                                                        ::    SysTimeCount
+  character(*), parameter                                             ::    ProcName='Initialize'
+  integer(8)                                                          ::    SysTimeCount
 
-    if (.not. This%Initialized) then
-      This%Initialized = .true.
-      This%Name = 'pseudo'
+  if (.not. This%Initialized) then
+    This%Initialized = .true.
+    This%Name = 'pseudo'
 
-      call system_clock(SysTimeCount)
-      This%SeedDefault = SysTimeCount
+    call system_clock(SysTimeCount)
+    This%SeedDefault = SysTimeCount
 
-      call This%SetDefaults()
-    end if
+    call This%SetDefaults()
+  end if
 
-  end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+end subroutine
+!!----------------------------------------------------------------------------------------------------------------------------!!
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Reset(This)
+!!----------------------------------------------------------------------------------------------------------------------------!!
+subroutine Reset(This)
 
-    class(RandPseudo_Type), intent(inout)                             ::    This
+  class(RandPseudo_Type), intent(inout)                               ::    This
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    This%Initialized=.false.
-    This%Constructed=.false.
+  This%Initialized=.false.
+  This%Constructed=.false.
 
-    call This%Initialize()
+  call This%Initialize()
 
-  end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+end subroutine
+!!----------------------------------------------------------------------------------------------------------------------------!!
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults(This)
+!!----------------------------------------------------------------------------------------------------------------------------!!
+subroutine SetDefaults(This)
 
-    class(RandPseudo_Type), intent(inout)                             ::    This
+  class(RandPseudo_Type), intent(inout)                               ::    This
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  character(*), parameter                                             ::    ProcName='SetDefaults'
 
-    This%Seed = This%SeedDefault
+  This%Seed = This%SeedDefault
+  call This%PRNG%init_genrand64(This%Seed)
+  This%DrawType=2
+
+end subroutine
+!!----------------------------------------------------------------------------------------------------------------------------!!
+
+!!----------------------------------------------------------------------------------------------------------------------------!!
+subroutine ConstructInput (This, Input, Prefix)
+
+  class(RandPseudo_Type), intent(inout)                               ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
+
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  logical                                                             ::    Found
+  character(:), allocatable                                           ::    VarC0D
+  logical                                                             ::    VarL0D
+  integer                                                             ::    VarI0D
+  integer(8), allocatable, dimension(:)                               ::    VarI1D_8
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+
+  if (This%Constructed) call This%Reset()
+  if (.not. This%Initialized) call This%Initialize()
+
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
+
+  ParameterName = 'seed'
+  call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) then 
+    This%Seed = ConvertToInteger8(String=VarC0D)
     call This%PRNG%init_genrand64(This%Seed)
-    This%DrawType=2
+  end if
 
-  end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  ParameterName = 'draw_type'
+  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%DrawType=VarI0D
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructInput (This, Input, Prefix)
+  SectionName = 'internal_generator'
+  if (Input%HasSection(SubSectionName=SectionName)) then
+    ParameterName = 'mti'
+    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName)
+    This%PRNG%mti = VarI0D
 
-    class(RandPseudo_Type), intent(inout)                             ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    VarC0D
-    logical                                                           ::    VarL0D
-    integer                                                           ::    VarI0D
-    integer(8), allocatable, dimension(:)                             ::    VarI1D_8
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
-
-    ParameterName = 'seed'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then 
-      This%Seed = ConvertToInteger8(String=VarC0D)
-      call This%PRNG%init_genrand64(This%Seed)
-    end if
-
-    SectionName = 'internal_generator'
-    if (Input%HasSection(SubSectionName=SectionName)) then
-      ParameterName = 'mti'
-      call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName)
-      This%PRNG%mti = VarI0D
-
-      SubSectionName = SectionName // '>mt'
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-      call ImportArray(Input=InputSection, Array=VarI1D_8, Prefix=PrefixLoc)
-      nullify(InputSection)
-      This%PRNG%mt = VarI1D_8
-      deallocate(VarI1D_8, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D_8', ProcName=ProcName, stat=StatLoc)
-    end if
-
-    This%Constructed = .true.
-
-  end subroutine 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine ConstructCase1 (This, Seed)
-
-    class(RandPseudo_Type), intent(inout)                             ::    This
-    integer(8), optional, intent(in)                                  ::    Seed
-
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    integer                                                           ::    StatLoc=0
-
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-
-    if (present(seed)) then
-      This%Seed = Seed
-      call This%PRNG%init_genrand64(This%Seed)
-    end if
-
-    This%Constructed = .true.
-
-  end subroutine 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetInput(This, Name, Prefix, Directory)
-
-    type(InputSection_Type)                                           ::    GetInput
-    class(RandPseudo_Type), intent(in)                                ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
-
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    character(:), allocatable                                         ::    FileName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    type(SMUQFile_Type)                                               ::    File
-    character(:), allocatable                                         ::    VarC0D
-
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
-
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
-
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
-
-    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
-
-    call GetInput%AddParameter(Name='seed', Value=ConvertToString(Value=This%Seed))
-
-    SectionName = 'internal_generator'
-    call GetInput%AddSection(SectionName=SectionName)
-
-    call GetInput%AddParameter(Name='mti', Value=ConvertToString(Value=This%PRNG%mti), SectionName=SectionName)
-
-    SubSectionName = 'mt'
-    call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
-    SubSectionName = SectionName // '>' // SubSectionName
-    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-    if (ExternalFlag) then
-      FileName = DirectoryLoc // '/mt.dat'
-      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-      call ExportArray(Input=InputSection, Array=This%PRNG%mt, File=File)
-    else
-      call ExportArray(Input=InputSection, Array=This%PRNG%mt)
-    end if
+    SubSectionName = SectionName // '>mt'
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+    call ImportArray(Input=InputSection, Array=VarI1D_8, Prefix=PrefixLoc)
     nullify(InputSection)
+    This%PRNG%mt = VarI1D_8
+    deallocate(VarI1D_8, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D_8', ProcName=ProcName, stat=StatLoc)
+  end if
 
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  This%Constructed = .true.
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function Draw(This, DrawType)
+end subroutine 
+!!----------------------------------------------------------------------------------------------------------------------------!!
 
-    real(rkp)                                                         ::    Draw
+!!----------------------------------------------------------------------------------------------------------------------------!!
+subroutine ConstructCase1 (This, Seed, DrawType)
 
-    class(RandPseudo_Type), intent(inout)                             ::    This
-    integer, optional, intent(in)                                     ::    DrawType
+  class(RandPseudo_Type), intent(inout)                               ::    This
+  integer(8), optional, intent(in)                                    ::    Seed
+  integer, optional, intent(in)                                       ::    DrawType
 
-    character(*), parameter                                           ::    ProcName='Draw'
-    integer                                                           ::    DrawTypeLoc
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  if (This%Constructed) call This%Reset()
+  if (.not. This%Initialized) call This%Initialize()
 
-    if (present(DrawType)) then 
-      DrawTypeLoc = DrawType
-    else
-      DrawTypeLoc = This%DrawType
+  if (present(seed)) then
+    This%Seed = Seed
+    call This%PRNG%init_genrand64(This%Seed)
+  end if
+
+  if (present(DrawType)) This%DrawType = DrawType
+
+  This%Constructed = .true.
+
+end subroutine 
+!!----------------------------------------------------------------------------------------------------------------------------!!
+
+!!----------------------------------------------------------------------------------------------------------------------------!!
+function GetInput(This, Name, Prefix, Directory)
+
+  type(InputSection_Type)                                             ::    GetInput
+  class(RandPseudo_Type), intent(in)                                  ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
+
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    FileName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  type(SMUQFile_Type)                                                 ::    File
+  character(:), allocatable                                           ::    VarC0D
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
+
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
+
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+
+  if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
+
+  call GetInput%AddParameter(Name='seed', Value=ConvertToString(Value=This%Seed))
+  call GetInput%AddParameter(Name='draw_type', Value=ConvertToString(Value=This%DrawType))
+
+  SectionName = 'internal_generator'
+  call GetInput%AddSection(SectionName=SectionName)
+
+  call GetInput%AddParameter(Name='mti', Value=ConvertToString(Value=This%PRNG%mti), SectionName=SectionName)
+
+  SubSectionName = 'mt'
+  call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+  SubSectionName = SectionName // '>' // SubSectionName
+  call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+  if (ExternalFlag) then
+    FileName = DirectoryLoc // '/mt.dat'
+    call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+    call ExportArray(Input=InputSection, Array=This%PRNG%mt, File=File)
+  else
+    call ExportArray(Input=InputSection, Array=This%PRNG%mt)
+  end if
+  nullify(InputSection)
+
+end function
+!!----------------------------------------------------------------------------------------------------------------------------!!
+
+!!----------------------------------------------------------------------------------------------------------------------------!!
+subroutine DrawScalar(This, Sample, DrawType)
+
+  class(RandPseudo_Type), intent(inout)                               ::    This
+  real(rkp), intent(out)                                              ::    Sample
+  integer, optional, intent(in)                                       ::    DrawType
+
+  character(*), parameter                                             ::    ProcName='DrawScalar'
+  integer                                                             ::    DrawTypeLoc
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  if (present(DrawType)) then 
+    DrawTypeLoc = DrawType
+  else
+    DrawTypeLoc = This%DrawType
+  end if
+
+  select case (DrawTypeLoc)
+    case (1)
+      Sample = real(This%PRNG%genrand64_real1(),rkp)
+    case (2)
+      Sample = real(This%PRNG%genrand64_real2(),rkp)
+    case (3)
+      Sample = real(This%PRNG%genrand64_real3(),rkp)
+    case default
+      call Error%Raise(Line='Something went wrong when selecting draw type', ProcName=ProcName)
+  end select
+
+end subroutine
+!!----------------------------------------------------------------------------------------------------------------------------!!
+
+!!----------------------------------------------------------------------------------------------------------------------------!!
+subroutine DrawVec(This, Samples, NbSamples, DrawType)
+
+  class(RandPseudo_Type), intent(inout)                               ::    This
+  real(rkp), allocatable, dimension(:), intent(inout)                 ::    Samples
+  integer, intent(in)                                                 ::    NbSamples
+  integer, optional, intent(in)                                       ::    DrawType
+
+  character(*), parameter                                             ::    ProcName='DrawVec'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  integer                                                             ::    DrawTypeLoc
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  if (present(DrawType)) then 
+    DrawTypeLoc = DrawType
+  else
+    DrawTypeLoc = This%DrawType
+  end if
+
+  if (allocated(Samples)) then
+    if (size(Samples,1) /= NbSamples) then
+      deallocate(Samples, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
     end if
+  end if
 
-    select case (DrawTypeLoc)
-      case (1)
-        Draw = real(This%PRNG%genrand64_real1(),rkp)
-      case (2)
-        Draw = real(This%PRNG%genrand64_real2(),rkp)
-      case (3)
-        Draw = real(This%PRNG%genrand64_real3(),rkp)
-      case default
-        call Error%Raise(Line='Something went wrong when selecting draw type', ProcName=ProcName)
-    end select
+  if (.not. allocated(Samples)) then
+    allocate(Samples(NbSamples), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
+  end if
 
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+  i = 1
+  select case (DrawTypeLoc)
+    case (1)
+      do i = 1, size(Samples,1)
+        Samples(i) = real(This%PRNG%genrand64_real1(),rkp)
+      end do
+    case (2)
+      do i = 1, size(Samples,1)
+        Samples(i) = real(This%PRNG%genrand64_real2(),rkp)
+      end do
+    case (3)
+      do i = 1, size(Samples,1)
+        Samples(i) = real(This%PRNG%genrand64_real3(),rkp)
+      end do
+    case default
+      call Error%Raise(Line='Something went wrong when selecting draw type', ProcName=ProcName)
+  end select
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function DrawVec(This, Size1, DrawType)
+end subroutine
+!!----------------------------------------------------------------------------------------------------------------------------!!
 
-    real(rkp), allocatable, dimension(:)                              ::    DrawVec
+!!----------------------------------------------------------------------------------------------------------------------------!!
+subroutine DrawMat(This, Samples, NbSamples, NbDim, DrawType)
 
-    class(RandPseudo_Type), intent(inout)                             ::    This
-    integer, intent(in)                                               ::    Size1
-    integer, optional, intent(in)                                     ::    DrawType
+  class(RandPseudo_Type), intent(inout)                               ::    This
+  real(rkp), allocatable, dimension(:,:), intent(inout)               ::    Samples
+  integer, intent(in)                                                 ::    NbSamples
+  integer, intent(in)                                                 ::    NbDim
+  integer, optional, intent(in)                                       ::    DrawType
 
-    character(*), parameter                                           ::    ProcName='DrawVec'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    DrawTypeLoc
+  character(*), parameter                                             ::    ProcName='DrawMat'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  integer                                                             ::    ii
+  integer                                                             ::    DrawTypeLoc
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if (Size1 <= 0) call Error%Raise(Line='Size 1 of requested sample at or below 0', ProcName=ProcName)
+  if (present(DrawType)) then 
+    DrawTypeLoc = DrawType
+  else
+    DrawTypeLoc = This%DrawType
+  end if
 
-    allocate(DrawVec(Size1), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='DrawSample_1D', ProcName=ProcName, stat=StatLoc)
-
-    if (present(DrawType)) then 
-      DrawTypeLoc = DrawType
-    else
-      DrawTypeLoc = This%DrawType
+  if (allocated(Samples)) then
+    if (size(Samples,1) /= NbDim .or. size(Samples,2) /= NbSamples) then
+      deallocate(Samples, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
     end if
+  end if
+  if (.not. allocated(Samples)) then
+    allocate(Samples(NbDim,NbSamples), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
+  end if
 
-    i = 1
-    do i = 1, Size1
-      DrawVec(i) = This%Draw(DrawType=DrawTypeLoc)
-    end do
+  i = 1
+  ii = 1
+  select case (DrawTypeLoc)
+    case (1)
+      ii = 1
+      do ii = 1, size(Samples,2)
+        do i = 1, size(Samples,1)
+          Samples(i,ii) = real(This%PRNG%genrand64_real1(),rkp)
+        end do
+      end do
+    case (2)
+      ii = 1
+      do ii = 1, size(Samples,2)
+        do i = 1, size(Samples,1)
+          Samples(i,ii) = real(This%PRNG%genrand64_real2(),rkp)
+        end do
+      end do
+    case (3)
+      ii = 1
+      do ii = 1, size(Samples,2)
+        do i = 1, size(Samples,1)
+          Samples(i,ii) = real(This%PRNG%genrand64_real3(),rkp)
+        end do
+      end do
+    case default
+      call Error%Raise(Line='Something went wrong when selecting draw type', ProcName=ProcName)
+  end select
 
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+end subroutine
+!!----------------------------------------------------------------------------------------------------------------------------!!
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function DrawMat(This, Size1, Size2, DrawType)
+!!----------------------------------------------------------------------------------------------------------------------------!!
+impure elemental subroutine Copy(LHS, RHS)
 
-    real(rkp), allocatable, dimension(:,:)                            ::    DrawMat
+  class(RandPseudo_Type), intent(out)                                 ::    LHS
+  class(Randpseudo_Type), intent(in)                                  ::    RHS
 
-    class(RandPseudo_Type), intent(inout)                             ::    This
-    integer, intent(in)                                               ::    Size1
-    integer, intent(in)                                               ::    Size2
-    integer, optional, intent(in)                                     ::    DrawType
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-    character(*), parameter                                           ::    ProcName='DrawMat'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    DrawTypeLoc
+  call LHS%Reset()
+  LHS%Initialized = RHS%Initialized
+  LHS%Constructed = RHS%Constructed
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  if (RHS%Constructed) then
+    LHS%Seed = RHS%Seed
+    LHS%SeedDefault = RHS%SeedDefault
+    LHS%PRNG = RHS%PRNG
+    LHS%DrawType = RHS%DrawType
+  end if
 
-    if (Size1 <= 0) call Error%Raise(Line='Size 1 of requested sample at or below 0', ProcName=ProcName)
+end subroutine
+!!----------------------------------------------------------------------------------------------------------------------------!!
 
-    if (Size2 <= 0) call Error%Raise(Line='Size 2 of requested samples at or below 0', ProcName=ProcName)
+!!----------------------------------------------------------------------------------------------------------------------------!!
+impure elemental subroutine Finalizer(This)
 
-    allocate(DrawMat(Size1, Size2), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='DrawMat', ProcName=ProcName, stat=StatLoc)
+  type(RandPseudo_Type), intent(inout)                                ::    This
 
-    if (present(DrawType)) then 
-      DrawTypeLoc = DrawType
-    else
-      DrawTypeLoc = This%DrawType
-    end if
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-    i = 1
-    do i = 1, Size2
-      DrawMat(:,i) = This%DrawVec(Size1=Size1, DrawType=DrawTypeLoc)
-    end do
-
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  impure elemental subroutine Copy(LHS, RHS)
-
-    class(RandPseudo_Type), intent(out)                               ::    LHS
-    class(Randpseudo_Type), intent(in)                                ::    RHS
-
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    call LHS%Reset()
-    LHS%Initialized = RHS%Initialized
-    LHS%Constructed = RHS%Constructed
-
-    if (RHS%Constructed) then
-      LHS%Seed = RHS%Seed
-      LHS%SeedDefault = RHS%SeedDefault
-      LHS%PRNG = RHS%PRNG
-      LHS%DrawType = RHS%DrawType
-    end if
-
-  end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  impure elemental subroutine Finalizer(This)
-
-    type(RandPseudo_Type), intent(inout)                              ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-  end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+end subroutine
+!!----------------------------------------------------------------------------------------------------------------------------!!
 
 end module
