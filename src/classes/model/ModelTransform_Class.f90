@@ -231,7 +231,8 @@ contains
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     call Input%GetValue(Values=VarR1D, Labels=This%InputLabels)
-    call InputLoc%Construct(Input=This%SpaceTransform%InvTransform(Z=VarR1D), Labels=This%InputLabels)
+    call This%SpaceTransform%InvTransform(Z=VarR1D)
+    call InputLoc%Construct(Input=VarR1D, Labels=This%InputLabels)
     deallocate(VarR1D, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
    
@@ -266,7 +267,8 @@ contains
     i = 1
     do i = 1, NbInputs
       call Input(i)%GetValue(Values=VarR1D, Labels=This%InputLabels)
-      call InputLoc(i)%Construct(Input=This%SpaceTransform%InvTransform(Z=VarR1D), Labels=This%InputLabels)
+      call This%SpaceTransform%InvTransform(Z=VarR1D)
+      call InputLoc(i)%Construct(Input=VarR1D, Labels=This%InputLabels)
     end do
 
     deallocate(VarR1D, stat=StatLoc)
@@ -284,7 +286,7 @@ contains
   impure elemental subroutine Copy(LHS, RHS)
 
     class(ModelTransform_Type), intent(out)                           ::    LHS
-    class(Model_Type), intent(in)                            ::    RHS
+    class(Model_Type), intent(in)                                     ::    RHS
 
     character(*), parameter                                           ::    ProcName='Copy'
     integer                                                           ::    i

@@ -345,12 +345,10 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Transform1D(This, X)
+  subroutine Transform1D(This, X)
     
-    real(rkp), allocatable, dimension(:)                              ::    Transform1D
-
     class(TransfSampleSpaceUnbound_Type), intent(inout)               ::    This
-    real(rkp), dimension(:), intent(in)                               ::    X
+    real(rkp), dimension(:), intent(inout)                            ::    X
 
     character(*), parameter                                           ::    ProcName='Transform1D'
     integer                                                           ::    i
@@ -359,31 +357,26 @@ contains
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    allocate(Transform1D, source=X, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Transform1D', ProcName=ProcName, stat=StatLoc)
-
     i = 1
     do i = 1, This%NbDim
       DistProbPtr => This%DistProb(i)%GetPointer()
       select type (DistProbPtr)
         type is (DistInfBoundTransf_Type)
-          call DistProbPtr%Transform(Value=Transform1D(i))
+          call DistProbPtr%Transform(Value=X(i))
         class default
           call Error%Raise('Something went wrong', ProcName=ProcName)
       end select
       nullify(DistProbPtr)
     end do
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvTransform1D(This, Z)
+  subroutine InvTransform1D(This, Z)
     
-    real(rkp), allocatable, dimension(:)                              ::    InvTransform1D
-
     class(TransfSampleSpaceUnbound_Type), intent(inout)               ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Z
+    real(rkp), dimension(:), intent(inout)                            ::    Z
 
     character(*), parameter                                           ::    ProcName='InvTransform1D'
     integer                                                           ::    i
@@ -392,22 +385,19 @@ contains
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    allocate(InvTransform1D, source=Z, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='InvTransform1D', ProcName=ProcName, stat=StatLoc)
-
     i = 1
     do i = 1, This%NbDim
       DistProbPtr => This%DistProb(i)%GetPointer()
       select type (DistProbPtr)
         type is (DistInfBoundTransf_Type)
-          call DistProbPtr%InvTransform(Value=InvTransform1D(i))
+          call DistProbPtr%InvTransform(Value=Z(i))
         class default
           call Error%Raise('Something went wrong', ProcName=ProcName)
       end select
       nullify(DistProbPtr)
     end do
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

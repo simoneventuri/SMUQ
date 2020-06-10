@@ -220,14 +220,13 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-function Split(This, Separator)
+subroutine Split(This, Separator, Strings)
 
   use String_Library                                              ,only:    Parse
 
-  type(SMUQString_Type), allocatable, dimension(:)                    ::    Split
-
   class(SMUQString_Type), intent(in)                                  ::    This
   character(*), optional, intent(in)                                  ::    Separator
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Strings
 
   character(*), parameter                                             ::    ProcName='Split'
   integer                                                             ::    StatLoc=0
@@ -240,9 +239,9 @@ function Split(This, Separator)
   if (present(Separator)) SeparatorLoc = Separator
 
   if (len(This%Strip()) == 0 ) then
-    allocate(Split(1), stat=StatLoc)
+    allocate(Strings(1), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Split', ProcName=ProcName, stat=StatLoc)
-    Split(1) = ''
+    Strings(1) = ''
     return
   end if
 
@@ -250,15 +249,15 @@ function Split(This, Separator)
 
   NbStrings = size(SplitChar)
 
-  allocate(Split(NbStrings), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Split', ProcName=ProcName, stat=StatLoc)
+  allocate(Strings(NbStrings), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
 
   i = 1
   do i = 1, NbStrings
-    Split(i) = trim(adjustl(SplitChar(i)))
+    Strings(i) = trim(adjustl(SplitChar(i)))
   end do
 
-end function
+end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------

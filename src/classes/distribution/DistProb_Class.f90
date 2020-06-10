@@ -52,15 +52,9 @@ contains
   procedure, public                                                   ::    GetMean
   procedure, public                                                   ::    GetVariance
   procedure, public                                                   ::    ComputeMomentNumerical
-  generic, public                                                     ::    PDF                     =>    PDF_R0D,                &
-                                                                                                          PDF_R1D
-  procedure, public                                                   ::    PDF_R1D
-  generic, public                                                     ::    CDF                     =>    CDF_R0D,                &
-                                                                                                          CDF_R1D
-  procedure, public                                                   ::    CDF_R1D
-  generic, public                                                     ::    InvCDF                  =>    InvCDF_R0D,             &
-                                                                                                          InvCDF_R1D
-  procedure, public                                                   ::    InvCDF_R1D
+  procedure, public                                                   ::    PDF                     =>    PDF_R0D
+  procedure, public                                                   ::    CDF                     =>    CDF_R0D
+  procedure, public                                                   ::    InvCDF                  =>    InvCDF_R0D                                                  ::    InvCDF_R1D
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(Initialize_DistProb), deferred, public                    ::    Initialize
@@ -180,83 +174,83 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R1D(This, X)
+  ! !!------------------------------------------------------------------------------------------------------------------------------
+  ! function PDF_R1D(This, X)
 
-    real(rkp), allocatable, dimension(:)                              ::    PDF_R1D
+  !   real(rkp), allocatable, dimension(:)                              ::    PDF_R1D
 
-    class(DistProb_Type), intent(in)                                  ::    This
-    real(rkp), dimension(:), intent(in)                               ::    X
+  !   class(DistProb_Type), intent(in)                                  ::    This
+  !   real(rkp), dimension(:), intent(in)                               ::    X
 
-    character(*), parameter                                           ::    ProcName='PDF_R1D'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    NbX
+  !   character(*), parameter                                           ::    ProcName='PDF_R1D'
+  !   integer                                                           ::    StatLoc=0
+  !   integer                                                           ::    i
+  !   integer                                                           ::    NbX
 
-    NbX = size(X,1)
+  !   NbX = size(X,1)
     
-    allocate(PDF_R1D(NbX), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='PDF_R1D', ProcName=ProcName, stat=StatLoc)
+  !   allocate(PDF_R1D(NbX), stat=StatLoc)
+  !   if (StatLoc /= 0) call Error%Allocate(Name='PDF_R1D', ProcName=ProcName, stat=StatLoc)
     
-    i = 1
-    do i = 1, NbX
-      PDF_R1D(i) = This%PDF(X=X(i))
-    end do
+  !   i = 1
+  !   do i = 1, NbX
+  !     PDF_R1D(i) = This%PDF(X=X(i))
+  !   end do
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  ! end function
+  ! !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R1D(This, X)
+  ! !!------------------------------------------------------------------------------------------------------------------------------
+  ! function CDF_R1D(This, X)
 
-    real(rkp), allocatable, dimension(:)                              ::    CDF_R1D
+  !   real(rkp), allocatable, dimension(:)                              ::    CDF_R1D
 
-    class(DistProb_Type), intent(in)                                  ::    This
-    real(rkp), dimension(:), intent(in)                               ::    X
+  !   class(DistProb_Type), intent(in)                                  ::    This
+  !   real(rkp), dimension(:), intent(in)                               ::    X
 
-    character(*), parameter                                           ::    ProcName='CDF_R1D'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    NbX
+  !   character(*), parameter                                           ::    ProcName='CDF_R1D'
+  !   integer                                                           ::    StatLoc=0
+  !   integer                                                           ::    i
+  !   integer                                                           ::    NbX
 
-    NbX = size(X,1)
+  !   NbX = size(X,1)
     
-    allocate(CDF_R1D(NbX), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='CDF_R1D', ProcName=ProcName, stat=StatLoc)
+  !   allocate(CDF_R1D(NbX), stat=StatLoc)
+  !   if (StatLoc /= 0) call Error%Allocate(Name='CDF_R1D', ProcName=ProcName, stat=StatLoc)
     
-    i = 1
-    do i = 1, NbX
-      CDF_R1D(i) = This%CDF(X=X(i))
-    end do
+  !   i = 1
+  !   do i = 1, NbX
+  !     CDF_R1D(i) = This%CDF(X=X(i))
+  !   end do
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  ! end function
+  ! !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R1D(This, P)
+  ! !!------------------------------------------------------------------------------------------------------------------------------
+  ! function InvCDF_R1D(This, P)
 
-    real(rkp), allocatable, dimension(:)                              ::    InvCDF_R1D
+  !   real(rkp), allocatable, dimension(:)                              ::    InvCDF_R1D
 
-    class(DistProb_Type), intent(in)                                  ::    This
-    real(rkp), dimension(:), intent(in)                               ::    P
+  !   class(DistProb_Type), intent(in)                                  ::    This
+  !   real(rkp), dimension(:), intent(in)                               ::    P
 
-    character(*), parameter                                           ::    ProcName='InvCDF_R1D'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    NbP
+  !   character(*), parameter                                           ::    ProcName='InvCDF_R1D'
+  !   integer                                                           ::    StatLoc=0
+  !   integer                                                           ::    i
+  !   integer                                                           ::    NbP
 
-    NbP = size(P,1)
+  !   NbP = size(P,1)
     
-    allocate(InvCDF_R1D(NbP), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='InvCDF_R1D', ProcName=ProcName, stat=StatLoc)
+  !   allocate(InvCDF_R1D(NbP), stat=StatLoc)
+  !   if (StatLoc /= 0) call Error%Allocate(Name='InvCDF_R1D', ProcName=ProcName, stat=StatLoc)
     
-    i = 1
-    do i = 1, NbP
-      InvCDF_R1D(i) = This%InvCDF(P=P(i))
-    end do
+  !   i = 1
+  !   do i = 1, NbP
+  !     InvCDF_R1D(i) = This%InvCDF(P=P(i))
+  !   end do
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  ! end function
+  ! !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetName(This)

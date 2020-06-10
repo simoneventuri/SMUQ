@@ -1172,7 +1172,7 @@ contains
 
     do i = NbEntries, 2, -1
       if (present(RNG)) then
-        RandNum = RNG%Draw(DrawType=2)
+        call RNG%Draw(Sample=RandNum, DrawType=2)
       else
         call random_number(RandNum)
       end if
@@ -1205,7 +1205,7 @@ contains
 
     do i = NbEntries, 2, -1
       if (present(RNG)) then
-        RandNum = RNG%Draw(DrawType=2)
+        call RNG%Draw(Sample=RandNum, DrawType=2)
       else
         call random_number(RandNum)
       end if
@@ -1503,7 +1503,7 @@ contains
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    VarR0D
 
-    VarR0D = RNG%Draw(DrawType=2)
+    call RNG%Draw(Sample=VarR0D, DrawType=2)
 
     RandomInteger_I0D_4_RNG = Min + floor(VarR0D * real(Max-Min+1,rkp))
     
@@ -1542,7 +1542,7 @@ contains
     integer                                                           ::    StatLoc=0
     real(rkp)                                                         ::    VarR0D
 
-    VarR0D = RNG%Draw(DrawType=2)
+    call RNG%Draw(Sample=VarR0D, DrawType=2)
 
     RandomInteger_I0D_8_RNG = Min + floor(VarR0D * real(Max-Min+1,rkp))
     

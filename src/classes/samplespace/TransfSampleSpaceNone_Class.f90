@@ -317,43 +317,31 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Transform1D(This, X)
+  subroutine Transform1D(This, X)
     
-    real(rkp), allocatable, dimension(:)                              ::    Transform1D
-
     class(TransfSampleSpaceNone_Type), intent(inout)                  ::    This
-    real(rkp), dimension(:), intent(in)                               ::    X
+    real(rkp), dimension(:), intent(inout)                            ::    X
 
     character(*), parameter                                           ::    ProcName='Transform1D'
-    integer                                                           ::    i
     integer                                                           ::    StatLoc=0
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    allocate(Transform1D, source=X, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Transform1D', ProcName=ProcName, stat=StatLoc)
-
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvTransform1D(This, Z)
+  subroutine InvTransform1D(This, Z)
     
-    real(rkp), allocatable, dimension(:)                              ::    InvTransform1D
-
     class(TransfSampleSpaceNone_Type), intent(inout)                  ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Z
+    real(rkp), dimension(:), intent(inout)                            ::    Z
 
     character(*), parameter                                           ::    ProcName='InvTransform1D'
-    integer                                                           ::    i
     integer                                                           ::    StatLoc=0
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    allocate(InvTransform1D, source=Z, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='InvTransform1D', ProcName=ProcName, stat=StatLoc)
-
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
