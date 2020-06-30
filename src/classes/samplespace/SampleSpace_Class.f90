@@ -58,7 +58,7 @@ contains
   procedure, public                                                   ::    IsCorrelated
   generic, public                                                     ::    GetDistribution         =>    GetDist0D_LabelString,  &
                                                                                                           GetDist0D_LabelChar,    &
-                                                                                                          GetDist0D_Num,          &
+                                                                                                          GetDist0D_Num
   procedure, public                                                   ::    GetDistributions        =>    GetDist1D
   procedure, private                                                  ::    GetDist0D_LabelString
   procedure, private                                                  ::    GetDist0D_LabelChar
@@ -68,7 +68,7 @@ contains
   generic, public                                                     ::    GetName                 =>    GetName0D_LabelChar,    &
                                                                                                           GetName0D_LabelString,  &
                                                                                                           GetName0D_Num
-  procedure, public                                                   ::    GetNames                =>    GetName1D
+  procedure, public                                                   ::    GetNames                =>    GetName1D_NonAlloc
   procedure, private                                                  ::    GetName0D_LabelString
   procedure, private                                                  ::    GetName0D_LabelChar
   procedure, private                                                  ::    GetName0D_Num
@@ -224,21 +224,19 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine GetName1D(This, Names)
+subroutine GetName1D_NonAlloc(This, Names)
 
   class(SampleSpace_Type), intent(in)                                 ::    This
-  type(SMUQString_Type), allocatable, dimension(:), intent(inout)     ::    Names
+  type(SMUQString_Type), dimension(:), intent(inout)                  ::    Names
 
-  character(*), parameter                                             ::    ProcName='GetName1D'
+  character(*), parameter                                             ::    ProcName='GetName1D_NonAlloc'
   integer                                                             ::    StatLoc=0
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  if (allocated(Names)) deallocate(Names, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='Names', ProcName=ProcName, stat=StatLoc)
+  if (size(Names,1) /= This%NbDim) call Error%Raise('Incompatible names array', ProcName=ProcName)
 
-  allocate(Names, source=This%ParamName, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Names', ProcName=ProcName, stat=StatLoc)
+  Names = This%ParamName
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -263,18 +261,16 @@ end function
 subroutine GetLabel1D(This, Labels)
 
   class(SampleSpace_Type), intent(in)                                 ::    This
-  type(SMUQString_Type), allocatable, dimension(:), intent(inout)     ::    Labels
+  type(SMUQString_Type), dimension(:), intent(inout)                  ::    Labels
 
   character(*), parameter                                             ::    ProcName='GetLabel1D'
   integer                                                             ::    StatLoc=0
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  if (allocated(Labels)) deallocate(Labels, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
+  if (size(Labels,1) /= This%NbDim) call Error%Raise('Incompatible labels array', ProcName=ProcName)
 
-  allocate(Labels, source=This%Label, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
+  Labels = This%Label
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -367,7 +363,7 @@ end function
 subroutine GetDist1D(This, Distributions)
 
   class(SampleSpace_Type), intent(in)                                 ::    This
-  type(DistProbContainer_Type), allocatable, dimension(:), intent(inout)   ::    Distributions
+  type(DistProbContainer_Type), dimension(:), intent(inout)           ::    Distributions
 
   character(*), parameter                                             ::    ProcName='GetDist1D'
   integer                                                             ::    i
@@ -375,11 +371,9 @@ subroutine GetDist1D(This, Distributions)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  if (allocated(Distributions)) deallocate(Distributions, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='Distributions', ProcName=ProcName, stat=StatLoc)
+  if (size(Distributions,1) /= This%NbDim) call Error%Raise('Incompatible distributions array', ProcName=ProcName)
 
-  allocate(Distributions, source=This%DistProb, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Distributions', ProcName=ProcName, stat=StatLoc)
+  Distributions = This%DistProb
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -466,19 +460,18 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine GetCorrMat(This. CorrMat)
+subroutine GetCorrMat(This, CorrMat)
 
   class(SampleSpace_Type), intent(in)                                 ::    This
-  real(rkp), allocatable, dimension(:,:), intent(inout)               ::    CorrMat
+  real(rkp), dimension(:,:), intent(inout)                            ::    CorrMat
 
   character(*), parameter                                             ::    ProcName='GetCorrMat'
   integer                                                             ::    StatLoc=0
 
-  if (allocated(CorrMat)) deallocate(CorrMat, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='CorrMat', ProcName=ProcName, stat=StatLoc)
+  if (size(CorrMat,1) /= This%NbDim) call Error%Raise('Incompatible covariance array', ProcName=ProcName)
+  if (size(CorrMat,2) /= This%NbDim) call Error%Raise('Incompatible covariance array', ProcName=ProcName)
 
-  allocate(GetCorrMat, source=This%CorrMat, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetCorrMat', ProcName=ProcName, stat=StatLoc)
+  CorrMat = This%CorrMat
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -584,8 +577,9 @@ subroutine Draw(This, Sampler, NbSamples, Samples)
     call DPOTRF('U', NbDim, Lt, NbDim, StatLoc)
     if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DPOTRF', ProcName=ProcName)
 
-    i = 1    if (allocated(Samples)) deallocate(Samples, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
+    i = 1
+    do i = 1, NbSamples
+      call This%DrawMVarNormalLt(Mu=VarR1D, Lt=Lt, Samples=Samples(:,i))
     end do
 
     deallocate(Lt, stat=StatLoc)

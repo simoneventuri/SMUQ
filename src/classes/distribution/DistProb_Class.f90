@@ -52,18 +52,15 @@ contains
   procedure, public                                                   ::    GetMean
   procedure, public                                                   ::    GetVariance
   procedure, public                                                   ::    ComputeMomentNumerical
-  procedure, public                                                   ::    PDF                     =>    PDF_R0D
-  procedure, public                                                   ::    CDF                     =>    CDF_R0D
-  procedure, public                                                   ::    InvCDF                  =>    InvCDF_R0D                                                  ::    InvCDF_R1D
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(Initialize_DistProb), deferred, public                    ::    Initialize
   procedure(Reset_DistProb), deferred, public                         ::    Reset
   procedure(ConstructInput_DistProb), deferred, private               ::    ConstructInput
   procedure(GetInput_DistProb), deferred, public                      ::    GetInput
-  procedure(CDF_R0D_DistProb), deferred, public                       ::    CDF_R0D
-  procedure(InvCDF_R0D_DistProb), deferred, public                    ::    InvCDF_R0D
-  procedure(PDF_R0D_DistProb), deferred, private                      ::    PDF_R0D
+  procedure(CDF_DistProb), deferred, public                           ::    CDF
+  procedure(InvCDF_DistProb), deferred, public                        ::    InvCDF
+  procedure(PDF_DistProb), deferred, public                           ::    PDF
   procedure(SetDefaults_DistProb), deferred, public                   ::    SetDefaults
   procedure(WriteInfo_DistProb), deferred, public                     ::    WriteInfo
   procedure(Copy_DistProb), deferred, public                          ::    Copy
@@ -117,30 +114,30 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D_DistProb(This, X)
+  function CDF_DistProb(This, X)
     use                                                               ::    Parameters_Library
     import                                                            ::    DistProb_Type
-    real(rkp)                                                         ::    CDF_R0D_DistProb
+    real(rkp)                                                         ::    CDF_DistProb
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D_DistProb(This, P)
+  function InvCDF_DistProb(This, P)
     use                                                               ::    Parameters_Library
     import                                                            ::    DistProb_Type
-    real(rkp)                                                         ::    InvCDF_R0D_DistProb
+    real(rkp)                                                         ::    InvCDF_DistProb
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    P
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D_DistProb(This, X)
+  function PDF_DistProb(This, X)
     use                                                               ::    Parameters_Library
     import                                                            ::    DistProb_Type
-    real(rkp)                                                         ::    PDF_R0D_DistProb
+    real(rkp)                                                         ::    PDF_DistProb
     class(DistProb_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
   end function

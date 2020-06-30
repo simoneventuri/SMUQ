@@ -50,9 +50,9 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  procedure, private                                                  ::    PDF_R0D
-  procedure, public                                                   ::    CDF_R0D
-  procedure, public                                                   ::    InvCDF_R0D
+  procedure, public                                                   ::    PDF
+  procedure, public                                                   ::    CDF
+  procedure, public                                                   ::    InvCDF
   generic, public                                                     ::    Transform               =>    Transform_0D,           &
                                                                                                           Transform_1D
   procedure, private                                                  ::    Transform_0D
@@ -232,14 +232,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D(This, X)
+  function PDF(This, X)
 
-    real(rkp)                                                         ::    PDF_R0D
+    real(rkp)                                                         ::    PDF
 
     class(DistInfBoundTransf_Type), intent(in)                        ::    This
     real(rkp), intent(in)                                             ::    X
 
-    character(*), parameter                                           ::    ProcName='PDF_R0D'
+    character(*), parameter                                           ::    ProcName='PDF'
     real(rkp)                                                         ::    XLoc
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -247,22 +247,22 @@ contains
     XLoc = X
     call This%Transform(Value=XLoc)
 
-    PDF_R0D = This%DistProb%PDF(X=XLoc)
+    PDF = This%DistProb%PDF(X=XLoc)
 
-    call This%fInvTransform(Value=PDF_R0D, X=XLoc)
+    call This%fInvTransform(Value=PDF, X=XLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D(This, X)
+  function CDF(This, X)
 
-    real(rkp)                                                         ::    CDF_R0D
+    real(rkp)                                                         ::    CDF
 
     class(DistInfBoundTransf_Type), intent(in)                        ::    This
     real(rkp), intent(in)                                             ::    X
 
-    character(*), parameter                                           ::    ProcName='CDF_R0D'
+    character(*), parameter                                           ::    ProcName='CDF'
     real(rkp)                                                         ::    XLoc
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -270,26 +270,26 @@ contains
     XLoc = X
     call This%Transform(Value=XLoc)
 
-    CDF_R0D = This%DistProb%CDF(X=XLoc)
+    CDF = This%DistProb%CDF(X=XLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D(This, P)
+  function InvCDF(This, P)
 
-    real(rkp)                                                         ::    InvCDF_R0D
+    real(rkp)                                                         ::    InvCDF
 
     class(DistInfBoundTransf_Type), intent(in)                        ::    This
     real(rkp), intent(in)                                             ::    P
 
-    character(*), parameter                                           ::    ProcName='InvCDF_R0D'
+    character(*), parameter                                           ::    ProcName='InvCDF'
     real(rkp)                                                         ::    XLoc
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    InvCDF_R0D = This%DistProb%InvCDF(P=P)
-    call This%InvTransform(Value=InvCDF_R0D)
+    InvCDF = This%DistProb%InvCDF(P=P)
+    call This%InvTransform(Value=InvCDF)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

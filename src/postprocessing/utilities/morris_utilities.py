@@ -109,8 +109,8 @@ def plot_mustar_sigma_single(response, i_cell, variables):
 
     fig1, ax1 = plt.subplots()
 
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+#    mng = plt.get_current_fig_manager()
+#    mng.resize(*mng.window.maxsize())
 
     ax1.scatter(response_mustar,response_sigma)
     for i, variable in enumerate(variables):
@@ -146,8 +146,8 @@ def plot_mu(response, variables):
         
     fig1, ax1 = plt.subplots()
 
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+#    mng = plt.get_current_fig_manager()
+#    mng.resize(*mng.window.maxsize())
 
     for i, variable in enumerate(variables):
         ax1.plot(x, response_mu[:,i],\
@@ -185,8 +185,8 @@ def plot_mustar(response, variables):
         
     fig1, ax1 = plt.subplots()
 
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+#    mng = plt.get_current_fig_manager()
+#    mng.resize(*mng.window.maxsize())
 
     for i, variable in enumerate(variables):
         ax1.plot(x, response_mustar[:,i],\
@@ -224,8 +224,8 @@ def plot_sigma(response, variables):
         
     fig1, ax1 = plt.subplots()
 
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+#    mng = plt.get_current_fig_manager()
+#    mng.resize(*mng.window.maxsize())
 
     for i, variable in enumerate(variables):
         ax1.plot(x, response_sigma[:,i],

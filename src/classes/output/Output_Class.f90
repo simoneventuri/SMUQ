@@ -169,7 +169,6 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine GetValues(This, Values)
 
-    real(rkp), dimension(:,:), allocatable                            ::    GetValues
     real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Values
 
     class(Output_Type), intent(inout)                                 ::    This
@@ -180,7 +179,7 @@ contains
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)        
    
     if (allocated(Values)) then
-      if (size(Values,1) /= NbNodes .or. size(Values,2) /= NbDegen) then
+      if (size(Values,1) /= This%NbNodes .or. size(Values,2) /= This%NbDegen) then
         deallocate(Values, stat=StatLoc)
         if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
       end if

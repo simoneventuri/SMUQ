@@ -347,8 +347,7 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        allocate(Array, source=ConvertToReal4s(String=VarC0D, Separator=' '), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
+        call ConvertToReals(String=VarC0D, Values=Array, Separator=' ')
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -411,8 +410,7 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        allocate(Array, source=ConvertToReal8s(String=VarC0D, Separator=' '), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
+        call ConvertToReals(String=VarC0D, Values=Array, Separator=' ')
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -475,8 +473,8 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        allocate(Array, source=ConvertToInteger4s(String=VarC0D, Separator=' '), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
+        call ConvertToIntegers(String=VarC0D, Values=Array, Separator=' ')
+
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -539,8 +537,7 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        allocate(Array, source=ConvertToInteger8s(String=VarC0D, Separator=' '), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
+        call ConvertToIntegers(String=VarC0D, Values=Array, Separator=' ')
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -603,8 +600,7 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        allocate(Array, source=ConvertToLogicals(String=VarC0D, Separator=' '), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
+        call ConvertToLogicals(String=VarC0D, Values=Array, Separator=' ')
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -667,8 +663,7 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        allocate(Array, source=ConvertToComplexs(String=VarC0D, Separator=' '), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
+        call ConvertToComplexs(String=VarC0D, Values=Array, Separator=' ')
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -732,8 +727,7 @@ contains
       case('internal')
         ParameterName = 'values'
         call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
-        allocate(Array, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
+        call ConvertToStrings(Value=VarC0D, Strings=Array, Separator=' ')
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -768,7 +762,7 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
-    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
+    real(4), allocatable, dimension(:)                                ::    Row
 
     PrefixLoc = ''
     if (present(Prefix)) PrefixLoc = Prefix
@@ -815,8 +809,9 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call ConvertToReals(String=VarC0D, Values=Row, Separator=' ')
           if (i == 1) then
-            NbEntries = size(ConvertToReal4s(String=VarC0D, Separator=' '),1)
+            NbEntries = size(Row,1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -826,12 +821,15 @@ contains
             end if
           end if
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToReal4s(String=VarC0D, Separator=' ')
+            Array(i,:) = Row
           else
-            Array(:,i) = ConvertToReal4s(String=VarC0D, Separator=' ')
+            Array(:,i) = Row
           end if
 
         end do
+
+        if (allocated(Row)) deallocate(Row, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
 
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
@@ -867,6 +865,7 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
+    real(8), allocatable, dimension(:)                                ::    Row
 
     PrefixLoc = ''
     if (present(Prefix)) PrefixLoc = Prefix
@@ -913,8 +912,9 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call ConvertToReals(String=VarC0D, Values=Row, Separator=' ')
           if (i == 1) then
-            NbEntries = size(ConvertToReal8s(String=VarC0D, Separator=' '),1)
+            NbEntries = size(Row,1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -924,13 +924,14 @@ contains
             end if
           end if
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToReal8s(String=VarC0D, Separator=' ')
+            Array(i,:) = Row
           else
-            Array(:,i) = ConvertToReal8s(String=VarC0D, Separator=' ')
+            Array(:,i) = Row
           end if
 
         end do
-
+        if (allocated(Row)) deallocate(Row, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -965,6 +966,7 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
+    integer(4), allocatable, dimension(:)                             ::    Row
 
     PrefixLoc = ''
     if (present(Prefix)) PrefixLoc = Prefix
@@ -1011,8 +1013,9 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call ConvertToIntegers(String=VarC0D, Values=Row, Separator=' ')
           if (i == 1) then
-            NbEntries = size(ConvertToInteger4s(String=VarC0D, Separator=' '),1)
+            NbEntries = size(Row,1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1022,12 +1025,13 @@ contains
             end if
           end if
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToInteger4s(String=VarC0D, Separator=' ')
+            Array(i,:) = Row
           else
-            Array(:,i) = ConvertToInteger4s(String=VarC0D, Separator=' ')
+            Array(:,i) = Row
           end if
         end do
-
+        if (allocated(Row)) deallocate(Row, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
     end select
@@ -1062,6 +1066,7 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
+    integer(8), allocatable, dimension(:)                             ::    Row
 
     PrefixLoc = ''
     if (present(Prefix)) PrefixLoc = Prefix
@@ -1108,8 +1113,9 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call ConvertToIntegers(String=VarC0D, Values=Row, Separator=' ')
           if (i == 1) then
-            NbEntries = size(ConvertToInteger8s(String=VarC0D, Separator=' '),1)
+            NbEntries = size(Row,1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1119,10 +1125,12 @@ contains
             end if
           end if
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToInteger8s(String=VarC0D, Separator=' ')
+            Array(i,:) = Row
           else
-            Array(:,i) = ConvertToInteger8s(String=VarC0D, Separator=' ')
+            Array(:,i) = Row
           end if
+          if (allocated(Row)) deallocate(Row, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
         end do
 
       case default
@@ -1159,6 +1167,7 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
+    logical, allocatable, dimension(:)                                ::    Row
 
     PrefixLoc = ''
     if (present(Prefix)) PrefixLoc = Prefix
@@ -1205,8 +1214,9 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call ConvertToLogicals(String=VarC0D, Values=Row, Separator=' ')
           if (i == 1) then
-            NbEntries = size(ConvertToLogicals(String=VarC0D, Separator=' '),1)
+            NbEntries = size(Row,1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1216,10 +1226,12 @@ contains
             end if
           end if
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToLogicals(String=VarC0D, Separator=' ')
+            Array(i,:) = Row
           else
-            Array(:,i) = ConvertToLogicals(String=VarC0D, Separator=' ')
+            Array(:,i) = Row
           end if
+          if (allocated(Row)) deallocate(Row, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
         end do
 
       case default
@@ -1256,6 +1268,7 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
+    complex, allocatable, dimension(:)                                ::    Row
 
     PrefixLoc = ''
     if (present(Prefix)) PrefixLoc = Prefix
@@ -1302,8 +1315,9 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call ConvertToComplexs(String=VarC0D, Values=Row, Separator=' ')
           if (i == 1) then
-            NbEntries = size(ConvertToComplexs(String=VarC0D, Separator=' '),1)
+            NbEntries = size(Row,1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1313,10 +1327,12 @@ contains
             end if
           end if
           if (RowMajorLoc) then
-            Array(i,:) = ConvertToComplexs(String=VarC0D, Separator=' ')
+            Array(i,:) = Row
           else
-            Array(:,i) = ConvertToComplexs(String=VarC0D, Separator=' ')
+            Array(:,i) = Row
           end if
+          if (allocated(Row)) deallocate(Row, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
         end do
       case default
         call Error%Raise(Line='Unrecognized source format', ProcName=ProcName)
@@ -1352,6 +1368,7 @@ contains
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
     character(:), allocatable                                         ::    ParamPrefix
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Row
 
     PrefixLoc = ''
     if (present(Prefix)) PrefixLoc = Prefix
@@ -1398,8 +1415,9 @@ contains
         do i = 1, NbLines
           ParameterName = ParamPrefix // ConvertToString(Value=i)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          call ConvertToStrings(Value=VarC0D, Strings=Row, Separator=' ')
           if (i == 1) then
-            NbEntries = size(ConvertToStrings(Value=VarC0D, Separator=' '),1)
+            NbEntries = size(Row,1)
             if (RowMajorLoc) then
               allocate(Array(NbLines,NbEntries), stat=StatLoc)
               if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
@@ -1409,11 +1427,12 @@ contains
             end if
           end if
           if (RowMajorLoc) then
-              Array(i,:) = ConvertToStrings(Value=VarC0D, Separator=' ')
+              Array(i,:) = Row
           else
-              Array(:,i) = ConvertToStrings(Value=VarC0D, Separator=' ')
+              Array(:,i) = Row
           end if
-
+          if (allocated(Row)) deallocate(Row, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
         end do
 
       case default
@@ -1485,7 +1504,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        Array = ConvertToReal4s(String=VarC0D, Separator=' ')
+        call ConvertToReals(String=VarC0D, Values=Array, Separator=' ')
       end if
 
     end if
@@ -1559,7 +1578,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        Array = ConvertToReal4s(String=VarC0D, Separator=' ')
+        call ConvertToReals(String=VarC0D, Values=Array, Separator=' ')
       end if
 
     end if
@@ -1633,7 +1652,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        Array = ConvertToInteger4s(String=VarC0D, Separator=' ')
+        call ConvertToIntegers(String=VarC0D, Values=Array, Separator=' ')
       end if
 
     end if
@@ -1707,7 +1726,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        Array = ConvertToInteger8s(String=VarC0D, Separator=' ')
+        call ConvertToIntegers(String=VarC0D, Values=Array, Separator=' ')
       end if
 
     end if
@@ -1781,7 +1800,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        Array = ConvertToLogicals(String=VarC0D, Separator=' ')
+        call ConvertToLogicals(String=VarC0D, Values=Array, Separator=' ')
       end if
 
     end if
@@ -1855,7 +1874,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        Array = ConvertToComplexs(String=VarC0D, Separator=' ')
+        call ConvertToComplexs(String=VarC0D, Values=Array, Separator=' ')
       end if
 
     end if
@@ -1929,8 +1948,7 @@ contains
         end do
       else
         if (ii /= 1) call Error%Raise(Line='Only one line can specify the array to be read in column wise', ProcName=ProcName)
-        allocate(Array, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='Array', ProcName=ProcName, stat=StatLoc)
+        call ConvertToStrings(Value=VarC0D, Strings=Array, Separator=' ')
       end if
 
     end if
@@ -1968,6 +1986,7 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
+    real(4), allocatable, dimension(:)                                ::    Row
 
     RowMajorLoc = .false.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -1990,7 +2009,8 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          Size1 = size(ConvertToReal4s(String=VarC0D, Separator=' '),1)
+          call ConvertToReals(String=VarC0D, Values=Row, Separator=' ')
+          Size1 = size(Row,1)
         end if
       end do
       Size2 = ii
@@ -2013,10 +2033,12 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
+        call ConvertToReals(String=VarC0D, Values=Row, Separator=' ')
+        if (size(Row,1) /= Size1) call Error%Raise('Mismatch in number of entries', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToReal4s(String=VarC0D, Separator=' ')
+          Array(ii,:) = Row
         else
-          Array(:,ii) = ConvertToReal4s(String=VarC0D, Separator=' ')
+          Array(:,ii) = Row
         end if
       end do
 
@@ -2025,6 +2047,9 @@ contains
     call File%Close()
 
     if (present(Found)) Found = FoundLoc
+
+    if (allocated(Row)) deallocate(Row, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -2055,6 +2080,7 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
+    real(8), allocatable, dimension(:)                                ::    Row
 
     RowMajorLoc = .false.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2077,7 +2103,8 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          Size1 = size(ConvertToReal8s(String=VarC0D, Separator=' '),1)
+          call ConvertToReals(String=VarC0D, Values=Row, Separator=' ')
+          Size1 = size(Row,1)
         end if
       end do
       Size2 = ii
@@ -2100,10 +2127,12 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
+        call ConvertToReals(String=VarC0D, Values=Row, Separator=' ')
+        if (size(Row,1) /= Size1) call Error%Raise('Mismatch in number of entries', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToReal8s(String=VarC0D, Separator=' ')
+          Array(ii,:) = Row
         else
-          Array(:,ii) = ConvertToReal8s(String=VarC0D, Separator=' ')
+          Array(:,ii) = Row
         end if
       end do
 
@@ -2112,6 +2141,9 @@ contains
     call File%Close()
 
     if (present(Found)) Found = FoundLoc
+
+    if (allocated(Row)) deallocate(Row, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -2142,6 +2174,7 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
+    integer(4), allocatable, dimension(:)                             ::    Row
 
     RowMajorLoc = .false.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2164,7 +2197,8 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          Size1 = size(ConvertToInteger4s(String=VarC0D, Separator=' '),1)
+          call ConvertToIntegers(String=VarC0D, Values=Row, Separator=' ')
+          Size1 = size(Row,1)
         end if
       end do
       Size2 = ii
@@ -2187,10 +2221,12 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
+        call ConvertToIntegers(String=VarC0D, Values=Row, Separator=' ')
+        if (size(Row,1) /= Size1) call Error%Raise('Mismatch in number of entries', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToInteger4s(String=VarC0D, Separator=' ')
+          Array(ii,:) = Row
         else
-          Array(:,ii) = ConvertToInteger4s(String=VarC0D, Separator=' ')
+          Array(:,ii) = Row
         end if
       end do
 
@@ -2199,6 +2235,9 @@ contains
     call File%Close()
 
     if (present(Found)) Found = FoundLoc
+
+    if (allocated(Row)) deallocate(Row, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -2229,6 +2268,7 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
+    integer(8), allocatable, dimension(:)                             ::    Row
 
     RowMajorLoc = .false.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2251,7 +2291,8 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          Size1 = size(ConvertToInteger8s(String=VarC0D, Separator=' '),1)
+          call ConvertToIntegers(String=VarC0D, Values=Row, Separator=' ')
+          Size1 = size(Row,1)
         end if
       end do
       Size2 = ii
@@ -2274,10 +2315,12 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
+        call ConvertToIntegers(String=VarC0D, Values=Row, Separator=' ')
+        if (size(Row,1) /= Size1) call Error%Raise('Mismatch in number of entries', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToInteger8s(String=VarC0D, Separator=' ')
+          Array(ii,:) = Row
         else
-          Array(:,ii) = ConvertToInteger8s(String=VarC0D, Separator=' ')
+          Array(:,ii) = Row
         end if
       end do
 
@@ -2286,6 +2329,9 @@ contains
     call File%Close()
 
     if (present(Found)) Found = FoundLoc
+
+    if (allocated(Row)) deallocate(Row, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -2316,6 +2362,7 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
+    logical, allocatable, dimension(:)                                ::    Row
 
     RowMajorLoc = .false.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2338,7 +2385,8 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          Size1 = size(ConvertToLogicals(String=VarC0D, Separator=' '),1)
+          call ConvertToLogicals(String=VarC0D, Values=Row, Separator=' ')
+          Size1 = size(Row,1)
         end if
       end do
       Size2 = ii
@@ -2361,10 +2409,12 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
+        call ConvertToLogicals(String=VarC0D, Values=Row, Separator=' ')
+        if (size(Row,1) /= Size1) call Error%Raise('Mismatch in number of entries', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToLogicals(String=VarC0D, Separator=' ')
+          Array(ii,:) = Row
         else
-          Array(:,ii) = ConvertToLogicals(String=VarC0D, Separator=' ')
+          Array(:,ii) = Row
         end if
       end do
 
@@ -2373,6 +2423,9 @@ contains
     call File%Close()
 
     if (present(Found)) Found = FoundLoc
+
+    if (allocated(Row)) deallocate(Row, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -2403,6 +2456,7 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
+    complex, allocatable, dimension(:)                                ::    Row
 
     RowMajorLoc = .false.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2425,7 +2479,8 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          Size1 = size(ConvertToComplexs(String=VarC0D, Separator=' '),1)
+          call ConvertToComplexs(String=VarC0D, Values=Row, Separator=' ')
+          Size1 = size(Row,1)
         end if
       end do
       Size2 = ii
@@ -2448,10 +2503,12 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
+        call ConvertToComplexs(String=VarC0D, Values=Row, Separator=' ')
+        if (size(Row,1) /= Size1) call Error%Raise('Mismatch in number of entries', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToComplexs(String=VarC0D, Separator=' ')
+          Array(ii,:) = Row
         else
-          Array(:,ii) = ConvertToComplexs(String=VarC0D, Separator=' ')
+          Array(:,ii) = Row
         end if
       end do
 
@@ -2460,6 +2517,9 @@ contains
     call File%Close()
 
     if (present(Found)) Found = FoundLoc
+
+    if (allocated(Row)) deallocate(Row, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -2490,6 +2550,7 @@ contains
     character(:), allocatable                                         ::    Separator
     logical                                                           ::    VarL0D
     logical                                                           ::    RowMajorLoc
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Row
 
     RowMajorLoc = .false.
     if (present(RowMajor)) RowMajorLoc = RowMajor
@@ -2512,7 +2573,8 @@ contains
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
         if (ii == 1) then
-          Size1 = size(ConvertToStrings(Value=VarC0D, Separator=' '),1)
+          call ConvertToStrings(Value=VarC0D, Strings=Row, Separator=' ')
+          Size1 = size(Row,1)
         end if
       end do
       Size2 = ii
@@ -2535,10 +2597,12 @@ contains
         if (i <= NbLinesSkipLoc) cycle
         if (VarC0D(1:len(Comment)) == Comment) cycle
         ii = ii + 1
+        call ConvertToStrings(Value=VarC0D, Strings=Row, Separator=' ')
+        if (size(Row,1) /= Size1) call Error%Raise('Mismatch in number of entries', ProcName=ProcName)
         if (RowMajorLoc) then
-          Array(ii,:) = ConvertToStrings(Value=VarC0D, Separator=' ')
+          Array(ii,:) = Row
         else
-          Array(:,ii) = ConvertToStrings(Value=VarC0D, Separator=' ')
+          Array(:,ii) = Row
         end if
       end do
 
@@ -2547,6 +2611,9 @@ contains
     call File%Close()
 
     if (present(Found)) Found = FoundLoc
+
+    if (allocated(Row)) deallocate(Row, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Row', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

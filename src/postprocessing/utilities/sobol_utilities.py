@@ -60,8 +60,8 @@ def plot_sobol_indices_single(response, i_cell, variables):
 
     fig1, ax1 = plt.subplots()
 
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+#    mng = plt.get_current_fig_manager()
+#    mng.resize(*mng.window.maxsize())
 
     variable_names = []
     for variable in variables:
@@ -96,8 +96,8 @@ def plot_sobol_indices(response, variables):
     fig1, ax1 = plt.subplots()
     ax2 = ax1.twinx()
 
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+#    mng = plt.get_current_fig_manager()
+#    mng.resize(*mng.window.maxsize())
 
     for i, variable in enumerate(variables):
         ax1.plot(x, response_indices[:,i],\

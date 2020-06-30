@@ -201,7 +201,7 @@ contains
       nullify(InputSection)
       This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
     else
-      This%CorrMat = EyeR(N=This%NbDim)
+      call Eye(Array=This%CorrMat)
       This%Correlated = .false.
     end if
 
@@ -269,7 +269,7 @@ contains
       This%CorrMat = CorrMat
       This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
     else
-      This%CorrMat = EyeR(N=This%NbDim)
+      call Eye(Array=This%CorrMat)
       This%Correlated = .false.
     end if
 
@@ -338,7 +338,7 @@ contains
       This%CorrMat = CorrMat
       This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
     else
-      This%CorrMat = EyeR(N=This%NbDim)
+      call Eye(Array=This%CorrMat)
       This%Correlated = .false.
     end if
 
@@ -364,19 +364,19 @@ contains
 
     allocate(This%Label(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-    This%Label = SampleSpace%GetLabel()
+    call SampleSpace%GetLabels(Labels=This%Label)
 
     allocate(This%ParamName(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Paramname', ProcName=ProcName, stat=StatLoc)
-    This%ParamName = SampleSpace%GetName()
+    call SampleSpace%GetNames(Names=This%ParamName)
 
     allocate(This%DistProb(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
-    This%DistProb = SampleSpace%GetDistribution()
+    call SampleSpace%GetDistributions(Distributions=This%DistProb)
 
     allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
-    This%CorrMat = SampleSpace%GetCorrMat()
+    call SampleSpace%GetCorrMat(CorrMat=This%CorrMat)
 
     This%Correlated = SampleSpace%IsCorrelated()
 
@@ -397,9 +397,11 @@ contains
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbDim1
     integer                                                           ::    NbDim2
+    real(rkp), dimension(:,:), pointer                                ::    VarR2DPtr
+    integer                                                           ::    i
 
     if (This%Constructed) call This%Reset
-    if (.not. This%Initialized) call This%Initialize 
+    if (.not. This%Initialized) call This%Initialize  
 
     NbDim1 = SampleSpace1%GetNbDim()
     NbDim2 = SampleSpace2%GetNbDim()
@@ -409,25 +411,35 @@ contains
     This%NbDim = NbDim1 + NbDim2
 
     allocate(This%ParamName(This%NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%Names', ProcName=ProcName, stat=StatLoc)
-    This%ParamName(1:NbDim1) = SampleSpace1%GetName()
-    This%ParamName(NbDim1+1:This%NbDim) = SampleSpace2%GetName()
+    if (StatLoc /= 0) call Error%Allocate(Name='This%ParamName', ProcName=ProcName, stat=StatLoc)
+    call SampleSpace1%GetNames(Names=This%ParamName(1:NbDim1))
+    call SampleSpace2%GetNames(Names=This%ParamName(NbDim1+1:This%NbDim))
 
     allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
     This%CorrMat = Zero
-    This%CorrMat(1:NbDim1,1:NbDim1) = SampleSpace1%GetCorrMat()
-    This%CorrMat(NbDim1+1:This%NbDim,NbDim1+1:This%NbDim) = SampleSpace2%GetCorrMat()
+    VarR2DPtr => SampleSpace1%GetCorrMatPointer()
+    i = 1
+    do i = 1, NbDim1
+      This%CorrMat(1:NbDim1,i) = VarR2DPtr(:,i)
+    end do
+    nullify(VarR2DPtr)
+    VarR2DPtr => SampleSpace2%GetCorrMatPointer()
+    i = 1
+    do i = 1, NbDim2
+      This%CorrMat(NbDim1+1:NbDim2,NbDim1+i) = VarR2DPtr(:,i)
+    end do
+    nullify(VarR2DPtr)
 
     allocate(This%DistProb(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
-    This%DistProb(1:NbDim1) = SampleSpace1%GetDistribution()
-    This%DistProb(NbDim1+1:This%NbDim) = SampleSpace2%GetDistribution()
+    call SampleSpace1%GetDistributions(Distributions=This%DistProb(1:NbDim1) )
+    call SampleSpace2%GetDistributions(Distributions=This%DistProb(NbDim1+1:This%NbDim))
 
     allocate(This%Label(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-    This%Label(1:NbDim1) = SampleSpace1%GetLabel()
-    This%Label(NbDim1+1:This%NbDim) = SampleSpace2%GetLabel()
+    call SampleSpace1%GetLabels(Labels=This%Label(1:NbDim1))
+    call SampleSpace2%GetLabels(Labels=This%Label(NbDim1+1:This%NbDim))
 
     This%Constructed=.true.
 
@@ -578,9 +590,11 @@ contains
     integer                                                           ::    NbDim2
     integer                                                           ::    NbDim
     real(rkp), allocatable, dimension(:,:)                            ::    CorrMat
+    real(rkp), dimension(:,:), pointer                                ::    VarR2DPtr
     type(SMUQString_Type), allocatable, dimension(:)                  ::    Names
     type(DistProbContainer_Type), allocatable, dimension(:)           ::    Distributions
     type(SMUQString_Type), allocatable, dimension(:)                  ::    Labels
+    integer                                                           ::    i
 
     NbDim1 = ParameterSpace1%GetNbDim()
     NbDim2 = ParameterSpace2%GetNbDim()
@@ -591,26 +605,48 @@ contains
 
     allocate(Names(NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Names', ProcName=ProcName, stat=StatLoc)
-    Names(1:NbDim1) = ParameterSpace1%GetName()
-    Names(NbDim1+1:NbDim) = ParameterSpace2%GetName()
+    call ParameterSpace1%GetNames(Names=Names(1:NbDim1))
+    call ParameterSpace2%GetNames(Names=Names(NbDim1+1:NbDim))
 
     allocate(CorrMat(NbDim,NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='CorrMat', ProcName=ProcName, stat=StatLoc)
     CorrMat = Zero
-    CorrMat(1:NbDim1,1:NbDim1) = ParameterSpace1%GetCorrMat()
-    CorrMat(NbDim1+1:NbDim,NbDim1+1:NbDim) = ParameterSpace2%GetCorrMat()
+    VarR2DPtr => ParameterSpace1%GetCorrMatPointer()
+    i = 1
+    do i = 1, NbDim1
+      CorrMat(1:NbDim1,i) = VarR2DPtr(:,i)
+    end do
+    nullify(VarR2DPtr)
+    VarR2DPtr => ParameterSpace2%GetCorrMatPointer()
+    i = 1
+    do i = 1, NbDim2
+      CorrMat(NbDim1+1:NbDim2,NbDim1+i) = VarR2DPtr(:,i)
+    end do
+    nullify(VarR2DPtr)
 
     allocate(Distributions(NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Distributions', ProcName=ProcName, stat=StatLoc)
-    Distributions(1:NbDim1) = ParameterSpace1%GetDistribution()
-    Distributions(NbDim1+1:NbDim) = ParameterSpace2%GetDistribution()
+    call ParameterSpace1%GetDistributions(Distributions=Distributions(1:NbDim1) )
+    call ParameterSpace2%GetDistributions(Distributions=Distributions(NbDim1+1:NbDim))
 
     allocate(Labels(NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
-    Labels(1:NbDim1) = ParameterSpace1%GetLabel()
-    Labels(NbDim1+1:NbDim) = ParameterSpace2%GetLabel()
+    call ParameterSpace1%GetLabels(Labels=Labels(1:NbDim1))
+    call ParameterSpace2%GetLabels(Labels=Labels(NbDim1+1:NbDim))
 
     call ConcatenateParamSpaces%Construct(Distributions=Distributions, CorrMat=CorrMat, Labels=Labels, Names=Names)
+
+    deallocate(Distributions, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Distributions', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(CorrMat, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='CorrMat', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(Labels, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(Names, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Names', ProcName=ProcName, stat=StatLoc)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

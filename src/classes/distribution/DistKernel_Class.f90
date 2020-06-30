@@ -56,11 +56,11 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  procedure, private                                                  ::    PDF_R0D
+  procedure, public                                                   ::    PDF
   procedure, nopass, public                                           ::    ComputePDF
-  procedure, public                                                   ::    CDF_R0D
+  procedure, public                                                   ::    CDF
   procedure, nopass, public                                           ::    ComputeCDF
-  procedure, public                                                   ::    InvCDF_R0D
+  procedure, public                                                   ::    InvCDF
   procedure, nopass, private                                          ::    ComputeRoTBandwidth
   generic, private                                                    ::    Transform               =>    Transform_0D,           &
                                                                                                           Transform_1D
@@ -235,13 +235,13 @@ contains
     if (StatLoc /= 0) call Error%Allocate(Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc)
     This%CDFSamples = Zero
 
-    This%XCDFSamples = LinSpace(InterMin=SampleMin, InterMax=SampleMax, NbNodes=This%NbCDFSamples)
+    call LinSpace(Values=This%XCDFSamples, Min=SampleMin, Max=Samplemax, NbNodes=This%NbCDFSamples)
     call This%Transform(Values=This%XCDFSamples)
 
     i = 1
     do i = 1, This%NbCDFSamples
-      This%CDFSamples(i) = This%ComputeCDF(X=This%XCDFSamples(i), Samples=This%TransformedSamples, Bandwidth=This%Bandwidth,     &
-                                                                                                              Kernel=This%Kernel)
+      This%CDFSamples(i) = This%ComputeCDF(X=This%XCDFSamples(i), Samples=This%TransformedSamples, &
+                                           Bandwidth=This%Bandwidth, Kernel=This%Kernel)
     end do
 
     This%Constructed = .true.
@@ -330,7 +330,7 @@ contains
     if (StatLoc /= 0) call Error%Allocate(Name='This%CDFSamples', ProcName=ProcName, stat=StatLoc)
     This%CDFSamples = Zero
 
-    This%XCDFSamples = LinSpace(InterMin=SampleMin, InterMax=SampleMax, NbNodes=This%NbCDFSamples)
+    call LinSpace(Values=This%XCDFSamples, Min=SampleMin, Max=Samplemax, NbNodes=This%NbCDFSamples)
     call This%Transform(Values=This%XCDFSamples)
 
     i = 1
@@ -412,14 +412,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D(This, X)
+  function PDF(This, X)
 
-    real(rkp)                                                         ::    PDF_R0D
+    real(rkp)                                                         ::    PDF
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(in)                                             ::    X
 
-    character(*), parameter                                           ::    ProcName='PDF_R0D'
+    character(*), parameter                                           ::    ProcName='PDF'
     real(rkp)                                                         ::    XLoc
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -427,9 +427,9 @@ contains
     XLoc = X
     call This%Transform(Value=XLoc)
 
-    PDF_R0D = This%ComputePDF(X=XLoc, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel)
+    PDF = This%ComputePDF(X=XLoc, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel)
 
-    call This%fInvTransform(Value=PDF_R0D, X=X)
+    call This%fInvTransform(Value=PDF, X=X)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -466,14 +466,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D(This, X)
+  function CDF(This, X)
 
-    real(rkp)                                                         ::    CDF_R0D
+    real(rkp)                                                         ::    CDF
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(in)                                             ::    X
 
-    character(*), parameter                                           ::    ProcName='CDF_R0D'
+    character(*), parameter                                           ::    ProcName='CDF'
     real(rkp)                                                         ::    XLoc
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -481,7 +481,7 @@ contains
     XLoc = X
     call This%Transform(Value=XLoc)
 
-    CDF_R0D = This%ComputeCDF(X=XLoc, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel)
+    CDF = This%ComputeCDF(X=XLoc, Samples=This%TransformedSamples, Bandwidth=This%Bandwidth, Kernel=This%Kernel)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -518,14 +518,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D(This, P)
+  function InvCDF(This, P)
 
-    real(rkp)                                                         ::    InvCDF_R0D
+    real(rkp)                                                         ::    InvCDF
 
     class(DistKernel_Type), intent(in)                                ::    This
     real(rkp), intent(in)                                             ::    P
 
-    character(*), parameter                                           ::    ProcName='InvCDF_R0D'
+    character(*), parameter                                           ::    ProcName='InvCDF'
     real(rkp)                                                         ::    LeftBound
     real(rkp)                                                         ::    RightBound
     integer                                                           ::    i
@@ -539,19 +539,19 @@ contains
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    InvCDF_R0D = Zero
+    InvCDF = Zero
 
     if (P == Zero) then
       if (This%TruncatedLeft) then
-        InvCDF_R0D = This%A
+        InvCDF = This%A
       else
-        InvCDF_R0D = -huge(One)
+        InvCDF = -huge(One)
       end if
     elseif (P == One) then
       if (This%TruncatedRight) then
-        InvCDF_R0D = This%B
+        InvCDF = This%B
       else
-        InvCDF_R0D = huge(One)
+        InvCDF = huge(One)
       end if
     else
       ! finds a suitable range for Brent root finder
@@ -598,7 +598,7 @@ contains
             end if
           end do
           if (istop == 0) call Error%Raise('Something went wrong', ProcName=ProcName)
-          InvCDF_R0D = This%CDFSamples(istop)
+          InvCDF = This%CDFSamples(istop)
         else
           istop = 0
           i = 2
@@ -614,9 +614,9 @@ contains
           MachEp = epsilon(MachEp)
           Tol = 1.d-8
           PMinFun => MinFun
-          InvCDF_R0D = real(Brent_Zero(LeftBound, RightBound, MachEp, Tol, PMinFun),rkp)
+          InvCDF = real(Brent_Zero(LeftBound, RightBound, MachEp, Tol, PMinFun),rkp)
         end if
-        call This%InvTransform(Value=InvCDF_R0D)
+        call This%InvTransform(Value=InvCDF)
       end if
     end if
 
@@ -802,7 +802,11 @@ contains
     if (This%TruncatedLeft) Strings(3) = ConvertToString(Value=This%A)
     Strings(4) = 'Inf'
     if (This%TruncatedRight) Strings(4) = ConvertToString(Value=This%B)
-    Strings(5:4+size(VarR1D,1)) = ConvertToStrings(Values=VarR1D)
+
+    i = 1
+    do i = 1, size(VarR1D,1)
+      Strings(4+i) = ConvertToString(Value=VarR1D(i))
+    end do
 
     deallocate(VarR1D, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)

@@ -45,11 +45,11 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  procedure, private                                                  ::    PDF_R0D
+  procedure, public                                                   ::    PDF
   procedure, nopass, public                                           ::    ComputeUnifPDF
-  procedure, public                                                   ::    CDF_R0D
+  procedure, public                                                   ::    CDF
   procedure, nopass, public                                           ::    ComputeUnifCDF
-  procedure, public                                                   ::    InvCDF_R0D
+  procedure, public                                                   ::    InvCDF
   procedure, nopass, public                                           ::    ComputeUnifInvCDF
   procedure, public                                                   ::    GetMoment
   procedure, public                                                   ::    WriteInfo
@@ -210,18 +210,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D(This, X)
+  function PDF(This, X)
 
-    real(rkp)                                                         ::    PDF_R0D
+    real(rkp)                                                         ::    PDF
 
     class(DistUnif_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
 
-    character(*), parameter                                           ::    ProcName='PDF_R0D'
+    character(*), parameter                                           ::    ProcName='PDF'
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    PDF_R0D = This%ComputeUnifPDF(X, This%A, This%B)
+    PDF = This%ComputeUnifPDF(X, This%A, This%B)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -277,18 +277,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D(This, X)
+  function CDF(This, X)
 
-    real(rkp)                                                         ::    CDF_R0D
+    real(rkp)                                                         ::    CDF
 
     class(DistUnif_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    X
 
-    character(*), parameter                                           ::    ProcName='CDF_R0D'
+    character(*), parameter                                           ::    ProcName='CDF'
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    CDF_R0D = ComputeUnifCDF(X, This%A, This%B)
+    CDF = ComputeUnifCDF(X, This%A, This%B)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -316,18 +316,18 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D(This, P)
+  function InvCDF(This, P)
 
-    real(rkp)                                                         ::    InvCDF_R0D
+    real(rkp)                                                         ::    InvCDF
 
     class(DistUnif_Type), intent(in)                                  ::    This
     real(rkp), intent(in)                                             ::    P
 
-    character(*), parameter                                           ::    ProcName='InvCDF_R0D'
+    character(*), parameter                                           ::    ProcName='InvCDF'
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    InvCDF_R0D = ComputeUnifInvCDF(P, This%A, This%B)
+    InvCDF = ComputeUnifInvCDF(P, This%A, This%B)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

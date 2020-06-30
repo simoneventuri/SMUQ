@@ -52,7 +52,7 @@ function ComputeMean_R41D(Values)
 
   character(*), parameter                                             ::    ProcName='ComputeMean_R41D'
 
-  ComputeMean_R41D = sum(Values/real(size(Values,1),rkp))
+  ComputeMean_R41D = sum(Values/real(size(Values,1),4))
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ function ComputeMean_R81D(Values)
 
   character(*), parameter                                             ::    ProcName='ComputeMean_R81D'
 
-  ComputeMean_R81D = sum(Values/real(size(Values,1),rkp))
+  ComputeMean_R81D = sum(Values/real(size(Values,1),8))
 
 end function
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -92,9 +92,9 @@ function ComputeVariance_R41D(Values, Mean, Population)
       MeanLoc = ComputeMean(Values)
     end if
     if (PopulationLoc) then
-      ComputeVariance_R41D = sum((Values - MeanLoc)**2) / real(size(Values),rkp)
+      ComputeVariance_R41D = sum((Values - MeanLoc)**2) / real(size(Values),4)
     else
-      ComputeVariance_R41D = sum((Values - MeanLoc)**2) / real(size(Values)-1,rkp)
+      ComputeVariance_R41D = sum((Values - MeanLoc)**2) / real(size(Values)-1,4)
     end if
   else
     ComputeVariance_R41D = Zero
@@ -125,9 +125,9 @@ function ComputeVariance_R81D(Values, Mean, Population)
       MeanLoc = ComputeMean(Values)
     end if
     if (PopulationLoc) then
-      ComputeVariance_R81D = sum((Values - MeanLoc)**2) / real(size(Values),rkp)
+      ComputeVariance_R81D = sum((Values - MeanLoc)**2) / real(size(Values),8)
     else
-      ComputeVariance_R81D = sum((Values - MeanLoc)**2) / real(size(Values)-1,rkp)
+      ComputeVariance_R81D = sum((Values - MeanLoc)**2) / real(size(Values)-1,8)
     end if
   else
     ComputeVariance_R81D = Zero

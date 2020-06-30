@@ -205,10 +205,10 @@ subroutine ConstructInput(This, Input, Prefix)
 
     i = 1
     do i = 1, This%NbFixs
-      Targets1 = This%Fix(i)%GetTargets()
+      call This%Fix(i)%GetTargets(Targets=Targets1)
       ii = 1
       do ii = i + 1 , This%NbFixs
-        Targets2 = This%Fix(ii)%GetTargets()
+        call This%Fix(ii)%GetTargets(Targets=Targets2)
         do iii = 1, size(Targets1,1)
           do iv = 1, size(Targets2,1)
             if (Targets1(iii) == Targets2(iv)) call Error%Raise('Duplicate fixed value labels', ProcName=ProcName)
@@ -237,10 +237,10 @@ subroutine ConstructInput(This, Input, Prefix)
 
     i = 1
     do i = 1, This%NbTransforms
-      Targets1 = This%Transform(i)%GetTargets()
+      call This%Transform(i)%GetTargets(Targets=Targets1)
       ii = 1
       do ii = i + 1 , This%NbTransforms
-        Targets2 = This%Transform(ii)%GetTargets()
+        call This%Transform(ii)%GetTargets(Targets=Targets2)
         do iii = 1, size(Targets1,1)
           do iv = 1, size(Targets2,1)
             if (Targets1(iii) == Targets2(iv)) call Error%Raise('Duplicate fixed value labels', ProcName=ProcName)
@@ -252,10 +252,10 @@ subroutine ConstructInput(This, Input, Prefix)
     if (This%NbFixs > 0) then
       i = 1
       do i = 1, This%NbTransforms
-        Targets1 = This%Transform(i)%GetTargets()
+        call This%Transform(i)%GetTargets(Targets=Targets1)
         ii = 1
         do ii = i + 1 , This%NbFixs
-          Targets2 = This%Fix(ii)%GetTargets()
+          call This%Fix(ii)%GetTargets(Targets=Targets2)
           do iii = 1, size(Targets1,1)
             do iv = 1, size(Targets2,1)
               if (Targets1(iii) == Targets2(iv)) call Error%Raise('Transformation of a fixed parameter not allowed : ', &
@@ -525,8 +525,7 @@ subroutine ConstructInput_IF(This, Input, Prefix)
 
   This%NbTargets = 0
   call Input%GetValue(Value=VarC0D, ParameterName='label', Mandatory=.true.)
-  allocate(This%Target, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
+  call ConvertToStrings(Value=VarC0D, Strings=This%Target, Separator=' ')
   This%NbTargets = size(This%Target,1)
 
   allocate(This%Value(This%NbTargets), stat=StatLoc)
@@ -593,21 +592,30 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-function GetTargets_IF(This)
-
-  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetTargets_IF
+subroutine GetTargets_IF(This, Targets)
 
   class(InputFixed_Type), intent(in)                                  ::    This
+  type(SMUQString_Type), allocatable, dimension(:), intent(inout)     ::    Targets
 
   character(*), parameter                                             ::    ProcName='GetTargets_IF'
   integer                                                             ::    StatLoc=0
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-  allocate(GetTargets_IF, source=This%Target, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetTargets_IF', ProcName=ProcName, stat=StatLoc)
+  if (allocated(Targets)) then
+    if (size(Targets,1) /= This%NbTargets) then
+      deallocate(Targets, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='Targets', ProcName=ProcName, stat=StatLoc)
+    end if
+  end if
+  if (.not. allocated(Targets)) then
+    allocate(Targets(This%NbTargets), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Targets', ProcName=ProcName, stat=StatLoc)
+  end if
 
-end function
+  Targets = This%Target
+
+end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -732,8 +740,7 @@ subroutine ConstructInput_IT(This, Input, Prefix)
 
   This%NbTargets = 0
   call Input%GetValue(Value=VarC0D, ParameterName='label', Mandatory=.true.)
-  allocate(This%Target, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
+  call ConvertToStrings(Value=VarC0D, Strings=This%Target, Separator=' ')
   This%NbTargets = size(This%Target,1)
 
   allocate(This%Transformation(This%NbTargets), stat=StatLoc)
@@ -803,21 +810,30 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-function GetTargets_IT(This)
-
-  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetTargets_IT
+subroutine GetTargets_IT(This, Targets)
 
   class(InputTransform_Type), intent(in)                              ::    This
+  type(SMUQString_Type), allocatable, dimension(:), intent(inout)     ::    Targets
 
   character(*), parameter                                             ::    ProcName='GetTargets_IT'
   integer                                                             ::    StatLoc=0
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-  allocate(GetTargets_IT, source=This%Target, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetTargets_IT', ProcName=ProcName, stat=StatLoc)
+  if (allocated(Targets)) then
+    if (size(Targets,1) /= This%NbTargets) then
+      deallocate(Targets, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='Targets', ProcName=ProcName, stat=StatLoc)
+    end if
+  end if
+  if (.not. allocated(Targets)) then
+    allocate(Targets(This%NbTargets), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Targets', ProcName=ProcName, stat=StatLoc)
+  end if
 
-end function
+  Targets = This%Target
+
+end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------

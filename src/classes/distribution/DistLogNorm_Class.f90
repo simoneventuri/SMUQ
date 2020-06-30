@@ -43,9 +43,9 @@ contains
   procedure, private                                                  ::    AdditionalConstruction
   procedure, public                                                   ::    GetA
   procedure, public                                                   ::    GetB
-  procedure, private                                                  ::    PDF_R0D
-  procedure, public                                                   ::    CDF_R0D
-  procedure, public                                                   ::    InvCDF_R0D
+  procedure, public                                                   ::    PDF
+  procedure, public                                                   ::    CDF
+  procedure, public                                                   ::    InvCDF
   procedure, public                                                   ::    GetMoment
   procedure, public                                                   ::    WriteInfo
   procedure, public                                                   ::    Copy
@@ -143,14 +143,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D(This, X)
+  function PDF(This, X)
 
-    real(rkp)                                                         ::    PDF_R0D
+    real(rkp)                                                         ::    PDF
 
     class(DistLogNorm_Type), intent(in)                               ::    This
     real(rkp), intent(in)                                             ::    X
 
-    character(*), parameter                                           ::    ProcName='PDF_R0D'
+    character(*), parameter                                           ::    ProcName='PDF'
     logical                                                           ::    TripFlag
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -158,21 +158,21 @@ contains
     TripFlag = .false.
 
     if (X <= Zero) then
-      PDF_R0D = Zero
+      PDF = Zero
       TripFlag = .true.
     end if
 
     if (.not. TripFlag) then
       if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
-        PDF_R0D = This%ComputeNormalPDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+        PDF = This%ComputeNormalPDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
       else if (This%DoubleTruncatedLeft) then
-        PDF_R0D = This%ComputeNormalPDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+        PDF = This%ComputeNormalPDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A)
       else if (This%TruncatedRight) then
-        PDF_R0D = This%ComputeNormalPDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B)
+        PDF = This%ComputeNormalPDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B)
       else
-        PDF_R0D = This%ComputeNormalPDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma)
+        PDF = This%ComputeNormalPDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma)
       end if
-      PDF_R0D = One/X * PDF_R0D
+      PDF = One/X * PDF
     end if
 
   end function
@@ -244,14 +244,14 @@ contains
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D(This, X)
+  function CDF(This, X)
 
-    real(rkp)                                                         ::    CDF_R0D
+    real(rkp)                                                         ::    CDF
 
     class(DistLogNorm_Type), intent(in)                               ::    This
     real(rkp), intent(in)                                             ::    X
 
-    character(*), parameter                                           ::    ProcName='CDF_R0D'
+    character(*), parameter                                           ::    ProcName='CDF'
     logical                                                           ::    TripFlag
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -259,19 +259,19 @@ contains
     TripFlag = .false.
 
     if (X <= Zero) then
-      CDF_R0D = Zero
+      CDF = Zero
       TripFlag = .true.
     end if
 
     if (.not. TripFlag) then
       if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
-        CDF_R0D = This%ComputeNormalCDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+        CDF = This%ComputeNormalCDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
       else if (This%DoubleTruncatedLeft) then
-        CDF_R0D = This%ComputeNormalCDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+        CDF = This%ComputeNormalCDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A)
       else if (This%TruncatedRight) then
-        CDF_R0D = This%ComputeNormalCDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B)
+        CDF = This%ComputeNormalCDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B)
       else
-        CDF_R0D = This%ComputeNormalCDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma)
+        CDF = This%ComputeNormalCDF(X=dlog(X), Mu=This%Mu, Sigma=This%Sigma)
       end if
     end if
 
@@ -279,14 +279,14 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D(This, P)
+  function InvCDF(This, P)
 
-    real(rkp)                                                         ::    InvCDF_R0D
+    real(rkp)                                                         ::    InvCDF
 
     class(DistLogNorm_Type), intent(in)                               ::    This
     real(rkp), intent(in)                                             ::    P
 
-    character(*), parameter                                           ::    ProcName='InvCDF_R0D'
+    character(*), parameter                                           ::    ProcName='InvCDF'
     logical                                                           ::    TripFlag
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -295,22 +295,22 @@ contains
 
     if (P == Zero) then
       if (.not. This%DoubleTruncatedLeft) then
-        InvCDF_R0D = tiny(One)
+        InvCDF = tiny(One)
         TripFlag = .true.
       end if
     end if
 
     if (.not. TripFlag) then
       if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
-        InvCDF_R0D = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+        InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
       else if (This%DoubleTruncatedLeft) then
-        InvCDF_R0D = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+        InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
       else if (This%TruncatedRight) then
-        InvCDF_R0D = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
+        InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
       else
-        InvCDF_R0D = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma)
+        InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma)
       end if
-      InvCDF_R0D = dexp(InvCDF_R0D)
+      InvCDF = dexp(InvCDF)
     end if
 
   end function

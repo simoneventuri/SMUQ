@@ -49,11 +49,11 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
-  procedure, private                                                  ::    PDF_R0D
+  procedure, public                                                   ::    PDF
   procedure, nopass, public                                           ::    ComputePDF
-  procedure, public                                                   ::    CDF_R0D
+  procedure, public                                                   ::    CDF
   procedure, nopass, public                                           ::    ComputeCDF
-  procedure, public                                                   ::    InvCDF_R0D
+  procedure, public                                                   ::    InvCDF
   procedure, nopass, public                                           ::    ComputeInvCDF
   procedure, public                                                   ::    GetAlpha
   procedure, public                                                   ::    GetBeta
@@ -244,25 +244,25 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF_R0D(This, X)
+  function PDF(This, X)
 
-    real(rkp)                                                         ::    PDF_R0D
+    real(rkp)                                                         ::    PDF
 
     class(DistGamma_Type), intent(in)                                 ::    This
     real(rkp), intent(in)                                             ::    X
 
-    character(*), parameter                                           ::    ProcName='PDF_R0D'
+    character(*), parameter                                           ::    ProcName='PDF'
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
-      PDF_R0D = This%ComputePDF(X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B)
+      PDF = This%ComputePDF(X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B)
     else if (This%DoubleTruncatedLeft) then
-      PDF_R0D = This%ComputePDF(X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A)
+      PDF = This%ComputePDF(X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A)
     else if (This%TruncatedRight) then
-      PDF_R0D = This%ComputePDF(X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B)
+      PDF = This%ComputePDF(X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B)
     else
-      PDF_R0D = This%ComputePDF(X=X, Alpha=This%Alpha, Beta=This%Beta)
+      PDF = This%ComputePDF(X=X, Alpha=This%Alpha, Beta=This%Beta)
     end if
 
   end function
@@ -326,25 +326,25 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF_R0D(This, X)
+  function CDF(This, X)
 
-    real(rkp)                                                         ::    CDF_R0D
+    real(rkp)                                                         ::    CDF
 
     class(DistGamma_Type), intent(in)                                 ::    This
     real(rkp), intent(in)                                             ::    X
 
-    character(*), parameter                                           ::    ProcName='CDF_R0D'
+    character(*), parameter                                           ::    ProcName='CDF'
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
-      CDF_R0D = This%ComputeCDF(X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B)
+      CDF = This%ComputeCDF(X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B)
     else if (This%DoubleTruncatedLeft) then
-      CDF_R0D = This%ComputeCDF(X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A)
+      CDF = This%ComputeCDF(X=X, Alpha=This%Alpha, Beta=This%Beta, A=This%A)
     else if (This%TruncatedRight) then
-      CDF_R0D = This%ComputeCDF(X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B)
+      CDF = This%ComputeCDF(X=X, Alpha=This%Alpha, Beta=This%Beta, B=This%B)
     else
-      CDF_R0D = This%ComputeCDF(X=X, Alpha=This%Alpha, Beta=This%Beta)
+      CDF = This%ComputeCDF(X=X, Alpha=This%Alpha, Beta=This%Beta)
     end if
 
   end function
@@ -406,25 +406,25 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF_R0D(This, P)
+  function InvCDF(This, P)
 
-    real(rkp)                                                         ::    InvCDF_R0D
+    real(rkp)                                                         ::    InvCDF
 
     class(DistGamma_Type), intent(in)                                 ::    This
     real(rkp), intent(in)                                             ::    P
 
-    character(*), parameter                                           ::    ProcName='InvCDF_R0D'
+    character(*), parameter                                           ::    ProcName='InvCDF'
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
-      InvCDF_R0D = This%ComputeInvCDF(P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B)
+      InvCDF = This%ComputeInvCDF(P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A, B=This%B)
     else if (This%DoubleTruncatedLeft) then
-      InvCDF_R0D = This%ComputeInvCDF(P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A)
+      InvCDF = This%ComputeInvCDF(P=P, Alpha=This%Alpha, Beta=This%Beta, A=This%A)
     else if (This%TruncatedRight) then
-      InvCDF_R0D = This%ComputeInvCDF(P=P, Alpha=This%Alpha, Beta=This%Beta, B=This%B)
+      InvCDF = This%ComputeInvCDF(P=P, Alpha=This%Alpha, Beta=This%Beta, B=This%B)
     else
-      InvCDF_R0D = This%ComputeInvCDF(P=P, Alpha=This%Alpha, Beta=This%Beta)
+      InvCDF = This%ComputeInvCDF(P=P, Alpha=This%Alpha, Beta=This%Beta)
     end if
 
   end function

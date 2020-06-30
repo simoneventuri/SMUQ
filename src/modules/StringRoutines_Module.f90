@@ -14,15 +14,11 @@ public                                                                ::    Conv
 public                                                                ::    ConvertToInteger
 public                                                                ::    ConvertToIntegers
 public                                                                ::    ConvertToInteger4
-public                                                                ::    ConvertToInteger4s
 public                                                                ::    ConvertToInteger8
-public                                                                ::    ConvertToInteger8s
 public                                                                ::    ConvertToReal
 public                                                                ::    ConvertToReals
 public                                                                ::    ConvertToReal4
-public                                                                ::    ConvertToReal4s
 public                                                                ::    ConvertToReal8
-public                                                                ::    ConvertToReal8s
 public                                                                ::    ConvertToLogical
 public                                                                ::    ConvertToLogicals
 public                                                                ::    ConvertToComplex
@@ -593,7 +589,7 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function Convert_String0D_To_R41D(String, Values, Separator)
+subroutine Convert_String0D_To_R41D(String, Values, Separator)
 
   class(SMUQString_Type), intent(in)                                  ::    String
   real(4), allocatable, dimension(:), intent(inout)                   ::    Values
@@ -608,7 +604,7 @@ function Convert_String0D_To_R41D(String, Values, Separator)
 
   call ConvertToReals(String=String%Get(), Values=Values, Separator=SeparatorLoc)
 
-end function
+end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -644,10 +640,10 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function Convert_String1D_To_R41D(Strings, Values)
+subroutine Convert_String1D_To_R41D(Strings, Values)
 
   class(SMUQString_Type), dimension(:), intent(in)                    ::    Strings
-  integer(4), allocatable, dimension(:), intent(inout)                ::    Values
+  real(4), allocatable, dimension(:), intent(inout)                   ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_String1D_To_R41D'
   integer                                                             ::    StatLoc=0
@@ -671,7 +667,7 @@ function Convert_String1D_To_R41D(Strings, Values)
     Values(i) = ConvertToReal4(String=Strings(i)%Get())
   end do
 
-end function
+end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------

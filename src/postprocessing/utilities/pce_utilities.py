@@ -116,8 +116,8 @@ def plot_sobol_indices_single(response, i_cell, variables):
 
     fig1, ax1 = plt.subplots()
 
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+#    mng = plt.get_current_fig_manager()
+#    mng.window.showMaximized()
     y_pos = np.arange(len(variables))
     ax1.barh(y=y_pos , width=response_sobol_total, \
              tick_label=variable_names, align='center')
@@ -129,8 +129,8 @@ def plot_sobol_indices_single(response, i_cell, variables):
 
     fig2, ax2 = plt.subplots()
 
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+#    mng = plt.get_current_fig_manager()
+#    mng.resize(*mng.window.maxsize())
 
     ax2.barh(y=y_pos, width=response_sobol_first, \
              tick_label=variable_names, align='center')
@@ -171,8 +171,8 @@ def plot_sobol_indices(response, variables):
     fig1, ax1 = plt.subplots()
     ax2 = ax1.twinx()
 
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+#    mng = plt.get_current_fig_manager()
+#    mng.resize(*mng.window.maxsize())
 
     for i, variable in enumerate(variables):
         ax1.plot(x, total_sobol[:,i],\
@@ -211,8 +211,8 @@ def plot_sobol_indices(response, variables):
 
     fig2, ax3 = plt.subplots()
     
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
+#    mng = plt.get_current_fig_manager()
+#    mng.resize(*mng.window.maxsize())
 
     for i, variable in enumerate(variables):
         ax3.plot(x, first_sobol[:,i],\

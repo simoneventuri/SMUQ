@@ -192,8 +192,7 @@ contains
     integer                                                           ::    NbSections=0
     integer                                                           ::    i
 
-    allocate(SectionNames, source=ConvertToStrings(Value=SectionChain, Separator='>'), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='SectionNames', ProcName=ProcName, stat=StatLoc)
+    call ConvertToStrings(Value=SectionChain, Strings=SectionNames, Separator='>')
 
     NbSections = size(SectionNames,1)
 

@@ -167,6 +167,7 @@ contains
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     integer, allocatable, dimension(:)                                ::    VarI1D
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    VarString1D
     integer                                                           ::    NbDataSets
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     integer                                                           ::    i
@@ -191,8 +192,11 @@ contains
     ParameterName = 'labels'
     call Input%GetValue(Value=VarC0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
 
-    allocate(This%Coordinateslabels, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
+    call ConvertToStrings(Value=VarC0D, Strings=VarString1D, Separator=' ')
+    allocate(This%Coordinateslabels, source=VarString1D, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Coordinateslabels', ProcName=ProcName, stat=StatLoc)
+    deallocate(VarString1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
 
     SubSectionName = SectionName // '>values'
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
@@ -221,9 +225,9 @@ contains
       ParameterName = 'column'
       call Input%GetValue(ParameterName=ParameterName, Value=VarC0D, SectionName=SectionName, Mandatory=.false., Found=Found)
       if (Found) then
-        VarI1D = ConvertToIntegers(String=VarC0D)
+        call ConvertToIntegers(String=VarC0D, Values=VarI1D)
       else
-        VarI1D = LinSequence(SeqStart=1, SeqEnd=size(VarR2D,2))
+        call LinSequence(Values=VarI1D, Start=1, End=size(VarR2D,2))
       end if
       This%NbDataSets = size(VarI1D,1)
 
@@ -262,6 +266,7 @@ contains
     character(*), optional, intent(in)                                ::    Directory
 
     character(*), parameter                                           ::    ProcName='GetInput'
+    integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     character(:), allocatable                                         ::    DirectorySub
@@ -272,6 +277,7 @@ contains
     type(SMUQFile_Type)                                               ::    File
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     integer                                                           ::    i
+    integer, allocatable, dimension(:)                                ::    VarI1D
 
     if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
@@ -296,8 +302,8 @@ contains
     call GetInput%AddParameter(Name='labels', Value=ConvertToString(This%CoordinatesLabels), SectionName=SectionName)
     SubSectionName = 'values'
     call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
-    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
-                                                                                                              Mandatory=.true.)
+    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName, &
+                                    Mandatory=.true.)
     if (ExternalFlag) then
       FileName = DirectoryLoc // '/coordinates.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
@@ -310,14 +316,15 @@ contains
     if (This%DataDefined) then
       SectionName = 'data'
       call GetInput%AddSection(SectionName=SectionName)
-
-      call GetInput%AddParameter(Name='column', Value=ConvertToString(LinSequence(SeqStart=1,SeqEnd=This%NbDataSets)),           &
-                                                                                                         SectionName=SectionName)
+      call LinSequence(Values=VarI1D, Start=1, End=This%NbDataSets)
+      call GetInput%AddParameter(Name='column', Value=ConvertToString(Values=VarI1D), SectionName=SectionName)
+      deallocate(VarI1D, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)
 
       SubSectionName = 'values'
       call GetInput%AddSection(SectionName=SubSectionName, To_Subsection=SectionName)
-      call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,           &
-                                                                                                                Mandatory=.true.)
+      call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName, &
+                                      Mandatory=.true.)
       if (ExternalFlag) then
         FileName = DirectoryLoc // '/data.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
