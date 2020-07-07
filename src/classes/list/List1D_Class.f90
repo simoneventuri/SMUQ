@@ -20,8 +20,9 @@ module List1D_Class
 
 use Parameters_Library
 use ArrayRoutines_Module
-use Logger_Class          ,only:  Logger
-use Error_Class           ,only:  Error
+use Logger_Class                                                  ,only:    Logger
+use Error_Class                                                   ,only:    Error
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -34,23 +35,31 @@ type                                                                  ::    List
   logical                                                             ::    Constructed=.false.
 contains
   procedure, public                                                   ::    Set
-  generic, public                                                     ::    Get                     =>    GetR1D,                 &
-                                                                                                          GetI1D,                 &
+  generic, public                                                     ::    Get                     =>    GetR41D,                &
+                                                                                                          GetR81D,                &
+                                                                                                          GetI41D,                &
+                                                                                                          GetI81D                 &
                                                                                                           GetC1D,                 &
                                                                                                           GetL1D,                 &
                                                                                                           GetCX1D
-  procedure, private                                                  ::    GetR1D
-  procedure, private                                                  ::    GetI1D
+  procedure, private                                                  ::    GetR41D
+  procedure, private                                                  ::    GetR81D
+  procedure, private                                                  ::    GetI41D
+  procedure, private                                                  ::    GetI81D
   procedure, private                                                  ::    GetC1D
   procedure, private                                                  ::    GetL1D
   procedure, private                                                  ::    GetCX1D
-  generic, public                                                     ::    GetPointer              =>    GetR1DPointer,          &
-                                                                                                          GetI1DPointer,          &
+  generic, public                                                     ::    GetPointer              =>    GetR41DPointer,         &
+                                                                                                          GetR81DPointer,         &
+                                                                                                          GetI41DPpointer,        &
+                                                                                                          GetI81DPointer,         &
                                                                                                           GetC1DPointer,          &
                                                                                                           GetL1DPointer,          &
                                                                                                           GetCX1DPointer
-  procedure, private                                                  ::    GetR1DPointer
-  procedure, private                                                  ::    GetI1DPointer
+  procedure, private                                                  ::    GetR41DPointer
+  procedure, private                                                  ::    GetR81DPointer
+  procedure, private                                                  ::    GetI41DPointer
+  procedure, private                                                  ::    GetI81DPointer
   procedure, private                                                  ::    GetC1DPointer
   procedure, private                                                  ::    GetL1DPointer
   procedure, private                                                  ::    GetCX1DPointer
@@ -64,299 +73,390 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Set(This, Values)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Set(This, Values)
 
-    class(List1D_Type), intent(inout)                                 ::    This
-    class(*), dimension(:), intent(in)                                ::    Values
+  class(List1D_Type), intent(inout)                                   ::    This
+  class(*), dimension(:), intent(in)                                  ::    Values
 
-    character(*), parameter                                           ::    ProcName='Set'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Set'
+  integer                                                             ::    StatLoc=0
 
-    if (This%Constructed) call This%Purge()
+  if (This%Constructed) call This%Purge()
 
-    allocate(This%Values, source=Values, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Tail%Values', stat=StatLoc)
+  allocate(This%Values, source=Values, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Tail%Values', stat=StatLoc)
 
-    This%Constructed=.true.
+  This%Constructed=.true.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetR1D(This, Values)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetR41D(This, Values)
 
-    class(List1D_Type), intent(in)                                    ::    This
-    real(rkp), dimension(:), allocatable, intent(out)                 ::    Values
+  class(List1D_Type), intent(in)                                      ::    This
+  real(4), dimension(:), allocatable, intent(inout)                   ::    Values
 
-    character(*), parameter                                           ::    ProcName='GetR1D'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='GetR41D'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    select type (Value => This%Values)
-      type is (real(rkp))
-        allocate(Values, source=Value, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
-      class default
-        call Error%Raise("Requested value does not match the requested type")
-    end select
+  select type (Value => This%Values)
+    type is (real(4))
+      call EnsureArraySize(Array=Values, Size1=size(Value,1), DefaultValue=.false.)
+      Values = Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetR1DPointer(This, Values)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetR81D(This, Values)
 
-    class(List1D_Type), target, intent(in)                            ::    This
-    real(rkp), dimension(:), pointer, intent(inout)                   ::    Values
+  class(List1D_Type), intent(in)                                      ::    This
+  real(8), dimension(:), allocatable, intent(inout)                   ::    Values
 
-    character(*), parameter                                           ::    ProcName='GetR1DPointer'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='GetR81D'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
+  select type (Value => This%Values)
+    type is (real(8))
+      call EnsureArraySize(Array=Values, Size1=size(Value,1), DefaultValue=.false.)
+      Values = Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-    select type (Value => This%Values)
-      type is (real(rkp))
-        Values => Value
-      class default
-        call Error%Raise("Requested value does not match the requested type")
-    end select
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetR41DPointer(This, Values)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetI1D(This, Values)
+  class(List1D_Type), target, intent(in)                              ::    This
+  real(4), dimension(:), pointer, intent(inout)                       ::    Values
 
-    class(List1D_Type), intent(in)                                    ::    This
-    integer, dimension(:), allocatable, intent(out)                   ::    Values
+  character(*), parameter                                             ::    ProcName='GetR41DPointer'
+  integer                                                             ::    StatLoc=0
 
-    character(*), parameter                                           ::    ProcName='GetI1D'
-    integer                                                           ::    StatLoc=0
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+  if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-    select type (Value => This%Values)
-      type is (integer)
-        allocate(Values, source=Value, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
-      class default
-        call Error%Raise("Requested value does not match the requested type")
-    end select
+  select type (Value => This%Values)
+    type is (real(4))
+      Values => Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetI1DPointer(This, Values)
 
-    class(List1D_Type), target, intent(in)                            ::    This
-    integer, dimension(:), pointer, intent(inout)                     ::    Values
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetR81DPointer(This, Values)
 
-    character(*), parameter                                           ::    ProcName='GetI1DPointer'
-    integer                                                           ::    StatLoc=0
+  class(List1D_Type), target, intent(in)                              ::    This
+  real(8), dimension(:), pointer, intent(inout)                       ::    Values
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetR81DPointer'
+  integer                                                             ::    StatLoc=0
 
-    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    select type (Value => This%Values)
-      type is (integer)
-        Values => Value
-      class default
-        call Error%Raise("Requested value does not match the requested type")
-    end select
+  if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  select type (Value => This%Values)
+    type is (real(8))
+      Values => Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetC1D(This, Values)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(List1D_Type), intent(in)                                    ::    This
-    character(:), dimension(:), allocatable, intent(out)              ::    Values
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetI41D(This, Values)
 
-    character(*), parameter                                           ::    ProcName='GetC1D'
-    integer                                                           ::    StatLoc=0
+  class(List1D_Type), intent(in)                                      ::    This
+  integer(4), dimension(:), allocatable, intent(inout)                ::    Values
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetI41D'
+  integer                                                             ::    StatLoc=0
 
-    select type (Value => This%Values)
-      type is (character(*))
-        allocate(Values, source=Value, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
-      class default
-        call Error%Raise("Requested value does not match the requested type")
-    end select
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  select type (Value => This%Values)
+    type is (integer(4))
+      call EnsureArraySize(Array=Values, Size1=size(Value,1), DefaultValue=.false.)
+      Values = Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetC1DPointer(This, Values)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(List1D_Type), target, intent(in)                            ::    This
-    character(:), dimension(:), pointer, intent(inout)                ::    Values
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetI81D(This, Values)
 
-    character(*), parameter                                           ::    ProcName='GetC1DPointer'
-    integer                                                           ::    StatLoc=0
+  class(List1D_Type), intent(in)                                      ::    This
+  integer(4), dimension(:), allocatable, intent(inout)                ::    Values
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetI81D'
+  integer                                                             ::    StatLoc=0
 
-    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    select type (Value => This%Values)
-      type is (character(*))
-        Values => Value
-      class default
-        call Error%Raise("Requested value does not match the requested type")
-    end select
+  select type (Value => This%Values)
+    type is (integer(8))
+      call EnsureArraySize(Array=Values, Size1=size(Value,1), DefaultValue=.false.)
+      Values = Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetL1D(This, Values)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetI41DPointer(This, Values)
 
-    class(List1D_Type), intent(in)                                    ::    This
-    logical, dimension(:), allocatable, intent(out)                   ::    Values
+  class(List1D_Type), target, intent(in)                              ::    This
+  integer(4), dimension(:), pointer, intent(inout)                    ::    Values
 
-    character(*), parameter                                           ::    ProcName='GetL1D'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='GetI41DPointer'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    select type (Value => This%Values)
-      type is (logical)
-        allocate(Values, source=Value, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
-      class default
-        call Error%Raise("Requested value does not match the requested type")
-    end select
+  if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  select type (Value => This%Values)
+    type is (integer(4))
+      Values => Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetL1DPointer(This, Values)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(List1D_Type), target, intent(in)                            ::    This
-    logical, dimension(:), pointer, intent(inout)                     ::    Values
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetI81DPointer(This, Values)
 
-    character(*), parameter                                           ::    ProcName='GetL1DPointer'
-    integer                                                           ::    StatLoc=0
+  class(List1D_Type), target, intent(in)                              ::    This
+  integer(8), dimension(:), pointer, intent(inout)                    ::    Values
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetI81DPointer'
+  integer                                                             ::    StatLoc=0
 
-    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    select type (Value => This%Values)
-      type is (logical)
-        Values => Value
-      class default
-        call Error%Raise("Requested value does not match the requested type")
-    end select
+  if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  select type (Value => This%Values)
+    type is (integer(8))
+      Values => Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetCX1D(This, Values)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(List1D_Type), intent(in)                                    ::    This
-    complex, dimension(:), allocatable, intent(out)                   ::    Values
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetC1D(This, Values)
 
-    character(*), parameter                                           ::    ProcName='GetCX1D'
-    integer                                                           ::    StatLoc=0
+  class(List1D_Type), intent(in)                                      ::    This
+  type(SMUQString_Type), dimension(:), allocatable, intent(inout)     ::    Values
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetC1D'
+  integer                                                             ::    StatLoc=0
 
-    select type (Value => This%Values)
-      type is (complex)
-        allocate(Values, source=Value, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Values', stat=StatLoc)
-      class default
-        call Error%Raise("Requested value does not match the requested type")
-    end select
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  select type (Value => This%Values)
+    type is (SMUQString_Type)
+      call EnsureArraySize(Array=Values, Size1=size(Value,1), DefaultValue=.false.)
+      Values = Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetCX1DPointer(This, Values)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(List1D_Type), target, intent(in)                            ::    This
-    complex, dimension(:), pointer, intent(inout)                     ::    Values
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetC1DPointer(This, Values)
 
-    character(*), parameter                                           ::    ProcName='GetCX1DPointer'
-    integer                                                           ::    StatLoc=0
+  class(List1D_Type), target, intent(in)                              ::    This
+  type(SMUQString_Type), dimension(:), pointer, intent(inout)         ::    Values
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetC1DPointer'
+  integer                                                             ::    StatLoc=0
 
-    if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    select type (Value => This%Values)
-      type is (complex)
-        Values => Value
-      class default
-        call Error%Raise("Requested value does not match the requested type")
-    end select
+  if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  select type (Value => This%Values)
+    type is (SMUQString_Type)
+      Values => Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Purge(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(List1D_Type), intent(inout)                                 ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetL1D(This, Values)
 
-    character(*), parameter                                           ::    ProcName='Purge'
-    integer                                                           ::    StatLoc=0
+  class(List1D_Type), intent(in)                                      ::    This
+  logical, dimension(:), allocatable, intent(inout)                   ::    Values
 
-    if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
+  character(*), parameter                                             ::    ProcName='GetL1D'
+  integer                                                             ::    StatLoc=0
 
-    This%Constructed=.false.
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  select type (Value => This%Values)
+    type is (logical)
+      call EnsureArraySize(Array=Values, Size1=size(Value,1), DefaultValue=.false.)
+      Values = Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(List1D_Type), intent(out)                                   ::    LHS
-    class(List1D_Type), intent(in)                                    ::    RHS
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetL1DPointer(This, Values)
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  class(List1D_Type), target, intent(in)                              ::    This
+  logical, dimension(:), pointer, intent(inout)                       ::    Values
 
-    call LHS%Purge()
+  character(*), parameter                                             ::    ProcName='GetL1DPointer'
+  integer                                                             ::    StatLoc=0
 
-    LHS%Constructed = RHS%Constructed
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-    if (RHS%Constructed) then
-      allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='LHS%Values', ProcName=ProcName, stat=StatLoc)
-    end if
+  if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  select type (Value => This%Values)
+    type is (logical)
+      Values => Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine FinalizerList(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    type(List1D_Type), intent(inout)                                  ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetCX1D(This, Values)
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+  class(List1D_Type), intent(in)                                      ::    This
+  complex, dimension(:), allocatable, intent(inout)                   ::    Values
 
-    if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
+  character(*), parameter                                             ::    ProcName='GetCX1D'
+  integer                                                             ::    StatLoc=0
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+
+  select type (Value => This%Values)
+    type is (complex)
+      call EnsureArraySize(Array=Values, Size1=size(Value,1), DefaultValue=.false.)
+      Values = Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetCX1DPointer(This, Values)
+
+  class(List1D_Type), target, intent(in)                              ::    This
+  complex, dimension(:), pointer, intent(inout)                       ::    Values
+
+  character(*), parameter                                             ::    ProcName='GetCX1DPointer'
+  integer                                                             ::    StatLoc=0
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
+
+  if (associated(Values)) call Error%Raise("Passed down pointer already associated with another target")
+
+  select type (Value => This%Values)
+    type is (complex)
+      Values => Value
+    class default
+      call Error%Raise("Requested value does not match the requested type")
+  end select
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Purge(This)
+
+  class(List1D_Type), intent(inout)                                   ::    This
+
+  character(*), parameter                                             ::    ProcName='Purge'
+  integer                                                             ::    StatLoc=0
+
+  if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
+
+  This%Constructed=.false.
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
+
+  class(List1D_Type), intent(out)                                     ::    LHS
+  class(List1D_Type), intent(in)                                      ::    RHS
+
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+
+  call LHS%Purge()
+
+  LHS%Constructed = RHS%Constructed
+
+  if (RHS%Constructed) then
+    allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='LHS%Values', ProcName=ProcName, stat=StatLoc)
+  end if
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine FinalizerList(This)
+
+  type(List1D_Type), intent(inout)                                    ::    This
+
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
+
+  if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

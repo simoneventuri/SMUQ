@@ -366,7 +366,7 @@ subroutine LinSpace(Values, Min, Max, NbNodes)
   if (NbNodes < 1) call Error%Raise(Line='Specified number of nodes below minimum of 1', ProcName=ProcName)
   if (size(Values,1) /= NbNodes) call Error%Raise('Incompatible array', ProcName=ProcName)
 
-  d = real(NbNodes - 1) 
+  d = real(NbNodes - 1,rkp) 
   h = (Max - Min) / d
 
   Values(1) = Min

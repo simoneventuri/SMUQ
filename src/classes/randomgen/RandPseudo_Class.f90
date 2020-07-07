@@ -294,7 +294,7 @@ end subroutine
 subroutine DrawVec(This, Samples, NbSamples, DrawType)
 
   class(RandPseudo_Type), intent(inout)                               ::    This
-  real(rkp), allocatable, dimension(:), intent(inout)                 ::    Samples
+  real(rkp), dimension(:), intent(inout)                              ::    Samples
   integer, intent(in)                                                 ::    NbSamples
   integer, optional, intent(in)                                       ::    DrawType
 
@@ -305,22 +305,12 @@ subroutine DrawVec(This, Samples, NbSamples, DrawType)
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
+  if (size(Samples,1) /= NbSamples) call Error%Raise('Incompatible array', ProcName=ProcName)
+
   if (present(DrawType)) then 
     DrawTypeLoc = DrawType
   else
     DrawTypeLoc = This%DrawType
-  end if
-
-  if (allocated(Samples)) then
-    if (size(Samples,1) /= NbSamples) then
-      deallocate(Samples, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-
-  if (.not. allocated(Samples)) then
-    allocate(Samples(NbSamples), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
   end if
 
   i = 1
@@ -348,7 +338,7 @@ end subroutine
 subroutine DrawMat(This, Samples, NbSamples, NbDim, DrawType)
 
   class(RandPseudo_Type), intent(inout)                               ::    This
-  real(rkp), allocatable, dimension(:,:), intent(inout)               ::    Samples
+  real(rkp), dimension(:,:), intent(inout)                            ::    Samples
   integer, intent(in)                                                 ::    NbSamples
   integer, intent(in)                                                 ::    NbDim
   integer, optional, intent(in)                                       ::    DrawType
@@ -367,16 +357,8 @@ subroutine DrawMat(This, Samples, NbSamples, NbDim, DrawType)
     DrawTypeLoc = This%DrawType
   end if
 
-  if (allocated(Samples)) then
-    if (size(Samples,1) /= NbDim .or. size(Samples,2) /= NbSamples) then
-      deallocate(Samples, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Samples)) then
-    allocate(Samples(NbDim,NbSamples), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Samples,1) /= NbDim) call Error%Raise('Incompatible array', ProcName=ProcName)
+  if (size(Samples,2) /= NbSamples) call Error%Raise('Incompatible array', ProcName=ProcName)
 
   i = 1
   ii = 1

@@ -131,16 +131,12 @@ contains
     integer                                                           ::    StatLoc=0
     type(InputSection_Type), pointer                                  ::    InputSection=>null()
     type(DistInfBoundTransf_Type), allocatable                        ::    DistProb
-    class(DistProb_Type), pointer                                     ::    DistProbPtr
-    class(DistProbContainer_Type), allocatable, dimension(:)          ::    DistProbVec
+    type(DistProbContainer_Type), allocatable, dimension(:)           ::    OrigDistProbVec
     type(ParamSpace_Type)                                             ::    OrigSampleSpace
     character(:), allocatable                                         ::    SectionName
     character(:), allocatable                                         ::    SubSectionName
     character(:), allocatable                                         ::    ParameterName
     real(rkp)                                                         ::    VarR0D
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D_1
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D_2
-    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     integer                                                           ::    VarI0D
     character(:),  allocatable                                        ::    VarC0D
     logical                                                           ::    VarL0D
@@ -167,6 +163,9 @@ contains
     allocate(This%Label(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
 
+    allocate(OrigDistProbVec(This%NbDim), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='OrigDistProbVec', ProcName=ProcName, stat=StatLoc)
+
     i = 1
     do i = 1, This%NbDim
       SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
@@ -185,6 +184,7 @@ contains
       nullify(InputSection)
       call This%DistProb(i)%Set(Object=DistProb)
       call DistProb%Reset()
+      call OrigDistProbVec(i)%Set(Object=DistProb%GetOriginalPtr())
     end do 
 
     i = 1
@@ -202,28 +202,23 @@ contains
       nullify(InputSection)
       This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
     else
-      This%CorrMat = EyeR(N=This%NbDim)
+      call Eye(Array=This%CorrMat, N=This%NbDim)
       This%Correlated = .false.
     end if
 
     if (size(This%Corrmat,1) /= This%NbDim .or. size(This%CorrMat,2) /= This%NbDim) call Error%Raise(                        &
                                                        Line='Improper sizes for the input correlation matrix', ProcName=ProcName)
 
-    allocate(DistProbVec(This%NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
-    i = 1
-    do i = 1, This%NbDim
-      DistProbPtr => DistProbVec(i)%GetPointer()
-      call DistProbVec(i)%Set(Object=DistProbPtr)
-    end do
-
-    call This%OrigSampleSpace%Construct(Distributions=DistProbVec, CorrMat=This%CorrMat, Labels=This%Label, Names=This%ParamName)
+    call This%OrigSampleSpace%Construct(Distributions=OrigDistProbVec, CorrMat=This%CorrMat, &
+                                        Labels=This%Label, Names=This%ParamName)
 
     if (This%Correlated .or. This%OrigSampleSpace%IsCorrelated()) call Error%Raise('Integral sample space ' //                 &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName)
 
-
     This%Constructed=.true.
+
+    deallocate(OrigDistProbVec, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='OrigDistProbVec', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -247,11 +242,11 @@ contains
 
     allocate(This%Label(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-    This%Label = OriginalSampleSpace%GetLabel()
+    call OriginalSampleSpace%GetLabels(Labels=This%Label)
 
     allocate(This%ParamName(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Paramname', ProcName=ProcName, stat=StatLoc)
-    This%ParamName = OriginalSampleSpace%GetName()
+    call OriginalSampleSpace%GetNames(Names=This%ParamName)
 
     allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)

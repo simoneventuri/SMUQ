@@ -384,7 +384,7 @@ contains
     call This%MCMC%GenerateChain(SamplingTarget=Posterior, SampleSpace=TargetSpace, ParameterChain=ParamChain,                   &
                                              TargetChain=PosteriorChain, MiscChain=MiscChain, OutputDirectory=OutputDirectoryLoc)
 
-    ParamChain = TargetSpace%InvTransform(Z=ParamChain)
+    call TargetSpace%InvTransform(Z=ParamChain)
 
     if (allocated(Output)) deallocate(Output, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='Output', ProcName=ProcName, stat=StatLoc)
@@ -445,7 +445,7 @@ contains
 
         Prior = PriorDistribution%PDF(X=OrigInputValues)
 
-        OrigInputValues = TargetSpace%InvTransform(Z=OrigInputValues)
+        call TargetSpace%InvTransform(Z=OrigInputValues)
 
         call InputLoc%Construct(Input=OrigInputValues, Labels=Labels(1:NbDimOrig))
 
@@ -513,7 +513,8 @@ contains
         if (Prior > Zero) then
 
           call This%HierarchicalSpace%Generate(Input=InputLoc, ParamSpace=ParamSpaceRealization)
-          HierSamples = ParamSpaceRealization%Draw(Sampler=This%HierarchicalSampler, NbSamples=This%HierarchicalNbSamples)
+          call ParamSpaceRealization%Draw(Samples=HierSamples, Sampler=This%HierarchicalSampler, &
+                                          NbSamples=This%HierarchicalNbSamples)
           NbHierSamples = This%HierarchicalNbSamples
 
           if (allocated(HierOutput)) then
@@ -596,12 +597,14 @@ contains
     character(*), intent(in)                                          ::    Directory
 
     character(*), parameter                                           ::    ProcName='WriteOutput'
+    integer                                                           ::    StatLoc=0
     type(InputSection_Type)                                           ::    Input
     character(:), allocatable                                         ::    FileName
     character(:), allocatable                                         ::    PrefixLoc
     character(:), allocatable                                         ::    DirectoryLoc
     logical                                                           ::    SilentLoc
     type(SMUQFile_Type)                                               ::    File
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Names 
 
     if (len_trim(Directory) /= 0) then
 
@@ -616,9 +619,13 @@ contains
 
       PrefixLoc = Directory
 
+      call SampleSpace%GetNames(Names=Names)
       FileName = '/parameter_names.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-      call ExportArray(Array=SampleSpace%GetName(), File=File)
+      call ExportArray(Array=Names, File=File)
+      deallocate(Names, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='Names', ProcName=ProcName, stat=StatLoc)
+
 
       FileName = '/prior_chain.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')

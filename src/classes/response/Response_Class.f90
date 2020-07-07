@@ -573,21 +573,21 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCoordinateLabels(This)
-
-    type(SMUQString_Type), allocatable, dimension(:)                  ::    GetCoordinateLabels
+  subroutine GetCoordinateLabels(This, Labels)
 
     class(Response_Type), intent(in)                                  ::    This
+    type(SMUQString_Type), dimension(:), intent(inout)                ::    Labels
 
     character(*), parameter                                           ::    ProcName='GetCoordinateLabels'
     integer                                                           ::    StatLoc=0
 
     if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    allocate(GetCoordinateLabels, source=This%CoordinatesLabels, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetCoordinatesLabels', ProcName=ProcName, stat=StatLoc)
+    if (size(Labels,1) /= This%NbIndCoordinates) call Error%Raise('Incompatible array', ProcName=ProcName)
 
-  end function
+    Labels = This%CoordinatesLabels
+
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

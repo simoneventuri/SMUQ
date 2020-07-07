@@ -363,8 +363,10 @@ contains
     call StrictTriangular(Array=B, UL='L')
 
     VarI0D = NbGridLevelsLoc-PerturbationSizeLoc
+    allocate(VarR1D(VarI0D+1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
-    VarR1D = LinSequence(SeqStart=0, SeqEnd=VarI0D)
+    call LinSpace(Values=VarR1D, Min=Zero, Max=real(VarI0D,rkp), NbNodes=VarI0D+1)
     VarR1D = VarR1D / real(VarI0D,rkp)
 
     call This%Sampler%Draw(NbSamples=NbTrajectories, NbDim=NbDim, Samples=VarR2D)
@@ -401,7 +403,7 @@ contains
 
     i = 1
     do i = 1, NbTrajectories
-      PermutationIndices = LinSequence(SeqStart=1, SeqEnd=NbDim)
+      call LinSequence(Values=Permutationindices, Start=1, End=NbDim)
       call ScrambleArray(Array=PermutationIndices, RNG=This%RNG)
       if (present(Indices)) Indices(:,i) = PermutationIndices
       P = Zero
@@ -409,7 +411,7 @@ contains
       Signs = 1
       ii = 1
       do ii = 1, NbDim
-        VarR0D = This%RNG%Draw()
+        call This%RNG%Draw(Sample=VarR0D)
         if (VarR0D < 0.5) Signs(ii) = - 1
         P(PermutationIndices(ii),ii) = One
       end do
@@ -425,8 +427,8 @@ contains
         VarR2D(:,ii) = (VarR2D(:,ii)*Signs(ii) + One)*VarR0D + XStar(ii,i)
       end do
 
-      call DGEMM('N', 'T', NbDim, NbDimP1, NbDim, One, P, NbDim, VarR2D, NbDimP1, Zero,                                          &
-                                                                                Trajectories(:,(i-1)*NbDimP1+1:i*NbDimP1), NbDim)
+      call DGEMM('N', 'T', NbDim, NbDimP1, NbDim, One, P, NbDim, VarR2D, NbDimP1, Zero, &
+                 Trajectories(:,(i-1)*NbDimP1+1:i*NbDimP1), NbDim)
 
     end do
 

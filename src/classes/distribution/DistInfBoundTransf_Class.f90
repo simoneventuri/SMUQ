@@ -63,6 +63,7 @@ contains
   procedure, private                                                  ::    InvTransform_1D
   generic, public                                                     ::    fInvTransform           =>    fInvTransform_0D
   procedure, private                                                  ::    fInvTransform_0D
+  procedure, public                                                   ::    GetOriginalPtr
   procedure, public                                                   ::    WriteInfo
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer     
@@ -393,6 +394,18 @@ contains
     end if
 
   end subroutine
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetOriginalPtr(This)
+
+    class(DistProb_Type), pointer                                     ::    GetOriginalPtr
+
+    class(DistInfBoundTransf_Type), target, intent(in)                ::    This
+
+    GetOriginalPtr => This%DistProb
+
+  end function
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -198,7 +198,7 @@ contains
       nullify(InputSection)
       This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
     else
-      This%CorrMat = EyeR(N=This%NbDim)
+      call Eye(Array=This%CorrMat)
       This%Correlated = .false.
     end if
 
@@ -227,19 +227,19 @@ contains
 
     allocate(This%Label(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-    This%Label = OriginalSampleSpace%GetLabel()
+    call OriginalSampleSpace%GetLabels(Labels=This%Label)
 
     allocate(This%ParamName(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Paramname', ProcName=ProcName, stat=StatLoc)
-    This%ParamName = OriginalSampleSpace%GetName()
+    call OriginalSampleSpace%GetNames(Names=This%ParamName)
 
     allocate(This%DistProb(This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
-    This%DistProb = OriginalSampleSpace%GetDistribution()
+    call OriginalSampleSpace%GetDistributions(Distributions=This%DistProb)
 
     allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
-    This%CorrMat = OriginalSampleSpace%GetCorrMat()
+    call OriginalSampleSpace%GetCorrMat(Corrmat=This%CorrMat)
 
     This%Correlated = OriginalSampleSpace%IsCorrelated()
 

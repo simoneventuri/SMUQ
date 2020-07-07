@@ -20,6 +20,7 @@ module SampleQuasiMC_Class
 
 use Parameters_Library
 use Input_Library
+use ArrayRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
@@ -224,7 +225,9 @@ subroutine Draw0D(This, Samples, NbSamples)
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-  call This%LowDiscSequence%Get(Sequence=Samples, NbPoints=NbSamples)
+  call EnsureArraySize(Array=Samples, Size1=NbSamples)
+
+  call This%LowDiscSequence%GetSequence(Sequence=Samples, NbPoints=NbSamples)
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -242,7 +245,9 @@ subroutine Draw1D(This, Samples, NbSamples, NbDim)
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-  call This%LowDiscSequence%Get(Sequence=Samples, NbPoints=NbSamples, NbDim=NbDim)
+  call EnsureArraySize(Array=Samples, Size1=NbDim, Size2=NbSamples)
+
+  call This%LowDiscSequence%GetSequence(Sequence=Samples, NbPoints=NbSamples, NbDim=NbDim)
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -262,7 +267,10 @@ subroutine Enrich0D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
 
   if (NbEnrichmentSamples < 1) call Error%Raise(Line='Inquired less than 1 enrichment sample', ProcName=ProcName)
   
-  call This%LowDiscSequence%Get(Sequence=EnrichmentSamples, NbPoints=NbEnrichmentSamples, Offset=size(Samples,1))
+  call EnsureArraySize(Array=EnrichmentSamples, Size1=NbEnrichmentSamples)
+
+  call This%LowDiscSequence%GetSequence(Sequence=EnrichmentSamples, NbPoints=NbEnrichmentSamples, &
+                                        Offset=size(Samples,1))
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -285,7 +293,10 @@ subroutine Enrich1D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
 
   if (NbEnrichmentSamples < 1) call Error%Raise(Line='Inquired less than 1 enrichment sample', ProcName=ProcName)
 
-  call This%LowDiscSequence%Get(Sequence=EnrichmentSamples, NbPoints=NbEnrichmentSamples, NbDim=NbDim, Offset=size(Samples,2))
+  call EnsureArraySize(Array=EnrichmentSamples, Size1=NbDim, Size2=NbEnrichmentSamples)
+
+  call This%LowDiscSequence%GetSequence(Sequence=EnrichmentSamples, NbPoints=NbEnrichmentSamples, &
+                                        NbDim=NbDim, Offset=size(Samples,2))
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------

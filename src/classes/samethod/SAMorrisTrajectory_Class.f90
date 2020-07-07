@@ -46,6 +46,8 @@ use OnlineVarEstimator_Class                                      ,only:    Onli
 use OnlineMeanEstimator_Class                                     ,only:    OnlineMeanEstimator_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 use TrajectoryDesign_Class                                        ,only:    TrajectoryDesign_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
+
 implicit none
 
 private
@@ -519,6 +521,7 @@ contains
     logical                                                           ::    Converged
     real(rkp), allocatable, dimension(:)                              ::    Delta
     real(rkp), allocatable, dimension(:)                              ::    Snapshot
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Labels 
 
     if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
@@ -554,6 +557,10 @@ contains
 
     allocate(NbCellsOutput(NbResponses), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc)
+
+    allocate(Labels(SampleSpace%GetNbDim()), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
+    call SampleSpace%GetLabels(Labels=Labels)
 
     This%NbCells = 0
     i = 1
@@ -656,7 +663,7 @@ contains
 
         do ii = 1, NbInputs
           iii = iii + 1
-          call Input(ii)%Construct(Input=This%ParamSample(:,iii), Labels=SampleSpace%GetLabel())
+          call Input(ii)%Construct(Input=This%ParamSample(:,iii), Labels=Labels)
         end do
 
         if (.not. SilentLoc) then
@@ -738,10 +745,10 @@ contains
         if (This%ParamSampleStep < 2) Converged = .false.
         ii = 1
         do ii = 1, This%NbCells
-          Delta = This%Cells(ii)%GetSnapShot()
+          call This%Cells(ii)%GetSnapShot(Values=Delta)
           call This%Cells(ii)%TakeSnapShot()
           if (.not. Converged) cycle
-          SnapShot = This%Cells(ii)%GetSnapShot()
+          call This%Cells(ii)%GetSnapShot(Values=SnapShot)
           Delta = dabs(Delta - SnapShot)
 
           iii = 1
@@ -821,6 +828,9 @@ contains
     deallocate(NbCellsOutput, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc)
 
+    deallocate(Labels, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
+
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
@@ -847,6 +857,8 @@ contains
     integer                                                           ::    v
     integer                                                           ::    NbResponses
     integer, allocatable, dimension(:)                                ::    VarI1D
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     character(:), allocatable                                         ::    ResponseLabel
 
     if (len_trim(Directory) /= 0) then
@@ -887,33 +899,45 @@ contains
 
           FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mu.dat'
           call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-          call ExportArray(Array=This%Cells(iv)%GetMu(), File=File)
+          call This%Cells(iv)%GetMu(Values=VarR1D)
+          call ExportArray(Array=VarR1D, File=File)
 
           FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mu_star.dat'
           call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-          call ExportArray(Array=This%Cells(iv)%GetMuStar(), File=File)
+          call This%Cells(iv)%GetMuStar(Values=VarR1D)
+          call ExportArray(Array=VarR1D, File=File)
 
           FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sigma.dat'
           call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-          call ExportArray(Array=This%Cells(iv)%GetSigma(), File=File)
+          call This%Cells(iv)%GetSigma(Values=VarR1D)
+          call ExportArray(Array=VarR1D, File=File)
 
           if (This%HistoryFreq > 0) then
             call This%HistoryStep%Get(Values=VarI1D)
             FileName = '/' // ResponseLabel // '/history_step.dat'
             call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
             call ExportArray(Array=VarI1D, File=File, RowMajor=.true.)
+            deallocate(VarI1D, stat=StatLoc)
+            if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)
 
             FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mu_history.dat'
             call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ') 
-            call ExportArray(Array=This%Cells(iv)%GetMuHistory(), File=File, RowMajor=.false.)
+            call This%Cells(iv)%GetMuHistory(Values=VarR2D)
+            call ExportArray(Array=VarR2D, File=File, RowMajor=.false.)
 
             FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mu_star_history.dat'
             call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ') 
-            call ExportArray(Array=This%Cells(iv)%GetMuStarHistory(), File=File, RowMajor=.false.)
+            call This%Cells(iv)%GetMuStarHistory(Values=VarR2D)
+            call ExportArray(Array=VarR2D, File=File, RowMajor=.false.)
 
             FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sigma_history.dat'
             call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-            call ExportArray(Array=This%Cells(iv)%GetSigmaHistory(), File=File, RowMajor=.false.)
+            call This%Cells(iv)%GetSigmaHistory(Values=VarR2D)
+            call ExportArray(Array=VarR2D, File=File, RowMajor=.false.)
+
+            deallocate(VarR2D, stat=StatLoc)
+            if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
+
           end if
 
           ii = iii + 1
@@ -1389,20 +1413,26 @@ contains
 
     character(*), parameter                                           ::    ProcName='UpdateHistory_Cell'
     integer                                                           ::    StatLoc=0
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
-    call This%MuHistory%Append(Values=This%GetMu())
-    call This%MuStarHistory%Append(Values=This%GetMuStar())
-    call This%SigmaHistory%Append(Values=This%GetSigma())
+    call This%GetMu(Values=VarR1D)
+    call This%MuHistory%Append(Values=VarR1D)
+    call This%GetMuStar(Values=VarR1D)
+    call This%MuStarHistory%Append(Values=VarR1D)
+    call This%GetSigma(Values=VarR1D)
+    call This%SigmaHistory%Append(Values=VarR1D)
+
+    deallocate(VarR1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMu_Cell(This)
-
-    real(rkp), allocatable, dimension(:)                              ::    GetMu_Cell
+  subroutine GetMu_Cell(This, Values)
 
     class(Cell_Type), intent(in)                                      ::    This
+    real(rkp), allocatable, dimension(:), intent(inout)               ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetMu_Cell'
     integer                                                           ::    StatLoc=0
@@ -1411,24 +1441,21 @@ contains
 
     NbDim = size(This%MuEstimator,1)
 
-    allocate(GetMu_Cell(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetMu_Cell', ProcName=ProcName, stat=StatLoc)
-    GetMu_Cell = Zero
+    call EnsureArraySize(Array=Values, Size1=NbDIm, DefaultValue=.false.)
 
     i = 1
     do i = 1, NbDim
-      GetMu_Cell(i) = This%MuEstimator(i)%GetMean()
+      Values(i) = This%MuEstimator(i)%GetMean()
     end do
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMuStar_Cell(This)
-
-    real(rkp), allocatable, dimension(:)                              ::    GetMuStar_Cell
+  subroutine GetMuStar_Cell(This, Values)
 
     class(Cell_Type), intent(in)                                      ::    This
+    real(rkp), allocatable, dimension(:), intent(inout)               ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetMuStar_Cell'
     integer                                                           ::    StatLoc=0
@@ -1436,25 +1463,21 @@ contains
     integer                                                           ::    NbDim
 
     NbDim = size(This%MuEstimator,1)
-
-    allocate(GetMuStar_Cell(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetMuStar_Cell', ProcName=ProcName, stat=StatLoc)
-    GetMuStar_Cell = Zero
+    call EnsureArraySize(Array=Values, Size1=NbDIm, DefaultValue=.false.)
 
     i = 1
     do i = 1, NbDim
-      GetMuStar_Cell(i) = This%MuStarEstimator(i)%GetMean()
+      Values(i) = This%MuStarEstimator(i)%GetMean()
     end do
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSigma_Cell(This)
-
-    real(rkp), allocatable, dimension(:)                              ::    GetSigma_Cell
+  subroutine GetSigma_Cell(This, Values)
 
     class(Cell_Type), intent(in)                                      ::    This
+    real(rkp), allocatable, dimension(:), intent(inout)               ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetSigma_Cell'
     integer                                                           ::    StatLoc=0
@@ -1462,80 +1485,83 @@ contains
     integer                                                           ::    NbDim
 
     NbDim = size(This%MuEstimator,1)
-
-    allocate(GetSigma_Cell(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetSigma_Cell', ProcName=ProcName, stat=StatLoc)
-    GetSigma_Cell = Zero
+    call EnsureArraySize(Array=Values, Size1=NbDIm, DefaultValue=.false.)
 
     i = 1
     do i = 1, NbDim
-      GetSigma_Cell(i) = dsqrt(This%VarEstimator(i)%GetVariance())
+      Values(i) = dsqrt(This%VarEstimator(i)%GetVariance())
     end do
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMuHistory_Cell(This)
-
-    real(rkp), allocatable, dimension(:,:)                            ::    GetMuHistory_Cell
+  subroutine GetMuHistory_Cell(This, Values)
 
     class(Cell_Type), intent(inout)                                   ::    This
+    real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetMuHistory_Cell'
     integer                                                           ::    StatLoc=0
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
     if (This%MuHistory%GetLength() > 0) then
-      call This%MuHistory%Get(Values=GetMuHistory_Cell)
+      call This%MuHistory%Get(Values=Values)
     else
-      allocate(GetMuHistory_Cell(size(This%MuEstimator,1),1), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='GetMuHistory_Cell', ProcName=ProcName, stat=StatLoc)
-      GetMuHistory_Cell(:,1) = This%GetMu()
+      call EnsureArraySize(Array=Values, Size1=size(This%MuEstimator,1), Size2=1)
+      call This%GetMu(Values=VarR1D)
+      Values(:,1) = VarR1D
+      deallocate(VarR1D, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
     end if
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMuStarHistory_Cell(This)
-
-    real(rkp), allocatable, dimension(:,:)                            ::    GetMuStarHistory_Cell
+  subroutine GetMuStarHistory_Cell(This, Values)
 
     class(Cell_Type), intent(inout)                                   ::    This
+    real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetMuStarHistory_Cell'
     integer                                                           ::    StatLoc=0
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
     if (This%MuStarHistory%GetLength() > 0) then
-      call This%MuStarHistory%Get(Values=GetMuStarHistory_Cell)
+      call This%MuStarHistory%Get(Values=Values)
     else
-      allocate(GetMuStarHistory_Cell(size(This%MuEstimator,1),1), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='GetMuStarHistory_Cell', ProcName=ProcName, stat=StatLoc)
-      GetMuStarHistory_Cell(:,1) = This%GetMuStar()
+      call EnsureArraySize(Array=Values, Size1=size(This%MuStarEstimator,1), Size2=1)
+      call This%GetMuStar(Values=VarR1D)
+      Values(:,1) = VarR1D
+      deallocate(VarR1D, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
     end if
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSigmaHistory_Cell(This)
-
-    real(rkp), allocatable, dimension(:,:)                            ::    GetSigmaHistory_Cell
+  subroutine GetSigmaHistory_Cell(This, Values)
 
     class(Cell_Type), intent(inout)                                   ::    This
+    real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetSigmaHistory_Cell'
     integer                                                           ::    StatLoc=0
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
     if (This%SigmaHistory%GetLength() > 0) then
-      call This%SigmaHistory%Get(Values=GetSigmaHistory_Cell)
+      call This%SigmaHistory%Get(Values=Values)
     else
-      allocate(GetSigmaHistory_Cell(size(This%MuEstimator,1),1), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='GetSigmaHistory_Cell', ProcName=ProcName, stat=StatLoc)
-      GetSigmaHistory_Cell(:,1) = This%GetSigma()
+      call EnsureArraySize(Array=Values, Size1=size(This%VarEstimator,1), Size2=1)
+      call This%GetSigma(Values=VarR1D)
+      Values(:,1) = VarR1D
+      deallocate(VarR1D, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
     end if
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1546,31 +1572,37 @@ contains
     character(*), parameter                                           ::    ProcName='TakeSnapShot_Cell'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    NbDim
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
     NbDim = size(This%MuStarEstimator,1)
 
-    This%SnapShot(1:NbDim) = This%GetMuStar()
-    This%SnapShot(NbDim+1:2*NbDim) = This%GetMu()
-    This%SnapShot(2*NbDim+1:3*NbDim) = This%GetSigma()
+    call This%GetMuStar(Values=VarR1D)
+    This%SnapShot(1:NbDim) = VarR1D
+    call This%GetMu(Values=VarR1D)
+    This%SnapShot(NbDim+1:2*NbDim) = VarR1D
+    call This%GetSigma(Values=VarR1D)
+    This%SnapShot(2*NbDim+1:3*NbDim) = VarR1D
+
+    deallocate(VarR1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSnapShot_Cell(This)
-
-    real(rkp), allocatable, dimension(:)                              ::    GetSnapShot_Cell
+  subroutine GetSnapShot_Cell(This, Values)
 
     class(Cell_Type), intent(in)                                      ::    This
+    real(rkp), allocatable, dimension(:), intent(inout)               ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetSnapShot_Cell'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
-    allocate(GetSnapShot_Cell, source=This%SnapShot, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetSnapShot_Cell', ProcName=ProcName, stat=StatLoc)
+    call EnsureArraySize(Array=Values, Size1=size(This%MuEstimator,1))
+    Values = This%SnapShot
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

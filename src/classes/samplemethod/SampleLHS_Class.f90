@@ -22,6 +22,7 @@ use Parameters_Library
 use Input_Library
 use ArrayRoutines_Module
 use ComputingRoutines_Module
+use ArrayRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
@@ -228,20 +229,13 @@ subroutine Draw0D(This, Samples, NbSamples)
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i
   real(rkp)                                                           ::    dx
+  real(rkp)                                                           ::    VarR0D
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-  if (allocated(Samples)) then
-    if (size(Samples,1) /= NbSamples) then
-      deallocate(Samples, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
+  VarR0D = Zero
 
-  if (.not. allocated(Samples)) then
-    allocate(Samples(NbSamples), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
-  end if
+  call EnsureArraySize(Array=Samples, Size1=NbSamples)
 
   dx = One / real(NbSamples,rkp)
 
@@ -251,9 +245,11 @@ subroutine Draw0D(This, Samples, NbSamples)
       Samples(i) = 0.5 *dx + real((i-1),rkp)*dx
     else
       if (i == NbSamples) then
-        Samples(i) = This%RNG%Draw(DrawType=1)*dx + real((i-1),rkp)*dx
+        call This%RNG%Draw(Sample=VarR0D, DrawType=1)
+        Samples(i) = VarR0D*dx + real((i-1),rkp)*dx
       else
-        Samples(i) = This%RNG%Draw(DrawType=2)*dx + real((i-1),rkp)*dx
+        call This%RNG%Draw(Sample=VarR0D, DrawType=2)
+        Samples(i) = VarR0D*dx + real((i-1),rkp)*dx
       end if
     end if
   end do
@@ -275,19 +271,13 @@ subroutine Draw1D(This, Samples, NbSamples, NbDim)
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i, ii
   real(rkp)                                                           ::    dx
+  real(rkp)                                                           ::    VarR0D
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  
+  VarR0D = Zero
 
-  if (allocated(Samples)) then
-    if (size(Samples,1) /= NbDim .or. size(Samples,2) /= NbSamples) then
-      deallocate(Samples, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Samples)) then
-    allocate(Samples(NbDim, NbSamples), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
-  end if
+  call EnsureArraySize(Array=Samples, Size1=NbDim, Size2=NbSamples)
 
   dx = One / real(NbSamples,rkp)
 
@@ -299,9 +289,11 @@ subroutine Draw1D(This, Samples, NbSamples, NbDim)
         Samples(ii,i) = 0.5 *dx + real((i-1),rkp)*dx
       else
         if (i == NbSamples) then
-          Samples(ii,i) = This%RNG%Draw(DrawType=1)*dx + real((i-1),rkp)*dx
+          call This%RNG%Draw(Sample=VarR0D, DrawType=1)
+          Samples(ii,i) = VarR0D*dx + real((i-1),rkp)*dx
         else
-          Samples(ii,i) = This%RNG%Draw(DrawType=2)*dx + real((i-1),rkp)*dx
+          call This%RNG%Draw(Sample=VarR0D, DrawType=2)
+          Samples(ii,i) = VarR0D*dx + real((i-1),rkp)*dx
         end if
       end if
     end do
@@ -316,7 +308,7 @@ subroutine Enrich0D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
 
   class(SampleLHS_Type), intent(inout)                                ::    This
   real(rkp), dimension(:), intent(in)                                 ::    Samples
-  real(rkp), dimension(:), allocatable, intent(out)                   ::    EnrichmentSamples
+  real(rkp), dimension(:), allocatable, intent(inout)                 ::    EnrichmentSamples
   integer, intent(in)                                                 ::    NbEnrichmentSamples
 
   character(*), parameter                                             ::    ProcName='Enrich0D'
@@ -326,9 +318,11 @@ subroutine Enrich0D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
   integer                                                             ::    NbBins
   real(rkp)                                                           ::    dx
   integer                                                             ::    NbEnrichmentSamplesLoc
+  real(rkp)                                                           ::    VarR0D
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
+  VarR0D = Zero
   NbEnrichmentSamplesLoc = NbEnrichmentSamples
 
   if (NbEnrichmentSamplesLoc < 1) call Error%Raise(Line='Inquired less than 1 enrichment sample', ProcName=ProcName)
@@ -336,20 +330,11 @@ subroutine Enrich0D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
   NbBins = NbEnrichmentSamplesLoc + size(Samples,1)
   dx = One / real(NbBins,rkp)
 
-  Representation = This%CheckRepresentation(NbBins=NbBins, Array=Samples)
+  call This%CheckRepresentation(NbBins=NbBins, Array=Samples, Representation=Representation)
 
   NbEnrichmentSamplesLoc = count(Representation .eqv. .false.)
 
-  if (allocated(EnrichmentSamples)) then
-    if (size(EnrichmentSamples,1) /= NbEnrichmentSamplesLoc) then
-      deallocate(EnrichmentSamples, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(EnrichmentSamples)) then
-    allocate(EnrichmentSamples(NbEnrichmentSamplesLoc), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc)
-  end if
+  call EnsureArraySize(Array=EnrichmentSamples, Size1=NbEnrichmentSamplesLoc)
 
   i = 1
   ii = 0
@@ -361,9 +346,11 @@ subroutine Enrich0D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
       EnrichmentSamples(ii) = 0.5 *dx + real((i-1),rkp)*dx
     else
       if (i == size(Representation,1)) then
-        EnrichmentSamples(ii) = This%RNG%Draw(DrawType=1)*dx + real((i-1),rkp)*dx
+        call This%RNG%Draw(Sample=VarR0D, DrawType=1)
+        EnrichmentSamples(ii) = VarR0D*dx + real((i-1),rkp)*dx
       else
-        EnrichmentSamples(ii) = This%RNG%Draw(DrawType=2)*dx + real((i-1),rkp)*dx
+        call This%RNG%Draw(Sample=VarR0D, DrawType=2)
+        EnrichmentSamples(ii) = VarR0D*dx + real((i-1),rkp)*dx
       end if
     end if
   end do
@@ -381,7 +368,7 @@ subroutine Enrich1D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
 
   class(SampleLHS_Type), intent(inout)                                ::    This
   real(rkp), dimension(:,:),intent(in)                                ::    Samples
-  real(rkp), dimension(:,:), allocatable, intent(out)                 ::    EnrichmentSamples
+  real(rkp), dimension(:,:), allocatable, intent(inout)               ::    EnrichmentSamples
   integer, intent(in)                                                 ::    NbEnrichmentSamples
 
   character(*), parameter                                             ::    ProcName='Enrich1D'
@@ -395,8 +382,11 @@ subroutine Enrich1D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
   integer, allocatable, dimension(:)                                  ::    PermutationArray
   real(rkp)                                                           ::    dx
   integer                                                             ::    NbEnrichmentSamplesLoc
+  real(rkp)                                                           ::    VarR0D
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  VarR0D = Zero
 
   NbDim = size(Samples,1)
   if (NbDim <= 0) call Error%Raise(Line='Dimensionality of requested samples at or below 0', ProcName=ProcName)
@@ -410,24 +400,15 @@ subroutine Enrich1D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
 
   i = 1
   do i = 1, size(Samples,1)
-    Representation = This%CheckRepresentation(NbBins=NbBins, Array=Samples(i,:))
+    call This%CheckRepresentation(NbBins=NbBins, Array=Samples(i,:), Representation=Representation)
     ii = count(Representation .eqv. .false.)
     if (ii > NbEnrichmentSamplesLoc) NbEnrichmentSamplesLoc = ii
   end do
 
-  if (allocated(EnrichmentSamples)) then
-    if (size(EnrichmentSamples,2) /= NbEnrichmentSamplesLoc) then
-      deallocate(EnrichmentSamples, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(EnrichmentSamples)) then
-    allocate(EnrichmentSamples(NbDim, NbEnrichmentSamplesLoc), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='EnrichmentSamples', ProcName=ProcName, stat=StatLoc)
-  end if
+  call EnsureArraySize(Array=EnrichmentSamples, Size1=NbDim, Size2=NbEnrichmentSamplesLoc)
 
   do iii = 1, NbDim
-    Representation = This%CheckRepresentation(NbBins=NbBins, Array=Samples(iii,:))
+    call This%CheckRepresentation(NbBins=NbBins, Array=Samples(iii,:), Representation=Representation)
     iv = 0
     ii = 0
     do
@@ -441,9 +422,11 @@ subroutine Enrich1D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
           EnrichmentSamples(iii,ii) = 0.5 *dx + real((i-1),rkp)*dx
         else
           if (i == size(Representation,1)) then
-            EnrichmentSamples(iii,ii) = This%RNG%Draw(DrawType=1)*dx + real((i-1),rkp)*dx
+            call This%RNG%Draw(Sample=VarR0D, DrawType=1)
+            EnrichmentSamples(iii,ii) = VarR0D*dx + real((i-1),rkp)*dx
           else
-            EnrichmentSamples(iii,ii) = This%RNG%Draw(DrawType=2)*dx + real((i-1),rkp)*dx
+            call This%RNG%Draw(Sample=VarR0D, DrawType=2)
+            EnrichmentSamples(iii,ii) = VarR0D*dx + real((i-1),rkp)*dx
           end if
         end if
       end do
@@ -461,9 +444,11 @@ subroutine Enrich1D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
           EnrichmentSamples(iii,ii) = 0.5 *dx + real((PermutationArray(i)-1),rkp)*dx
         else
           if (PermutationArray(i) == size(Representation,1)) then
-            EnrichmentSamples(iii,ii) = This%RNG%Draw(DrawType=1)*dx + real((PermutationArray(i)-1),rkp)*dx
+            call This%RNG%Draw(Sample=VarR0D, DrawType=1)
+            EnrichmentSamples(iii,ii) = VarR0D*dx + real((PermutationArray(i)-1),rkp)*dx
           else
-            EnrichmentSamples(iii,ii) = This%RNG%Draw(DrawType=2)*dx + real((PermutationArray(i)-1),rkp)*dx
+            call This%RNG%Draw(Sample=VarR0D, DrawType=2)
+            EnrichmentSamples(iii,ii) = VarR0D*dx + real((PermutationArray(i)-1),rkp)*dx
           end if
         end if
       end do
@@ -478,9 +463,9 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function CheckRepresentation(NbBins, Array)
+subroutine CheckRepresentation(NbBins, Array, Representation)
 
-  logical, allocatable, dimension(:)                                  ::    CheckRepresentation
+  logical, allocatable, dimension(:), intent(inout)                   ::    Representation
   integer, intent(in)                                                 ::    NbBins
   real(rkp), dimension(:), intent(in)                                 ::    Array
 
@@ -494,10 +479,9 @@ function CheckRepresentation(NbBins, Array)
 
   Length = size(Array,1)
 
-  allocate(CheckRepresentation(NbBins), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='CheckRepresentation', ProcName=ProcName, stat=StatLoc)
+  call EnsureArraySize(Array=Representation, Size1=NbBins, DefaultValue=.false.)
+  Representation = .false.
 
-  CheckRepresentation = .false.
   dx = One / real(NbBins,rkp)
 
   i = 1
@@ -505,13 +489,13 @@ function CheckRepresentation(NbBins, Array)
     BinMin = (i-1)*dx
     BinMax = i*dx
     if (i == NbBins) then
-      if (any(Array >= BinMin .and. Array <= BinMax)) CheckRepresentation(i) = .true.
+      if (any(Array >= BinMin .and. Array <= BinMax)) Representation(i) = .true.
     else
-      if (any(Array >= BinMin .and. Array < BinMax)) CheckRepresentation(i) = .true.
+      if (any(Array >= BinMin .and. Array < BinMax)) Representation(i) = .true.
     end if
   end do
 
-end function
+end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------

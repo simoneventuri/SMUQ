@@ -37,6 +37,7 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -383,6 +384,8 @@ contains
     logical                                                           ::    LogValueLoc
     real(rkp)                                                         ::    MultiplierLoc
     class(CovFunction_Type), allocatable                              ::    CovFunction
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Labels
+    real(rkp), pointer, dimension(:,:)                                ::    VarR2DPtr=>null()
 
     if (Response%GetLabel() /= This%Label) call Error%Raise('Passed incorrect response', ProcName=ProcName)
     if (Output%GetLabel() /= This%Label) call Error%Raise('Passed incorrect output', ProcName=ProcName)
@@ -435,10 +438,13 @@ contains
     NbDataSets = size(DataPtr,2)
 
     MultiplierLoc = This%Multiplier%GetValue(Input=Input)
+    VarR2DPtr => Response%GetCoordinatesPointer()
+    allocate(Labels(Response%GetNbIndCoordinates()), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
+    call Response%GetCoordinateLabels(Labels=Labels)
 
     call This%HierCovFunction%Generate(Input=Input, CovFunction=CovFunction)
-    call CovFunction%Evaluate(Coordinates=Response%GetCoordinatesPointer() , CoordinateLabels=Response%GetCoordinateLabels(),    &
-                                                                                                               Covariance=This%L)
+    call CovFunction%Evaluate(Coordinates=VarR2DPtr, CoordinateLabels=Labels, Covariance=This%L)
     deallocate(CovFunction, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='CovFunction', ProcName=ProcName, stat=StatLoc)
 

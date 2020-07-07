@@ -22,6 +22,7 @@ use Parameters_Library
 use Input_Library
 use CommandRoutines_Module
 use StringRoutines_Module
+use ArrayRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
@@ -201,13 +202,15 @@ end function
 subroutine Draw0D(This, Samples, NbSamples)
 
   class(SampleMC_Type), intent(inout)                                 ::    This
-  real(rkp), , allocatable, dimension(:), intent(inout)               ::    Samples
+  real(rkp), allocatable, dimension(:), intent(inout)                 ::    Samples
   integer, intent(in)                                                 ::    NbSamples
 
   character(*), parameter                                             ::    ProcName='Draw0D'
   integer                                                             ::    StatLoc=0
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  call EnsureArraySize(Array=Samples, Size1=NbSamples)
 
   call This%RNG%Draw(Samples=Samples, NbSamples=NbSamples)
 
@@ -226,6 +229,8 @@ subroutine Draw1D(This, Samples, NbSamples, NbDim)
   integer                                                             ::    StatLoc=0
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  call EnsureArraySize(Array=Samples, Size1=NbDim, Size2=NbSamples)
 
   call This%RNG%Draw(Samples=Samples, NbSamples=NbSamples, NbDim=NbDim)
 
@@ -247,6 +252,8 @@ subroutine Enrich0D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
 
   if (NbEnrichmentSamples < 1) call Error%Raise(Line='Inquired less than 1 enrichment sample', ProcName=ProcName)
 
+  call EnsureArraySize(Array=EnrichmentSamples, Size1=NbEnrichmentSamples)
+
   call This%RNG%Draw(Samples=EnrichmentSamples, NbSamples=NbEnrichmentSamples)
 
 end subroutine
@@ -257,7 +264,7 @@ subroutine Enrich1D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
 
   class(SampleMC_Type), intent(inout)                                 ::    This
   real(rkp), dimension(:,:),intent(in)                                ::    Samples
-  real(rkp), dimension(:,:), allocatable, intent(out)                 ::    EnrichmentSamples
+  real(rkp), dimension(:,:), allocatable, intent(inout)               ::    EnrichmentSamples
   integer, intent(in)                                                 ::    NbEnrichmentSamples
 
   character(*), parameter                                             ::    ProcName='Enrich1D'
@@ -269,6 +276,8 @@ subroutine Enrich1D(This, Samples, NbEnrichmentSamples, EnrichmentSamples)
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
   if (NbEnrichmentSamples < 1) call Error%Raise(Line='Inquired less than 1 enrichment sample', ProcName=ProcName)
+
+  call EnsureArraySize(Array=EnrichmentSamples, Size1=NbDim, Size2=NbEnrichmentSamples)
 
   call This%RNG%Draw(Samples=EnrichmentSamples, NbSamples=NbEnrichmentSamples, NbDim=NbDim)
 

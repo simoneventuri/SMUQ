@@ -471,6 +471,7 @@ contains
     class(DistProb_Type), pointer                                     ::    DistProbPtr=>null()
     logical                                                           ::    Converged
     procedure(RestartTarget), pointer                                 ::    RestartInput=>null()
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Labels 
 
     if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
@@ -499,6 +500,10 @@ contains
 
     allocate(NbCellsOutput(NbResponses), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc)
+
+    allocate(Labels(SampleSpace%GetNbDim()), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
+    call SampleSpace%GetLabels(Labels=Labels)
 
     This%NbCells = 0
     i = 1
@@ -594,7 +599,7 @@ contains
         ii = 1
         do ii = 1, NbInputs
           iii = iii + 1
-          call Input(ii)%Construct(Input=This%ParamSample(:,iii), Labels=SampleSpace%GetLabel())
+          call Input(ii)%Construct(Input=This%ParamSample(:,iii), Labels=Labels)
         end do
 
         if (.not. SilentLoc) then
@@ -724,6 +729,9 @@ contains
     This%NbCells = 0
 
     call This%HistoryStep%Purge()
+
+    deallocate(Labels, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
 
     deallocate(SnapShot, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='SnapShot', ProcName=ProcName, stat=StatLoc)

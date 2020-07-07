@@ -96,21 +96,24 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Get0D_LowDiscSequence(This, Sequence, Offset)
+  subroutine Get0D_LowDiscSequence(This, Sequence, NbPoints, Offset)
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
-    real(rkp), dimension(:), intent(inout)                            ::    Sequence
     class(LowDiscSequence_Type), intent(in)                           ::    This
+    real(rkp), dimension(:), intent(inout)                            ::    Sequence
+    integer, intent(in)                                               ::    NbPoints
     integer, optional, intent(in)                                     ::    Offset                                          
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Get1D_LowDiscSequence(This, Sequence, Offset)
+  subroutine Get1D_LowDiscSequence(This, Sequence, NbPoints, NbDim, Offset)
     use Parameters_Library
     import                                                            ::    LowDiscSequence_Type
     class(LowDiscSequence_Type), intent(in)                           ::    This
-    real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Sequence
+    real(rkp), dimension(:,:), intent(inout)                          ::    Sequence
+    integer, intent(in)                                               ::    NbPoints
+    integer, intent(in)                                               ::    NbDim
     integer, optional, intent(in)                                     ::    Offset                                          
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

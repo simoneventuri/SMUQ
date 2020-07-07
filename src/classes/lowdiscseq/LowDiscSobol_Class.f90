@@ -52,7 +52,7 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Initialize(This)
 
   class(LowDiscSobol_Type), intent(inout)                             ::    This
@@ -67,9 +67,9 @@ subroutine Initialize(This)
   call This%SetDefaults()
 
 end subroutine
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(LowDiscSobol_Type), intent(inout)                             ::    This
@@ -83,9 +83,9 @@ subroutine Reset(This)
   call This%Initialize()
 
 end subroutine
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine SetDefaults(This)
 
   class(LowDiscSobol_Type), intent(inout)                             ::    This
@@ -96,9 +96,9 @@ subroutine SetDefaults(This)
   This%Leap = 0
 
 end subroutine
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput(This, Input, Prefix)
 
   use StringRoutines_Module
@@ -142,9 +142,9 @@ subroutine ConstructInput(This, Input, Prefix)
   This%Constructed=.true.
 
 end subroutine 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructCase1 (This, Skip, Leap)
 
   class(LowDiscSobol_Type), intent(inout)                             ::    This
@@ -172,9 +172,9 @@ subroutine ConstructCase1 (This, Skip, Leap)
   This%Constructed = .true.
 
 end subroutine 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 function GetInput(This, Name, Prefix, Directory)
 
   use StringRoutines_Module
@@ -210,13 +210,13 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddParameter(Name='leap', Value=ConvertToString(Value=This%Leap))
 
 end function
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Get0D(This, Sequence, NbPoints, Offset)
 
   class(LowDiscSobol_Type), intent(in)                                ::    This
-  real(rkp), allocatable, dimension(:), intent(inout)                 ::    Sequence
+  real(rkp), dimension(:), intent(inout)                              ::    Sequence
   integer, intent(in)                                                 ::    NbPoints  
   integer, optional, intent(in)                                       ::    Offset                                          
 
@@ -233,17 +233,7 @@ subroutine Get0D(This, Sequence, NbPoints, Offset)
 
   if (NbPoints <= 0) call Error%Raise(Line='Requested 0 or less points from the sequence', ProcName=ProcName)
 
-  if (allocated(Sequence)) then
-    if (size(Sequence,1) /= NbPoints) then
-      deallocate(Sequence, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-
-  if (.not. allocated(Sequence)) then
-    allocate(Sequence(NbPoints), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Samples', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Sequence,1) /= NbPoints) call Error%Raise('Incompatible array', ProcName=ProcName)
 
   OffsetLoc = 0
   if (present(Offset)) OffsetLoc = Offset
@@ -259,21 +249,20 @@ subroutine Get0D(This, Sequence, NbPoints, Offset)
   end do
 
 end subroutine
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Get1D(This, Sequence, NbPoints, NbDim, Offset)
 
   class(LowDiscSobol_Type), intent(in)                                ::    This
-  real(rkp), allocatable, dimension(:,:), intent(inout)               ::    Sequence
+  real(rkp), dimension(:,:), intent(inout)                            ::    Sequence
   integer, intent(in)                                                 ::    NbPoints
   integer, intent(in)                                                 ::    NbDim
   integer, optional, intent(in)                                       ::    Offset                                          
 
   character(*), parameter                                             ::    ProcName='Get1D'
   integer                                                             ::    StatLoc=0
-  integer                                                             ::    NbPoints
-  integer(8)                                                          ::    NbDim
+  integer(8)                                                          ::    NbDimLoc
   integer(8)                                                          ::    Step
   integer(8)                                                          ::    SkipLoc
   integer(8)                                                          ::    LeapLoc
@@ -286,36 +275,26 @@ subroutine Get1D(This, Sequence, NbPoints, NbDim, Offset)
 
   if (NbDim <= 0) call Error%Raise(Line='Specified dimensionality of 0 or less frmo the sequence', ProcName=ProcName)
 
-  if (allocated(Sequence)) then
-    if (size(Sequence,1) /= NbDim .or. size(Sequence,2) /= NbPoints) then
-      deallocate(Sequence, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Sequence', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-
-  if (.not. allocated(Sequence)) then
-    allocate(Sequence(NbDim,NbPoints), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Sequence', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Sequence,1) /= NbDim) call Error%Raise('Incompatible array', ProcName=ProcName)
+  if (size(Sequence,2) /= NbPoints) call Error%Raise('Incompatible array', ProcName=ProcName)
 
   OffsetLoc = 0
   if (present(Offset)) OffsetLoc = Offset
 
-  NbPoints = size(Sequence,2)
-  NbDim = int(size(Sequence,1),8)
+  NbDimLoc = int(NbDim,8)
 
   LeapLoc = int(This%Leap,8) + 1
   SkipLoc = int(This%Skip,8) + int(OffSetLoc,8)*LeapLoc
 
   do i = 1, NbPoints
     Step = SkipLoc + LeapLoc*(i-1) + 1
-    call i8_sobol(NbDim, Step, Sequence(:,i))
+    call i8_sobol(NbDimLoc, Step, Sequence(:,i))
   end do
 
 end subroutine
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Copy(LHS, RHS)
 
   class(LowDiscSobol_Type), intent(out)                               ::    LHS
@@ -342,9 +321,9 @@ impure elemental subroutine Copy(LHS, RHS)
   end select
 
 end subroutine
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Finalizer(This)
 
   type(LowDiscSobol_Type), intent(inout)                            ::    This
@@ -353,6 +332,6 @@ impure elemental subroutine Finalizer(This)
   integer                                                             ::    StatLoc=0
 
 end subroutine
-!!----------------------------------------------------------------------------------------------------------------------------!!
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -237,10 +237,7 @@ contains
 
     ParameterName = 'initial_start'
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%IniMu = ConvertToReals(String=VarC0D)
-      VarR1D = ConvertToReals(String=VarC0D)
-    end if
+    if (Found) call ConvertToReals(String=VarC0D, Values=This%IniMu)
 
     SectionName = 'initial_covariance'
     if (Input%HasSection(SubSectionName=SectionName)) then
@@ -251,7 +248,7 @@ contains
         case ('diagonals')
           ParameterName = 'values'
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-          VarR1D = ConvertToReals(String=VarC0D)
+          call ConvertToReals(String=VarC0D, Values=VarR1D)
           allocate(This%IniCov(size(VarR1D,1),size(VarR1D,1)), stat=StatLoc)
           if (StatLoc /= 0) call Error%Allocate(Name='This%IniCov', ProcName=ProcName, stat=StatLoc)
           This%IniCov = Zero
@@ -335,11 +332,11 @@ contains
 
       ParameterName = 'nb_accepted_dr'
       call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
-      This%Accepted_DR = ConvertToIntegers(String=VarC0D)
+      call ConvertToIntegers(String=VarC0D, Values=This%Accepted_DR)
 
       ParameterName = 'nb_steps_dr'
       call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
-      This%Step_DR = ConvertToIntegers(String=VarC0D)
+      call ConvertToIntegers(String=VarC0D, Values=This%Step_DR)
 
       SubSectionName = SectionName // '>parameter_chain'
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
@@ -804,7 +801,7 @@ contains
         end if
 
         if (.not. allocated(This%IniMu)) then
-          SpaceSample = This%RNG%DrawVec(Size1=NbDim)
+          call This%RNG%Draw(Samples=SpaceSample, NbSamples=NbDim)
           i = 1
           do i = 1, NbDim
             DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
@@ -822,7 +819,8 @@ contains
         This%L = LLoc
         ii = 1
         do ii = 1, NbDim
-          This%L(ii,1:ii) = This%L(1:ii,ii)
+          VarR1D(1:ii) = This%L(1:ii,ii)
+          This%L(ii,1:ii) = VarR1D(1:ii)
         end do
 
         call Input%Construct(Input=SpaceSample, Labels=Labels)
@@ -839,7 +837,7 @@ contains
               write(*,*) ''
               write(*,'(A)') 'Resampling attempt #' // ConvertToString(Value=ii) 
             end if
-            SpaceSample = This%RNG%DrawVec(Size1=NbDim)
+            call This%RNG%Draw(Samples=SpaceSample, NbSamples=NbDim)
             i = 1
             do i = 1, NbDim
               DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
@@ -895,7 +893,7 @@ contains
         call ProposalLoc%Construct(X=DRSamples(:,1:i), Cov=CovLoc)
 
         call ProposalLoc%GetMu(Mu=VarR1D)
-        PVec = This%RNG%DrawVec(Size1=NbDim)
+        call This%RNG%Draw(Samples=PVec, NbSamples=NbDim)
         ii = 1
         do ii = 1, NbDim
           PVec(ii) = DistNormal%InvCDF(P=PVec(ii))
@@ -959,7 +957,7 @@ contains
         end do
 
         TransitionProb = DRTransProb(1)
-        Alpha = This%RNG%Draw()
+        call This%RNG%Draw(Sample=Alpha)
 
         if (Alpha <= TransitionProb) AcceptedFlag = .true.
 
@@ -1114,7 +1112,8 @@ contains
             This%L = LLoc
             ii = 1
             do ii = 1, NbDIm
-              This%L(ii,1:ii) = This%L(1:ii,ii)
+              VarR1D(1:ii) = This%L(1:ii,ii)
+              This%L(ii,1:ii) = VarR1D(1:ii)
             end do
           end if
 

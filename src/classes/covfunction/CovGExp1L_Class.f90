@@ -250,10 +250,15 @@ contains
     integer                                                           ::    ii
     integer                                                           ::    NbNodes
     integer                                                           ::    iCoordinate
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     NbNodes = size(Coordinates,1)
+
+    allocate(VarR1D(NbNodes), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+    VarR1D = Zero 
 
     i = 1
     iCoordinate = 0
@@ -283,7 +288,8 @@ contains
         Covariance(i,ii) = This%Sigma**2 * dexp(- (dabs(Coordinates(i,iCoordinate)-Coordinates(ii,iCoordinate))/This%L)**This%Gam)
         if (abs(Covariance(i,ii) / This%Sigma**2) < This%Tolerance) Covariance(i,ii) = Zero
       end do
-      Covariance(i:NbNodes,i) = Covariance(i,i:NbNodes)
+      VarR1D(1:NbNodes-i+1) = Covariance(i,i:NbNodes)
+      Covariance(i:NbNodes,i) = VarR1D(1:NbNodes-i+1)
     end do
 
   end subroutine
