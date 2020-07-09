@@ -98,7 +98,7 @@ end interface
 
 interface ComputeEigenvalues ! square matrices
   module procedure                                                    ::    ComputeEigenvalues_REAL
-  module procedure                                                    ::    ComputeEigenvalues_CMPLX
+  module procedure                                                    ::    ComputeEigenvalues_CMPLX8
 end interface
 
 interface ComputeQR
@@ -847,10 +847,10 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine ComputeEigenvalues_CMPLX(Matrix, EigenValues, EigenVectors)
+subroutine ComputeEigenvalues_CMPLX8(Matrix, EigenValues, EigenVectors)
 
   real(rkp), contiguous, dimension(:,:), intent(inout)                ::    Matrix
-  complex, allocatable, dimension(:), intent(out)                     ::    EigenValues
+  complex(8), allocatable, dimension(:), intent(out)                  ::    EigenValues
   real(rkp), allocatable, dimension(:,:), optional, intent(out)       ::    EigenVectors
 
   character(*), parameter                                             ::    ProcName='ComputeEigenvalues_CMPLX'
@@ -894,7 +894,7 @@ subroutine ComputeEigenvalues_CMPLX(Matrix, EigenValues, EigenVectors)
     if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DGEEV', ProcName=ProcName)
     deallocate(WORK, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
-    EigenValues = CMPLX(WR,WI)
+    EigenValues = CMPLX(WR,WI,8)
   else
     allocate(WORK(1), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
@@ -910,7 +910,7 @@ subroutine ComputeEigenvalues_CMPLX(Matrix, EigenValues, EigenVectors)
     if (StatLoc /= 0) call Error%Raise(Line='Something went wrong in DGEEV', ProcName=ProcName)
     deallocate(WORK, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='WORK', ProcName=ProcName, stat=StatLoc)
-    EigenValues = CMPLX(WR,WI)
+    EigenValues = CMPLX(WR,WI,8)
   end if
 
 end subroutine
