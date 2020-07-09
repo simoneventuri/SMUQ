@@ -22,7 +22,7 @@ module TestSpill_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use ComputingRoutines_Module
 use TestFunction_Class                                            ,only:    TestFunction_Type
 use Output_Class                                                  ,only:    Output_Type
@@ -149,7 +149,7 @@ subroutine ConstructInput(This, Input, Prefix)
   integer                                                             ::    VarI0D
   character(:), allocatable                                           ::    VarC0D
   integer                                                             ::    i
-  real(rkp), dimension(2)                                             ::    TimeRange
+  real(rkp), allocatable, dimension(:)                                ::    TimeRange
   logical                                                             ::    MandatoryLoc
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
 
@@ -167,7 +167,8 @@ subroutine ConstructInput(This, Input, Prefix)
 
   ParameterName = 'time_range'
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
-  TimeRange = ConvertToReals(String=VarC0D)
+  call ConvertToReals(String=VarC0D, Values=TimeRange)
+  if (size(TimeRange,1) /= 2) call Error%Raise('Incompatible time range specification', ProcName=ProcName)
   if (TimeRange(1) <= 0) call Error%Raise(Line='Minimum time range at or below zero', ProcName=ProcName)
   if (TimeRange(2) < TimeRange(1)) call Error%Raise(Line='Minimum time larger than maximum', ProcName=ProcName)
       
@@ -175,11 +176,13 @@ subroutine ConstructInput(This, Input, Prefix)
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
   This%NbTimes = VarI0D
 
-  This%Time = LinSpace(TimeRange(1), TimeRange(2), This%NbTimes)
+  allocate(This%Time(This%NbTimes), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%Time', ProcName=ProcName, stat=StatLoc)
+  call LinSpace(Min=TimeRange(1), Max=TimeRange(2), NbNodes=This%NbTimes, Values=This%Time)
 
   ParameterName = 'location'
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-  This%Location = ConvertToReals(String=VarC0D)
+  call ConvertToReals(String=VarC0D, Values=This%Location, Separator=' ')
   if (any(This%Location > 3.0) .or. any(This%Location < 0.0)) call Error%Raise(Line='Location must be in between 0 and 3',        &
                                                                                ProcName=ProcName) 
   This%NbLocations = size(This%Location)
@@ -215,7 +218,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 function GetInput(This, Name, Prefix, Directory)
 
-  use StringRoutines_Module
+  use StringConversion_Module
 
   type(InputSection_Type)                                             ::    GetInput
   class(TestSpill_Type), intent(in)                                   ::    This

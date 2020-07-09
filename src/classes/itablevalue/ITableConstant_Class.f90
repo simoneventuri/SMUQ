@@ -20,7 +20,7 @@ module ITableConstant_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use ITableValue_Class                                             ,only:    ITableValue_Type
@@ -45,7 +45,6 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
-  procedure, public                                                   ::    GetCharValue
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -167,60 +166,23 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-function GetValue(This, Input, Abscissa)
-
-  real(rkp), allocatable, dimension(:)                                ::    GetValue
+subroutine GetValue(This, Input, Abscissa, Values)
 
   class(ITableConstant_Type), intent(in)                              ::    This
   type(Input_Type), intent(in)                                        ::    Input
   real(rkp), dimension(:), intent(in)                                 ::    Abscissa
+  real(rkp), dimension(:), intent(inout)                              ::    Values
 
   character(*), parameter                                             ::    ProcName='GetValue'
   integer                                                             ::    StatLoc=0
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  allocate(GetValue(size(Abscissa,1)), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetValue', ProcName=ProcName, stat=StatLoc)
-  GetValue = Zero
+  if (size(Values,1) /= size(Abscissa,1)) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
-  GetValue = This%Constant%GetValue(Input=Input)
+  Values = This%Constant%GetValue(Input=Input)
 
-end function
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-function GetCharValue(This, Input, Abscissa, Format)
-
-  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetCharValue
-  
-  class(ITableConstant_Type), intent(in)                              ::    This
-  type(Input_Type), intent(in)                                        ::    Input
-  real(rkp), dimension(:), intent(in)                                 ::    Abscissa
-  character(*), optional, intent(in)                                  ::    Format
-
-  character(*), parameter                                             ::    ProcName='GetCharValue'
-  integer                                                             ::    StatLoc=0
-  real(rkp), allocatable, dimension(:)                                ::    VarR1D
-  character(:), allocatable                                           ::    FormatLoc
-  integer                                                             ::    i
-
-  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-  FormatLoc = 'G0'
-  if (present(Format)) FormatLoc = Format
-
-  allocate(GetCharValue(size(Abscissa,1)), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetValue', ProcName=ProcName, stat=StatLoc)
-
-  VarR1D = This%GetValue(Input=Input, Abscissa=Abscissa)
-
-  i = 1
-  do i = 1, size(VarR1D,1)
-    GetCharValue(i) = ConvertToString(Value=VarR1D(i), Format=FormatLoc)
-  end do
-
-end function
+end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------

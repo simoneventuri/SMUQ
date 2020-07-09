@@ -104,7 +104,7 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput(This, Input, Prefix)
 
-  use StringRoutines_Module
+  use StringConversion_Module
 
   class(SampleQuasiMC_Type), intent(inout)                            ::    This
   type(InputSection_Type), intent(in)                                 ::    Input

@@ -21,7 +21,7 @@ module DistLog10Unif_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use DistUnif_Class                                                ,only:    DistUnif_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error

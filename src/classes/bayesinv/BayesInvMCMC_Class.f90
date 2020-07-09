@@ -22,7 +22,7 @@ use Input_Library
 use Parameters_Library
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error

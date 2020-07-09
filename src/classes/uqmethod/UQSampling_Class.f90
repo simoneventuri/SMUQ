@@ -21,7 +21,7 @@ module UQSampling_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module

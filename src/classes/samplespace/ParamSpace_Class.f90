@@ -20,7 +20,7 @@ module ParamSpace_Class
 
 use Parameters_Library
 use Input_Library
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module

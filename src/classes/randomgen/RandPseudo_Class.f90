@@ -21,7 +21,7 @@ module RandPseudo_Class
 use Parameters_Library
 use Input_Library
 use ArrayIORoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error

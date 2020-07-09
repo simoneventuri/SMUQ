@@ -20,7 +20,7 @@ module CVKFold_Class
 
   use Input_Library
   use Parameters_Library
-  use StringRoutines_Module
+  use StringConversion_Module
   use StatisticsRoutines_Module
   use ComputingRoutines_Module
   use Logger_Class                                                  ,only:    Logger
@@ -159,7 +159,7 @@ module CVKFold_Class
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
   
-    use StringRoutines_Module
+    use StringConversion_Module
   
     type(InputSection_Type)                                             ::    GetInput
   
@@ -262,7 +262,7 @@ module CVKFold_Class
 
     allocate(ScrambledIndices(NbData), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='ScrambledIndices', ProcName=ProcName, stat=StatLoc)
-    ScrambledIndices = LinSequence(SeqStart=1, SeqEnd=NbData, Scrambled=.true.)
+    call LinSequence(Start=1, End=NbData, Values=ScrambledIndices, Scrambled=.true.)
 
     iOffset = 0
     if (FoldSizeRemainder > 0) iOffset = 1

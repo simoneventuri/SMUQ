@@ -137,7 +137,7 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine GetR2DPointer(This, Values)
+subroutine GetR42DPointer(This, Values)
 
   class(List2D_Type), target, intent(in)                              ::    This
   real(4), dimension(:,:), pointer, intent(inout)                     ::    Values
@@ -160,7 +160,7 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine GetR2DPointer(This, Values)
+subroutine GetR82DPointer(This, Values)
 
   class(List2D_Type), target, intent(in)                              ::    This
   real(8), dimension(:,:), pointer, intent(inout)                     ::    Values
@@ -298,7 +298,7 @@ end subroutine
 subroutine GetC2DPointer(This, Values)
 
   class(List2D_Type), target, intent(in)                              ::    This
-  type(SMUQString_Type), dimension(:,:), allocatable, intent(inout)   ::    Values
+  type(SMUQString_Type), dimension(:,:), pointer, intent(inout)       ::    Values
 
   character(*), parameter                                             ::    ProcName='GetC2DPointer'
   integer                                                             ::    StatLoc=0

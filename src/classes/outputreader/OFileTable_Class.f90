@@ -20,7 +20,7 @@ module OFileTable_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use ComputingRoutines_Module
@@ -146,7 +146,7 @@ contains
 
     ParameterName = 'output_column'
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%OutputColumn = ConvertToIntegers(VarC0D)
+    call ConvertToIntegers(String=VarC0D, Values=This%OutputColumn)
 
     This%NbColumns = size(This%OutputColumn,1)
 
@@ -169,7 +169,7 @@ contains
           call ImportArray(Input=InputSection, Array=This%InterpolationNodes, Prefix=PrefixLoc)
         case ('computed')
           call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-          This%InterpolationNodes = LinSpaceVec(Input=InputSection)
+          call InterSpace(Input=InputSection, Values=This%InterpolationNodes)
         case default
           call Error%Raise(Line='Interpolation nodes source not recognized', ProcName=ProcName)
       end select
@@ -322,8 +322,8 @@ contains
       end do
 
       if (This%Interpolated) then
-        Values((i-1)*NbEntries+1:i*NbEntries,1) = Interpolate(Abscissa=Abscissa, Ordinate=TableOutput,                            &
-                                                                                                     Nodes=This%InterpolationNodes)
+        call Interpolate(Abscissa=Abscissa, Ordinate=TableOutput, &
+                         Nodes=This%InterpolationNodes, Values=Values((i-1)*NbEntries+1:i*NbEntries,1))
         if (This%DebugFlag) then
           write(*,*)
           write(*,*) 'Interpolated values from column ' // ConvertToString(Value=This%OutputColumn(i))

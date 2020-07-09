@@ -154,7 +154,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
     class(IndexHyperbolic_Type), intent(in)                           ::    This
@@ -215,7 +215,6 @@ contains
     integer, dimension(:,:), allocatable                              ::    Indices_Loc
     integer, dimension(:), allocatable                                ::    VarI1D
     integer, dimension(:,:), allocatable                              ::    VarI2D
-    integer, dimension(:,:), allocatable                              ::    IdentityM
     real(rkp), dimension(:), allocatable                              ::    VarR1D
     integer                                                           ::    i, ii
     integer                                                           ::    k, j
@@ -233,10 +232,6 @@ contains
     if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
     VarR1D = Zero
 
-    allocate(IdentityM(M,M), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='IdentityM', stat=StatLoc)
-    IdentityM = EyeI(M)
-
     allocate(VarI1D(M), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
     VarI1D = 0
@@ -252,7 +247,9 @@ contains
 
           ii = 1
           do ii = 1, M
-            call IndicesRecord%Append(k*IdentityM(:,ii))
+            VarR1D = Zero 
+            VarR1D(ii) = k
+            call IndicesRecord%Append(Values=VarR1D)
           end do
 
           cycle

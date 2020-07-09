@@ -21,7 +21,7 @@ module CovIID_Class
 use Input_Library
 use Parameters_Library
 use ArrayRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use CommandRoutines_Module
 use ComputingRoutines_Module
 use Logger_Class                                                  ,only:    Logger

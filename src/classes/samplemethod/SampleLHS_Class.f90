@@ -109,7 +109,7 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput (This, Input, Prefix)
 
-  use StringRoutines_Module
+  use StringConversion_Module
 
   class(SampleLHS_Type), intent(inout)                                ::    This
   type(InputSection_Type), intent(in)                                 ::    Input
@@ -180,7 +180,7 @@ end subroutine
 function GetInput(This, Name, Prefix, Directory)
 
   use CommandRoutines_Module
-  use StringRoutines_Module
+  use StringConversion_Module
 
   type(InputSection_Type)                                             ::    GetInput
   class(SampleLHS_Type), intent(in)                                   ::    This

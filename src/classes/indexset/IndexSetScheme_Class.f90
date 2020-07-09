@@ -21,7 +21,7 @@ module IndexSetScheme_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use IndexSet_Class                                                ,only:    IndexSet_Type
 use IndexHyperbolic_Class                                         ,only:    IndexHyperbolic_Type
 use IndexSet_Factory_Class                                        ,only:    IndexSet_Factory

@@ -20,7 +20,7 @@ module ITablePoly_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
@@ -48,7 +48,6 @@ contains
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
-  procedure, public                                                   ::    GetCharValue
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -222,13 +221,12 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-function GetValue(This, Input, Abscissa)
-
-  real(rkp), allocatable, dimension(:)                                ::    GetValue
+subroutine GetValue(This, Input, Abscissa, Values)
 
   class(ITablePoly_Type), intent(in)                                  ::    This
   type(Input_Type), intent(in)                                        ::    Input
   real(rkp), dimension(:), intent(in)                                 ::    Abscissa
+  real(rkp), dimension(:), intent(inout)                              ::    Values
 
   character(*), parameter                                             ::    ProcName='GetValue'
   integer                                                             ::    StatLoc=0
@@ -237,62 +235,21 @@ function GetValue(This, Input, Abscissa)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  allocate(GetValue(size(Abscissa,1)), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetValue', ProcName=ProcName, stat=StatLoc)
+  if (size(Values,1) /= size(Abscissa,1)) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
-  GetValue = Zero
+  Values = Zero
 
   ii = 1
   do ii = 1, size(Abscissa,1)
     i = 1
     do i = 1, This%Order+1
       PolyCoeffPointer => This%PolyCoeff(i)%GetPointer()
-      GetValue(ii) = GetValue(ii) + PolyCoeffPointer%GetValue(Input=Input)*Abscissa(ii)**(i-1)
+      Values(ii) = Values(ii) + PolyCoeffPointer%GetValue(Input=Input)*Abscissa(ii)**(i-1)
       nullify(PolyCoeffPointer)
     end do
   end do
 
-end function
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-function GetCharValue(This, Input, Abscissa, Format)
-
-  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetCharValue
-
-  class(ITablePoly_Type), intent(in)                                  ::    This
-  type(Input_Type), intent(in)                                        ::    Input
-  real(rkp), dimension(:), intent(in)                                 ::    Abscissa
-  character(*), optional, intent(in)                                  ::    Format
-
-  character(*), parameter                                             ::    ProcName='GetCharValue'
-  integer                                                             ::    StatLoc=0
-  integer                                                             ::    i, ii
-  class(IScalarValue_Type), pointer                                   ::    PolyCoeffPointer=>null()
-  real(rkp)                                                           ::    VarR0D
-  character(:), allocatable                                           ::    FormatLoc
-
-  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-  FormatLoc = 'G0'
-  if (present(Format)) FormatLoc = Format
-
-  allocate(GetCharValue(size(Abscissa,1)), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetValue', ProcName=ProcName, stat=StatLoc)
-
-  ii = 1
-  do ii = 1, size(Abscissa,1)
-    VarR0D = Zero
-    i = 1
-    do i = 1, This%Order+1
-      PolyCoeffPointer => This%PolyCoeff(i)%GetPointer()
-      VarR0D = VarR0D + PolyCoeffPointer%GetValue(Input=Input)*Abscissa(ii)**(i-1)
-      nullify(PolyCoeffPointer)
-    end do
-    GetCharValue(ii) = ConvertToString(Value=VarR0D, Format=FormatLoc)
-  end do
-
-end function
+end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------

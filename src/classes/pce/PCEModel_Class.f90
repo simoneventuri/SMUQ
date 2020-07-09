@@ -23,7 +23,7 @@ use Parameters_Library
 use CommandRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Model_Class                                                   ,only:    Model_Type
@@ -66,6 +66,7 @@ contains
   procedure, public                                                   ::    GetIndicesPointer       =>    GetIndicesPointer_Cell
   procedure, public                                                   ::    GetCoefficientsPointer  =>    GetCoeffsPointer_Cell
   procedure, public                                                   ::    GetCoordinatePointer    =>    GetCoordPointer_Cell
+  procedure, public                                                   ::    GetNbIndCoordinates     =>    GetNbIndCoordinates_Cell
   procedure, public                                                   ::    GetCVError              =>    GetCVError_Cell
   generic, public                                                     ::    assignment(=)           =>    Copy
   procedure, public                                                   ::    Copy                    =>    Copy_Cell
@@ -177,7 +178,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     class(PCEModel_Type), intent(inout)                               ::    This
     class(InputSection_Type), intent(in)                              ::    Input
@@ -254,10 +255,10 @@ contains
       call This%Cells(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
     end do
 
-    allocate(This%CoordinateLabels(size(This%Cells(1)%GetCoordinatePointer())))
+    allocate(This%CoordinateLabels(This%Cells(1)%GetNbIndCoordinates()))
     ParameterName = 'coordinate_labels'
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-    allocate(VarString1D, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
+    call ConvertToStrings(Value=VarC0D, Strings=VarString1D, Separator=' ')
     if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
     if (size(VarString1D,1) /= size(This%CoordinateLabels)) call Error%Raise('Incorrect number of coordinate labels', &
                                                                              ProcName=ProcName)
@@ -274,7 +275,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput2(This, Prefix)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     class(PCEModel_Type), intent(inout)                               ::    This
     character(*), optional, intent(in)                                ::    Prefix
@@ -349,10 +350,10 @@ contains
       call This%Cells(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
     end do
 
-    allocate(This%CoordinateLabels(size(This%Cells(1)%GetCoordinatePointer())))
+    allocate(This%CoordinateLabels(This%Cells(1)%GetNbIndCoordinates()))
     ParameterName = 'coordinate_labels'
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-    allocate(VarString1D, source=ConvertToStrings(Value=VarC0D, Separator=' '), stat=StatLoc)
+    call ConvertToStrings(Value=VarC0D, Strings=VarString1D, Separator=' ')
     if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
     if (size(VarString1D,1) /= size(This%CoordinateLabels)) call Error%Raise('Incorrect number of coordinate labels', &
                                                                              ProcName=ProcName)
@@ -454,8 +455,9 @@ contains
     deallocate(VarR1D, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
-    allocate(This%CoordinateLabels, source=Response%GetCoordinateLabels(), stat=StatLoc)
+    allocate(This%CoordinateLabels(Response%GetNbIndCoordinates()), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%CoordinateLabels', ProcName=ProcName, stat=StatLoc)
+    call Response%GetCoordinateLabels(Labels=This%CoordinateLabels)
 
     This%Constructed = .true.
 
@@ -465,7 +467,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -573,12 +575,17 @@ contains
     allocate(Ordinate(This%NbCells,1), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Ordinate', ProcName=ProcName, stat=StatLoc)
 
+    allocate(Basis(This%NbDim), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Basis', ProcName=ProcName, stat=StatLoc)
+    Basis = Zero 
+    
     i = 1
     do i = 1, This%NbCells
       CoefficientsPointer => This%Cells(i)%GetCoefficientsPointer()
       IndicesPointer => This%Cells(i)%GetIndicesPointer()
       NbCoefficients = size(CoefficientsPointer,1)
-      Basis = This%Basis%Eval(X=This%TransformedSpace%Transform(X=VarR1D), Indices=IndicesPointer)
+      call This%TransformedSpace%Transform(X=VarR1D)
+      call This%Basis%Eval(X=VarR1D, Indices=IndicesPointer, Values=Basis)
       Ordinate(i,1) = dot_product(CoefficientsPointer, Basis)
       nullify(IndicesPointer)
       nullify(CoefficientsPointer)
@@ -915,7 +922,7 @@ contains
 
     ParameterName = 'coordinate'
     call Input%GetValue(Value=VarC0D, ParameterName=Parametername, Mandatory=.true.)
-    VarR1D = ConvertToReals(String=VarC0D)
+    call ConvertToReals(String=VarC0D, Values=VarR1D)
     allocate(This%Coordinate, source=VarR1D, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%Coordinate', ProcName=ProcName, stat=StatLoc)
     deallocate(VarR1D, stat=StatLoc)
@@ -1070,6 +1077,23 @@ contains
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     GetCoordPointer_Cell => This%Coordinate
+
+  end function
+  !!------------------------------------------------------------------------------------------------------------------------------
+
+  !!------------------------------------------------------------------------------------------------------------------------------
+  function GetNbIndCoordinates_Cell(This)
+
+    integer                                                           ::    GetNbIndCoordinates_Cell
+
+    class(Cell_Type), target, intent(in)                              ::    This
+
+    character(*), parameter                                           ::    ProcName='GetCoordPointer_Cell'
+    integer                                                           ::    StatLoc=0    
+
+    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+    GetNbIndCoordinates_Cell = size(This%Coordinate)
 
   end function
   !!------------------------------------------------------------------------------------------------------------------------------

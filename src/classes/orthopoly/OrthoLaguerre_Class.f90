@@ -24,7 +24,7 @@ use Error_Class                                                   ,only:  Error
 use OrthoPoly_class
 use ComputingRoutines_Module
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 
 implicit none
 
@@ -161,7 +161,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
     class(OrthoLaguerre_Type), intent(in)                             ::    This
@@ -194,13 +194,12 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Eval_N(This, Order, X, Normalized)
-
-    real(rkp)                                                         ::    Eval_N
+  subroutine Eval_N(This, Order, X, Value, Normalized)
 
     class(OrthoLaguerre_Type), intent(inout)                          ::    This
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    Order
+    real(rkp), intent(out)                                            ::    Value
     logical, optional, intent(in)                                     ::    Normalized
 
     character(*), parameter                                           ::    ProcName='Eval_N'
@@ -220,10 +219,12 @@ contains
 
     if (Order < -1) call Error%Raise("An order of below -1 was requested but is not supported")
 
+    Value = Zero
+
     if (Order == -1) then
-      Eval_N = This%polyorderm1
+      Value = This%polyorderm1
     elseif (Order == 0) then
-      Eval_N = This%polyorder0
+      Value = This%polyorder0
     else
       i = 1
       valnm1 = This%polyorderm1
@@ -234,23 +235,22 @@ contains
         valnm1 = valnp0
         valnp0 = valnp1
       end do
-      Eval_N = valnp1
+      Value = valnp1
     end if
 
-    if (NormalizedLoc) Eval_N = Eval_N / This%NFactor(Order=Order, A=This%A)
+    if (NormalizedLoc) Value = Value / This%NFactor(Order=Order, A=This%A)
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Eval_MN(This, MinOrder, MaxOrder, X, Normalized)
-
-    real(rkp), dimension(:), allocatable                              ::    Eval_MN
+  subroutine Eval_MN(This, MinOrder, MaxOrder, X, Values, Normalized)
 
     class(OrthoLaguerre_Type), intent(inout)                          ::    This
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    MinOrder
     integer, intent(in)                                               ::    MaxOrder
+    real(rkp), dimension(:), intent(inout)                            ::    Values
     logical, optional, intent(in)                                     ::    Normalized
 
     character(*), parameter                                           ::    ProcName='Eval_MN'
@@ -272,19 +272,19 @@ contains
     if (MinOrder < -1) call Error%Raise("A starting order of below -1 was requested but is not supported")
     if (MinOrder > MaxOrder) call Error%Raise("Starting order was specified to be larger than the final order")
 
-    allocate(Eval_MN(maxOrder-MinOrder+1),stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Eval_MN', ProcName=ProcName, stat=StatLoc)
+    if (size(Values,1) /= MaxOrder-MinOrder + 1) call Error%Raise('Incompatible values array', ProcName=ProcName)
+    Values = Zero
 
     if (MinOrder == MaxOrder) then
-      Eval_MN(1) = This%Eval(Order=MinOrder, X=X) 
+      call This%Eval(Order=MinOrder, X=X, Value=Values(1), Normalized=NormalizedLoc) 
     else
       i_offset = 0
       if (MinOrder == -1)  then
-        Eval_MN(1) = This%Eval(Order=-1, X=X, Normalized=NormalizedLoc)
-        Eval_MN(2) = This%Eval(Order=0, X=X, Normalized=NormalizedLoc)
+        call This%Eval(Order=-1, X=X, Value=Values(1), Normalized=NormalizedLoc)
+        call This%Eval(Order=0, X=X, Value=Values(2), Normalized=NormalizedLoc)
         i_offset = 2
       elseif (MinOrder == 0) then
-        Eval_MN(1) = This%Eval(Order=0, X=X, Normalized=NormalizedLoc)
+        call This%Eval(Order=0, X=X, Value=Values(1), Normalized=NormalizedLoc)
         i_offset = 1
       end if
       i = 1
@@ -297,8 +297,8 @@ contains
         valnm1 = valnp0
         valnp0 = valnp1
         if (i >= MinOrder) then
-          Eval_MN(i+i_offset-ii) = valnp1
-          if (NormalizedLoc) Eval_MN(i+i_offset-ii) = Eval_MN(i+i_offset-ii) / This%NFactor(Order=i, A=This%A)
+          Values(i+i_offset-ii) = valnp1
+          if (NormalizedLoc) Values(i+i_offset-ii) = Values(i+i_offset-ii) / This%NFactor(Order=i, A=This%A)
         else
           ii = ii + 1
         end if
@@ -306,7 +306,7 @@ contains
 
     end if
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

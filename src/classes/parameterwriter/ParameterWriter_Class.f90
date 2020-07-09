@@ -20,7 +20,7 @@ module ParameterWriter_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
@@ -137,7 +137,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput1(This, Input, Prefix)
 
-    use StringRoutines_Module
+    use StringConversion_Module
     class(ParameterWriter_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
@@ -184,7 +184,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput2(This, Input, ConstructPrefix, WritePrefix)
 
-    use StringRoutines_Module
+    use StringConversion_Module
     class(ParameterWriter_Type), intent(inout)                        ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), intent(in)                                          ::    ConstructPrefix
@@ -228,7 +228,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
 

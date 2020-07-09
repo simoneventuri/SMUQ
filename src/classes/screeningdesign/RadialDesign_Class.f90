@@ -116,7 +116,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput (This, Input, Prefix)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     class(RadialDesign_Type), intent(inout)                           ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -212,7 +212,7 @@ contains
   function GetInput(This, Name, Prefix, Directory)
 
     use CommandRoutines_Module
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
     class(RadialDesign_Type), intent(in)                              ::    This

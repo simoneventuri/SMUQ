@@ -20,7 +20,7 @@ module TransfSampleSpaceNone_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module

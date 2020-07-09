@@ -2,10 +2,8 @@ module ArrayRoutines_Module
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
-use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none

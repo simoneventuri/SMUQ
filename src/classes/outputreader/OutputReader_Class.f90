@@ -20,7 +20,7 @@ module OutputReader_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Output_Class                                                  ,only:    Output_Type
@@ -168,7 +168,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -390,7 +390,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput_Cell(This, Input, Prefix)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     class(Cell_Type), intent(inout)                                   ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -446,7 +446,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput_Cell(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput_Cell
 

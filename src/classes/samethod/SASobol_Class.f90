@@ -21,7 +21,7 @@ module SASobol_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module
@@ -42,6 +42,7 @@ use LinkedList1D_Class                                            ,only:    Link
 use OnlineVarEstimator_Class                                      ,only:    OnlineVarEstimator_Type
 use RadialDesign_Class                                            ,only:    RadialDesign_Type
 use DistProb_Class                                                ,only:    DistProb_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -679,10 +680,10 @@ contains
         if (This%ParamSampleStep < 2) Converged = .false.
         ii = 1
         do ii = 1, This%NbCells
-          Delta = This%Cells(ii)%GetSnapShot()
+          call This%Cells(ii)%GetSnapShot(Values=Delta)
           call This%Cells(ii)%TakeSnapShot()
           if (.not. Converged) cycle
-          SnapShot = This%Cells(ii)%GetSnapShot()
+          call This%Cells(ii)%GetSnapShot(Values=SnapShot)
           Delta = dabs(Delta - SnapShot)
 
           iii = 1
@@ -802,6 +803,8 @@ contains
     integer                                                           ::    v
     integer                                                           ::    NbResponses
     integer, allocatable, dimension(:)                                ::    VarI1D
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D 
+    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D 
     character(:), allocatable                                         ::    ResponseLabel
 
     if (len_trim(Directory) /= 0) then
@@ -850,7 +853,8 @@ contains
 
           FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sobol_total.dat'
           call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-          call ExportArray(Array=This%Cells(iv)%GetSt(), File=File)
+          call This%Cells(iv)%GetSt(Values=VarR1D)
+          call ExportArray(Array=VarR1D, File=File, RowMajor=.true.)
 
           if (This%HistoryFreq > 0) then
             call This%HistoryStep%Get(Values=VarI1D)
@@ -860,17 +864,19 @@ contains
             call ExportArray(Array=VarI1D, File=File, RowMajor=.true.)
 
             FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mean_history.dat'
-            call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ') 
-            call ExportArray(Array=This%Cells(iv)%GetMeanHistory(), File=File, RowMajor=.true.)
+            call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+            call This%Cells(iv)%GetMeanHistory(Values=VarR1D)
+            call ExportArray(Array=VarR1D, File=File, RowMajor=.true.)
 
             FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/variance_history.dat'
             call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-            call ExportArray(Array=This%Cells(iv)%GetVarianceHistory(), File=File, RowMajor=.true.)
+            call This%Cells(iv)%GetVarianceHistory(Values=VarR1D)
+            call ExportArray(Array=VarR1D, File=File, RowMajor=.true.)
 
             FileName = '/' // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sobol_total_history.dat'
             call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-            call ExportArray(Array=This%Cells(iv)%GetStHistory(), File=File, RowMajor=.false.)
-
+            call This%Cells(iv)%GetStHistory(Values=VarR2D)
+            call ExportArray(Array=VarR2D, File=File, RowMajor=.true.)
           end if
 
           ii = iii + 1
@@ -880,6 +886,15 @@ contains
       end do
 
     end if
+
+    if (allocated(VarI1D)) deallocate(VarI1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)
+
+    if (allocated(VarR1D)) deallocate(VarR1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+
+    if (allocated(VarR2D)) deallocate(VarR2D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1320,10 +1335,15 @@ contains
 
     character(*), parameter                                           ::    ProcName='UpdateHistory_Cell'
     integer                                                           ::    StatLoc=0
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
-    call This%MeanHistory%Append(Value=This%MomentEstimator%GetMean())
-    call This%VarianceHistory%Append(Value=This%MomentEstimator%GetVariance())
-    call This%StHistory%Append(Values=This%GetSt())
+    call This%MeanHistory%Append(Value=This%GetMean())
+    call This%VarianceHistory%Append(Value=This%GetVariance())
+    call This%GetSt(Values=VarR1D)
+    call This%StHistory%Append(Values=VarR1D)
+
+    deallocate(VarR1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1336,50 +1356,47 @@ contains
     character(*), parameter                                           ::    ProcName='TakeSnapShot_Cell'
     integer                                                           ::    StatLoc=0
 
-    This%SnapShot = This%GetSt()
+    call This%GetSt(Values=This%SnapShot)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSnapShot_Cell(This)
-
-    real(rkp), allocatable, dimension(:)                              ::    GetSnapShot_Cell
+  subroutine GetSnapShot_Cell(This, Values)
 
     class(Cell_Type), intent(in)                                      ::    This
+    real(rkp), allocatable, dimension(:), intent(inout)               ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetSnapShot_Cell'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
-    allocate(GetSnapShot_Cell, source=This%SnapShot, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetSnapShot_Cell', ProcName=ProcName, stat=StatLoc)
+    call EnsureArraySize(Array=Values, Size1=size(This%StEstimator,1), DefaultValue=.false.)
+    Values = This%SnapShot
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSt_Cell(This)
-
-    real(rkp), allocatable, dimension(:)                              ::    GetSt_Cell
+  subroutine GetSt_Cell(This, Values)
 
     class(Cell_Type), intent(in)                                      ::    This
+    real(rkp), allocatable, dimension(:), intent(inout)               ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetSt_Cell'
     integer                                                           ::    StatLoc=0
     integer                                                           ::    i
 
-    allocate(GetSt_Cell(size(This%StEstimator,1)), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='(GetSt_Cell', ProcName=ProcName, stat=StatLoc)
-    GetSt_Cell = Zero
+    call EnsureArraySize(Array=Values, Size1=size(This%StEstimator,1), DefaultValue=.false.)
+    Values = Zero 
 
     i = 1
-    do i = 1, size(GetSt_Cell,1)
+    do i = 1, size(Values,1)
       if (This%StEstimatorNbSamples(i) < 2) cycle
-      GetSt_Cell(i) = This%StEstimator(i) / (Two*real(This%StEstimatorNbSamples(i),rkp) * This%MomentEstimator%GetVariance())
+      Values(i) = This%StEstimator(i) / (Two*real(This%StEstimatorNbSamples(i),rkp) * This%MomentEstimator%GetVariance())
     end do
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -1413,66 +1430,64 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMeanHistory_Cell(This)
-
-    real(rkp), allocatable, dimension(:)                              ::    GetMeanHistory_Cell
+  subroutine GetMeanHistory_Cell(This, Values)
 
     class(Cell_Type), intent(inout)                                   ::    This
+    real(rkp), allocatable, dimension(:), intent(inout)               ::    Values 
 
-    character(*), parameter                                           ::    ProcName='GetMean_Cell'
+    character(*), parameter                                           ::    ProcName='GetMeanHistory_Cell'
     integer                                                           ::    StatLoc=0
 
     if (This%MeanHistory%GetLength() > 0) then
-      call This%MeanHistory%Get(Values=GetMeanHistory_Cell)
+      call This%MeanHistory%Get(Values=Values)
     else
-      allocate(GetMeanHistory_Cell(1), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='GetMeanHistory_Cell', ProcName=ProcName, stat=StatLoc)
-      GetMeanHistory_Cell = This%MomentEstimator%GetMean()
+      call EnsureArraySize(Array=Values, Size1=1, DefaultValue=.false.)
+      Values = This%MomentEstimator%GetMean()
     end if
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVarianceHistory_Cell(This)
-
-    real(rkp), allocatable, dimension(:)                              ::    GetVarianceHistory_Cell
+  subroutine GetVarianceHistory_Cell(This, Values)
 
     class(Cell_Type), intent(inout)                                   ::    This
+    real(rkp), allocatable, dimension(:), intent(inout)               ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetVariance_Cell'
     integer                                                           ::    StatLoc=0
 
     if (This%VarianceHistory%GetLength() > 0) then
-      call This%VarianceHistory%Get(Values=GetVarianceHistory_Cell)
+      call This%VarianceHistory%Get(Values=Values)
     else
-      allocate(GetVarianceHistory_Cell(1), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='GetVarianceHistory_Cell', ProcName=ProcName, stat=StatLoc)
-      GetVarianceHistory_Cell = This%MomentEstimator%GetVariance()
+      call EnsureArraySize(Array=Values, Size1=1, DefaultValue=.false.)
+      Values = This%MomentEstimator%GetVariance()
     end if
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetStHistory_Cell(This)
-
-    real(rkp), allocatable, dimension(:,:)                            ::    GetStHistory_Cell
+  subroutine GetStHistory_Cell(This, Values)
 
     class(Cell_Type), intent(inout)                                   ::    This
+    real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Values 
 
     character(*), parameter                                           ::    ProcName='GetStHistory_Cell'
     integer                                                           ::    StatLoc=0
+    real(rkp), allocatable, dimension(:)                              ::    VarR1D
 
     if (This%StHistory%GetLength() > 0) then
-      call This%StHistory%Get(Values=GetStHistory_Cell)
+      call This%StHistory%Get(Values=Values)
     else
-      allocate(GetStHistory_Cell(size(This%StEstimator,1),1), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='GetStHistory_Cell', ProcName=ProcName, stat=StatLoc)
-      GetStHistory_Cell(:,1) = This%GetSt()
+      call EnsureArraySize(Array=Values, Size1=size(This%StEstimator,1), Size2=1, DefaultValue=.false.)
+      call This%GetSt(Values=VarR1D)
+      Values(:,1) = VarR1D 
+      deallocate(VarR1D, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
     end if
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

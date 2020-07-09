@@ -4,6 +4,6 @@ add_target_sources (smuqApp
   ArrayRoutines_Module.f90
   ArrayIORoutines_Module.f90
   ComputingRoutines_Module.f90
-  StringRoutines_Module.f90
+  StringConversion_Module.f90
   Test_Module.f90
 )

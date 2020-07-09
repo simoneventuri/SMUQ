@@ -21,7 +21,7 @@ module SampleEnrichScheme_Class
 use Parameters_Library
 use Input_Library
 use CommandRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 
@@ -113,7 +113,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput (This, Input, Prefix)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     class(SampleEnrichScheme_Type), intent(inout)                     ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -159,8 +159,7 @@ contains
           This%EnrichmentScheme = 2
           ParameterName = 'sequence'
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
-          allocate(This%EnrichmentSequence, source=ConvertToIntegers(String=VarC0D), stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='This%EnrichmentSequence', ProcName=ProcName, stat=StatLoc)
+          call ConvertToIntegers(String=VarC0D, Values=This%EnrichmentSequence, Separator=' ')
           if (any(This%EnrichmentSequence < 1)) call Error%Raise(Line='Detected enrichment sequence value of 0 or below',      &
                                                                                                                ProcName=ProcName)
         case default

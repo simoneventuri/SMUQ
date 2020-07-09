@@ -25,7 +25,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use Input_Class                                                   ,only:    Input_Type
-use StringRoutines_Module
+use StringConversion_Module
 
 implicit none
 

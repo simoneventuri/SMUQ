@@ -22,7 +22,7 @@ use Input_Library
 use Parameters_Library
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SurrogateMethod_Class                                         ,only:    SurrogateMethod_Type
@@ -225,8 +225,7 @@ contains
 
       ParameterName = 'labels'
       call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-      allocate(This%InputSamplesLabels, source=ConvertToStrings(Value=VarC0D), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='This%InputSamplesLabels', ProcName=ProcName, stat=StatLoc)
+      call ConvertToStrings(Value=VarC0D, Strings=This%InputSamplesLabels)
 
       SubSectionName = SubSectionName // '>values'
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
@@ -278,7 +277,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
     
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -349,7 +348,6 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii
-    real(rkp), allocatable, dimension(:)                              ::    X
     character(:), allocatable                                         ::    Line
 
     OutputDirectoryLoc = ''
@@ -394,11 +392,8 @@ contains
       if (This%InputSamplesTransform) then
         i = 1
         do i = 1, size(InputSamplesLoc,2)
-          X = InputSamplesLoc(:,i)
-          InputSamplesLoc(:,i) = SpaceTransform%Transform(X=X)
+          call SpaceTransform%Transform(X=InputSamplesLoc(:,i))
         end do
-        deallocate(X, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='X', ProcName=ProcName, stat=StatLoc)
       end if
 
       allocate(OutputSamplesLoc(size(This%OutputSamples,1)), stat=StatLoc)
@@ -495,7 +490,7 @@ contains
   subroutine WriteOutput(This, PCEModel, Directory)
 
     use CommandRoutines_Module
-    use StringRoutines_Module
+    use StringConversion_Module
     use ArrayRoutines_Module
     use SMUQFile_Class                                            ,only:    SMUQFile_Type
 

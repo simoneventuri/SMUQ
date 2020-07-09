@@ -20,7 +20,7 @@ module PCESM_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -127,7 +127,7 @@ contains
     character(:), allocatable, dimension(:)                           ::    VarC1D
     real(rkp)                                                         ::    VarR0D
     logical                                                           ::    VarL0D
-    type(SMUQString_Type), dimension(2)                               ::    LabelMap
+    type(SMUQString_Type), dimension(:), allocatable                  ::    LabelMap
     logical                                                           ::    Found
 
     if (This%Constructed) call This%Reset()
@@ -172,7 +172,7 @@ contains
           do ii = 1, Input%GetNumberofParameters(FromSubSection=SubSectionName)
             ParameterName = 'map' // ConvertToString(Value=ii)
             call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-            LabelMap = ConvertToStrings(Value=VarC0D, Separator=' ')
+            call ConvertToStrings(Value=VarC0D, Strings=LabelMap, Separator=' ')
             if (size(LabelMap,1) /= 2) call Error%Raise(Line='Incorrect input label map format', ProcName=ProcName)
             call This%PCEModels(i)%ReplaceInputLabel(Old=LabelMap(1),  New=LabelMap(2))
           end do

@@ -21,7 +21,7 @@ module DistUnif_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use DistProb_Class                                                ,only:    DistProb_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -176,7 +176,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
 

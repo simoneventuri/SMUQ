@@ -2,7 +2,7 @@ module Test_Module
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use StatisticsRoutines_Module
 use ArrayIORoutines_Module
 use ArrayRoutines_Module

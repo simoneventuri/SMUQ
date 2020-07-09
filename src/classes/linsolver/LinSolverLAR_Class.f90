@@ -23,7 +23,7 @@ use Parameters_Library
 use StatisticsRoutines_Module
 use ComputingRoutines_Module
 use CommandRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error

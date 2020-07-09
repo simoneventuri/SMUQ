@@ -23,7 +23,7 @@ use Parameters_Library
 use ComputingRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -49,7 +49,6 @@ contains
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
-  procedure, public                                                   ::    GetCharValue
   procedure, public                                                   ::    Copy
   final                                                               ::    Finalizer
 end type
@@ -239,13 +238,12 @@ end function
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-function GetValue(This, Input, Abscissa)
-
-  real(rkp), allocatable, dimension(:)                                ::    GetValue
+subroutine GetValue(This, Input, Abscissa, Values)
 
   class(ITableCrossOver_Type), intent(in)                             ::    This
   type(Input_Type), intent(in)                                        ::    Input
   real(rkp), dimension(:), intent(in)                                 ::    Abscissa
+  real(rkp), dimension(:), intent(inout)                              ::    Values
 
   character(*), parameter                                             ::    ProcName='GetValue'
   integer                                                             ::    StatLoc=0
@@ -256,31 +254,29 @@ function GetValue(This, Input, Abscissa)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  allocate(GetValue(size(Abscissa,1)), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetValue', ProcName=ProcName, stat=StatLoc)
-
-  GetValue = Zero
+  if (size(Values,1) /= size(Abscissa,1)) call Error%Raise('Incompatible values array', ProcName=ProcName)
   
-  allocate(TableVal, source=Interpolate(Abscissa=This%OriginalTable(:,1), Ordinate=This%OriginalTable(:,2), Nodes=Abscissa),    &
-                                                                                                                    stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+  allocate(TableVal(size(Abscissa,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='TableVal', ProcName=ProcName, stat=StatLoc)
+  call Interpolate(Abscissa=This%OriginalTable(:,1), Ordinate=This%OriginalTable(:,2), Nodes=Abscissa, Values=TableVal)
 
-  allocate(Polyval, source=This%PolyParam%GetValue(Input=Input, Abscissa=Abscissa), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Polyval', ProcName=ProcName, stat=StatLoc)
+  allocate(PolyVal(size(Abscissa,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='PolyVal', ProcName=ProcName, stat=StatLoc)
+  call This%PolyParam%GetValue(Input=Input, Abscissa=Abscissa, Values=PolyVal)
 
   TripFlag = .false.
-  GetValue = Zero
+  Values = Zero
 
   i = 1
   do i = 1, size(Abscissa,1)
     if (TripFlag) then
-      GetValue(i) = TableVal(i)
+      Values(i) = TableVal(i)
     else
       if (TableVal(i) > PolyVal(i)) then
-        GetValue(i) = TableVal(i)
+        Values(i) = TableVal(i)
         TripFlag = .true.
       else
-        GetValue(i) = PolyVal(i)
+        Values(i) = PolyVal(i)
       end if
     end if
   end do
@@ -291,65 +287,7 @@ function GetValue(This, Input, Abscissa)
   deallocate(PolyVal, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='PolyVal', ProcName=ProcName, stat=StatLoc)
 
-end function
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-function GetCharValue(This, Input, Abscissa, Format)
-
-  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetCharValue
-
-  class(ITableCrossOver_Type), intent(in)                             ::    This
-  type(Input_Type), intent(in)                                        ::    Input
-  real(rkp), dimension(:), intent(in)                                 ::    Abscissa
-  character(*), optional, intent(in)                                  ::    Format
-
-  character(*), parameter                                             ::    ProcName='GetValue'
-  integer                                                             ::    StatLoc=0
-  integer                                                             ::    i
-  real(rkp), allocatable, dimension(:)                                ::    PolyVal
-  real(rkp), allocatable, dimension(:)                                ::    TableVal
-  logical                                                             ::    TripFlag=.false.
-  character(:), allocatable                                           ::    FormatLoc
-
-  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-  FormatLoc = 'G0'
-  if (present(Format)) FormatLoc = Format
-
-  allocate(GetCharValue(size(Abscissa,1)), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetValue', ProcName=ProcName, stat=StatLoc)
-  
-  allocate(TableVal, source=Interpolate(Abscissa=This%OriginalTable(:,1), Ordinate=This%originalTable(:,2), Nodes=Abscissa),    &
-                                                                                                                    stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
-
-  allocate(Polyval, source=This%PolyParam%GetValue(Input=Input, Abscissa=Abscissa), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Polyval', ProcName=ProcName, stat=StatLoc)
-
-  TripFlag = .false.
-
-  i = 1
-  do i = 1, size(Abscissa,1)
-    if (TripFlag) then
-      GetCharValue(i) = ConvertToString(Value=TableVal(i), Format=FormatLoc)
-    else
-      if (TableVal(i) > PolyVal(i)) then
-        GetCharValue(i) = ConvertToString(Value=TableVal(i), Format=FormatLoc)
-        TripFlag = .true.
-      else
-        GetCharValue(i) = ConvertToString(Value=PolyVal(i), Format=FormatLoc)
-      end if
-    end if
-  end do
-
-  deallocate(TableVal, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='TableVal', ProcName=ProcName, stat=StatLoc)
-
-  deallocate(PolyVal, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='PolyVal', ProcName=ProcName, stat=StatLoc)
-
-end function
+end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------

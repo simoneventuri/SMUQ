@@ -138,7 +138,7 @@ contains
 
     allocate(This%InputLabels(This%SpaceTransform%GetNbDim()), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%InputLabels', ProcName=ProcName, stat=StatLoc)
-    This%InputLabels = This%SpaceTransform%GetLabel()
+    call This%SpaceTransform%GetLabels(Labels=This%InputLabels)
 
     This%Constructed = .true.
 
@@ -165,7 +165,7 @@ contains
 
     allocate(This%InputLabels(This%SpaceTransform%GetNbDim()), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='This%InputLabels', ProcName=ProcName, stat=StatLoc)
-    This%InputLabels = This%SpaceTransform%GetLabel()
+    call This%SpaceTransform%GetLabels(Labels=This%InputLabels)
 
     This%NbOutputs = This%Model%GetNbOutputs()
     This%Label = This%Model%GetLabel()

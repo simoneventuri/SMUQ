@@ -115,7 +115,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
     type(InputSection_Type), intent(in)                               ::    Input
@@ -188,7 +188,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -263,7 +263,7 @@ contains
     i = 1
     do i = 1, This%NbDim
       OrthoPolyPointer => This%OrthoPoly(i)%GetPointer()
-      Values(1:MaxOrder(i)+1,i) = OrthoPolyPointer%Eval(MinOrder=0, MaxOrder=MaxOrder(i) , X=X(i))
+      call OrthoPolyPointer%Eval(MinOrder=0, MaxOrder=MaxOrder(i) , X=X(i), Values=Values(1:MaxOrder(i)+1,i))
       nullify(OrthoPolyPointer)
     end do
 
@@ -271,42 +271,42 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvalObject0D(This, X, Indices)
-
-    real(rkp)                                                         ::    EvalObject0D
+  subroutine EvalObject0D(This, X, Indices, Value)
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
     integer, dimension(:), intent(in)                                 ::    Indices
+    real(rkp), intent(out)                                            ::    Value
 
     character(*), parameter                                           ::    ProcName='EvalObject0D'
     integer                                                           ::    i
     class(OrthoPoly_Type), pointer                                    ::    OrthoPolyPointer=>null()
+    real(rkp)                                                         ::    VarR0D
 
     if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
     if (size(Indices,1) /= This%NbDim) call Error%Raise(Line='Indices length does not match the dimension of the' //           & 
                                                                         ' multivariate orthogonal polynomial', ProcName=ProcName)
 
-    EvalObject0D = One
+    Value = One
     i = 1
     do i = 1, This%NbDim
       OrthoPolyPointer => This%OrthoPoly(i)%GetPointer()
-      EvalObject0D = EvalObject0D * OrthoPolyPointer%Eval(Order=Indices(i), X=X(i))
+      call OrthoPolyPointer%Eval(Order=Indices(i), X=X(i), Value=VarR0D)
+      Value = Value * VarR0D
       nullify(OrthoPolyPointer)
     end do
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function EvalObject1D(This, X, Indices)
-
-    real(rkp), allocatable, dimension(:)                              ::    EvalObject1D
+  subroutine EvalObject1D(This, X, Indices, Values)
 
     class(OrthoMultiVar_Type), intent(inout)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
     integer, dimension(:,:), intent(in)                               ::    Indices
+    real(rkp), dimension(:), intent(inout)                            ::    Values
 
     character(*), parameter                                           ::    ProcName='EvalObject1D'
     integer                                                           ::    NbTuples
@@ -320,10 +320,11 @@ contains
     if (size(Indices,1) /= This%NbDim) call Error%Raise(Line='Indices length does not match the dimension of the' //           & 
                                                                         ' multivariate orthogonal polynomial', ProcName=ProcName)
 
-    NbTuples = size(Indices,2)
+    if (size(Values,1) /= This%NbDim) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
-    allocate(EvalObject1D(NbTuples), stat=StatLoc)  
-    if (StatLoc /= 0) call Error%Allocate(Name='EvalObject1D', ProcName=ProcName, stat=StatLoc)
+    if (size(X,1) /= This%NbDim) call Error%Raise('Incompatible X array', ProcName=ProcName)
+
+    NbTuples = size(Indices,2)
 
     allocate(MaxOrder(This%NbDim), stat=StatLoc)  
     if (StatLoc /= 0) call Error%Allocate(Name='MaxOrder', ProcName=ProcName, stat=StatLoc)
@@ -331,13 +332,13 @@ contains
 
     call This%Precompute(X=X, MaxOrder=MaxOrder, Values=Values0D)
 
-    EvalObject1D = One
+    Values = One
 
     i = 1
     do i = 1, NbTuples
       ii = 1
       do ii = 1, This%NbDim
-        EvalObject1D(i) = EvalObject1D(i) * Values0D(Indices(ii,i)+1,ii)
+        Values(i) = Values(i) * Values0D(Indices(ii,i)+1,ii)
       end do
     end do
 
@@ -347,7 +348,7 @@ contains
     deallocate(Values0D, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='Values0D', ProcName=ProcName, stat=StatLoc)
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

@@ -38,7 +38,7 @@ contains
   generic, public                                                     ::    Get                     =>    GetR41D,                &
                                                                                                           GetR81D,                &
                                                                                                           GetI41D,                &
-                                                                                                          GetI81D                 &
+                                                                                                          GetI81D,                &
                                                                                                           GetC1D,                 &
                                                                                                           GetL1D,                 &
                                                                                                           GetCX1D
@@ -51,7 +51,7 @@ contains
   procedure, private                                                  ::    GetCX1D
   generic, public                                                     ::    GetPointer              =>    GetR41DPointer,         &
                                                                                                           GetR81DPointer,         &
-                                                                                                          GetI41DPpointer,        &
+                                                                                                          GetI41DPointer,         &
                                                                                                           GetI81DPointer,         &
                                                                                                           GetC1DPointer,          &
                                                                                                           GetL1DPointer,          &
@@ -159,7 +159,6 @@ subroutine GetR41DPointer(This, Values)
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
-
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine GetR81DPointer(This, Values)
 
@@ -209,7 +208,7 @@ end subroutine
 subroutine GetI81D(This, Values)
 
   class(List1D_Type), intent(in)                                      ::    This
-  integer(4), dimension(:), allocatable, intent(inout)                ::    Values
+  integer(8), dimension(:), allocatable, intent(inout)                ::    Values
 
   character(*), parameter                                             ::    ProcName='GetI81D'
   integer                                                             ::    StatLoc=0

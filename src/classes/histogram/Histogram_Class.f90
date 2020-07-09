@@ -23,7 +23,7 @@ use Parameters_Library
 use ComputingRoutines_Module
 use ArrayIORoutines_Module
 use ArrayRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use CommandRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -162,14 +162,9 @@ contains
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     select case (VarC0D)
       case('computed')
-        allocate(This%BinEdges, source=LinSpaceVec(Input=InputSection), stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='This%BinEdges', ProcName=ProcName, stat=StatLoc)
+        call InterSpace(Input=InputSection, Values=This%BinEdges)
       case('imported')
-        call ImportArray(Input=InputSection, Array=VarR1D, Prefix=PrefixLoc)
-        allocate(This%BinEdges, source=VarR1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Allocate(Name='This%BinEdges', ProcName=ProcName, stat=StatLoc)
-        deallocate(VarR1D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+        call ImportArray(Input=InputSection, Array=This%BinEdges, Prefix=PrefixLoc)
       case default
         call Error%Raise(Line='Source not recognized', ProcName=ProcName)
     end select

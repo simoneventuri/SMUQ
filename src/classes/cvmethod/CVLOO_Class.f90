@@ -20,7 +20,7 @@ module CVLOO_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use StatisticsRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -146,7 +146,7 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 function GetInput(This, Name, Prefix, Directory)
 
-  use StringRoutines_Module
+  use StringConversion_Module
 
   type(InputSection_Type)                                             ::    GetInput
 

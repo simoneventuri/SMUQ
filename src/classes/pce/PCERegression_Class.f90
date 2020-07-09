@@ -21,7 +21,7 @@ module PCERegression_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module
@@ -52,6 +52,7 @@ use Restart_Class                                                 ,only:    Rest
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use List2D_Class                                                  ,only:    List2D_Type
 use Model_Class                                                   ,only:    Model_Type
+use SMUQString_Class                                              ,only:    SMUQString_Type
 
 implicit none
 
@@ -567,10 +568,11 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
   type(Input_Type), allocatable, dimension(:)                         ::    Input
   real(rkp)                                                           ::    VarR0D
   real(rkp), allocatable, dimension(:,:)                              ::    VarR2D
-  real(rkp), pointer, dimension(:,:)                                  ::    VarR2DPointer=>null()
   real(rkp), allocatable, dimension(:)                                ::    Goal
   real(rkp), allocatable, dimension(:)                                ::    CoefficientsLoc
-  real(rkp), dimension(:), pointer                                    ::    VarR1DPointer=>null()
+  real(rkp), dimension(:), pointer                                    ::    VarR1DPtr=>null()
+  real(rkp), dimension(:,:), pointer                                  ::    VarR2DPtr=>null()
+  integer, pointer, dimension(:,:)                                    ::    VarI2DPtr=>null()
   integer                                                             ::    VarI0D
   real(rkp)                                                           ::    CVError
   real(rkp)                                                           ::    CVErrorTrip
@@ -598,6 +600,7 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
   logical                                                             ::    EarlyExitFlag
   logical                                                             ::    NotOrderExceeded 
   logical                                                             ::    NotConverged
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    Labels 
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
@@ -607,6 +610,10 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
 
   NbOutputs = size(Responses,1)
   NbDim = SampleSpace%GetNbDim()
+
+  allocate(Labels(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
+  call SampleSpace%GetLabels(Labels=Labels) 
 
   allocate(NbCellsOutput(NbOutputs), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='NbCellsOutput', ProcName=ProcName, stat=StatLoc)
@@ -649,10 +656,10 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
 
       i = 1
       do i = 1, NbOutputs
-        call OutputSamples(i)%GetPointer(Values=VarR2DPointer)
-        if (size(VarR2DPointer,1) /= size(InputSamples,2)) call Error%Raise('Mismatch in number of input and output samples'    &
+        call OutputSamples(i)%GetPointer(Values=VarR2DPtr)
+        if (size(VarR2DPtr,1) /= size(InputSamples,2)) call Error%Raise('Mismatch in number of input and output samples'    &
                                                                                                             , ProcName=ProcName)
-        if (size(VarR2DPointer,2) /= NbCellsOutput(i)) call Error%Raise('Mismatch in number of nodes in response and ' //       &
+        if (size(VarR2DPtr,2) /= NbCellsOutput(i)) call Error%Raise('Mismatch in number of nodes in response and ' //       &
                                                                                     'initial output samples', ProcName=ProcName)
 
         if (i > 1) then
@@ -666,9 +673,9 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
         ii = iMin
         do ii = iMin, iMax
           iii = iii + 1
-          call This%Cells(ii)%AppendRecord(Entries=VarR2DPointer(:,iii))
+          call This%Cells(ii)%AppendRecord(Entries=VarR2DPtr(:,iii))
         end do
-        nullify(VarR2DPointer)
+        nullify(VarR2DPtr)
       end do
       This%ModelRunCounter = size(This%ParamRecord,2)
       This%SamplesObtained = .true.
@@ -782,7 +789,7 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
 
         ii = 1
         do ii = 1, NbInputs
-          call Input(ii)%Construct(Input=This%ParamSample(:,i+ii), Labels=SampleSpace%GetLabel())
+          call Input(ii)%Construct(Input=This%ParamSample(:,i+ii), Labels=Labels)
         end do
 
         if (.not. SilentLoc) then
@@ -806,17 +813,17 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
           im1 = 0
           ii = 1
           do ii = 1, NbOutputs
-            VarR2DPointer => Outputs(ii,iRun)%GetValuesPointer()
+            VarR2DPtr => Outputs(ii,iRun)%GetValuesPointer()
             if (Outputs(ii,iRun)%GetNbDegen() > 1) call Error%Raise('PCE procedure cant deal with stochastic ' //      &
                                                                                                 'responses', ProcName=ProcName)
             iv = 0
             iii = im1 + 1
-            do iii = im1+1, im1+size(VarR2DPointer,1)
+            do iii = im1+1, im1+size(VarR2DPtr,1)
               iv = iv + 1
-              call This%Cells(iii)%AppendRecord(Entry=VarR2DPointer(iv,1))
+              call This%Cells(iii)%AppendRecord(Entry=VarR2DPtr(iv,1))
             end do
-            im1 = im1 + size(VarR2DPointer,1)
-            nullify(VarR2DPointer)
+            im1 = im1 + size(VarR2DPtr,1)
+            nullify(VarR2DPtr)
             call Outputs(ii,iRun)%Reset()
           end do
         end do
@@ -897,7 +904,7 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
           call IndexSetPointer%GenerateIndices(Order=IndexOrder, TupleSize=NbDim, Indices=IndicesLoc)
 
           NbIndices = size(IndicesLoc,2)
-          Goal = This%Cells(i)%GetRecord()
+          call This%Cells(i)%GetRecord(Values=Goal)
 
           ! Constructing design space
           allocate(DesignSpace(iEnd,NbIndices), stat=StatLoc)
@@ -907,7 +914,7 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
 
           ii = 1
           do ii = 1, M
-            DesignSpace(ii,:) = Basis%Eval(X=This%ParamRecord(:,ii), Indices=IndicesLoc)
+             call Basis%Eval(X=This%ParamRecord(:,ii), Indices=IndicesLoc, Values=DesignSpace(ii,:))
           end do
 
           allocate(CoefficientsLoc(N), stat=StatLoc)
@@ -999,9 +1006,13 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
     ii = 1
     do ii = iStart, iEnd
       call CVErrors(i)%Append(Value=This%Cells(ii)%GetCVError())
-      call Coefficients(i)%Append(Values=This%Cells(ii)%GetCoefficientsPointer())
-      call Indices(i)%Append(Values=This%Cells(ii)%GetIndicesPointer())
+      VarR1DPtr => This%Cells(ii)%GetCoefficientsPointer()
+      call Coefficients(i)%Append(Values=VarR1DPtr)
+      VarI2DPtr => This%Cells(ii)%GetIndicesPointer()
+      call Indices(i)%Append(Values=VarI2DPtr)
       call This%Cells(ii)%Reset()
+      nullify(VarI2DPtr)
+      nullify(VarR1DPtr)
     end do
   end do
 
@@ -1045,6 +1056,7 @@ subroutine WriteOutput(This, Directory, Responses)
   type(Response_Type), dimension(:), intent(in)                       ::    Responses
 
   character(*), parameter                                             ::    ProcName='WriteOutput'
+  integer                                                             ::    StatLoc=0
   type(InputSection_Type)                                             ::    Input
   character(:), allocatable                                           ::    FileName
   character(:), allocatable                                           ::    PrefixLoc
@@ -1057,6 +1069,12 @@ subroutine WriteOutput(This, Directory, Responses)
   integer                                                             ::    iStart
   integer                                                             ::    iEnd
   integer                                                             ::    NbCells
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D 
+  integer, allocatable, dimension(:)                                  ::    VarI1D
+  real(rkp), allocatable, dimension(:)                                ::    SobolIndices
+  real(rkp), allocatable, dimension(:,:)                              ::    VarR2D
+  real(rkp), pointer, dimension(:)                                    ::    VarR1DPtr=>null()
+  integer, pointer, dimension(:,:)                                    ::    VarI2DPtr=>null()
 
   if (len_trim(Directory) /= 0) then
 
@@ -1082,6 +1100,10 @@ subroutine WriteOutput(This, Directory, Responses)
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Array=This%ParamRecord, File=File)
 
+    allocate(SobolIndices(size(This%ParamRecord,1)), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='SobolIndices', ProcName=ProcName, stat=StatLoc)
+    SobolIndices = Zero 
+
     iStart = 0
 
     i = 1
@@ -1103,47 +1125,67 @@ subroutine WriteOutput(This, Directory, Responses)
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call File%Export(String=ConvertToString(Value=This%Cells(ii)%GetCVError()))
 
+        VarR1DPtr => This%Cells(ii)%GetCoefficientsPointer()
         FileName = DirectoryLoc // '/coefficients.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call ExportArray(Array=This%Cells(ii)%GetCoefficientsPointer(), File=File)
+        call ExportArray(Array=VarR1DPtr, File=File)
+        nullify(VarR1DPtr)
 
+        VarI2DPtr => This%Cells(ii)%GetIndicesPointer()
         FileName = DirectoryLoc // '/indices.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call ExportArray(Array=This%Cells(ii)%GetIndicesPointer(), File=File)
+        call ExportArray(Array=VarI2DPtr, File=File)
+        nullify(VarI2DPtr)
 
+        call This%Cells(ii)%GetRecord(Values=VarR1D)
         FileName = DirectoryLoc // '/sampled_output.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call ExportArray(Array=This%Cells(ii)%GetRecord(), File=File)
+        call ExportArray(Array=VarR1D, File=File)
 
+        call This%Cells(ii)%GetCVErrorHistory(Values=VarR1D)
         FileName = DirectoryLoc // '/cverror_history.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call ExportArray(Array=This%Cells(ii)%GetCVErrorHistory(), File=File)
+        call ExportArray(Array=VarR1D, File=File)
 
+        call This%Cells(ii)%GetOrderHistory(Values=VarI1D)
         FileName = DirectoryLoc // '/order_history.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call ExportArray(Array=This%Cells(ii)%GetOrderHistory(), File=File)
+        call ExportArray(Array=VarI1D, File=File)
 
+        call This%Cells(ii)%GetNbRunsHistory(Values=VarI1D)
         FileName = DirectoryLoc // '/nb_runs_history.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call ExportArray(Array=This%Cells(ii)%GetNbRunsHistory(), File=File)
+        call ExportArray(Array=VarI1D, File=File)
 
+        call This%Cells(ii)%GetCardinalityHistory(Values=VarI1D)
         FileName = DirectoryLoc // '/cardinality_history.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call ExportArray(Array=This%Cells(ii)%GetCardinalityHistory(), File=File)
+        call ExportArray(Array=VarI1D, File=File)
 
+        call This%Cells(ii)%GetSobolIndicesHistory(Values=VarR2D)
         FileName = DirectoryLoc // '/sobol_indices_history.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call ExportArray(Array=This%Cells(ii)%GetSobolIndicesHistory(), File=File)
+        call ExportArray(Array=VarR2D, File=File)
 
+        call This%Cells(ii)%GetSobolIndices(Values=SobolIndices)
         FileName = DirectoryLoc // '/sobol_indices.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call ExportArray(Array=This%Cells(ii)%GetSobolIndices(), File=File)
+        call ExportArray(Array=SobolIndices, File=File)
 
       end do
 
       iStart = iEnd
 
     end do
+
+    deallocate(SobolIndices, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='SobolIndices', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(VarR1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+
+    deallocate(VarR2D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
 
   end if
 
@@ -1432,7 +1474,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
 
   use CommandRoutines_Module
   use ArrayRoutines_Module
-  use StringRoutines_Module
+  use StringConversion_Module
   use SMUQFile_Class                                            ,only:    SMUQFile_Type
 
   type(InputSection_Type)                                             ::    GetInput_Cell
@@ -1770,11 +1812,10 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function GetRecord_Cell(This)
-
-  real(rkp), allocatable, dimension(:)                                ::    GetRecord_Cell
+subroutine GetRecord_Cell(This, Values)
 
   class(Cell_Type), intent(inout)                                     ::    This
+  real(rkp), allocatable, dimension(:), intent(inout)                 ::    Values 
 
   character(*), parameter                                             ::    ProcName='GetRecord_Cell'
   integer                                                             ::    StatLoc=0    
@@ -1782,9 +1823,9 @@ function GetRecord_Cell(This)
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
   if (This%OutputRecord%GetLength() < 1) call Error%Raise(Line='Outputs not yet supplied', ProcName=ProcName)
 
-  call This%OutputRecord%Get(Values=GetRecord_Cell)
+  call This%OutputRecord%Get(Values=Values)
 
-end function
+end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -1858,106 +1899,101 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function GetSobolIndices_Cell(This)
-
-  real(rkp), allocatable, dimension(:)                                ::    GetSobolIndices_Cell
+subroutine GetSobolIndices_Cell(This, Values)
 
   class(Cell_Type), intent(inout)                                     ::    This
+  real(rkp), dimension(:), intent(inout)                              ::    Values 
 
   character(*), parameter                                             ::    ProcName='GetSobolIndices_Cell'
   integer                                                             ::    StatLoc=0    
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  allocate(GetSobolIndices_Cell, source=This%SobolIndices, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='GetSobolIndices', ProcName=ProcName, stat=StatLoc)
+  if (size(values,1) /= size(This%SobolIndices)) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
-end function
+  Values = This%SobolIndices
+
+end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function GetCVErrorHistory_Cell(This)
-
-  real(rkp), allocatable, dimension(:)                                ::    GetCVErrorHistory_Cell
+subroutine GetCVErrorHistory_Cell(This, Values)
 
   class(Cell_Type), intent(inout)                                     ::    This
+  real(rkp), allocatable, dimension(:), intent(inout)                 ::    Values
 
   character(*), parameter                                             ::    ProcName='GetCVErrorHistory_Cell'
   integer                                                             ::    StatLoc=0    
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  call This%CVErrorHistory%Get(Values=GetCVErrorHistory_Cell)
+  call This%CVErrorHistory%Get(Values=Values)
 
-end function
+end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function GetNbRunsHistory_Cell(This)
-
-  integer, allocatable, dimension(:)                                  ::    GetNbRunsHistory_Cell
+subroutine GetNbRunsHistory_Cell(This, Values)
 
   class(Cell_Type), intent(inout)                                     ::    This
+  integer, allocatable, dimension(:), intent(inout)                   ::    Values
 
   character(*), parameter                                             ::    ProcName='GetNbRunsHistory_Cell'
   integer                                                             ::    StatLoc=0    
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  call This%NbRunsHistory%Get(Values=GetNbRunsHistory_Cell)
+  call This%NbRunsHistory%Get(Values=Values)
 
-end function
+end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function GetOrderHistory_Cell(This)
-
-  integer, allocatable, dimension(:)                                  ::    GetOrderHistory_Cell
+subroutine GetOrderHistory_Cell(This, Values)
 
   class(Cell_Type), intent(inout)                                     ::    This
+  integer, allocatable, dimension(:), intent(inout)                   ::    Values
 
   character(*), parameter                                             ::    ProcName='GetOrderHistory_Cell'
   integer                                                             ::    StatLoc=0    
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  call This%OrderHistory%Get(Values=GetOrderHistory_Cell)
+  call This%OrderHistory%Get(Values=Values)
 
-end function
+end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function GetCardinalityHistory_Cell(This)
-
-  integer, allocatable, dimension(:)                                  ::    GetCardinalityHistory_Cell
+subroutine GetCardinalityHistory_Cell(This, Values)
 
   class(Cell_Type), intent(inout)                                     ::    This
+  integer, allocatable, dimension(:), intent(inout)                   ::    Values
 
   character(*), parameter                                             ::    ProcName='GetCardinalityHistory_Cell'
   integer                                                             ::    StatLoc=0    
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  call This%CardinalityHistory%Get(Values=GetCardinalityHistory_Cell)
+  call This%CardinalityHistory%Get(Values=Values)
 
-end function
+end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-function GetSobolIndicesHistory_Cell(This)
-
-  real(rkp), allocatable, dimension(:,:)                              ::    GetSobolIndicesHistory_Cell
+subroutine GetSobolIndicesHistory_Cell(This, Values)
 
   class(Cell_Type), intent(inout)                                     ::    This
+  real(rkp), allocatable, dimension(:,:), intent(inout)               ::    Values
 
   character(*), parameter                                             ::    ProcName='GetSobolIndicesHistory_Cell'
   integer                                                             ::    StatLoc=0    
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  call This%SobolIndicesHistory%Get(Values=GetSobolIndicesHistory_Cell)
+  call This%SobolIndicesHistory%Get(Values=Values)
 
-end function
+end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------

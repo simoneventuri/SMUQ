@@ -23,7 +23,7 @@ use Parameters_Library
 use CommandRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use StatisticsRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -191,7 +191,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, SectionChain, Prefix)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     class(MCMCDRAM_Type), intent(inout)                               ::    This
     class(InputSection_Type), intent(in)                              ::    Input
@@ -404,7 +404,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
     class(MCMCDRAM_Type), intent(in)                                  ::    This

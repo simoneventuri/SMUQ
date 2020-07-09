@@ -21,7 +21,7 @@ module SampleMC_Class
 use Parameters_Library
 use Input_Library
 use CommandRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error

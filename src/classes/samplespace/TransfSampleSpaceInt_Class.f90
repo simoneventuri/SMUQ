@@ -20,7 +20,7 @@ module TransfSampleSpaceInt_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module
@@ -203,7 +203,7 @@ subroutine ConstructInput(This, Input, Prefix)
     nullify(InputSection)
     This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
   else
-    This%CorrMat = EyeR(N=This%NbDim)
+    call Eye(Array=This%Corrmat, N=This%NbDim)
     This%Correlated = .false.
   end if
 
@@ -240,19 +240,19 @@ subroutine ConstructCase1(This, SampleSpace, OriginalSampleSpace)
 
   allocate(This%Label(This%NbDim), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-  This%Label = SampleSpace%GetLabel()
+  call SampleSpace%GetLabels(Labels=This%Label)
 
   allocate(This%ParamName(This%NbDim), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%Paramname', ProcName=ProcName, stat=StatLoc)
-  This%ParamName = SampleSpace%GetName()
+  call SampleSpace%GetNames(Names=This%ParamName)
 
   allocate(This%DistProb(This%NbDim), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
-  This%DistProb = SampleSpace%GetDistribution()
+  call SampleSpace%GetDistributions(Distributions=This%DistProb)
 
   allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
-  This%CorrMat = SampleSpace%GetCorrMat()
+  call SampleSpace%GetCorrMat(CorrMat=This%CorrMat)
 
   This%Correlated = SampleSpace%IsCorrelated()
 
@@ -293,11 +293,11 @@ subroutine ConstructCase2(This, Distributions, CorrMat, OriginalSampleSpace)
 
   allocate(This%Label(This%NbDim), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-  This%Label = OriginalSampleSpace%GetLabel()
+  call OriginalSampleSpace%GetLabels(Labels=This%Label)
 
   allocate(This%ParamName(This%NbDim), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%Paramname', ProcName=ProcName, stat=StatLoc)
-  This%ParamName = OriginalSampleSpace%GetName()
+  call OriginalSampleSpace%GetNames(Names=This%ParamName)
 
   allocate(This%DistProb(This%NbDim), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%DistProb', ProcName=ProcName, stat=StatLoc)
@@ -354,11 +354,11 @@ subroutine ConstructCase3(This, Distributions, CorrMat, OriginalSampleSpace)
 
   allocate(This%Label(This%NbDim), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-  This%Label = OriginalSampleSpace%GetLabel()
+  call OriginalSampleSpace%GetLabels(Labels=This%Label)
 
   allocate(This%ParamName(This%NbDim), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%Paramname', ProcName=ProcName, stat=StatLoc)
-  This%ParamName = OriginalSampleSpace%GetName()
+  call OriginalSampleSpace%GetNames(Names=This%ParamName)
 
   allocate(This%CorrMat(This%NbDim,This%NbDim), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)

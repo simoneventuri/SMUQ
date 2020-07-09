@@ -22,7 +22,7 @@ use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
 use StatisticsRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use QuadPack_Library
 use DistProb_Class
 use Logger_Class                                                  ,only:    Logger
@@ -212,7 +212,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
 

@@ -100,28 +100,28 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Eval_N_OrthoPoly(This, Order, X, Normalized)
+  subroutine Eval_N_OrthoPoly(This, Order, X, Value, Normalized)
     use Parameters_Library
     import                                                            ::    OrthoPoly_Type
-    real(rkp)                                                         ::    Eval_N_OrthoPoly
     class(OrthoPoly_Type), intent(inout)                              ::    This
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    Order
+    real(rkp), intent(out)                                            ::    Value
     logical, optional, intent(in)                                     ::    Normalized
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Eval_MN_OrthoPoly(This, MinOrder, MaxOrder, X, Normalized)
+  subroutine Eval_MN_OrthoPoly(This, MinOrder, MaxOrder, X, Values, Normalized)
     use Parameters_Library
     import                                                            ::    OrthoPoly_Type
-    real(rkp), dimension(:), allocatable                              ::    Eval_MN_OrthoPoly
     class(OrthoPoly_Type), intent(inout)                              ::    This
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    MinOrder
     integer, intent(in)                                               ::    MaxOrder
+    real(rkp), dimension(:), intent(inout)                            ::    Values
     logical, optional, intent(in)                                     ::    Normalized
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------

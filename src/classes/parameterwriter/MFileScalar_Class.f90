@@ -20,7 +20,7 @@ module MFileScalar_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayIORoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -115,7 +115,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput(This, Input, Prefix)
 
-    use StringRoutines_Module
+    use StringConversion_Module
     use ArrayRoutines_Module
 
     class(MFileScalar_Type), intent(inout)                            ::    This

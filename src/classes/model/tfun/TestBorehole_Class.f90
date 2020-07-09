@@ -20,7 +20,7 @@ module TestBorehole_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use TestFunction_Class                                            ,only:    TestFunction_Type
 use Output_Class                                                  ,only:    Output_Type
 use Logger_Class                                                  ,only:    Logger
@@ -211,7 +211,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 function GetInput(This, Name, Prefix, Directory)
 
-  use StringRoutines_Module
+  use StringConversion_Module
 
   type(InputSection_Type)                                             ::    GetInput
   class(TestBorehole_Type), intent(in)                                ::    This

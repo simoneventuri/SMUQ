@@ -21,7 +21,7 @@ module Root_Class
 use Input_Library
 use Parameters_Library
 use CommandRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use AnalysisMethod_Class                                          ,only:    AnalysisMethod_Type
@@ -136,7 +136,7 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput(This, Input, SectionChain, Prefix)
 
-  use StringRoutines_Module
+  use StringConversion_Module
 
   class(Root_Type), intent(inout)                                   ::    This
   class(InputSection_Type), intent(in)                              ::    Input
@@ -222,7 +222,7 @@ end subroutine
 !!-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 function GetInput(This, Name, Prefix, Directory)
 
-  use StringRoutines_Module
+  use StringConversion_Module
 
   type(InputSection_Type)                                           ::    GetInput
   class(Root_Type), intent(inout)                                   ::    This

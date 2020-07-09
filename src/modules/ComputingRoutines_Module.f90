@@ -19,7 +19,8 @@
 module ComputingRoutines_Module
 
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
+use ArrayRoutines_Module
 use Input_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -848,7 +849,7 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ComputeEigenvalues_CMPLX(Matrix, EigenValues, EigenVectors)
 
-  real(rkp), dimension(:,:), intent(inout)                            ::    Matrix
+  real(rkp), contiguous, dimension(:,:), intent(inout)                ::    Matrix
   complex, allocatable, dimension(:), intent(out)                     ::    EigenValues
   real(rkp), allocatable, dimension(:,:), optional, intent(out)       ::    EigenVectors
 
@@ -918,7 +919,7 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ComputeEigenvalues_REAL(Matrix, EigenValues, EigenVectors)
 
-  real(rkp), dimension(:,:), intent(inout)                            ::    Matrix
+  real(rkp), contiguous, dimension(:,:), intent(inout)                 ::    Matrix
   real(rkp), allocatable, dimension(:), intent(out)                   ::    EigenValues
   real(rkp), allocatable, dimension(:,:), optional, intent(out)       ::    EigenVectors
 
@@ -1004,8 +1005,8 @@ end subroutine
 subroutine ComputeQR_Matrix(Matrix, Q, R, LowerR)
 
   real(rkp), dimension(:,:), intent(in)                               ::    Matrix
-  real(rkp), dimension(:,:), intent(inout)                            ::    Q
-  real(rkp), dimension(:,:), intent(inout)                            ::    R
+  real(rkp), contiguous, dimension(:,:), intent(inout)                ::    Q
+  real(rkp), contiguous, dimension(:,:), intent(inout)                ::    R
   logical, optional, intent(in)                                       ::    LowerR
 
   character(*), parameter                                             ::    ProcName='ComputeQR_Matrix'
@@ -1036,7 +1037,7 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ComputeQR_Q(Q, R, LowerR)
 
-  real(rkp), dimension(:,:), intent(inout)                            ::    Q
+  real(rkp), contiguous, dimension(:,:), intent(inout)                 ::    Q
   real(rkp), dimension(:,:), intent(inout)                            ::    R
   logical, optional, intent(in)                                       ::    LowerR
 
@@ -1113,9 +1114,9 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ComputeQInvR_Matrix(Matrix, Q, InvR, LowerInvR)
 
-  real(rkp), dimension(:,:), intent(in)                               ::    Matrix
-  real(rkp), dimension(:,:), intent(inout)                            ::    Q
-  real(rkp), dimension(:,:), intent(out)                              ::    InvR
+  real(rkp), contiguous, dimension(:,:), intent(in)                   ::    Matrix
+  real(rkp), contiguous, dimension(:,:), intent(inout)                ::    Q
+  real(rkp), contiguous, dimension(:,:), intent(out)                  ::    InvR
   logical, optional, intent(in)                                       ::    LowerInvR
 
   character(*), parameter                                             ::    ProcName='ComputeQInvR_Matrix'
@@ -1147,8 +1148,8 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ComputeQInvR_Q(Q, InvR, LowerInvR)
 
-  real(rkp), dimension(:,:), intent(inout)                            ::    Q
-  real(rkp), dimension(:,:), intent(out)                              ::    InvR
+  real(rkp), contiguous, dimension(:,:), intent(inout)                ::    Q
+  real(rkp), contiguous, dimension(:,:), intent(out)                  ::    InvR
   logical, optional, intent(in)                                       ::    LowerInvR
 
   character(*), parameter                                             ::    ProcName='ComputeQInvR_Q'

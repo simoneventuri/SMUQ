@@ -21,7 +21,7 @@ module SAMorrisRadial_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module
@@ -876,9 +876,6 @@ contains
           call This%Cells(iv)%GetSigma(Values=VarR1D)
           call ExportArray(Array=VarR1D, File=File)
 
-          deallocate(VarR1D, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
-
           if (This%HistoryFreq > 0) then
             call This%HistoryStep%Get(Values=VarI1D)
             FileName = '/' // ResponseLabel // '/history_step.dat'
@@ -902,9 +899,6 @@ contains
             call This%Cells(iv)%GetSigmaHistory(Values=VarR2D)
             call ExportArray(Array=VarR2D, File=File, RowMajor=.false.)
 
-            deallocate(VarR2D, stat=StatLoc)
-            if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
-
           end if
 
           ii = iii + 1
@@ -914,6 +908,15 @@ contains
       end do
 
     end if
+
+    if (allocated(VarI1D)) deallocate(VarI1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)
+
+    if (allocated(VarR1D)) deallocate(VarR1D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+
+    if (allocated(VarR2D)) deallocate(VarR2D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

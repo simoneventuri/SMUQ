@@ -20,6 +20,7 @@ module ITableValue_Class
 
 use Input_Library
 use Parameters_Library
+use StringConversion_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
@@ -39,13 +40,13 @@ contains
   procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
+  procedure, public                                                   ::    GetStringValue
   procedure(Initialize_ITableValue), deferred, public                 ::    Initialize
   procedure(Reset_ITableValue), deferred, public                      ::    Reset
   procedure(SetDefaults_ITableValue), deferred, public                ::    SetDefaults
   procedure(ConstructInput_ITableValue), deferred, private            ::    ConstructInput
   procedure(GetInput_ITableValue), deferred, public                   ::    GetInput
   procedure(GetValue_ITableValue), deferred, public                   ::    GetValue
-  procedure(GetCharValue_ITableValue), deferred, public               ::    GetCharValue
   procedure(Copy_ITableValue), deferred, public                       ::    Copy
 end type
 
@@ -97,29 +98,15 @@ abstract interface
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValue_ITableValue(This, Input, Abscissa)
+  subroutine GetValue_ITableValue(This, Input, Abscissa, Values)
     use Parameters_Library
     import                                                            ::    Input_Type
     import                                                            ::    ITableValue_Type  
-    real(rkp), allocatable, dimension(:)                              ::    GetValue_ITableValue
     class(ITableValue_Type), intent(in)                               ::    This
     type(Input_Type), intent(in)                                      ::    Input
     real(rkp), dimension(:), intent(in)                               ::    Abscissa
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCharValue_ITableValue(This, Input, Abscissa, Format)
-    use Parameters_Library
-    import                                                            ::    Input_Type
-    import                                                            ::    ITableValue_Type
-    import                                                            ::    SMUQString_Type
-    type(SMUQString_Type), allocatable, dimension(:)                  ::    GetCharValue_ITableValue
-    class(ITableValue_Type), intent(in)                               ::    This
-    type(Input_Type), intent(in)                                      ::    Input
-    real(rkp), dimension(:), intent(in)                               ::    Abscissa
-    character(*), optional, intent(in)                                ::    Format
-  end function
+    real(rkp), dimension(:), intent(inout)                            ::    Values
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -145,6 +132,40 @@ function GetName(This)
   GetName = This%Name
 
 end function
+!!--------------------------------------------------------------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------------------------------------------------------------
+subroutine GetStringValue(This, Input, Abscissa, Strings, Format)
+  
+  class(ITableValue_Type), intent(in)                                 ::    This
+  type(Input_Type), intent(in)                                        ::    Input
+  real(rkp), dimension(:), intent(in)                                 ::    Abscissa
+  type(SMUQString_Type), dimension(:), intent(inout)                  ::    Strings
+  character(*), optional, intent(in)                                  ::    Format
+
+  character(*), parameter                                             ::    ProcName='GetStringValue'
+  integer                                                             ::    StatLoc=0
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
+  character(:), allocatable                                           ::    FormatLoc
+  integer                                                             ::    i
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  FormatLoc = 'G0'
+  if (present(Format)) FormatLoc = Format
+
+  if (size(Strings,1) /= size(Abscissa,1)) call Error%Raise('Incompatible strings array', ProcName=ProcName)
+
+  allocate(VarR1D(size(Abscissa,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+  
+  call This%GetValue(Input=Input, Abscissa=Abscissa, Values=VarR1D)
+  call ConvertToStrings(Values=VarR1D, Strings=Strings, Format=FormatLoc)
+
+  deallocate(VarR1D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 end module

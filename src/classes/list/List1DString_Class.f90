@@ -31,7 +31,7 @@ private
 public                                                                ::    List1DAllocChar_Type
 
 type                                                                  ::    List1DAllocChar_Type
-  character(:), dimension(:), allocatable                             ::    Values
+  type(SMUQString_Type), dimension(:), allocatable                    ::    Values
   logical                                                             ::    Constructed=.false.
 contains
   procedure, public                                                   ::    Set

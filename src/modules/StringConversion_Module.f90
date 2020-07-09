@@ -1,6 +1,7 @@
-module StringRoutines_Module
+module StringConversion_Module
 
 use Parameters_Library
+use ArrayRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use SMUQString_Class                                              ,only:    SMUQString_Type
@@ -188,16 +189,7 @@ subroutine Convert_C0D_To_I41D(String, Values, Separator)
 
   NbEntries = size(VarString1D)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  call EnsureArraySize(Array=Values, Size1=NbEntries, DefaultValue=.false.)
 
   i = 1
   do i = 1, NbEntries
@@ -233,7 +225,7 @@ end subroutine
 subroutine Convert_C1D_To_I41D(Strings, Values)
 
   character(*), dimension(:), intent(in)                              ::    Strings
-  integer(4), allocatable, dimension(:), intent(inout)                ::    Values
+  integer(4), dimension(:), intent(inout)                             ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_C1D_To_I41D'
   integer                                                             ::    StatLoc=0
@@ -242,16 +234,7 @@ subroutine Convert_C1D_To_I41D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     read(unit=Strings(i), fmt=*, iostat=StatLoc) Values(i)
@@ -265,7 +248,7 @@ end subroutine
 subroutine Convert_String1D_To_I41D(Strings, Values)
 
   class(SMUQString_Type), dimension(:), intent(in)                    ::    Strings
-  integer(4), allocatable, dimension(:), intent(inout)                ::    Values
+  integer(4), dimension(:), intent(inout)                             ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_String1D_To_I41D'
   integer                                                             ::    StatLoc=0
@@ -274,16 +257,7 @@ subroutine Convert_String1D_To_I41D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     Values(i) = ConvertToInteger4(String=Strings(i)%Get())
@@ -346,16 +320,7 @@ subroutine Convert_C0D_To_I81D(String, Values, Separator)
 
   NbEntries = size(VarString1D)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  call EnsureArraySize(Array=Values, Size1=NbEntries, DefaultValue=.false.)
 
   i = 1
   do i = 1, NbEntries
@@ -391,7 +356,7 @@ end subroutine
 subroutine Convert_C1D_To_I81D(Strings, Values)
 
   character(*), dimension(:), intent(in)                              ::    Strings
-  integer(8), allocatable, dimension(:), intent(inout)                ::    Values
+  integer(8), dimension(:), intent(inout)                             ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_C1D_To_I81D'
   integer                                                             ::    StatLoc=0
@@ -400,16 +365,7 @@ subroutine Convert_C1D_To_I81D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     read(unit=Strings(i), fmt=*, iostat=StatLoc) Values(i)
@@ -423,7 +379,7 @@ end subroutine
 subroutine Convert_String1D_To_I81D(Strings, Values)
 
   class(SMUQString_Type), dimension(:), intent(in)                    ::    Strings
-  integer(8), allocatable, dimension(:), intent(inout)                ::    Values
+  integer(8), dimension(:), intent(inout)                             ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_String1D_To_I81D'
   integer                                                             ::    StatLoc=0
@@ -432,16 +388,7 @@ subroutine Convert_String1D_To_I81D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     Values(i) = ConvertToInteger8(String=Strings(i)%Get())
@@ -566,16 +513,7 @@ subroutine Convert_C0D_To_R41D(String, Values, Separator)
 
   NbEntries = size(VarString1D)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  call EnsureArraySize(Array=Values, Size1=NbEntries, DefaultValue=.false.)
 
   i = 1
   do i = 1, NbEntries
@@ -611,7 +549,7 @@ end subroutine
 subroutine Convert_C1D_To_R41D(Strings, Values)
 
   character(*), dimension(:), intent(in)                              ::    Strings
-  integer(4), allocatable, dimension(:), intent(inout)                ::    Values
+  integer(4), dimension(:), intent(inout)                             ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_C1D_To_R41D'
   integer                                                             ::    StatLoc=0
@@ -620,16 +558,7 @@ subroutine Convert_C1D_To_R41D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     read(unit=Strings(i), fmt=*, iostat=StatLoc) Values(i)
@@ -643,7 +572,7 @@ end subroutine
 subroutine Convert_String1D_To_R41D(Strings, Values)
 
   class(SMUQString_Type), dimension(:), intent(in)                    ::    Strings
-  real(4), allocatable, dimension(:), intent(inout)                   ::    Values
+  real(4), dimension(:), intent(inout)                                ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_String1D_To_R41D'
   integer                                                             ::    StatLoc=0
@@ -652,16 +581,7 @@ subroutine Convert_String1D_To_R41D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     Values(i) = ConvertToReal4(String=Strings(i)%Get())
@@ -724,16 +644,7 @@ subroutine Convert_C0D_To_R81D(String, Values, Separator)
 
   NbEntries = size(VarString1D)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  call EnsureArraySize(Array=Values, Size1=NbEntries, DefaultValue=.false.)
 
   i = 1
   do i = 1, NbEntries
@@ -769,7 +680,7 @@ end subroutine
 subroutine Convert_C1D_To_R81D(Strings, Values)
 
   character(*), dimension(:), intent(in)                              ::    Strings
-  real(8), allocatable, dimension(:), intent(inout)                   ::    Values
+  real(8), dimension(:), intent(inout)                                ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_C1D_To_R81D'
   integer                                                             ::    StatLoc=0
@@ -778,16 +689,7 @@ subroutine Convert_C1D_To_R81D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     read(unit=Strings(i), fmt=*, iostat=StatLoc) Values(i)
@@ -801,7 +703,7 @@ end subroutine
 subroutine Convert_String1D_To_R81D(Strings, Values)
 
   class(SMUQString_Type), dimension(:), intent(in)                    ::    Strings
-  real(8), allocatable, dimension(:), intent(inout)                   ::    Values
+  real(8), dimension(:), intent(inout)                                ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_String1D_To_R81D'
   integer                                                             ::    StatLoc=0
@@ -810,16 +712,7 @@ subroutine Convert_String1D_To_R81D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     Values(i) = ConvertToReal8(String=Strings(i)%Get())
@@ -882,16 +775,7 @@ subroutine Convert_C0D_To_L1D(String, Values, Separator)
 
   NbEntries = size(VarString1D,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  call EnsureArraySize(Array=Values, Size1=NbEntries, DefaultValue=.false.)
 
   i = 1
   do i = 1, NbEntries
@@ -924,7 +808,7 @@ end subroutine
 subroutine Convert_C1D_To_L1D(Strings, Values)
 
   character(*), dimension(:), intent(in)                              ::    Strings
-  logical, allocatable, dimension(:), intent(inout)                   ::    Values
+  logical, dimension(:), intent(inout)                                ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_C1D_To_L1D'
   integer                                                             ::    StatLoc=0
@@ -933,16 +817,7 @@ subroutine Convert_C1D_To_L1D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     read(unit=Strings(i), fmt=*, iostat=StatLoc) Values(i)
@@ -956,7 +831,7 @@ end subroutine
 subroutine Convert_String1D_To_L1D(Strings, Values)
 
   class(SMUQString_Type), dimension(:), intent(in)                    ::    Strings
-  logical, allocatable, dimension(:), intent(inout)                   ::    Values
+  logical, dimension(:), intent(inout)                                ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_String1D_To_L1D'
   integer                                                             ::    StatLoc=0
@@ -965,16 +840,7 @@ subroutine Convert_String1D_To_L1D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     Values(i) = ConvertToLogical(String=Strings(i)%Get())
@@ -1037,16 +903,7 @@ subroutine Convert_C0D_To_CX1D(String, Values, Separator)
 
   NbEntries = size(VarString1D,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  call EnsureArraySize(Array=Values, Size1=NbEntries, DefaultValue=.false.)
 
   i = 1
   do i = 1, NbEntries
@@ -1079,7 +936,7 @@ end subroutine
 subroutine Convert_C1D_To_CX1D(Strings, Values)
 
   character(*), dimension(:), intent(in)                              ::    Strings
-  complex, allocatable, dimension(:), intent(inout)                   ::    Values
+  complex, dimension(:), intent(inout)                                ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_C1D_To_CX1D'
   integer                                                             ::    StatLoc=0
@@ -1088,16 +945,7 @@ subroutine Convert_C1D_To_CX1D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     read(unit=Strings(i), fmt=*, iostat=StatLoc) Values(i)
@@ -1111,7 +959,7 @@ end subroutine
 subroutine Convert_String1D_To_CX1D(Strings, Values)
 
   class(SMUQString_Type), dimension(:), intent(in)                    ::    Strings
-  complex, allocatable, dimension(:), intent(inout)                   ::    Values
+  complex, dimension(:), intent(inout)                                ::    Values
 
   character(*), parameter                                             ::    ProcName='Convert_String1D_To_CX1D'
   integer                                                             ::    StatLoc=0
@@ -1120,16 +968,7 @@ subroutine Convert_String1D_To_CX1D(Strings, Values)
 
   NbEntries = size(Strings,1)
 
-  if(allocated(Values)) then
-    if (size(Values,1) /= NbEntries) then
-      deallocate(Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Values)) then
-    allocate(Values(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Values,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   do i = 1, NbEntries
     Values(i) = ConvertToComplex(String=Strings(i)%Get())
@@ -1607,7 +1446,7 @@ end subroutine
 subroutine Convert_C1D_To_String1D(Values, Strings)
 
   character(*), dimension(:), intent(in)                              ::    Values
-  type(SMUQString_Type), allocatable, dimension(:), intent(inout)     ::    Strings
+  type(SMUQString_Type), dimension(:), intent(inout)                  ::    Strings
 
   character(*), parameter                                             ::    ProcName='Convert_C1D_To_String1D'
   integer                                                             ::    StatLoc=0
@@ -1616,16 +1455,7 @@ subroutine Convert_C1D_To_String1D(Values, Strings)
 
   NbEntries = size(Values,1)
 
-  if(allocated(Strings)) then
-    if (size(Strings,1) /= NbEntries) then
-      deallocate(Strings, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Strings)) then
-    allocate(Strings(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Strings,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
   i = 1
   do i = 1, NbEntries
@@ -1636,10 +1466,11 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Convert_R41D_To_String1D(Values, Strings)
+subroutine Convert_R41D_To_String1D(Values, Strings, Format)
 
   real(4), dimension(:), intent(in)                                   ::    Values
-  type(SMUQString_Type), allocatable, dimension(:), intent(inout)     ::    Strings
+  type(SMUQString_Type), dimension(:), intent(inout)                  ::    Strings
+  character(*), optional, intent(in)                                  ::    Format
 
   character(*), parameter                                             ::    ProcName='Convert_R41D_To_String1D'
   integer                                                             ::    StatLoc=0
@@ -1648,30 +1479,29 @@ subroutine Convert_R41D_To_String1D(Values, Strings)
 
   NbEntries = size(Values,1)
 
-  if(allocated(Strings)) then
-    if (size(Strings,1) /= NbEntries) then
-      deallocate(Strings, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Strings)) then
-    allocate(Strings(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Strings,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
-  i = 1
-  do i = 1, NbEntries
-    Strings(i) = ConvertToString(Value=Values(i))
-  end do
+  if (present(Format)) then
+    i = 1
+    do i = 1, NbEntries
+      Strings(i) = ConvertToString(Value=Values(i), Format=Format)
+    end do
+  else 
+    i = 1
+    do i = 1, NbEntries
+      Strings(i) = ConvertToString(Value=Values(i))
+    end do
+  end if
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Convert_R81D_To_String1D(Values, Strings)
+subroutine Convert_R81D_To_String1D(Values, Strings, Format)
 
   real(8), dimension(:), intent(in)                                   ::    Values
-  type(SMUQString_Type), allocatable, dimension(:), intent(inout)     ::    Strings
+  type(SMUQString_Type), dimension(:), intent(inout)                  ::    Strings
+  character(*), optional, intent(in)                                  ::    Format
 
   character(*), parameter                                             ::    ProcName='Convert_R81D_To_String1D'
   integer                                                             ::    StatLoc=0
@@ -1680,21 +1510,19 @@ subroutine Convert_R81D_To_String1D(Values, Strings)
 
   NbEntries = size(Values,1)
 
-  if(allocated(Strings)) then
-    if (size(Strings,1) /= NbEntries) then
-      deallocate(Strings, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
-    end if
-  end if
-  if (.not. allocated(Strings)) then
-    allocate(Strings(NbEntries), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
-  end if
+  if (size(Strings,1) /= NbEntries) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
-  i = 1
-  do i = 1, NbEntries
-    Strings(i) = ConvertToString(Value=Values(i))
-  end do
+  if (present(Format)) then
+    i = 1
+    do i = 1, NbEntries
+      Strings(i) = ConvertToString(Value=Values(i), Format=Format)
+    end do
+  else 
+    i = 1
+    do i = 1, NbEntries
+      Strings(i) = ConvertToString(Value=Values(i))
+    end do
+  end if
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------

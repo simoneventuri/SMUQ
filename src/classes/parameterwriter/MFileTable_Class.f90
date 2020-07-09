@@ -20,7 +20,7 @@ module MFileTable_Class
 
 use Input_Library
 use Parameters_Library
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use Logger_Class                                                  ,only:    Logger
@@ -184,7 +184,7 @@ contains
 
       ParameterName = 'column'
       call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-      VarI1D = ConvertToIntegers(String=VarC0D)
+      call ConvertToIntegers(String=VarC0D, Values=VarI1D)
       if (any(VarI1D <= 0)) call Error%Raise(Line='Specified column 0 or less', ProcName=ProcName)
       call This%ParamColumn(i)%Set(Values=VarI1D)
       call ColumnRecord%Append(Values=VarI1D)
@@ -372,7 +372,8 @@ contains
     if (StatLoc /= 0) call Error%Allocate(Name='Abscissa', ProcName=ProcName, stat=StatLoc)
     Abscissa = Zero
 
-    NbColumns = size(ProcessedTemplate(TableStart)%Split(Separator=SeparatorChar),1)
+    call ProcessedTemplate(TableStart)%Split(Separator=SeparatorChar, Strings=VarString1D)
+    NbColumns = size(VarString1D,1)
 
     allocate(VarString1D(NbColumns), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
@@ -385,7 +386,7 @@ contains
         if (len_trim(VarC0D) == 0) cycle
         if (VarC0D(1:CommentCharLen) == CommentChar) cycle
         ii = ii + 1
-        VarString1D =  ProcessedTemplate(i)%Split(Separator=SeparatorChar)
+        call ProcessedTemplate(i)%Split(Separator=SeparatorChar, Strings=VarString1D)
         Abscissa(ii) = ConvertToReal(String=VarString1D(This%AbscissaColumn)%Get())
       end do
     end if
@@ -396,7 +397,7 @@ contains
     i = 1
     do i = 1, This%NbMParams
       MParamPointer => This%MParam(i)%GetPointer()
-      NewEntry(:,i) = MParamPointer%GetCharValue(Input=Input, Abscissa=Abscissa, Format=This%ParamFormat(i)%Get())
+      call MParamPointer%GetStringValue(Input=Input, Abscissa=Abscissa, Strings=NewEntry(:,i), Format=This%ParamFormat(i)%Get())
       nullify(MParamPointer)
     end do
 
@@ -407,7 +408,7 @@ contains
       if (len_trim(VarC0D) == 0) cycle
       if (VarC0D(1:CommentCharLen) == CommentChar) cycle
       ii = ii + 1
-      VarString1D = ProcessedTemplate(i)%Split(Separator=SeparatorChar)
+      call ProcessedTemplate(i)%Split(Separator=SeparatorChar, Strings=VarString1D)
       iii = 1
       do iii = 1, This%NbMParams
         call This%ParamColumn(iii)%Get(Values=VarI1D)

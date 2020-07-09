@@ -101,7 +101,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput(This, Input, Prefix)
 
-  use StringRoutines_Module
+  use StringConversion_Module
 
   class(LowDiscSobol_Type), intent(inout)                             ::    This
   type(InputSection_Type), intent(in)                                 ::    Input
@@ -177,7 +177,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 function GetInput(This, Name, Prefix, Directory)
 
-  use StringRoutines_Module
+  use StringConversion_Module
 
   type(InputSection_Type)                                             ::    GetInput
   class(LowDiscSobol_Type), intent(in)                                ::    This
@@ -216,7 +216,7 @@ end function
 subroutine Get0D(This, Sequence, NbPoints, Offset)
 
   class(LowDiscSobol_Type), intent(in)                                ::    This
-  real(rkp), dimension(:), intent(inout)                              ::    Sequence
+  real(rkp), contiguous, dimension(:), intent(inout)                  ::    Sequence
   integer, intent(in)                                                 ::    NbPoints  
   integer, optional, intent(in)                                       ::    Offset                                          
 
@@ -255,7 +255,7 @@ end subroutine
 subroutine Get1D(This, Sequence, NbPoints, NbDim, Offset)
 
   class(LowDiscSobol_Type), intent(in)                                ::    This
-  real(rkp), dimension(:,:), intent(inout)                            ::    Sequence
+  real(rkp), contiguous, dimension(:,:), intent(inout)                ::    Sequence
   integer, intent(in)                                                 ::    NbPoints
   integer, intent(in)                                                 ::    NbDim
   integer, optional, intent(in)                                       ::    Offset                                          

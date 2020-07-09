@@ -23,7 +23,7 @@ use Input_Library
 use Parameters_Library
 use Brent_Library
 use ComputingRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use StatisticsRoutines_Module
 use ArrayIORoutines_Module
 use CommandRoutines_Module

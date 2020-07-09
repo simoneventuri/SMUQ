@@ -24,7 +24,7 @@ use ArrayRoutines_Module
 use Input_Library
 use ArrayIORoutines_Module
 use CommandRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use DistProb_Class                                                ,only:    DistProb_Type
@@ -336,13 +336,12 @@ contains
 
   !!------------------------------------------------------------------------------------------------------------------------------
   ! Returns the value of a polynomial of order 'n' for value of 'x'
-  function Eval_N(This, Order, X, Normalized)
-
-    real(rkp)                                                         ::    Eval_N
+  subroutine Eval_N(This, Order, X, Value, Normalized)
 
     class(OrthoNumerical_Type), intent(inout)                         ::    This
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    Order
+    real(rkp), intent(out)                                            ::    Value
     logical, optional, intent(in)                                     ::    Normalized
 
     character(*), parameter                                           ::    ProcName='Eval_N'
@@ -362,10 +361,12 @@ contains
 
     if (This%Order < Order) call This%IncreaseOrder(Order=Order)
 
+    Value = Zero
+
     if (Order == -1) then
-      Eval_N = This%polyorderm1
+      Value = This%polyorderm1
     elseif (Order == 0) then
-      Eval_N = This%polyorder0
+      Value = This%polyorder0
     else
       valnm1 = This%polyorderm1
       valnp0 = This%polyorder0
@@ -376,25 +377,24 @@ contains
         valnm1 = valnp0
         valnp0 = valnp1
       end do
-      Eval_N = valnp1
+      Value = valnp1
     end if
 
     if (NormalizedLoc .and. Order > -1) then
-      Eval_N = Eval_N / This%NFactor(Order+1)
+      Value = Value / This%NFactor(Order+1)
     end if 
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  function Eval_MN(This, MinOrder, MaxOrder, X, Normalized)
-
-    real(rkp), allocatable, dimension(:)                              ::    Eval_MN
+  subroutine Eval_MN(This, MinOrder, MaxOrder, X, Values, Normalized)
 
     class(OrthoNumerical_Type), intent(inout)                         ::    This
     real(rkp), intent(in)                                             ::    X
     integer, intent(in)                                               ::    MinOrder
     integer, intent(in)                                               ::    MaxOrder
+    real(rkp), dimension(:), intent(inout)                            ::    Values
     logical, optional, intent(in)                                     ::    Normalized
 
     character(*), parameter                                           ::    ProcName='Eval_MN'
@@ -413,21 +413,21 @@ contains
     if (MinOrder < -1) call Error%Raise("A starting order of below -1 was requested but is not supported")
     if (MinOrder > MaxOrder) call Error%Raise("Starting order was specified to be larger than the final order")
 
-    allocate(Eval_MN(MaxOrder-MinOrder+1), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Eval_MN', ProcName=ProcName, stat=StatLoc)
+    if (size(Values,1) /= MaxOrder-MinOrder + 1) call Error%Raise('Incompatible values array', ProcName=ProcName)
+    Values = Zero
 
     if (MaxOrder > This%Order) call This%IncreaseOrder(Order=MaxOrder)
 
-    if (MinOrder==MaxOrder) then
-      Eval_MN(1) = This%Eval(Order=MinOrder, X=X)
+    if (MinOrder == MaxOrder) then
+      call This%Eval(Order=MinOrder, X=X, Value=Values(1), Normalized=NormalizedLoc) 
     else
       i_offset = 0
       if (MinOrder == -1)  then
-        Eval_MN(1) = This%Eval(Order=-1, X=X, Normalized=NormalizedLoc)
-        Eval_MN(2) = This%Eval(Order=0, X=X, Normalized=NormalizedLoc)
+        call This%Eval(Order=-1, X=X, Value=Values(1), Normalized=NormalizedLoc)
+        call This%Eval(Order=0, X=X, Value=Values(2), Normalized=NormalizedLoc)
         i_offset = 2
       elseif (MinOrder == 0) then
-        Eval_MN(1) = This%Eval(Order=0, X=X, Normalized=NormalizedLoc)
+        call This%Eval(Order=0, X=X, Value=Values(1), Normalized=NormalizedLoc)
         i_offset = 1
       end if
       valnm1 = This%polyorderm1
@@ -442,8 +442,8 @@ contains
         valnp0 = valnp1
         if (i >= MinOrder) then
           iii = i+i_offset-ii
-          Eval_MN(iii) = valnp1
-          if (NormalizedLoc) Eval_MN(iii) = Eval_MN(iii) / This%NFactor(i+1)
+          Values(iii) = valnp1
+          if (NormalizedLoc) Values(iii) = Values(iii) / This%NFactor(i+1)
         else
           ii = ii + 1
         end if
@@ -452,7 +452,7 @@ contains
 
     end if
 
-  end function
+  end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -633,7 +633,8 @@ contains
 
         real(8), intent(in)                                               ::    X
 
-        Integrand1 = X * This%Eval(Order=i, X=X, Normalized=.false.)**2 * This%Weights%PDF(X=X)
+        call This%Eval(Order=i, X=X, Value=Integrand1, Normalized=.false.)
+        Integrand1 = X * Integrand1**2 * This%Weights%PDF(X=X)
 
       end function
       !!--------------------------------------------------------------------------------------------------------------------------
@@ -645,7 +646,8 @@ contains
 
         real(8), intent(in)                                               ::    X
 
-        Integrand2 = This%Eval(Order=i, X=X, Normalized=.false.)**2 * This%Weights%PDF(X=X)
+        call This%Eval(Order=i, X=X, Value=Integrand2, Normalized=.false.)
+        Integrand2 = Integrand2**2 * This%Weights%PDF(X=X)
 
       end function
       !!--------------------------------------------------------------------------------------------------------------------------

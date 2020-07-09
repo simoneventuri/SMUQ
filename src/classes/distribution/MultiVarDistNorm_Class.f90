@@ -21,7 +21,7 @@ module MultiVarDistNorm_Class
 use Input_Library
 use Parameters_Library
 use ComputingRoutines_Module
-use StringRoutines_Module
+use StringConversion_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use Logger_Class                                                  ,only:    Logger
@@ -235,7 +235,7 @@ contains
   !!------------------------------------------------------------------------------------------------------------------------------
   function GetInput(This, Name, Prefix, Directory)
 
-    use StringRoutines_Module
+    use StringConversion_Module
 
     type(InputSection_Type)                                           ::    GetInput
 
@@ -311,7 +311,7 @@ contains
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
-    real(rkp), dimension(:,:), intent(in)                             ::    L
+    real(rkp), contiguous, dimension(:,:), intent(in)                 ::    L
 
     character(*), parameter                                           ::    ProcName='PDF_Cholesky'
     integer                                                           ::    StatLoc=0
@@ -379,7 +379,7 @@ contains
     real(rkp), dimension(:), intent(in)                               ::    X
     real(rkp), dimension(:), intent(in)                               ::    Mu
     real(rkp), dimension(:,:), intent(in)                             ::    Cov
-    real(rkp), dimension(:,:), intent(in)                             ::    L
+    real(rkp), contiguous, dimension(:,:), intent(in)                 ::    L
 
     character(*), parameter                                           ::    ProcName='ComputePDF_Cholesky'
     integer                                                           ::    StatLoc=0
@@ -422,7 +422,7 @@ contains
 
     class(MultiVarDistNorm_Type), intent(in)                          ::    This
     real(rkp), dimension(:), intent(in)                               ::    X
-    real(rkp), dimension(:,:), intent(in)                             ::    L
+    real(rkp), contiguous, dimension(:,:), intent(in)                 ::    L
 
     character(*), parameter                                           ::    ProcName='LogPDF_Cholesky'
     integer                                                           ::    StatLoc=0
@@ -440,7 +440,7 @@ contains
     real(rkp), dimension(:), intent(in)                               ::    X
     real(rkp), dimension(:), intent(in)                               ::    Mu
     real(rkp), dimension(:,:), intent(in)                             ::    Cov
-    real(rkp), dimension(:,:), intent(in)                             ::    L
+    real(rkp), contiguous, dimension(:,:), intent(in)                 ::    L
 
     character(*), parameter                                           ::    ProcName='LogComputePDF_Cholesky'
     integer                                                           ::    StatLoc=0

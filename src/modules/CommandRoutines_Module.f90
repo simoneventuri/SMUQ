@@ -1,7 +1,7 @@
 module CommandRoutines_Module
 
 use File_Library
-use StringRoutines_Module
+use StringConversion_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use ProgramDefs_Class                                             ,only:    ProgramDefs
