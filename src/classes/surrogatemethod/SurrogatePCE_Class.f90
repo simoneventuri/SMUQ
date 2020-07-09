@@ -151,7 +151,7 @@ contains
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-    This%BasisScheme = 'numerical'
+    This%BasisScheme = 'askey_numerical'
     This%SectionChain = ''
     This%InputSamplesTransform = .true.
 

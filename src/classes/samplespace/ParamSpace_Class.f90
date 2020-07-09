@@ -201,7 +201,7 @@ contains
       nullify(InputSection)
       This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
     else
-      call Eye(Array=This%CorrMat)
+      call Eye(Array=This%CorrMat, N=This%NbDim)
       This%Correlated = .false.
     end if
 

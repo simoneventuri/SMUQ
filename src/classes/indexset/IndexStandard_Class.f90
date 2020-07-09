@@ -226,9 +226,9 @@ contains
 
           ii = 1
           do ii = 1, M
-            VarR1D = Zero 
-            VarR1D(ii) = k
-            call IndicesRecord%Append(Values=VarR1D)
+            VarI1D = Zero 
+            VarI1D(ii) = k
+            call IndicesRecord%Append(Values=VarI1D)
           end do
 
           cycle

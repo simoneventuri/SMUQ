@@ -320,7 +320,7 @@ contains
     if (size(Indices,1) /= This%NbDim) call Error%Raise(Line='Indices length does not match the dimension of the' //           & 
                                                                         ' multivariate orthogonal polynomial', ProcName=ProcName)
 
-    if (size(Values,1) /= This%NbDim) call Error%Raise('Incompatible values array', ProcName=ProcName)
+    if (size(Values,1) /= size(Indices,2)) call Error%Raise('Incompatible values array', ProcName=ProcName)
 
     if (size(X,1) /= This%NbDim) call Error%Raise('Incompatible X array', ProcName=ProcName)
 
