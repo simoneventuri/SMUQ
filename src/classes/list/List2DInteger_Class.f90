@@ -76,7 +76,7 @@ subroutine GetI2D(This, Values)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-  call EnsureArraySize(Array=Values, Size1=size(This%Values,1), DefaultValue=.false.)
+  call EnsureArraySize(Array=Values, Size1=size(This%Values,1), Size2=size(This%Values,2), DefaultValue=.false.)
   Values = This%Values
 
 end subroutine

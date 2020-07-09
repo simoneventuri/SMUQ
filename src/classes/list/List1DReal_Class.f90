@@ -69,15 +69,15 @@ end subroutine
 subroutine GetR1D(This, Values)
 
   class(List1DAllocReal_Type), intent(in)                             ::    This
-  real(rkp), dimension(:), allocatable, intent(inout)                 ::    Values
+  real(rkp), allocatable, dimension(:), intent(inout)                 ::    Values
 
   character(*), parameter                                             ::    ProcName='GetR2D'
   integer                                                             ::    StatLoc=0
 
   if (.not. This%Constructed) call Error%Raise(Line='Object never constructed', ProcName=ProcName)
 
-  call EnsureArraySize(Array=Values, Size1=size(This%Values,1), DefaultValues.false.)
-  Values = Value
+  call EnsureArraySize(Array=Values, Size1=size(This%Values,1), DefaultValue=.false.)
+  Values = This%Values
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------

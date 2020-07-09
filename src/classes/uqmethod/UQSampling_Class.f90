@@ -469,6 +469,7 @@ contains
     integer                                                           ::    StatLoc=0
     character(:), allocatable                                         ::    VarC0D
     real(rkp), allocatable, dimension(:)                              ::    VarR1D
+    real(rkp), dimension(:), pointer                                  ::    VarR1DPtr=>null()
     integer, allocatable, dimension(:,:)                              ::    VarI2D
     integer, dimension(:,:), pointer                                  ::    VarI2DPtr=>null()
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
@@ -491,6 +492,7 @@ contains
     type(Input_Type), allocatable, dimension(:)                       ::    Input
     integer                                                           ::    ParamRecordLength
     procedure(RestartTarget), pointer                                 ::    RestartInput=>null()
+    type(SMUQString_Type), allocatable, dimension(:)                  ::    Labels 
 
     if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
@@ -502,6 +504,10 @@ contains
 
     NbDim = SampleSpace%GetNbDim()
     SilentLoc = This%Silent
+
+    allocate(Labels(NbDim), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
+    call SampleSpace%GetLabels(Labels=Labels)
 
     if (.not. allocated(This%BinCounts)) then
       allocate(This%BinCounts(This%NbHistograms), stat=StatLoc)
@@ -539,7 +545,7 @@ contains
         write(*,'(A)') Line
       end if
 
-      call SampleSpace%Draw(Sampler=This%Sampler, NbSamples=This%NbSamples, Samples=This%ParamSamples)
+      call SampleSpace%Draw(Sampler=This%Sampler, NbSamples=This%NbSamples, Samples=This%ParamSample)
 
       allocate(This%ParamSampleRan(size(This%ParamSample,2)), stat=StatLoc)
       if (StatLoc /= 0) call Error%Allocate(Name='This%ParamSampleRan', ProcName=ProcName, stat=StatLoc)
@@ -577,7 +583,7 @@ contains
 
         ii = 1
         do ii = 1, NbInputs
-          call Input(ii)%Construct(Input=This%ParamSample(:,i+ii), Labels=SampleSpace%GetLabel())
+          call Input(ii)%Construct(Input=This%ParamSample(:,i+ii), Labels=Labels)
         end do
 
         if (.not. SilentLoc) then
@@ -615,11 +621,15 @@ contains
             if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
             VarR1D = Zero
 
+            VarR1DPtr => This%Histograms(ii)%GetBinEdgesPointer()
+
             iii = 1
             do iii = 1, Outputs(iOutput,iRun)%GetNbNodes()
               VarR1D = VarR2DPtr(iii,:)
-              call BinValues(Values=VarR1D, BinEdges=This%Histograms(ii)%GetBinEdgesPointer(), BinCounts=VarI2DPtr(:,iii))
+              call BinValues(Values=VarR1D, BinEdges=VarR1DPtr, BinCounts=VarI2DPtr(:,iii))
             end do  
+
+            nullify(VarR1DPtr)
 
             deallocate(VarR1D, stat=StatLoc)
             if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
@@ -673,6 +683,9 @@ contains
 
     if (present(OutputDirectory)) call This%WriteOutput(Directory=OutputDirectory, Responses=Responses)
 
+    deallocate(Labels, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
+
     deallocate(This%ParamRecord, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamRecord', ProcName=ProcName, stat=StatLoc)
 
@@ -722,6 +735,7 @@ contains
     integer                                                           ::    i
     integer                                                           ::    ii
     integer                                                           ::    iii
+    real(rkp), dimension(:), pointer                                  ::    VarR1DPtr=>null()
     integer, dimension(:,:), pointer                                  ::    VarI2DPtr=>null()
 
 
@@ -754,9 +768,10 @@ contains
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=VarI2DPtr, File=File, RowMajor=.true.)
 
+        VarR1DPtr => This%Histograms(i)%GetBinEdgesPointer()
         FileName = '/' //This%Labels(i) // '/bin_edges.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-        call ExportArray(Array=This%Histograms(i)%GetBinEdgesPointer(), File=File)
+        call ExportArray(Array=VarR1DPtr, File=File)
 
         nullify(VarI2DPtr)
 
