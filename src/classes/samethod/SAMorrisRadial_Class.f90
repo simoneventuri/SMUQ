@@ -634,9 +634,6 @@ contains
           call Input(ii)%Construct(Input=This%ParamSample(:,iii), Labels=Labels)
         end do
 
-        deallocate(Labels, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='Labels', ProcName=ProcName, stat=StatLoc)
-
         if (.not. SilentLoc) then
           Line = '  Running blocks #' // ConvertToString(Value=i+1) 
           if(NbBlocks > 1) Line = Line // '-' // ConvertToString(Value=i+NbBlocks)

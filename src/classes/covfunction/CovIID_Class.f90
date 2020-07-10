@@ -161,7 +161,7 @@ contains
 
     type(InputSection_Type)                                           ::    GetInput
 
-    class(CovIID_Type), intent(in)                      ::    This
+    class(CovIID_Type), intent(in)                                    ::    This
     character(*), intent(in)                                          ::    Name
     character(*), optional, intent(in)                                ::    Prefix
     character(*), optional, intent(in)                                ::    Directory

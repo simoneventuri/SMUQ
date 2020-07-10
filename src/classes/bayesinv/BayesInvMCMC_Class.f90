@@ -619,13 +619,14 @@ contains
 
       PrefixLoc = Directory
 
+      allocate(Names(SampleSpace%GetNbDim()), stat=StatLoc)
+      if (StatLoc /= 0) call Error%Allocate(Name='Names', ProcName=ProcName, stat=StatLoc)
       call SampleSpace%GetNames(Names=Names)
       FileName = '/parameter_names.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
       call ExportArray(Array=Names, File=File)
       deallocate(Names, stat=StatLoc)
       if (StatLoc /= 0) call Error%Deallocate(Name='Names', ProcName=ProcName, stat=StatLoc)
-
 
       FileName = '/prior_chain.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')

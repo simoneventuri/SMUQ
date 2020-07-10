@@ -109,8 +109,8 @@ contains
 
     character(*), parameter                                           ::    ProcName='SetDefaults'
 
-    This%NbGridLevels = 0
-    This%PerturbationSize = 0
+    This%NbGridLevels = 100
+    This%PerturbationSize = 1
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
@@ -295,7 +295,6 @@ contains
     integer                                                           ::    StatLoc=0
     integer, allocatable, dimension(:)                                ::    Signs
     integer, allocatable, dimension(:)                                ::    PermutationIndices
-    integer                                                           ::    NbGridLevelsLoc
     integer                                                           ::    NbEntries
     integer                                                           ::    NbDimP1
     real(rkp), allocatable, dimension(:,:)                            ::    XStar
@@ -307,7 +306,6 @@ contains
     real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
     integer, allocatable, dimension(:,:)                              ::    VarI2D
     real(rkp)                                                         ::    GridSize
-    integer                                                           ::    PerturbationSizeLoc
     real(rkp)                                                         ::    PerturbationSize
     integer                                                           ::    i
     integer                                                           ::    ii
@@ -315,15 +313,6 @@ contains
     integer                                                           ::    iv
 
     if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-    NbGridLevelsLoc = NbDim
-    if (This%NbGridLevels > 0) NbGridLevelsLoc = This%NbGridLevels
-
-    PerturbationSizeLoc = nint(real(NbGridLevelsLoc,rkp)/Two)
-    if (This%PerturbationSize > 0) PerturbationSizeLoc = This%PerturbationSize
-    if (PerturbationSizeLoc <= 0) call Error%Raise('Perturbation size must be above zero', ProcName=ProcName)
-    if (PerturbationSizeLoc >= NbGridLevelsLoc) call Error%Raise('Perturbation size must be lower than number of grid levels', &
-                                                                                                               ProcName=ProcName)
 
     NbEntries = (NbDim+1)*NbTrajectories
     NbDimP1 = NbDim+1
@@ -343,8 +332,8 @@ contains
 
     Trajectories = Zero
 
-    GridSize = One / real(NbGridLevelsLoc-1,rkp)
-    PerturbationSize = GridSize*real(PerturbationSizeLoc,rkp)
+    GridSize = One / real(This%NbGridLevels-1,rkp)
+    PerturbationSize = GridSize*real(THis%PerturbationSize,rkp)
 
     allocate(Signs(NbDim), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Signs', ProcName=ProcName, stat=StatLoc)
@@ -362,7 +351,7 @@ contains
     if (StatLoc /= 0) call Error%Allocate(Name='B', ProcName=ProcName, stat=StatLoc)
     call StrictTriangular(Array=B, UL='L')
 
-    VarI0D = NbGridLevelsLoc-PerturbationSizeLoc
+    VarI0D = This%NbGridLevels-This%PerturbationSize
     allocate(VarR1D(VarI0D+1), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
