@@ -226,7 +226,7 @@ subroutine Split(This, Strings, Separator)
 
   class(SMUQString_Type), intent(in)                                  ::    This
   character(*), optional, intent(in)                                  ::    Separator
-  type(SMUQString_Type), allocatable, dimension(:)                    ::    Strings
+  type(SMUQString_Type), allocatable, dimension(:), intent(inout)     ::    Strings
 
   character(*), parameter                                             ::    ProcName='Split'
   integer                                                             ::    StatLoc=0
@@ -249,8 +249,16 @@ subroutine Split(This, Strings, Separator)
 
   NbStrings = size(SplitChar)
 
-  allocate(Strings(NbStrings), stat=StatLoc)
-  if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
+  if (allocated(Strings)) then
+    if (size(Strings,1) /= NbStrings) then
+      deallocate(Strings, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
+    end if
+  end if
+  if (.not. allocated(Strings)) then
+    allocate(Strings(NbStrings), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Strings', ProcName=ProcName, stat=StatLoc)
+  end if
 
   i = 1
   do i = 1, NbStrings
