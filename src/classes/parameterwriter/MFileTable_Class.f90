@@ -375,9 +375,6 @@ contains
     call ProcessedTemplate(TableStart)%Split(Separator=SeparatorChar, Strings=VarString1D)
     NbColumns = size(VarString1D,1)
 
-    allocate(VarString1D(NbColumns), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='VarString1D', ProcName=ProcName, stat=StatLoc)
-
     if (This%AbscissaColumn <= NbColumns) then
       i = 1
       ii = 0
