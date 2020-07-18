@@ -33,17 +33,12 @@ private
 public                                                                ::    AnalysisMethod_Type
 
 type, abstract                                                        ::    AnalysisMethod_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_AnalysisMethod), deferred, public              ::    Initialize
   procedure(Reset_AnalysisMethod), deferred, public                   ::    Reset
-  procedure(SetDefaults_AnalysisMethod), deferred, public             ::    SetDefaults
   procedure(ConstructInput_AnalysisMethod), deferred, private         ::    ConstructInput
   procedure(GetInput_AnalysisMethod), deferred, public                ::    GetInput
   procedure(Run_AnalysisMethod), deferred, public                     ::    Run
@@ -55,21 +50,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_AnalysisMethod(This)
-    import                                                            ::    AnalysisMethod_Type
-    class(AnalysisMethod_Type), intent(inout)                         ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_AnalysisMethod(This)
-    import                                                            ::    AnalysisMethod_Type
-    class(AnalysisMethod_Type), intent(inout)                         ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_AnalysisMethod(This)
     import                                                            ::    AnalysisMethod_Type
     class(AnalysisMethod_Type), intent(inout)                         ::    This
   end subroutine
@@ -123,18 +104,5 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
-
-    character(:), allocatable                                         ::    GetName
-    class(AnalysisMethod_Type), intent(inout)                         ::    This
-
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    GetName = This%Name
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -38,9 +38,7 @@ public                                                                ::    Anal
 type, extends(AnalysisMethod_Type)                                    ::    AnalysisUQ_Type
   class(UQMethod_Type), allocatable                                   ::    UQMethod
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run
@@ -52,181 +50,148 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(AnalysisUQ_Type), intent(inout)                             ::    This
+  class(AnalysisUQ_Type), intent(inout)                               ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Initialized = .true.
-      This%Name = 'AnalysisUQ'
-      call This%SetDefaults()
-    end if
+  This%Constructed=.false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  deallocate(This%UQMethod, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%SurrogateMethod', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+  This%SectionChain = ''
 
-    class(AnalysisUQ_Type), intent(inout)                             ::    This
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, SectionChain, Prefix)
 
-    deallocate(This%UQMethod, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%SurrogateMethod', ProcName=ProcName, stat=StatLoc)
+  class(AnalysisUQ_Type), intent(inout)                               ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), intent(in)                                            ::    SectionChain
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    This%Initialized=.false.
-    This%Constructed=.false.
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    PrefixLoc
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    SectionName
 
-    call This%Initialize()
+  call This%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  This%SectionChain = SectionChain
 
-    class(AnalysisUQ_Type), intent(inout)                             ::    This
+  call UQMethod_Factory%Construct(Object=This%UQMethod, Input=Input, SectionChain=This%SectionChain, Prefix=PrefixLoc)
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
-    integer                                                           ::    StatLoc=0
+  This%Constructed = .true.
 
-    This%SectionChain = ''
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, SectionChain, Prefix)
+  type(InputSection_Type)                                             ::    GetInput
+  class(AnalysisUQ_Type), intent(inout)                               ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    class(AnalysisUQ_Type), intent(inout)                             ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), intent(in)                                          ::    SectionChain
-    character(*), optional, intent(in)                                ::    Prefix
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    PrefixLoc
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    character(:), allocatable                                         ::    SectionName
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    This%SectionChain = SectionChain
+  GetInput = UQMethod_Factory%GetObjectInput(Object=This%UQMethod, Name=Name, &
+                                             Prefix=PrefixLoc, Directory=DirectorySub)
 
-    call UQMethod_Factory%Construct(Object=This%UQMethod, Input=Input, SectionChain=This%SectionChain, Prefix=PrefixLoc)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    This%Constructed = .true.
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Run(This, SampleSpace, Responses, Model, OutputDirectory)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  class(AnalysisUQ_Type), intent(inout)                               ::    This
+  class(SampleSpace_Type), intent(in)                                 ::    SampleSpace
+  type(Response_Type), dimension(:), intent(in)                       ::    Responses
+  class(Model_Type), intent(inout)                                    ::    Model
+  character(*), optional, intent(in)                                  ::    OutputDirectory
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  character(*), parameter                                             ::    ProcName='Run'
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    OutputDirectoryLoc
 
-    type(InputSection_Type)                                           ::    GetInput
-    class(AnalysisUQ_Type), intent(inout)                             ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  OutputDirectoryLoc = ''
+  if (present(OutputDirectory)) OutputDirectoryLoc = OutputDirectory
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
+  if (present(OutputDirectory)) then
+    call This%UQMethod%Run(SampleSpace=SampleSpace, Responses=Responses, Model=Model, OutputDirectory=OutputDirectoryLoc)
+  else
+    call This%UQMethod%Run(SampleSpace=SampleSpace, Responses=Responses, Model=Model)
+  end if
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  class(AnalysisUQ_Type), intent(out)                                 ::    LHS
+  class(AnalysisMethod_Type), intent(in)                              ::    RHS
 
-    GetInput = UQMethod_Factory%GetObjectInput(Object=This%UQMethod, Name=Name,                             &
-                                                                                         Prefix=PrefixLoc, Directory=DirectorySub)
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  select type (RHS)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run(This, SampleSpace, Responses, Model, OutputDirectory)
+    type is (AnalysisUQ_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
 
-    class(AnalysisUQ_Type), intent(inout)                             ::    This
-    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
-    type(Response_Type), dimension(:), intent(in)                     ::    Responses
-    class(Model_Type), intent(inout)                                  ::    Model
-    character(*), optional, intent(in)                                ::    OutputDirectory
+      if (RHS%Constructed) then
+        allocate(LHS%UQMethod, source=RHS%UQMethod, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%SurrogateMethod', ProcName=ProcName, stat=StatLoc)
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-    character(*), parameter                                           ::    ProcName='Run'
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    OutputDirectoryLoc
+  end select
 
-    OutputDirectoryLoc = ''
-    if (present(OutputDirectory)) OutputDirectoryLoc = OutputDirectory
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (present(OutputDirectory)) then
-      call This%UQMethod%Run(SampleSpace=SampleSpace, Responses=Responses, Model=Model, OutputDirectory=OutputDirectoryLoc)
-    else
-      call This%UQMethod%Run(SampleSpace=SampleSpace, Responses=Responses, Model=Model)
-    end if
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  type(AnalysisUQ_Type), intent(inout)                                ::    This
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-    class(AnalysisUQ_Type), intent(out)                               ::    LHS
-    class(AnalysisMethod_Type), intent(in)                            ::    RHS
+  if (allocated(This%UQMethod)) deallocate(This%UQMethod, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%UQMethod', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    select type (RHS)
-  
-      type is (AnalysisUQ_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-
-        if (RHS%Constructed) then
-          allocate(LHS%UQMethod, source=RHS%UQMethod, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%SurrogateMethod', ProcName=ProcName, stat=StatLoc)
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
-
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(AnalysisUQ_Type), intent(inout)                              ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-    if (allocated(This%UQMethod)) deallocate(This%UQMethod, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%UQMethod', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

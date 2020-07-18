@@ -30,8 +30,6 @@ private
 public                                                                ::    ProgramDefs
 
 type                                                                  ::    ProgramDefs_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    RunDir
   character(:), allocatable                                           ::    SuppliedCaseDir
@@ -44,7 +42,6 @@ type                                                                  ::    Prog
   character(:), allocatable                                           ::    LogDir
   character(:), allocatable                                           ::    LogFilePath
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
   procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct                   =>    ConstructInput
@@ -64,323 +61,289 @@ contains
 end Type
 
 type(ProgramDefs_Type)                                                ::    ProgramDefs
-logical, parameter                                                    ::    DebugGlobal = .false.
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
-
-    class(ProgramDefs_Type), intent(inout)                            ::    This
-
-    character(*), parameter                                           ::    ProcName='Initialize'
-    integer                                                           ::    StatLoc=0
-
-    if (.not. This%Initialized) then
-      This%Initialized = .true.
-      This%Name = 'programdefs'
-      call This%SetDefaults()
-    end if
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
-
-    class(ProgramDefs_Type), intent(inout)                            ::    This
-
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
-
-    This%Initialized=.false.
-    This%Constructed=.false.
-
-    call This%Initialize()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
-
-    class(ProgramDefs_Type),intent(inout)                             ::    This
-
-    character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    This%RunDir = ''
-    This%LogDir = ''
-    This%CaseDir = ''
-    This%SuppliedCaseDir = ''
-    This%InputFilePath = ''
-    This%InputFilePrefix = '/input'
-    This%InputFileSuffix = '/input.dat'
-    This%OutputDir = ''
-    This%RestartDir = ''
-
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------  
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
+
+  class(ProgramDefs_Type), intent(inout)                              ::    This
+
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
-    
-    class(ProgramDefs_Type), intent(inout)                            ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-    
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable                                         ::    PrefixLoc
-    logical                                                           ::    Found
+  This%Constructed=.false.
+
+  call This%SetDefaults()
 
-    if (This%Constructed) call This%Reset
-    if (.not. This%Initialized) call This%Initialize 
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine SetDefaults(This)
 
-    This%RunDir = PrefixLoc
+  class(ProgramDefs_Type),intent(inout)                               ::    This
 
-    ParameterName = 'log_directory'
-    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%LogDir = PrefixLoc // '/' // VarC0D
-    else
-      This%LogDir = PrefixLoc // '/log'
-    end if
+  character(*), parameter                                             ::    ProcName='SetDefaults'
 
-    ParameterName = 'log_file_name'
-    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%LogFilePath = This%LogDir // '/' // VarC0D
-    else
-      This%LogFilePath = This%LogDir // '/log.dat'
-    end if
+  This%RunDir = ''
+  This%LogDir = ''
+  This%CaseDir = ''
+  This%SuppliedCaseDir = ''
+  This%InputFilePath = ''
+  This%InputFilePrefix = 'input/'
+  This%InputFileSuffix = 'input.dat'
+  This%OutputDir = ''
+  This%RestartDir = ''
 
-    ParameterName = 'output_directory'
-    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%OutputDir = PrefixLoc // '/' // VarC0D
-    else
-      This%OutputDir = PrefixLoc // '/output'
-    end if
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------  
 
-    ParameterName = 'restart_directory'
-    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%RestartDir = PrefixLoc // '/' // VarC0D
-    else
-      This%RestartDir = PrefixLoc // '/restart'
-    end if
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
+  
+  class(ProgramDefs_Type), intent(inout)                              ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
+  
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    VarC0D
+  character(:), allocatable                                           ::    PrefixLoc
+  logical                                                             ::    Found
 
-    ParameterName = 'case_directory'
-    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%CaseDir = PrefixLoc // '/' // VarC0D
-    else
-      This%CaseDir = PrefixLoc // '/case'
-    end if
+  call This%Reset
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    This%InputFilePath = This%CaseDir // This%InputFilePrefix // This%InputFileSuffix
+  This%RunDir = PrefixLoc
 
-    ParameterName = 'case'
-    call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%SuppliedCaseDir = VarC0D
+  ParameterName = 'log_directory'
+  call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+  This%LogDir = PrefixLoc // 'log/'
+  if (Found) This%LogDir = PrefixLoc // VarC0D
+  if (This%LogDir(len(This%LogDir):len(This%LogDir)) /= '/') This%LogDir = This%LogDir // '/'
 
-    This%Constructed = .true.
-    
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  ParameterName = 'log_file_name'
+  call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+  This%LogFilePath = This%LogDir // 'log.dat'
+  if (Found) This%LogFilePath = This%LogDir // VarC0D
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOutputDir(This)
+  ParameterName = 'output_directory'
+  call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+  This%OutputDir = PrefixLoc // 'output/'
+  if (Found) This%OutputDir = PrefixLoc // VarC0D
+  if (This%OutputDir(len(This%OutputDir):len(This%OutputDir)) /= '/') This%OutputDir = This%OutputDir // '/'
 
-    character(:), allocatable                                         ::    GetOutputDir
+  ParameterName = 'restart_directory'
+  call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+  This%RestartDir = PrefixLoc // 'restart/'
+  if (Found) This%RestartDir = PrefixLoc // VarC0D
+  if (This%RestartDir(len(This%RestartDir):len(This%RestartDir)) /= '/') This%RestartDir = This%RestartDir // '/'
 
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetOutputDir'
+  ParameterName = 'case_directory'
+  call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+  This%CaseDir = PrefixLoc // 'case/'
+  if (Found) This%CaseDir = PrefixLoc // VarC0D
+  if (This%CaseDir(len(This%CaseDir):len(This%CaseDir)) /= '/') This%CaseDir = This%CaseDir // '/'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  This%InputFilePath = This%CaseDir // This%InputFilePrefix // This%InputFileSuffix
 
-    GetOutputDir = This%OutputDir
+  ParameterName = 'case'
+  call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%SuppliedCaseDir = VarC0D
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Constructed = .true.
+  
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetRestartDir(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetOutputDir(This)
 
-    character(:), allocatable                                         ::    GetRestartDir
+  character(:), allocatable                                           ::    GetOutputDir
 
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetRestartDir'
+  class(ProgramDefs_Type),intent(in)                                  ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetOutputDir'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetRestartDir = This%RestartDir
+  GetOutputDir = This%OutputDir
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInputFilePath(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetRestartDir(This)
 
-    character(:), allocatable                                         ::    GetInputFilePath
+  character(:), allocatable                                           ::    GetRestartDir
 
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetInputFilePath'
+  class(ProgramDefs_Type),intent(in)                                  ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetRestartDir'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetInputFilePath = This%InputFilePath
+  GetRestartDir = This%RestartDir
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInputFilePrefix(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInputFilePath(This)
 
-    character(:), allocatable                                         ::    GetInputFilePrefix
+  character(:), allocatable                                           ::    GetInputFilePath
 
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetInputFilePrefix'
+  class(ProgramDefs_Type),intent(in)                                  ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetInputFilePath'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetInputFilePrefix = This%InputFilePrefix
+  GetInputFilePath = This%InputFilePath
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInputFileSuffix(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInputFilePrefix(This)
 
-    character(:), allocatable                                         ::    GetInputFileSuffix
+  character(:), allocatable                                           ::    GetInputFilePrefix
 
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetInputFileSuffix'
+  class(ProgramDefs_Type),intent(in)                                  ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetInputFilePrefix'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetInputFileSuffix = This%InputFileSuffix
+  GetInputFilePrefix = This%InputFilePrefix
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSuppliedCaseDir(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInputFileSuffix(This)
 
-    character(:), allocatable                                         ::    GetSuppliedCaseDir
+  character(:), allocatable                                           ::    GetInputFileSuffix
 
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetSuppliedCaseDir'
+  class(ProgramDefs_Type),intent(in)                                  ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetInputFileSuffix'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetSuppliedCaseDir = This%SuppliedCaseDir
+  GetInputFileSuffix = This%InputFileSuffix
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetCaseDir(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetSuppliedCaseDir(This)
 
-    character(:), allocatable                                         ::    GetCaseDir
+  character(:), allocatable                                           ::    GetSuppliedCaseDir
 
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetCaseDir'
+  class(ProgramDefs_Type),intent(in)                                  ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetSuppliedCaseDir'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetCaseDir = This%CaseDir
+  GetSuppliedCaseDir = This%SuppliedCaseDir
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetRunDir(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetCaseDir(This)
 
-    character(:), allocatable                                         ::    GetRunDir
+  character(:), allocatable                                           ::    GetCaseDir
 
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetRunDir'
+  class(ProgramDefs_Type),intent(in)                                  ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetCaseDir'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetRunDir = This%RunDir
+  GetCaseDir = This%CaseDir
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLogDir(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetRunDir(This)
 
-    character(:), allocatable                                         ::    GetLogDir
+  character(:), allocatable                                           ::    GetRunDir
 
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetLogDir'
+  class(ProgramDefs_Type),intent(in)                                  ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetRunDir'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetLogDir = This%LogDir
+  GetRunDir = This%RunDir
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLogFilePath(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetLogDir(This)
 
-    character(:), allocatable                                         ::    GetLogFilePath
+  character(:), allocatable                                           ::    GetLogDir
 
-    class(ProgramDefs_Type),intent(in)                                ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetLogFilePath'
+  class(ProgramDefs_Type),intent(in)                                  ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetLogDir'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    GetLogFilePath = This%LogFilePath
+  GetLogDir = This%LogDir
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetLogFilePath(This)
 
-    class(ProgramDefs_Type), intent(out)                              ::    LHS
-    class(ProgramDefs_Type), intent(in)                               ::    RHS
+  character(:), allocatable                                           ::    GetLogFilePath
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  class(ProgramDefs_Type),intent(in)                                  ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetLogFilePath'
 
-    call LHS%Reset()
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    LHS%Initialized = RHS%Initialized
-    LHS%Constructed = RHS%Constructed
-    
-    if (RHS%Constructed) then
-      LHS%RunDir = RHS%RunDir
-      LHS%LogDir = RHS%LogDir
-      LHS%CaseDir = RHS%CaseDir
-      LHS%SuppliedCaseDir = RHS%SuppliedCaseDir
-      LHS%InputFilePrefix = RHS%InputFilePrefix
-      LHS%InputFileSuffix = RHS%InputFileSuffix
-      LHS%InputFilePath = RHS%InputFilePath
-      LHS%OutputDir = RHS%OutputDir
-      LHS%RestartDir = RHS%RestartDir
-    end if
+  GetLogFilePath = This%LogFilePath
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
+
+  class(ProgramDefs_Type), intent(out)                                ::    LHS
+  class(ProgramDefs_Type), intent(in)                                 ::    RHS
+
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+
+  call LHS%Reset()
+
+  LHS%Constructed = RHS%Constructed
+  
+  if (RHS%Constructed) then
+    LHS%RunDir = RHS%RunDir
+    LHS%LogDir = RHS%LogDir
+    LHS%CaseDir = RHS%CaseDir
+    LHS%SuppliedCaseDir = RHS%SuppliedCaseDir
+    LHS%InputFilePrefix = RHS%InputFilePrefix
+    LHS%InputFileSuffix = RHS%InputFileSuffix
+    LHS%InputFilePath = RHS%InputFilePath
+    LHS%OutputDir = RHS%OutputDir
+    LHS%RestartDir = RHS%RestartDir
+  end if
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 End Module

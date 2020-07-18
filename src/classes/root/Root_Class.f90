@@ -184,7 +184,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
 
   SectionName = 'analysis'
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-  call AnalysisMethod_Factory%Construct(Object=This%AnalysisMethod, Input=InputSection,                                           &
+  call AnalysisMethod_Factory%Construct(Object=This%AnalysisMethod, Input=InputSection, &
                                         SectionChain=This%SectionChain // '>analysis', Prefix=PrefixLoc)
   nullify (InputSection)
 

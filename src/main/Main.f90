@@ -111,8 +111,8 @@ program SMUQ
   !!--------------------------------------------------------------------------------------------------------------------------------
   !! Initializing logger with log file
   !!--------------------------------------------------------------------------------------------------------------------------------
-  call Logger%Initialize(FileName=ProgramDefs%GetLogFilePath(), Status='REPLACE', Position='REWIND', Procedure='SMUQ',             &
-                                                                                                                     Indentation=2)
+  call Logger%Initialize(FileName=ProgramDefs%GetLogFilePath(), Status='REPLACE', &
+                         Position='REWIND', Procedure='SMUQ', Indentation=2)
   
   !!--------------------------------------------------------------------------------------------------------------------------------
   !! Reading in input
@@ -136,8 +136,8 @@ program SMUQ
       write(*,'(A)') 'Constructing objects from input and creating necessary temporary work directories'
       SectionChain = 'main'
       call Root%Construct(Input=Input, SectionChain=SectionChain, Prefix=ProgramDefs%GetCaseDir())
-      call RestartUtility%Construct(Input=Root%GetInput(Name='main', Prefix=ProgramDefs%GetRestartDir(),                &
-                                                                            Directory='/main'), Prefix=ProgramDefs%GetRestartDir())
+      call RestartUtility%Construct(Input=Root%GetInput(Name='main', Prefix=ProgramDefs%GetRestartDir(), &
+                                    Directory='main/'), Prefix=ProgramDefs%GetRestartDir())
       call Root%Run()   
     case('test')
       call Test(Input=Input, Prefix=ProgramDefs%GetCaseDir())

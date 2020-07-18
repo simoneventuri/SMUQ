@@ -238,6 +238,9 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   integer, allocatable, dimension(:)                                  ::    VarI1D
   integer                                                             ::    NbOutputs
   integer                                                             ::    NbCells
+  character(:), allocatable                                           ::    CellSource
+  character(:), allocatable                                           ::    CellFile
+  type(InputReader_Type)                                              ::    CellSection
 
   if (This%Constructed) call This%Reset()
   if (.not. This%Initialized) call This%Initialize()
@@ -254,8 +257,19 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   ParameterName = 'nb_samples'
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
   This%NbSamples = VarI0D
-
   if (This%NbSamples <= 0) call Error%Raise('Must specify number of samples above 0', ProcName=ProcName)
+
+  ParameterName = "max_num_overfit"
+  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%MaxNumOverfit = VarI0D
+
+  ParameterName = "checkpoint_frequency"
+  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%CheckpointFreq = VarI0D
+
+  ParameterName = "stop_error"
+  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%StopError = VarR0D
 
   SectionName = 'sampler'
   if (Input%HasSection(SubSectionName=SectionName)) then
@@ -282,18 +296,6 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
 
   if (This%NbSamples > This%SampleEnrichScheme%GetMaxNbSamples()) call Error%Raise(                                        &
                                         'Specified number of samples greater than maximum number of samples', ProcName=ProcName)
-
-  ParameterName = "max_num_overfit"
-  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-  if (Found) This%MaxNumOverfit = VarI0D
-
-  ParameterName = "checkpoint_frequency"
-  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-  if (Found) This%CheckpointFreq = VarI0D
-
-  ParameterName = "stop_error"
-  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-  if (Found) This%StopError = VarR0D
 
   SectionName = "solver"
   if (Input%HasSection(SubSectionName=SectionName)) then
@@ -363,21 +365,46 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
     call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     This%SamplesAnalyzed = VarL0D
 
+    ParameterName = 'cell_source'
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
+    CellSource = VarC0D 
+
     SubSectionName = SectionName // '>cells'
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-    NbCells = InputSection%GetNumberofSubSections()
-    nullify(InputSection)
 
-    allocate(This%Cells(NbCells), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%Cells', ProcName=ProcName, stat=StatLoc)
+    select case (CellSource)
+      case ('external')
+        NbCells = InputSection%GetNumberofParameters()
+        nullify(InputSection)
+        allocate(This%Cells(NbCells), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='This%Cells', ProcName=ProcName, stat=StatLoc)
 
-    i = 1
-    do i = 1, NbCells
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName // '>cell' //                     &
-                                                                                    ConvertToString(Value=i), Mandatory=.true.)
-      call This%Cells(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
-      nullify(InputSection)
-    end do
+        i = 1
+        do i = 1, NbCells
+          ParameterName = 'cell' // ConvertToString(Value=i) // '_file'
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          CellFile = PrefixLoc // VarC0D
+          call CellSection%Read(FileName=CellFile)
+          call This%Cells(i)%Construct(Input=CellSection, Prefix=PrefixLoc)
+          call CellSection%Free()
+        end do
+      case ('internal')
+        NbCells = InputSection%GetNumberofSubSections()
+        nullify(InputSection)
+        allocate(This%Cells(NbCells), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='This%Cells', ProcName=ProcName, stat=StatLoc)
+    
+        i = 1
+        do i = 1, NbCells
+          call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName // '>cell' // &
+                                       ConvertToString(Value=i), Mandatory=.true.)
+          call This%Cells(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
+          nullify(InputSection)
+        end do
+      case default
+        call Error%Raise('Unrecognized cell source option', ProcName=ProcName)
+    end select
+
   end if
 
   if (This%MaxNumOverfit < 2) call Error%Raise(Line='Number of allowable overfits below minimum off 2', ProcName=ProcName)
@@ -412,6 +439,10 @@ function GetInput(This, Name, Prefix, Directory)
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
   type(SMUQFile_Type)                                                 ::    File
   character(:), allocatable                                           ::    FileName
+  character(:), allocatable                                           ::    VarC0D
+  type(InputSection_Type)                                             ::    CellInput 
+  character(:), allocatable                                           ::    CellInputDir
+  integer                                                             ::    UnitLoc 
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -452,6 +483,30 @@ function GetInput(This, Name, Prefix, Directory)
     call GetInput%AddSection(SectionName=SectionName)
 
     if (ExternalFlag) then
+      DirectorySub = DirectoryLoc // 'cells/'
+      CellInputDir = DirectorySub // '/cell_inputs/'
+
+      call MakeDirectory(Path=PrefixLoc // DirectorySub, Options='-p')
+      call MakeDirectory(Path=PrefixLoc // CellInputDir, Options='-p')
+      call GetInput%AddParameter(Name='cell_source', Value='external', SectionName=SectionName)
+      SubSectionName = 'cells'
+      call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+      i = 1
+      do i = 1, This%NbCells
+        VarC0D = 'cell' // ConvertToString(Value=i) // '_file'
+        FileName = 'cell' // ConvertToString(Value=i) // '_input.dat'
+        call GetInput%AddParameter(Name=VarC0D, Value=CellInputDir // FileName, SectionName=SectionName // '>' // SubSectionName)
+
+        DirectorySub = DirectoryLoc // 'cells/cell' // ConvertToString(Value=i)
+        CellInput = This%Cells(i)%GetInput(Name='cell' // ConvertToString(Value=i), Prefix=PrefixLoc, Directory=DirectorySub)
+
+        call File%Construct(File=FileName, Prefix=PrefixLoc // CellInputDir)
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace')
+        call CellInput%Write(FileUnit=UnitLoc)
+        call File%Close()
+        call CellInput%Free()
+      end do
+
       if (allocated(This%ParamRecord)) then
         SubSectionName = 'param_record'
         call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
@@ -486,6 +541,15 @@ function GetInput(This, Name, Prefix, Directory)
                                                                                                         SectionName=SectionName)
       end if
     else
+      call GetInput%AddParameter(Name='cell_source', Value='internal', SectionName=SectionName)
+      SubSectionName = 'cells'
+      call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+      i = 1
+      do i = 1, This%NbCells
+        call GetInput%AddSection(Section=This%Cells(i)%GetInput(Name='cell' // ConvertToString(Value=i)), &
+                                 To_SubSection=SectionName // '>' // SubSectionName)
+      end do
+
       if (allocated(This%ParamRecord)) then
         SubSectionName = 'param_record'
         call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
@@ -524,15 +588,6 @@ function GetInput(This, Name, Prefix, Directory)
     call GetInput%AddParameter(Name='samples_ran', Value=ConvertToString(Value=This%SamplesRan), SectionName=SectionName)
     call GetInput%AddParameter(Name='samples_processed', Value=ConvertToString(Value=This%SamplesAnalyzed),                  &
                                                                                                         SectionName=SectionName)
-
-    SubSectionName = 'cells'
-    call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
-    i = 1
-    do i = 1, This%NbCells
-      if (ExternalFlag) DirectorySub = DirectoryLoc // '/cell' // ConvertToString(Value=i)
-      call GetInput%AddSection(Section=This%Cells(i)%GetInput(Name='cell' // ConvertToString(Value=i),             &
-                                Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SectionName // '>' // SubSectionName)
-    end do
 
   end if
 
@@ -914,7 +969,7 @@ subroutine BuildModel(This, Basis, SampleSpace, Responses, Model, IndexSetScheme
 
           ii = 1
           do ii = 1, M
-             call Basis%Eval(X=This%ParamRecord(:,ii), Indices=IndicesLoc, Values=DesignSpace(ii,:))
+              call Basis%Eval(X=This%ParamRecord(:,ii), Indices=IndicesLoc, Values=DesignSpace(ii,:))
           end do
 
           allocate(CoefficientsLoc(N), stat=StatLoc)
@@ -1326,7 +1381,7 @@ subroutine ConstructInput_Cell(This, Input, Prefix)
   use ArrayRoutines_Module
 
   class(Cell_Type), intent(inout)                                     ::    This
-  type(InputSection_Type), intent(in)                                 ::    Input
+  class(InputSection_Type), intent(in)                                ::    Input
   character(*), optional, intent(in)                                  ::    Prefix
 
   character(*), parameter                                             ::    ProcName='ConstructInput_Cell'
@@ -2056,5 +2111,6 @@ impure elemental subroutine Finalizer_Cell(This)
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
-
-end module
+  
+  end module
+  
