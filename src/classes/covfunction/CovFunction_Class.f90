@@ -24,6 +24,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -32,19 +33,14 @@ private
 public                                                                ::    CovFunction_Type
 
 type, abstract                                                        ::    CovFunction_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
-  procedure, public                                                   ::    GetName
   procedure, public                                                   ::    IsConstructed
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    Evaluate                =>    Evaluate_1D
-  procedure(Initialize_CovFunction), deferred, public                 ::    Initialize
   procedure(Reset_CovFunction), deferred, public                      ::    Reset
-  procedure(SetDefaults_CovFunction), deferred, public                ::    SetDefaults
   procedure(ConstructInput_CovFunction), deferred, private            ::    ConstructInput
   procedure(GetInput_CovFunction), deferred, public                   ::    GetInput
   procedure(Evaluate_1D_CovFunction), deferred, public                ::    Evaluate_1D
@@ -56,21 +52,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_CovFunction(This)
-    import                                                            ::    CovFunction_Type
-    class(CovFunction_Type), intent(inout)                            ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_CovFunction(This)
-    import                                                            ::    CovFunction_Type
-    class(CovFunction_Type), intent(inout)                            ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_CovFunction(This)
     import                                                            ::    CovFunction_Type
     class(CovFunction_Type), intent(inout)                            ::    This
   end subroutine
@@ -122,28 +104,16 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function IsConstructed(This)
 
-    character(:), allocatable                                         ::    GetName
-    class(CovFunction_Type), intent(inout)                            ::    This
-    character(*), parameter                                           ::    ProcName='GetName'
+  logical                                                             ::    IsConstructed
+  class(CovFunction_Type), intent(inout)                              ::    This
+  character(*), parameter                                             ::    ProcName='IsConstructed'
 
-    GetName = This%Name
+  IsConstructed = This%Constructed
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed(This)
-
-    logical                                                           ::    IsConstructed
-    class(CovFunction_Type), intent(inout)                            ::    This
-    character(*), parameter                                           ::    ProcName='IsConstructed'
-
-    IsConstructed = This%Constructed
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

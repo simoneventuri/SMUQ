@@ -24,6 +24,7 @@ use LinkedList1D_Class                                            ,only:    Link
 use IndexSet_Class                                                ,only:    IndexSet_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -34,9 +35,7 @@ public                                                                ::    Inde
 type, extends(IndexSet_Type)                                          ::    IndexLowOrder_Type
   integer                                                             ::    Norm0=1000
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -52,281 +51,256 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(IndexLowOrder_Type), intent(inout)                          ::    This
+  class(IndexLowOrder_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Name         =   'hyperbolic'
-      This%Initialized  =   .true.
-      call This%SetDefaults()
-    end if
+  This%Constructed = .false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Norm0 = 1000
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(IndexLowOrder_Type), intent(inout)                          ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  class(IndexLowOrder_Type), intent(inout)                            ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    This%Initialized = .false.
-    This%Constructed = .false.
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    ParameterName
+  logical                                                             ::    Found
+  real(rkp)                                                           ::    VarR0D
+  integer                                                             ::    VarI0D
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-    call This%Initialize()
+  call This%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  call InputVerifier%Construct()
 
-    class(IndexLowOrder_Type), intent(inout)                          ::    This
+  ParameterName = "norm0"
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%Norm0 = VarI0D
+  if (This%Norm0 < 1) call Error%Raise("Norm0 specification below the minimum of 1")
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
-    This%Norm0 = 1000
+  This%Constructed = .true.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, Norm0)
 
-    class(IndexLowOrder_Type), intent(inout)                          ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+  class(IndexLowOrder_Type), intent(inout)                            ::    This
+  integer, intent(in)                                                 ::    Norm0   
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    ParameterName
-    logical                                                           ::    Found
-    real(rkp)                                                         ::    VarR0D
-    integer                                                           ::    VarI0D
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  if (Norm0 < 1) call Error%Raise("Norm0 specification below the minimum of 1")
+  This%Norm0 = Norm0
 
-    ParameterName = "norm0"
-    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%Norm0 = VarI0D
-    if (This%Norm0 < 1) call Error%Raise("Norm0 specification below the minimum of 1")
+  This%Constructed = .true.
 
-    This%Constructed = .true.
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, Norm0)
+  use StringConversion_Module
 
-    class(IndexLowOrder_Type), intent(inout)                          ::    This
-    integer, intent(in)                                               ::    Norm0   
+  type(InputSection_Type)                                             ::    GetInput
+  class(IndexLowOrder_Type), intent(in)                               ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if (Norm0 < 1) call Error%Raise("Norm0 specification below the minimum of 1")
-    This%Norm0 = Norm0
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    This%Constructed = .true.
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  call GetInput%AddParameter(Name='norm0', Value=ConvertToString(Value=This%Norm0))
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    use StringConversion_Module
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GenerateIndices(This, Order, TupleSize, Indices)
 
-    type(InputSection_Type)                                           ::    GetInput
-    class(IndexLowOrder_Type), intent(in)                             ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  class(IndexLowOrder_Type), intent(in)                               ::    This
+  integer, intent(in)                                                 ::    Order
+  integer, intent(in)                                                 ::    TupleSize
+  integer, dimension(:,:), allocatable, intent(out)                   ::    Indices
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
+  character(*), parameter                                             ::    ProcName='GenerateIndices'
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  if (TupleSize < This%Norm0) call Error%Raise("Requested MTuples of length TupleSize which is less than the Norm0")
+  call This%ComputeIndices(TupleSize, Order, This%Norm0, Indices)
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
-    call GetInput%AddParameter(Name='norm0', Value=ConvertToString(Value=This%Norm0))
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ComputeIndices(This, M, Order, Norm0, Indices)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  class(IndexLowOrder_Type), intent(in)                               ::    This
+  integer, dimension(:,:), allocatable, intent(out)                   ::    Indices
+  integer, intent(in)                                                 ::    M
+  integer, intent(in)                                                 ::    Order
+  integer, intent(in)                                                 ::    Norm0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateIndices(This, Order, TupleSize, Indices)
+  character(*), parameter                                             ::    ProcName='ComputeIndices'
+  integer, dimension(:,:), allocatable                                ::    Indices_Loc
+  integer, dimension(:), allocatable                                  ::    VarI1D
+  integer, dimension(:,:), allocatable                                ::    VarI2D
+  real(rkp), dimension(:), allocatable                                ::    VarR1D
+  type(LinkedList1D_Type), allocatable                                ::    IndicesRecord
+  integer                                                             ::    i, ii
+  integer                                                             ::    NbPermutations, NbIndices
+  integer                                                             ::    StatLoc=0
 
-    class(IndexLowOrder_Type), intent(in)                             ::    This
-    integer, intent(in)                                               ::    Order
-    integer, intent(in)                                               ::    TupleSize
-    integer, dimension(:,:), allocatable, intent(out)                 ::    Indices
+  allocate(IndicesRecord, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='GenerateIndices'
+  allocate(VarR1D(M), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
+  VarR1D = Zero
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  allocate(VarI1D(M), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
+  VarI1D = 0
 
-    if (TupleSize < This%Norm0) call Error%Raise("Requested MTuples of length TupleSize which is less than the Norm0")
-    call This%ComputeIndices(TupleSize, Order, This%Norm0, Indices)
+  call This%AlgorithmH(M, Order, Norm0, Indices_Loc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  NbPermutations = size(Indices_Loc,2)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeIndices(This, M, Order, Norm0, Indices)
+  i = 1
+  do i = 1, NbPermutations
+    VarR1D = real(Indices_Loc(:,i),rkp)
+    call dlasrt('I', M, VarR1D, StatLoc)
+    if (StatLoc /= 0) call Error%Raise("Something went wrong with lapack routine dlasrt")
+    VarI1D = nint(VarR1D)
 
-    class(IndexLowOrder_Type), intent(in)                             ::    This
-    integer, dimension(:,:), allocatable, intent(out)                 ::    Indices
-    integer, intent(in)                                               ::    M
-    integer, intent(in)                                               ::    Order
-    integer, intent(in)                                               ::    Norm0
+    call This%AlgorithmL(VarI1D, M, VarI2D)
 
-    character(*), parameter                                           ::    ProcName='ComputeIndices'
-    integer, dimension(:,:), allocatable                              ::    Indices_Loc
-    integer, dimension(:), allocatable                                ::    VarI1D
-    integer, dimension(:,:), allocatable                              ::    VarI2D
-    real(rkp), dimension(:), allocatable                              ::    VarR1D
-    type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
-    integer                                                           ::    i, ii
-    integer                                                           ::    NbPermutations, NbIndices
-    integer                                                           ::    StatLoc=0
-
-    allocate(IndicesRecord, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
-
-    allocate(VarR1D(M), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
-    VarR1D = Zero
-
-    allocate(VarI1D(M), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
-    VarI1D = 0
-
-    call This%AlgorithmH(M, Order, Norm0, Indices_Loc)
-
-    NbPermutations = size(Indices_Loc,2)
-
-    i = 1
-    do i = 1, NbPermutations
-      VarR1D = real(Indices_Loc(:,i),rkp)
-      call dlasrt('I', M, VarR1D, StatLoc)
-      if (StatLoc /= 0) call Error%Raise("Something went wrong with lapack routine dlasrt")
-      VarI1D = nint(VarR1D)
-  
-      call This%AlgorithmL(VarI1D, M, VarI2D)
-
-      ii = 1
-      NbIndices = size(VarI2D,2)
-      do ii = 1, NbIndices
-        VarI1D = VarI2D(:,ii)
-        call IndicesRecord%Append(VarI1D)
-      end do
-
+    ii = 1
+    NbIndices = size(VarI2D,2)
+    do ii = 1, NbIndices
+      VarI1D = VarI2D(:,ii)
+      call IndicesRecord%Append(VarI1D)
     end do
 
-    StatLoc = 0
-    if (allocated(Indices_Loc)) deallocate(Indices_Loc, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Indices_Loc', stat=StatLoc)
-    if (allocated(VarI1D)) deallocate(VarI1D, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
-    if (allocated(VarI2D)) deallocate(VarI2D, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI2D', stat=StatLoc)
-    if (allocated(VarR1D)) deallocate(VarR1D, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
+  end do
 
-    NbIndices = IndicesRecord%GetLength()
-    allocate(Indices(M, NbIndices), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='Indices', stat=StatLoc)
-    i = 1
-    do i = 1, NbIndices
-      call IndicesRecord%Get(i, VarI1D)
-      Indices(:,i) = VarI1D
-    end do
+  StatLoc = 0
+  if (allocated(Indices_Loc)) deallocate(Indices_Loc, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Indices_Loc', stat=StatLoc)
+  if (allocated(VarI1D)) deallocate(VarI1D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
+  if (allocated(VarI2D)) deallocate(VarI2D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI2D', stat=StatLoc)
+  if (allocated(VarR1D)) deallocate(VarR1D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
 
-    deallocate(IndicesRecord, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
+  NbIndices = IndicesRecord%GetLength()
+  allocate(Indices(M, NbIndices), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='Indices', stat=StatLoc)
+  i = 1
+  do i = 1, NbIndices
+    call IndicesRecord%Get(i, VarI1D)
+    Indices(:,i) = VarI1D
+  end do
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  deallocate(IndicesRecord, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNorm0(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    integer                                                           ::    GetNorm0
-    class(IndexLowOrder_Type), intent(in)                             ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetNorm0(This)
 
-    character(*), parameter                                           ::    ProcName='GetNorm0'
+  integer                                                             ::    GetNorm0
+  class(IndexLowOrder_Type), intent(in)                               ::    This
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetNorm0'
 
-    GetNorm0 = This%Norm0
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  GetNorm0 = This%Norm0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(IndexLowOrder_Type), intent(out)                            ::    LHS
-    class(IndexSet_Type), intent(in)                                  ::    RHS
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  class(IndexLowOrder_Type), intent(out)                              ::    LHS
+  class(IndexSet_Type), intent(in)                                    ::    RHS
 
-    select type (RHS)
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-      type is (IndexLowOrder_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+  select type (RHS)
 
-        if (RHS%Constructed) then
-          LHS%Norm0 = RHS%Norm0
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+    type is (IndexLowOrder_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
 
-    end select
+      if (RHS%Constructed) then
+        LHS%Norm0 = RHS%Norm0
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    type(IndexLowOrder_Type), intent(inout)                           ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+  type(IndexLowOrder_Type), intent(inout)                             ::    This
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module
 

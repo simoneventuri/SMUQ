@@ -27,6 +27,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -38,9 +39,7 @@ type, extends(DistProb_Type)                                          ::    Dist
 
 contains
   private
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -61,185 +60,162 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(DistUnif_Type), intent(inout)                               ::    This
+  class(DistUnif_Type), intent(inout)                                 ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Name = 'uniform'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  This%Constructed = .false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%A = Zero
+  This%B = One
+  This%TruncatedLeft=.true.
+  This%TruncatedRight=.true.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistUnif_Type), intent(inout)                               ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  class(DistUnif_Type), intent(inout)                                 ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    This%Initialized = .false.
-    This%Constructed = .false.
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    ParameterName
+  logical                                                             ::    Found
+  real(rkp)                                                           ::    VarR0D
+  character(:), allocatable                                           ::    VarC0D
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-    call This%Initialize()
+  call This%Reset()
+  
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call InputVerifier%Construct()
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  This%TruncatedLeft=.true.
+  This%TruncatedRight=.true.
 
-    class(DistUnif_Type), intent(inout)                               ::    This
+  ParameterName = 'a'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%A = VarR0D
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  ParameterName = 'b'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%B = VarR0D
 
-    This%A = Zero
-    This%B = One
-    This%TruncatedLeft=.true.
-    This%TruncatedRight=.true.
+  if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
+  
+  This%Constructed = .true.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistUnif_Type), intent(inout)                               ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, A, B)
+  
+  class(DistUnif_Type), intent(inout)                                 ::    This
+  real(rkp), intent(in)                                               ::    A
+  real(rkp), intent(in)                                               ::    B 
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    ParameterName
-    logical                                                           ::    Found
-    real(rkp)                                                         ::    VarR0D
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  This%TruncatedLeft=.true.
+  This%TruncatedRight=.true.
 
-    This%TruncatedLeft=.true.
-    This%TruncatedRight=.true.
+  This%A = A
 
-    ParameterName = 'a'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%A = VarR0D
+  This%B = B
 
-    ParameterName = 'b'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%B = VarR0D
+  if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
 
-    if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
+  This%Constructed = .true.
 
-    This%Constructed = .true.
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, A, B)
-    
-    class(DistUnif_Type), intent(inout)                               ::    This
-    real(rkp), intent(in)                                             ::    A
-    real(rkp), intent(in)                                             ::    B 
+  use StringConversion_Module
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
+  type(InputSection_Type)                                             ::    GetInput
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  class(DistUnif_Type), intent(in)                                    ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    This%TruncatedLeft=.true.
-    This%TruncatedRight=.true.
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
 
-    This%A = A
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    This%B = B
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    This%Constructed = .true.
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
+  call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    use StringConversion_Module
+!!------------------------------------------------------------------------------------------------------------------------------
+function PDF(This, X)
 
-    type(InputSection_Type)                                           ::    GetInput
+  real(rkp)                                                           ::    PDF
 
-    class(DistUnif_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  class(DistUnif_Type), intent(in)                                    ::    This
+  real(rkp), intent(in)                                               ::    X
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
+  character(*), parameter                                             ::    ProcName='PDF'
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  PDF = This%ComputeUnifPDF(X, This%A, This%B)
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
-
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
-
-    call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
-    call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF(This, X)
-
-    real(rkp)                                                         ::    PDF
-
-    class(DistUnif_Type), intent(in)                                  ::    This
-    real(rkp), intent(in)                                             ::    X
-
-    character(*), parameter                                           ::    ProcName='PDF'
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    PDF = This%ComputeUnifPDF(X, This%A, This%B)
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 !  !!------------------------------------------------------------------------------------------------------------------------------
 !  function PDF_R2D(This, NbNodes)
 
 !    use ComputingRoutines_Module
 
-!    real(rkp), dimension(:,:), allocatable                            ::    PDF_R2D
+!    real(rkp), dimension(:,:), allocatable                              ::    PDF_R2D
 
-!    class(DistUnif_Type), intent(in)                                  ::    This
-!    integer, intent(in)                                               ::    NbNodes
+!    class(DistUnif_Type), intent(in)                                    ::    This
+!    integer, intent(in)                                                 ::    NbNodes
 
-!    character(*), parameter                                           ::    ProcName='PDF_R2D'
-!    real(rkp)                                                         ::    BinMass
-!    integer                                                           ::    StatLoc=0
-!    integer                                                           ::    i
+!    character(*), parameter                                             ::    ProcName='PDF_R2D'
+!    real(rkp)                                                           ::    BinMass
+!    integer                                                             ::    StatLoc=0
+!    integer                                                             ::    i
 
 !    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -256,194 +232,193 @@ contains
 !  end function
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeUnifPDF(X, A, B)
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeUnifPDF(X, A, B)
 
-    real(rkp)                                                         ::    ComputeUnifPDF
+  real(rkp)                                                           ::    ComputeUnifPDF
 
-    real(rkp), intent(in)                                             ::    X
-    real(rkp), intent(in)                                             ::    A
-    real(rkp), intent(in)                                             ::    B
+  real(rkp), intent(in)                                               ::    X
+  real(rkp), intent(in)                                               ::    A
+  real(rkp), intent(in)                                               ::    B
 
-    character(*), parameter                                           ::    ProcName='ComputeUnifPDF'
+  character(*), parameter                                             ::    ProcName='ComputeUnifPDF'
 
-    if (X < A .or. X > B) then
-      ComputeUnifPDF = Zero
-    else
-      ComputeUnifPDF = One/(B-A)
-    end if
+  if (X < A .or. X > B) then
+    ComputeUnifPDF = Zero
+  else
+    ComputeUnifPDF = One/(B-A)
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF(This, X)
+!!------------------------------------------------------------------------------------------------------------------------------
+function CDF(This, X)
 
-    real(rkp)                                                         ::    CDF
+  real(rkp)                                                           ::    CDF
 
-    class(DistUnif_Type), intent(in)                                  ::    This
-    real(rkp), intent(in)                                             ::    X
+  class(DistUnif_Type), intent(in)                                    ::    This
+  real(rkp), intent(in)                                               ::    X
 
-    character(*), parameter                                           ::    ProcName='CDF'
+  character(*), parameter                                             ::    ProcName='CDF'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    CDF = ComputeUnifCDF(X, This%A, This%B)
+  CDF = ComputeUnifCDF(X, This%A, This%B)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeUnifCDF(X, A, B)
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeUnifCDF(X, A, B)
 
-    real(rkp)                                                         ::    ComputeUnifCDF
+  real(rkp)                                                           ::    ComputeUnifCDF
 
-    real(rkp), intent(in)                                             ::    X
-    real(rkp), intent(in)                                             ::    A
-    real(rkp), intent(in)                                             ::    B
+  real(rkp), intent(in)                                               ::    X
+  real(rkp), intent(in)                                               ::    A
+  real(rkp), intent(in)                                               ::    B
 
-    character(*), parameter                                           ::    ProcName='ComputeUnifCDF'
+  character(*), parameter                                             ::    ProcName='ComputeUnifCDF'
 
-    if (X < A) then
-      ComputeUnifCDF = Zero
-    elseif (X > B) then
-      ComputeUnifCDF = One
-    else
-      ComputeUnifCDF = (X-A) / (B-A)
-    end if      
+  if (X < A) then
+    ComputeUnifCDF = Zero
+  elseif (X > B) then
+    ComputeUnifCDF = One
+  else
+    ComputeUnifCDF = (X-A) / (B-A)
+  end if      
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF(This, P)
+!!------------------------------------------------------------------------------------------------------------------------------
+function InvCDF(This, P)
 
-    real(rkp)                                                         ::    InvCDF
+  real(rkp)                                                           ::    InvCDF
 
-    class(DistUnif_Type), intent(in)                                  ::    This
-    real(rkp), intent(in)                                             ::    P
+  class(DistUnif_Type), intent(in)                                    ::    This
+  real(rkp), intent(in)                                               ::    P
 
-    character(*), parameter                                           ::    ProcName='InvCDF'
+  character(*), parameter                                             ::    ProcName='InvCDF'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    InvCDF = ComputeUnifInvCDF(P, This%A, This%B)
+  InvCDF = ComputeUnifInvCDF(P, This%A, This%B)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeUnifInvCDF(P, A, B)
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeUnifInvCDF(P, A, B)
 
-    real(rkp)                                                         ::    ComputeUnifInvCDF
+  real(rkp)                                                           ::    ComputeUnifInvCDF
 
-    real(rkp), intent(in)                                             ::    P
-    real(rkp), intent(in), optional                                   ::    A
-    real(rkp), intent(in), optional                                   ::    B
+  real(rkp), intent(in)                                               ::    P
+  real(rkp), intent(in), optional                                     ::    A
+  real(rkp), intent(in), optional                                     ::    B
 
-    character(*), parameter                                           ::    ProcName='ComputeUnifInvCDF'
-    real(rkp)                                                         ::    CDFLeft
-    real(rkp)                                                         ::    CDFRight
-    real(rkp)                                                         ::    VarR0D
+  character(*), parameter                                             ::    ProcName='ComputeUnifInvCDF'
+  real(rkp)                                                           ::    CDFLeft
+  real(rkp)                                                           ::    CDFRight
+  real(rkp)                                                           ::    VarR0D
 
-    if (P < Zero) call Error%Raise(Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName)
-    if (P > One) call Error%Raise(Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName)
+  if (P < Zero) call Error%Raise(Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName)
+  if (P > One) call Error%Raise(Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName)
 
-    ComputeUnifInvCDF = A + P*(B-A)
+  ComputeUnifInvCDF = A + P*(B-A)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment(This, Moment)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMoment(This, Moment)
 
-    real(rkp)                                                         ::    GetMoment
+  real(rkp)                                                           ::    GetMoment
 
-    class(DistUnif_Type), intent(in)                                  ::    This
-    integer, intent(in)                                               ::    Moment
+  class(DistUnif_Type), intent(in)                                    ::    This
+  integer, intent(in)                                                 ::    Moment
 
-    character(*), parameter                                           ::    ProcName='GetMoment'
-    integer                                                           ::    i
+  character(*), parameter                                             ::    ProcName='GetMoment'
+  integer                                                             ::    i
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
+  if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-    if (Moment > 0) then
-      i = 0
-      GetMoment = Zero
-      do i = 0, Moment
-        GetMoment = GetMoment + This%A**i*This%B**(Moment-i)
-      end do
-      GetMoment = GetMoment / (real(Moment,rkp)+One)
-    else
-      GetMoment = One
-    end if
+  if (Moment > 0) then
+    i = 0
+    GetMoment = Zero
+    do i = 0, Moment
+      GetMoment = GetMoment + This%A**i*This%B**(Moment-i)
+    end do
+    GetMoment = GetMoment / (real(Moment,rkp)+One)
+  else
+    GetMoment = One
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo(This, File)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine WriteInfo(This, File)
 
-    class(DistUnif_Type), intent(in)                                  ::    This
-    type(SMUQFile_Type), intent(inout)                                ::    File
+  class(DistUnif_Type), intent(in)                                    ::    This
+  type(SMUQFile_Type), intent(inout)                                  ::    File
 
-    character(*), parameter                                           ::    ProcName='WriteInfo'
-    integer                                                           ::    i
-    type(SMUQString_Type), dimension(3)                               ::    Strings
+  character(*), parameter                                             ::    ProcName='WriteInfo'
+  integer                                                             ::    i
+  type(SMUQString_Type), dimension(3)                                 ::    Strings
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    Strings(1) = 'uniform'
-    Strings(2) = ConvertToString(Value=This%A)
-    Strings(3) = ConvertToString(Value=This%B)
+  Strings(1) = 'uniform'
+  Strings(2) = ConvertToString(Value=This%A)
+  Strings(3) = ConvertToString(Value=This%B)
 
-    call File%Append(Strings=Strings)
+  call File%Append(Strings=Strings)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    class(DistUnif_Type), intent(out)                                 ::    LHS
-    class(DistProb_Type), intent(in)                                  ::    RHS
+  class(DistUnif_Type), intent(out)                                   ::    LHS
+  class(DistProb_Type), intent(in)                                    ::    RHS
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-    select type (RHS)
-  
-      type is (DistUnif_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+  select type (RHS)
 
-        if (RHS%Constructed) then
-          LHS%A = RHS%A
-          LHS%B = RHS%B
-          LHS%TruncatedLeft=RHS%TruncatedLeft
-          LHS%TruncatedRight=RHS%TruncatedRight
-        end if
+    type is (DistUnif_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
 
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+      if (RHS%Constructed) then
+        LHS%A = RHS%A
+        LHS%B = RHS%B
+        LHS%TruncatedLeft=RHS%TruncatedLeft
+        LHS%TruncatedRight=RHS%TruncatedRight
+      end if
 
-    end select
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    type(DistUnif_Type), intent(inout)                                ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+  type(DistUnif_Type), intent(inout)                                  ::    This
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

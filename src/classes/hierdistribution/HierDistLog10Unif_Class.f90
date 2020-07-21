@@ -35,29 +35,12 @@ public                                                                ::    Hier
 
 type, extends(HierDistUnif_Type)                                      ::    HierDistLog10Unif_Type
 contains
-  procedure, public                                                   ::    Initialize
   procedure, private                                                  ::    GenerateDistribution
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
 
 contains
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(HierDistLog10Unif_Type), intent(inout)                        ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'hiererchical_loguniform'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine GenerateDistribution(This, A, B, Distribution)

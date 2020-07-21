@@ -31,17 +31,13 @@ public                                                                ::    CVMe
 public                                                                ::    CVFitTarget
 
 type, abstract                                                        ::    CVMethod_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   logical                                                             ::    Normalized=.true.
 contains
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure, public                                                   ::    IsNormalized
-  procedure(Initialize_CVMethod), deferred, public                    ::    Initialize
   procedure(Reset_CVMethod), deferred, public                         ::    Reset
-  procedure(SetDefaults_CVMethod), deferred, public                   ::    SetDefaults
   procedure(ConstructInput_CVMethod), deferred, private               ::    ConstructInput
   procedure(GetInput_CVMethod), deferred, public                      ::    GetInput
   procedure(Calculate_CVMethod), deferred, public                     ::    Calculate
@@ -53,21 +49,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_CVMethod(This)
-    import                                                            ::    CVMethod_Type
-    class(CVMethod_Type), intent(inout)                               ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_CVMethod(This)
-    import                                                            ::    CVMethod_Type
-    class(CVMethod_Type), intent(inout)                               ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_CVMethod(This)
     import                                                            ::    CVMethod_Type
     class(CVMethod_Type), intent(inout)                               ::    This
   end subroutine

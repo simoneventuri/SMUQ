@@ -26,6 +26,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use DistLog10Norm_Class                                           ,only:    DistLog10Norm_Type
 use DistProb_Class                                                ,only:    DistProb_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -35,8 +36,7 @@ public                                                                ::    Hier
 
 type, extends(HierDistNorm_Type)                                      ::    HierDistLog10Norm_Type
 contains
-  procedure, public                                                   ::    Initialize
-  procedure, public                                                   ::    SetDefaults
+  procedure, public                                                   ::    Reset
   procedure, private                                                  ::    GenerateDistribution
 end type
 
@@ -45,31 +45,30 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
+subroutine Reset(This)
 
-  class(HierDistLog10Norm_Type), intent(inout)                        ::    This
+  class(HierDistLog10Norm_Type), intent(inout)                             ::    This
 
-  character(*), parameter                                             ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-  if (.not. This%Initialized) then
-    This%Name = 'hierarchical_log10normal'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
+  This%Constructed = .false.
 
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%A)) deallocate(This%A, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%A', ProcName=ProcName, stat=StatLoc)
 
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
+  if (allocated(This%B)) deallocate(This%B, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%B', ProcName=ProcName, stat=StatLoc)
 
-  class(HierDistLog10Norm_Type), intent(inout)                        ::    This
+  if (allocated(This%Mu)) deallocate(This%Mu, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Mu', ProcName=ProcName, stat=StatLoc)
 
-  character(*), parameter                                             ::    ProcName='SetDefaults'
+  if (allocated(This%Sigma)) deallocate(This%Sigma, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Sigma', ProcName=ProcName, stat=StatLoc)
 
   This%TruncatedRight = .false.
   This%TruncatedLeft = .true.
-
+  
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 

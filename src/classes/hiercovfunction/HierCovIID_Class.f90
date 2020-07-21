@@ -32,6 +32,7 @@ use CovIID_Class                                                  ,only:    CovI
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -42,9 +43,7 @@ public                                                                ::    Hier
 type, extends(HierCovFunction_Type)                                   ::    HierCovIID_Type
   class(IScalarValue_Type), allocatable                               ::    Sigma
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Generate
@@ -57,22 +56,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(HierCovIID_Type), intent(inout)                               ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'HierCovIID'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(HierCovIID_Type), intent(inout)                               ::    This
@@ -80,23 +63,10 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc = 0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%Sigma)) deallocate(This%Sigma, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Sigma', ProcName=ProcName, stat=StatLoc)
-
-  call This%SetDefaults()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(HierCovIID_Type), intent(inout)                               ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -120,19 +90,24 @@ subroutine ConstructInput(This, Input, Prefix)
   logical                                                             ::    Found
   character(:), allocatable                                           ::    PrefixLoc
   real(rkp), allocatable, dimension(:)                                ::    VarR1D
-  logical                                                             ::    MandatoryLoc
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   SectionName = 'sigma'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%Sigma, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
   
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
+
   This%Constructed = .true.
 
 end subroutine
@@ -173,7 +148,7 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
   SectionName = 'sigma'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc //  SectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                       &
                                                                        Prefix=PrefixLoc, Directory=DirectorySub))
 
@@ -221,7 +196,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (HierCovIID_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then

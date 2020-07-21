@@ -31,16 +31,12 @@ private
 public                                                                ::    Input_Type
 
 type                                                                  ::    Input_Type
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
-  character(:), allocatable                                           ::    Name
   integer                                                             ::    NbInputs=0
   type(SMUQString_Type), dimension(:), allocatable                    ::    Label
   real(rkp), dimension(:), allocatable                                ::    Input
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1,         &
                                                                                                           ConstructCase2
   procedure, private                                                  ::    ConstructCase1
@@ -95,24 +91,6 @@ logical, parameter                                                    ::    Debu
 contains
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(Input_Type), intent(inout)                                    ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  integer                                                             ::    StatLoc=0
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = '<undefined>'
-    call This%SetDefaults()
-  end if
-
-
-  end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(Input_Type), intent(inout)                                    ::    This
@@ -120,34 +98,18 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%Input)) deallocate(This%Input, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Input', ProcName=ProcName, stat=StatLoc)
 
   This%NbInputs = 0
-
+  
   if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
 
-  if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
-
-  call This%Initialize()
-
   end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(Input_Type),intent(inout)                                     ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------ 
 
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructCase1(This, Input, Labels)
@@ -159,8 +121,7 @@ subroutine ConstructCase1(This, Input, Labels)
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   if (size(Labels,1) /= size(Input,1)) call Error%Raise(Line='Mismatch between number of labels and number of inputs',       &
                                                                                                               ProcName=ProcName)
@@ -187,8 +148,7 @@ subroutine ConstructCase2(This)
   character(*), parameter                                             ::    ProcName='ConstructEmpty'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   This%NbInputs = 0
 
@@ -872,8 +832,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (Input_Type)
       call LHS%Reset
-
-      LHS%Initialized = LHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then

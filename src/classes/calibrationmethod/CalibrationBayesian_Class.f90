@@ -33,6 +33,8 @@ use SampleSpace_Class                                             ,only:    Samp
 use Response_Class                                                ,only:    Response_Type
 use Model_Class                                                   ,only:    Model_Type
 use LikelihoodProduct_Class                                       ,only:    LikelihoodProduct_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
+
 implicit none
 
 private
@@ -44,9 +46,7 @@ type, extends(CalibrationMethod_Type)                                 ::    Cali
   type(LikelihoodProduct_Type)                                        ::    Likelihood
   logical                                                             ::    Silent
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, public                                                   ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run
@@ -59,245 +59,221 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(CalibrationBayesian_Type), intent(inout)                    ::    This
+  class(CalibrationBayesian_Type), intent(inout)                      ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
-    integer(8)                                                        ::    SysTimeCount
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Initialized = .true.
-      This%Name = 'calibrationbayesian'
-      call This%SetDefaults()
-    end if
+  This%Constructed=.false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%BayesInvMethod)) deallocate(This%BayesInvMethod, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+  call This%Likelihood%Reset()
 
-    class(CalibrationBayesian_Type), intent(inout)                    ::    This
+  This%Silent = .false.
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    This%Initialized=.false.
-    This%Constructed=.false.
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput (This, Input, SectionChain, Prefix)
 
-    if (allocated(This%BayesInvMethod)) deallocate(This%BayesInvMethod, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc)
+  class(CalibrationBayesian_Type), intent(inout)                      ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), intent(in)                                            ::    SectionChain
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    call This%Likelihood%Reset()
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  logical                                                             ::    VarL0D
+  integer                                                             ::    VarI0D
+  character(:), allocatable                                           ::    VarC0D
+  integer                                                             ::    i
+  logical                                                             ::    Found
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-    call This%Initialize()
+  call This%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  This%SectionChain = SectionChain
 
-    class(CalibrationBayesian_Type), intent(inout)                    ::    This
+  call InputVerifier%Construct()
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  ParameterName= 'silent'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%Silent=VarL0D
 
-    This%Silent = .false.
+  SectionName = 'likelihood'
+  call InputVerifier%AddSection(Section=SectionName)
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call This%Likelihood%Construct(Input=InputSection, Prefix=PrefixLoc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  VarC0D = SectionChain // '>method'
+  SectionName = 'method'
+  call InputVerifier%AddSection(Section=SectionName)
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call BayesInvMethod_Factory%Construct(Object=This%BayesInvMethod, Input=InputSection, SectionChain=VarC0D, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput (This, Input, SectionChain, Prefix)
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
-    class(CalibrationBayesian_Type), intent(inout)                    ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), intent(in)                                          ::    SectionChain
-    character(*), optional, intent(in)                                ::    Prefix
+  This%Constructed = .true.
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    logical                                                           ::    VarL0D
-    integer                                                           ::    VarI0D
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    i
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
+end subroutine 
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
+  
+  type(InputSection_Type)                                             ::    GetInput
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  class(CalibrationBayesian_Type), intent(inout)                      ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    This%SectionChain = SectionChain
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  integer                                                             ::    i
 
-    ParameterName= 'silent'
-    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%Silent=VarL0D
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    SectionName = 'likelihood'
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call This%Likelihood%Construct(Input=InputSection, Prefix=PrefixLoc)
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    VarC0D = SectionChain // '>method'
-    SectionName = 'method'
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call BayesInvMethod_Factory%Construct(Object=This%BayesInvMethod, Input=InputSection,                                        &
-                                                                                           SectionChain=VarC0D, Prefix=PrefixLoc)
-    nullify(InputSection)
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    This%Constructed = .true.
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-  end subroutine 
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call GetInput%AddParameter(Name='silent', Value=ConvertToString(Value=This%Silent))
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  SectionName = 'likelihood'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'likelihood/'
+  call GetInput%AddSection(Section=This%Likelihood%GetInput(Name=SectioNName, Prefix=PrefixLoc,                    &
+                                                                                                      Directory=DirectorySub))
+
+  SectionName = 'method'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'method/'
+  call GetInput%AddSection(Section=BayesInvMethod_Factory%GetObjectInput(Object=This%BayesInvMethod,                          &
+                                                        Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Run(This, SampleSpace, Responses, Model, OutputDirectory)
+
+  class(CalibrationBayesian_Type), intent(inout)                      ::    This
+  class(SampleSpace_Type), intent(in)                                 ::    SampleSpace
+  type(Response_Type), dimension(:), intent(in)                       ::    Responses
+  class(Model_Type), intent(inout)                                    ::    Model
+  character(*), optional, intent(in)                                  ::    OutputDirectory
+
+  character(*), parameter                                             ::    ProcName='Run'
+  integer                                                             ::    StatLoc=0
+
+  if (present(OutputDirectory)) then
+    call This%BayesInvMethod%Calibrate(Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
+                                                            LikelihoodFunction=This%Likelihood, OutputDirectory=OutputDirectory)
+  else
+    call This%BayesInvMethod%Calibrate(Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
+                                                                                            LikelihoodFunction=This%Likelihood)
+  end if
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine WriteOutput(This, Posterior, Directory)
+
+  class(CalibrationBayesian_Type), intent(inout)                      ::    This
+  real(rkp), dimension(:,:), intent(in)                               ::    Posterior
+  character(*), intent(in)                                            ::    Directory
+
+  character(*), parameter                                             ::    ProcName='WriteOutput'
+  type(InputSection_Type)                                             ::    Input
+  character(:), allocatable                                           ::    FileName
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  logical                                                             ::    SilentLoc
+  character(:), allocatable                                           ::    Line
+  integer                                                             ::    IOLoc
+  integer                                                             ::    UnitLoc
+  type(SMUQFile_Type)                                                 ::    File
+  integer                                                             ::    i, ii
+
+  if (len_trim(Directory) /= 0) then
+
+    call MakeDirectory(Path=Directory, Options='-p')
+
+  end if
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
+
+  class(CalibrationBayesian_Type), intent(out)                        ::    LHS
+  class(CalibrationMethod_Type), intent(in)                           ::    RHS
+
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+
+  select type (RHS)
+
+    type is (CalibrationBayesian_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
+
+      if (RHS%Constructed) then
+        allocate(LHS%BayesInvMethod, source=RHS%BayesInvMethod, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%BayesInvMethod', ProcName=ProcName, stat=StatLoc)
+        LHS%Likelihood = RHS%Likelihood
+        LHS%Silent = RHS%Silent
+      end if
     
-    type(InputSection_Type)                                           ::    GetInput
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-    class(CalibrationBayesian_Type), intent(inout)                    ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  end select
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    integer                                                           ::    i
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  type(CalibrationBayesian_Type), intent(inout)                       ::    This
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  if (allocated(This%BayesInvMethod)) deallocate(This%BayesInvMethod, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc)
 
-    call GetInput%AddParameter(Name='silent', Value=ConvertToString(Value=This%Silent))
-
-    SectionName = 'likelihood'
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/likelihood'
-    call GetInput%AddSection(Section=This%Likelihood%GetInput(Name=SectioNName, Prefix=PrefixLoc,                    &
-                                                                                                        Directory=DirectorySub))
-
-    SectionName = 'method'
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/method'
-    call GetInput%AddSection(Section=BayesInvMethod_Factory%GetObjectInput(Object=This%BayesInvMethod,                          &
-                                                         Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run(This, SampleSpace, Responses, Model, OutputDirectory)
-
-    class(CalibrationBayesian_Type), intent(inout)                    ::    This
-    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
-    type(Response_Type), dimension(:), intent(in)                     ::    Responses
-    class(Model_Type), intent(inout)                                  ::    Model
-    character(*), optional, intent(in)                                ::    OutputDirectory
-
-    character(*), parameter                                           ::    ProcName='Run'
-    integer                                                           ::    StatLoc=0
-
-    if (present(OutputDirectory)) then
-      call This%BayesInvMethod%Calibrate(Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
-                                                             LikelihoodFunction=This%Likelihood, OutputDirectory=OutputDirectory)
-    else
-      call This%BayesInvMethod%Calibrate(Model=Model, SampleSpace=SampleSpace, Responses=Responses,                              &
-                                                                                              LikelihoodFunction=This%Likelihood)
-    end if
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput(This, Posterior, Directory)
-
-    class(CalibrationBayesian_Type), intent(inout)                    ::    This
-    real(rkp), dimension(:,:), intent(in)                             ::    Posterior
-    character(*), intent(in)                                          ::    Directory
-
-    character(*), parameter                                           ::    ProcName='WriteOutput'
-    type(InputSection_Type)                                           ::    Input
-    character(:), allocatable                                         ::    FileName
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    logical                                                           ::    SilentLoc
-    character(:), allocatable                                         ::    Line
-    integer                                                           ::    IOLoc
-    integer                                                           ::    UnitLoc
-    type(SMUQFile_Type)                                               ::    File
-    integer                                                           ::    i, ii
-
-    if (len_trim(Directory) /= 0) then
-
-      call MakeDirectory(Path=Directory, Options='-p')
-
-    end if
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
-
-    class(CalibrationBayesian_Type), intent(out)                      ::    LHS
-    class(CalibrationMethod_Type), intent(in)                         ::    RHS
-
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    select type (RHS)
-
-      type is (CalibrationBayesian_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-
-        if (RHS%Constructed) then
-          allocate(LHS%BayesInvMethod, source=RHS%BayesInvMethod, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%BayesInvMethod', ProcName=ProcName, stat=StatLoc)
-          LHS%Likelihood = RHS%Likelihood
-          LHS%Silent = RHS%Silent
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
-
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(CalibrationBayesian_Type), intent(inout)                     ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-    if (allocated(This%BayesInvMethod)) deallocate(This%BayesInvMethod, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%BayesInvMethod', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

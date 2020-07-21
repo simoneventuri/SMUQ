@@ -26,6 +26,7 @@ use Error_Class                                                   ,only:    Erro
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use Input_Class                                                   ,only:    Input_Type
 use StringConversion_Module
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -37,9 +38,7 @@ type, extends(IScalarValue_Type)                                      ::    ISca
   real(rkp)                                                           ::    Value
   character(:), allocatable                                           ::    Label
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -54,21 +53,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(IScalarFixed_Type), intent(inout)                             ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  if (.not. This%Initialized) then
-    This%Name = 'IScalarFixed'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(IScalarFixed_Type), intent(inout)                             ::    This
@@ -76,20 +60,8 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  call This%SetDefaults()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(IScalarFixed_Type), intent(inout)                             ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-
   This%Value = Zero
-  
+
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
@@ -106,15 +78,22 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    ParameterName
   real(rkp)                                                           ::    VarR0D
   logical                                                             ::    Found
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  type(InputVerifier_Type)                                            ::    InputVerifier 
+
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'value'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
   This%Value = VarR0D
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -130,8 +109,7 @@ subroutine ConstructCase1(This, Value)
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   This%Value = Value
 
@@ -226,7 +204,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (IScalarFixed_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
         LHS%Value = RHS%Value

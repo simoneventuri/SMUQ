@@ -33,6 +33,7 @@ use IScalarValueContainer_Class                                   ,only:    ISca
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -44,9 +45,7 @@ type, extends(ITableValue_Type)                                       ::    ITab
   real(rkp), allocatable, dimension(:,:)                              ::    OriginalTable
   class(IScalarValue_Type), allocatable                               ::    Multiplier
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
@@ -57,21 +56,6 @@ end type
 logical   ,parameter                                                  ::    DebugGlobal = .false.
 
 contains
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(ITableMultiplier_Type), intent(inout)                         ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  if (.not. This%Initialized) then
-    This%Name = 'ITableMultiplier'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
@@ -87,20 +71,7 @@ subroutine Reset(This)
   if (allocated(This%Multiplier)) deallocate(This%Multiplier, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Multiplier', ProcName=ProcName, stat=StatLoc)
 
-  This%Initialized = .false.
   This%Constructed = .false.
-
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(ITableMultiplier_Type), intent(inout)                         ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -128,16 +99,20 @@ subroutine ConstructInput(This, Input, Prefix)
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
   integer                                                             ::    AbscissaColumn
   integer                                                             ::    ParamColumn
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   SectionName = 'original_values'
+  call InputVerifier%AddSection(Section=SectionName)
 
   SubSectionName = SectionName // '>values'
+  call InputVerifier%AddSection(Section='values', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -147,11 +122,13 @@ subroutine ConstructInput(This, Input, Prefix)
 
   ParamColumn = 2
   ParameterName = 'parameter_column'
+  call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
   call Input%GetValue(Value=VarI0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
   ParamColumn = VarI0D
 
   AbscissaColumn = 1
   ParameterName = 'abscissa_column'
+  call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
   call Input%GetValue(Value=VarI0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
   AbscissaColumn = VarI0D
 
@@ -174,9 +151,13 @@ subroutine ConstructInput(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'multiplier'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%Multiplier, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -229,7 +210,7 @@ function GetInput(This, Name, Prefix, Directory)
   SubSectionName = SectionName // '>values'
   call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   if (ExternalFlag) then
-    FileName = DirectoryLoc // '/values.dat'
+    FileName = DirectoryLoc // 'values.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Input=InputSection, Array=transpose(This%OriginalTable), File=File)
   else
@@ -270,7 +251,7 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Copy(LHS, RHS)
 
-  class(ITableMultiplier_Type), intent(out)                            ::    LHS
+  class(ITableMultiplier_Type), intent(out)                           ::    LHS
   class(ITableValue_Type), intent(in)                                 ::    RHS
 
   character(*), parameter                                             ::    ProcName='Copy'
@@ -280,7 +261,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (ITableMultiplier_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
         allocate(LHS%OriginalTable, source=RHS%OriginalTable, stat=StatLoc)

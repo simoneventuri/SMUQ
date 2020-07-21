@@ -31,16 +31,11 @@ private
 public                                                                ::    IScalarValue_Type
 
 type, abstract                                                        ::    IScalarValue_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_IScalarValue), deferred, public                ::    Initialize
   procedure(Reset_IScalarValue), deferred, public                     ::    Reset
-  procedure(SetDefaults_IScalarValue), deferred, public               ::    SetDefaults
   procedure(ConstructInput_IScalarValue), deferred, private           ::    ConstructInput
   procedure(GetInput_IScalarValue), deferred, public                  ::    GetInput
   procedure(GetValue_IScalarValue), deferred, public                  ::    GetValue
@@ -53,21 +48,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_IScalarValue(This)
-    import                                                            ::    IScalarValue_Type
-    class(IScalarValue_Type), intent(inout)                           ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_IScalarValue(This)
-    import                                                            ::    IScalarValue_Type
-    class(IScalarValue_Type), intent(inout)                           ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_IScalarValue(This)
     import                                                            ::    IScalarValue_Type
     class(IScalarValue_Type), intent(inout)                           ::    This
   end subroutine
@@ -129,18 +110,5 @@ abstract interface
 end interface
 
 contains
-
-!!------------------------------------------------------------------------------------------------------------------------------
-function GetName(This)
-
-  character(:), allocatable                                         ::    GetName
-  class(IScalarValue_Type), intent(inout)                           ::    This
-
-  character(*), parameter                                           ::    ProcName='GetName'
-
-  GetName = This%Name
-
-end function
-!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

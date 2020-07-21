@@ -26,6 +26,7 @@ use Error_Class                                                   ,only:    Erro
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use Input_Class                                                   ,only:    Input_Type
 use StringConversion_Module
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -36,9 +37,7 @@ public                                                                ::    ISca
 type, extends(IScalarValue_Type)                                      ::    IScalarDirect_Type
   character(:), allocatable                                           ::    Dependency
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
@@ -51,38 +50,15 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(IScalarDirect_Type), intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  if (.not. This%Initialized) then
-    This%Name = 'IScalarDirect'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(IScalarDirect_Type), intent(inout)                            ::    This
 
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
-  call This%SetDefaults()
 
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
+  This%Constructed = .false.
 
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(IScalarDirect_Type), intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
   This%Dependency=''
 
 end subroutine
@@ -102,15 +78,22 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    VarC0D
   integer                                                             ::    VarI0D
   logical                                                             ::    Found
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  type(InputVerifier_Type)                                            ::    InputVerifier 
+
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'dependency'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   This%Dependency = VarC0D
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -200,7 +183,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (IScalarDirect_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
         LHS%Dependency = RHS%Dependency

@@ -31,8 +31,6 @@ private
 public                                                                ::    IndexSet_Type
 
 type, abstract                                                        ::    IndexSet_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
 contains
   generic, public                                                     ::    assignment(=)           =>    Copy
@@ -40,25 +38,16 @@ contains
   procedure, nopass, public                                           ::    AlgorithmH
   procedure, nopass, public                                           ::    AlgorithmL
   procedure, public                                                   ::    IsConstructed
-  procedure(Initialize_IndexSet), deferred, public                    ::    Initialize
   procedure(Reset_IndexSet), deferred, public                         ::    Reset
   procedure(ConstructInput_IndexSet), deferred, private               ::    ConstructInput
   procedure(GetInput_IndexSet), deferred, public                      ::    GetInput
   procedure(GenerateIndices_IndexSet), deferred, public               ::    GenerateIndices
-  procedure(SetDefaults_IndexSet), deferred, public                   ::    SetDefaults
   procedure(Copy_IndexSet), deferred, public                          ::    Copy
 end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
 
 abstract interface
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_IndexSet(This)
-    import                                                            ::    IndexSet_Type
-    class(IndexSet_Type), intent(inout)                               ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_IndexSet(This)
@@ -74,13 +63,6 @@ abstract interface
     class(IndexSet_Type), intent(inout)                               ::    This
     type(InputSection_Type), intent(in)                               ::    Input
     character(*), optional, intent(in)                                ::    Prefix
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_IndexSet(This)
-    import                                                            ::    IndexSet_Type
-    class(IndexSet_Type), intent(inout)                               ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
 

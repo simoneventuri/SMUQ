@@ -32,6 +32,7 @@ use ITablePoly_Class                                              ,only:    ITab
 use Input_Class                                                   ,only:    Input_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -43,9 +44,7 @@ type, extends(ITableValue_Type)                                       ::    ITab
   type(ITablePoly_Type)                                               ::    PolyParam
   real(rkp), allocatable, dimension(:,:)                              ::    OriginalTable
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
@@ -58,21 +57,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(ITableCrossOver_Type), intent(inout)                          ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  if (.not. This%Initialized) then
-    This%Name = 'ITablecrossover'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(ITableCrossOver_Type), intent(inout)                          ::    This
@@ -83,20 +67,7 @@ subroutine Reset(This)
   if (allocated(This%OriginalTable)) deallocate(This%OriginalTable, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%OriginalTable', ProcName=ProcName, stat=StatLoc)
 
-  This%Initialized = .false.
   This%Constructed = .false.
-
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(ITableCrossOver_Type), intent(inout)                          ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -122,16 +93,20 @@ subroutine ConstructInput(This, Input, Prefix)
   integer                                                             ::    ParamColumn
   integer                                                             ::    AbscissaColumn
   type(SMUQString_Type), allocatable, dimension(:,:)                  ::    VarR2D
-  
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  type(InputVerifier_Type)                                            ::    InputVerifier
+
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   SectionName = 'original_values'
+  call InputVerifier%AddSection(Section=SectionName)
 
   SubSectionName = SectionName // '>values'
+  call InputVerifier%AddSection(Section='values', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -141,11 +116,13 @@ subroutine ConstructInput(This, Input, Prefix)
 
   ParamColumn = 2
   ParameterName = 'parameter_column'
+  call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
   call Input%GetValue(Value=VarI0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
   ParamColumn = VarI0D
 
   AbscissaColumn = 1
   ParameterName = 'abscissa_column'
+  call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
   call Input%GetValue(Value=VarI0D, ParameterName=Parametername, SectionName=SectionName, Mandatory=.true.)
   AbscissaColumn = VarI0D
 
@@ -168,9 +145,13 @@ subroutine ConstructInput(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'polynomial'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call This%PolyParam%Construct(Input=InputSection)
   nullify(InputSection)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 

@@ -34,8 +34,6 @@ public                                                                ::    Dist
 public                                                                ::    Fun
 
 type, abstract                                                        ::    DistProb_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   real(rkp)                                                           ::    A=One
   real(rkp)                                                           ::    B=One
@@ -43,7 +41,6 @@ type, abstract                                                        ::    Dist
   logical                                                             ::    TruncatedRight=.false.
 contains
   private
-  procedure, public                                                   ::    GetName
   procedure, public                                                   ::    GetA
   procedure, public                                                   ::    GetB
   procedure, public                                                   ::    IsTruncatedLeft
@@ -54,14 +51,12 @@ contains
   procedure, public                                                   ::    ComputeMomentNumerical
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_DistProb), deferred, public                    ::    Initialize
   procedure(Reset_DistProb), deferred, public                         ::    Reset
   procedure(ConstructInput_DistProb), deferred, private               ::    ConstructInput
   procedure(GetInput_DistProb), deferred, public                      ::    GetInput
   procedure(CDF_DistProb), deferred, public                           ::    CDF
   procedure(InvCDF_DistProb), deferred, public                        ::    InvCDF
   procedure(PDF_DistProb), deferred, public                           ::    PDF
-  procedure(SetDefaults_DistProb), deferred, public                   ::    SetDefaults
   procedure(WriteInfo_DistProb), deferred, public                     ::    WriteInfo
   procedure(Copy_DistProb), deferred, public                          ::    Copy
 end type
@@ -71,21 +66,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_DistProb(This)
-    import                                                            ::    DistProb_Type
-    class(DistProb_Type), intent(inout)                               ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_DistProb(This)
-    import                                                            ::    DistProb_Type
-    class(DistProb_Type), intent(inout)                               ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_DistProb(This)
     import                                                            ::    DistProb_Type
     class(DistProb_Type), intent(inout)                               ::    This
   end subroutine
@@ -171,311 +152,298 @@ end interface
 
 contains
 
-  ! !!------------------------------------------------------------------------------------------------------------------------------
-  ! function PDF_R1D(This, X)
+! !!------------------------------------------------------------------------------------------------------------------------------
+! function PDF_R1D(This, X)
 
-  !   real(rkp), allocatable, dimension(:)                              ::    PDF_R1D
+!   real(rkp), allocatable, dimension(:)                              ::    PDF_R1D
 
-  !   class(DistProb_Type), intent(in)                                  ::    This
-  !   real(rkp), dimension(:), intent(in)                               ::    X
+!   class(DistProb_Type), intent(in)                                  ::    This
+!   real(rkp), dimension(:), intent(in)                               ::    X
 
-  !   character(*), parameter                                           ::    ProcName='PDF_R1D'
-  !   integer                                                           ::    StatLoc=0
-  !   integer                                                           ::    i
-  !   integer                                                           ::    NbX
+!   character(*), parameter                                           ::    ProcName='PDF_R1D'
+!   integer                                                           ::    StatLoc=0
+!   integer                                                           ::    i
+!   integer                                                           ::    NbX
 
-  !   NbX = size(X,1)
-    
-  !   allocate(PDF_R1D(NbX), stat=StatLoc)
-  !   if (StatLoc /= 0) call Error%Allocate(Name='PDF_R1D', ProcName=ProcName, stat=StatLoc)
-    
-  !   i = 1
-  !   do i = 1, NbX
-  !     PDF_R1D(i) = This%PDF(X=X(i))
-  !   end do
+!   NbX = size(X,1)
+  
+!   allocate(PDF_R1D(NbX), stat=StatLoc)
+!   if (StatLoc /= 0) call Error%Allocate(Name='PDF_R1D', ProcName=ProcName, stat=StatLoc)
+  
+!   i = 1
+!   do i = 1, NbX
+!     PDF_R1D(i) = This%PDF(X=X(i))
+!   end do
 
-  ! end function
-  ! !!------------------------------------------------------------------------------------------------------------------------------
+! end function
+! !!------------------------------------------------------------------------------------------------------------------------------
 
-  ! !!------------------------------------------------------------------------------------------------------------------------------
-  ! function CDF_R1D(This, X)
+! !!------------------------------------------------------------------------------------------------------------------------------
+! function CDF_R1D(This, X)
 
-  !   real(rkp), allocatable, dimension(:)                              ::    CDF_R1D
+!   real(rkp), allocatable, dimension(:)                              ::    CDF_R1D
 
-  !   class(DistProb_Type), intent(in)                                  ::    This
-  !   real(rkp), dimension(:), intent(in)                               ::    X
+!   class(DistProb_Type), intent(in)                                  ::    This
+!   real(rkp), dimension(:), intent(in)                               ::    X
 
-  !   character(*), parameter                                           ::    ProcName='CDF_R1D'
-  !   integer                                                           ::    StatLoc=0
-  !   integer                                                           ::    i
-  !   integer                                                           ::    NbX
+!   character(*), parameter                                           ::    ProcName='CDF_R1D'
+!   integer                                                           ::    StatLoc=0
+!   integer                                                           ::    i
+!   integer                                                           ::    NbX
 
-  !   NbX = size(X,1)
-    
-  !   allocate(CDF_R1D(NbX), stat=StatLoc)
-  !   if (StatLoc /= 0) call Error%Allocate(Name='CDF_R1D', ProcName=ProcName, stat=StatLoc)
-    
-  !   i = 1
-  !   do i = 1, NbX
-  !     CDF_R1D(i) = This%CDF(X=X(i))
-  !   end do
+!   NbX = size(X,1)
+  
+!   allocate(CDF_R1D(NbX), stat=StatLoc)
+!   if (StatLoc /= 0) call Error%Allocate(Name='CDF_R1D', ProcName=ProcName, stat=StatLoc)
+  
+!   i = 1
+!   do i = 1, NbX
+!     CDF_R1D(i) = This%CDF(X=X(i))
+!   end do
 
-  ! end function
-  ! !!------------------------------------------------------------------------------------------------------------------------------
+! end function
+! !!------------------------------------------------------------------------------------------------------------------------------
 
-  ! !!------------------------------------------------------------------------------------------------------------------------------
-  ! function InvCDF_R1D(This, P)
+! !!------------------------------------------------------------------------------------------------------------------------------
+! function InvCDF_R1D(This, P)
 
-  !   real(rkp), allocatable, dimension(:)                              ::    InvCDF_R1D
+!   real(rkp), allocatable, dimension(:)                              ::    InvCDF_R1D
 
-  !   class(DistProb_Type), intent(in)                                  ::    This
-  !   real(rkp), dimension(:), intent(in)                               ::    P
+!   class(DistProb_Type), intent(in)                                  ::    This
+!   real(rkp), dimension(:), intent(in)                               ::    P
 
-  !   character(*), parameter                                           ::    ProcName='InvCDF_R1D'
-  !   integer                                                           ::    StatLoc=0
-  !   integer                                                           ::    i
-  !   integer                                                           ::    NbP
+!   character(*), parameter                                           ::    ProcName='InvCDF_R1D'
+!   integer                                                           ::    StatLoc=0
+!   integer                                                           ::    i
+!   integer                                                           ::    NbP
 
-  !   NbP = size(P,1)
-    
-  !   allocate(InvCDF_R1D(NbP), stat=StatLoc)
-  !   if (StatLoc /= 0) call Error%Allocate(Name='InvCDF_R1D', ProcName=ProcName, stat=StatLoc)
-    
-  !   i = 1
-  !   do i = 1, NbP
-  !     InvCDF_R1D(i) = This%InvCDF(P=P(i))
-  !   end do
+!   NbP = size(P,1)
+  
+!   allocate(InvCDF_R1D(NbP), stat=StatLoc)
+!   if (StatLoc /= 0) call Error%Allocate(Name='InvCDF_R1D', ProcName=ProcName, stat=StatLoc)
+  
+!   i = 1
+!   do i = 1, NbP
+!     InvCDF_R1D(i) = This%InvCDF(P=P(i))
+!   end do
 
-  ! end function
-  ! !!------------------------------------------------------------------------------------------------------------------------------
+! end function
+! !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetA(This)
 
-    character(:), allocatable                                         ::    GetName
-    class(DistProb_Type), intent(in)                                  ::    This
+  real(rkp)                                                           ::    GetA
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  class(DistProb_Type), intent(in)                                    ::    This
 
-    GetName = This%Name
+  character(*), parameter                                             ::    ProcName='GetA'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetA(This)
+  if (.not. This%TruncatedLeft) call Error%Raise(Line='Distribution was never left truncated', ProcName=ProcName)
 
-    real(rkp)                                                         ::    GetA
+  GetA = This%A
 
-    class(DistProb_Type), intent(in)                                  ::    This
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetA'
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetB(This)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  real(rkp)                                                           ::    GetB
 
-    if (.not. This%TruncatedLeft) call Error%Raise(Line='Distribution was never left truncated', ProcName=ProcName)
+  class(DistProb_Type), intent(in)                                    ::    This
 
-    GetA = This%A
+  character(*), parameter                                             ::    ProcName='GetB'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetB(This)
+  if (.not. This%TruncatedRight) call Error%Raise(Line='Distribution was never right truncated', ProcName=ProcName)
 
-    real(rkp)                                                         ::    GetB
+  GetB = This%B
 
-    class(DistProb_Type), intent(in)                                  ::    This
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetB'
+!!------------------------------------------------------------------------------------------------------------------------------
+function IsTruncatedLeft(This)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  logical                                                             ::    IsTruncatedLeft
 
-    if (.not. This%TruncatedRight) call Error%Raise(Line='Distribution was never right truncated', ProcName=ProcName)
+  class(DistProb_Type), intent(in)                                    ::    This
 
-    GetB = This%B
+  character(*), parameter                                             ::    ProcName='IsTruncatedLeft'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsTruncatedLeft(This)
+  IsTruncatedLeft = This%TruncatedLeft
 
-    logical                                                           ::    IsTruncatedLeft
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistProb_Type), intent(in)                                  ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function IsTruncatedRight(This)
 
-    character(*), parameter                                           ::    ProcName='IsTruncatedLeft'
+  logical                                                             ::    IsTruncatedRight
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(DistProb_Type), intent(in)                                    ::    This
 
-    IsTruncatedLeft = This%TruncatedLeft
+  character(*), parameter                                             ::    ProcName='IsTruncatedRight'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsTruncatedRight(This)
+  IsTruncatedRight = This%TruncatedRight
 
-    logical                                                           ::    IsTruncatedRight
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistProb_Type), intent(in)                                  ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMean(This)
 
-    character(*), parameter                                           ::    ProcName='IsTruncatedRight'
+  real(rkp)                                                           ::    GetMean
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(DistProb_Type), intent(in)                                    ::    This
 
-    IsTruncatedRight = This%TruncatedRight
+  character(*), parameter                                             ::    ProcName='GetMean'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMean(This)
+  GetMean = This%GetMoment(Moment=1)
 
-    real(rkp)                                                         ::    GetMean
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistProb_Type), intent(in)                                  ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetVariance(This)
 
-    character(*), parameter                                           ::    ProcName='GetMean'
+  real(rkp)                                                           ::    GetVariance
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(DistProb_Type), intent(in)                                    ::    This
 
-    GetMean = This%GetMoment(Moment=1)
+  character(*), parameter                                             ::    ProcName='GetVariance'
+  real(rkp)                                                           ::    Ex
+  real(rkp)                                                           ::    Ex2
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVariance(This)
+  GetVariance = This%GetMoment(Moment=2) - (This%GetMoment(Moment=1))**2
 
-    real(rkp)                                                         ::    GetVariance
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistProb_Type), intent(in)                                  ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMoment(This, Moment)
 
-    character(*), parameter                                           ::    ProcName='GetVariance'
-    real(rkp)                                                         ::    Ex
-    real(rkp)                                                         ::    Ex2
+  real(rkp)                                                           ::    GetMoment
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(DistProb_Type), intent(in)                                    ::    This
+  integer, intent(in)                                                 ::    Moment
 
-    GetVariance = This%GetMoment(Moment=2) - (This%GetMoment(Moment=1))**2
+  character(*), parameter                                             ::    ProcName='GetMoment'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment(This, Moment)
+  if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-    real(rkp)                                                         ::    GetMoment
+  if (Moment > 0) then
+    GetMoment = This%ComputeMomentNumerical(Moment=Moment)
+  else
+    GetMoment = One
+  end if
 
-    class(DistProb_Type), intent(in)                                  ::    This
-    integer, intent(in)                                               ::    Moment
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetMoment'
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeMomentNumerical(This, Moment)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  real(rkp)                                                           ::    ComputeMomentNumerical
 
-    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
+  class(DistProb_Type), intent(in)                                    ::    This
+  integer, intent(in)                                                 ::    Moment
 
-    if (Moment > 0) then
-      GetMoment = This%ComputeMomentNumerical(Moment=Moment)
-    else
-      GetMoment = One
-    end if
+  character(*), parameter                                             ::    ProcName='ComputeMomentNumerical'
+  integer                                                             ::    StatLoc=0
+  real(rkp)                                                           ::    NumericalMoment
+  procedure(Fun), pointer                                             ::    PIntegrand=>null()
+  real(8)                                                             ::    Num
+  real(8)                                                             ::    EpsAbs
+  real(8)                                                             ::    EpsRel
+  integer                                                             ::    Key
+  real(8)                                                             ::    AbsErr
+  integer                                                             ::    NEval
+  integer                                                             ::    Limit
+  integer                                                             ::    LenW
+  integer, allocatable, dimension(:)                                  ::    iWork
+  real(8), allocatable, dimension(:)                                  ::    Work
+  integer                                                             ::    Last
+  real(8)                                                             ::    A
+  real(8)                                                             ::    B
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeMomentNumerical(This, Moment)
+  AbsErr = Zero
+  NEval=0
+  EpsAbs = 0.0
+  EpsRel = 1.d-3
+  Key = 6
+  Limit = 500
+  LenW = 4*Limit
 
-    real(rkp)                                                         ::    ComputeMomentNumerical
+  if (This%TruncatedLeft) A = This%GetA()
+  if (This%TruncatedRight) B = This%GetB()
 
-    class(DistProb_Type), intent(in)                                  ::    This
-    integer, intent(in)                                               ::    Moment
+  allocate(iWork(Limit), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='iWork', ProcName=ProcName, stat=StatLoc)
+  allocate(Work(LenW), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Work', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='ComputeMomentNumerical'
-    integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    NumericalMoment
-    procedure(Fun), pointer                                           ::    PIntegrand=>null()
-    real(8)                                                           ::    Num
-    real(8)                                                           ::    EpsAbs
-    real(8)                                                           ::    EpsRel
-    integer                                                           ::    Key
-    real(8)                                                           ::    AbsErr
-    integer                                                           ::    NEval
-    integer                                                           ::    Limit
-    integer                                                           ::    LenW
-    integer, allocatable, dimension(:)                                ::    iWork
-    real(8), allocatable, dimension(:)                                ::    Work
-    integer                                                           ::    Last
-    real(8)                                                           ::    A
-    real(8)                                                           ::    B
+  PIntegrand => Integrand
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  NumericalMoment = Zero
 
-    AbsErr = Zero
-    NEval=0
-    EpsAbs = 0.0
-    EpsRel = 1.d-3
-    Key = 6
-    Limit = 500
-    LenW = 4*Limit
+  if (This%TruncatedLeft .and. This%TruncatedRight) then
+    call dqag(PIntegrand, A, B, EpsAbs, EpsRel, Key, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work)
+    if (StatLoc /= 0 .and. StatLoc /= 2) call Error%Raise("Dqag exited with non zero exit code : " //                        &
+                                                                                                ConvertToString(Value=StatLoc))
+  elseif (This%TruncatedLeft) then
+    call dqagi(PIntegrand, A, 1, EpsAbs, EpsRel, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work)
+    if (StatLoc /= 0 .and. StatLoc /= 2) call Error%Raise("Dqagi exited with non zero exit code : " //                       &
+                                                                                                ConvertToString(Value=StatLoc))
+  elseif (This%TruncatedRight) then
+    call dqagi(PIntegrand, B, -1, EpsAbs, EpsRel, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work)
+    if (StatLoc /= 0 .and. StatLoc /= 2) call Error%Raise("Dqagi exited with non zero exit code : " //                       &
+                                                                                                ConvertToString(Value=StatLoc))
+  else
+    call dqagi(PIntegrand, Zero, 2, EpsAbs, EpsRel, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work)
+    if (StatLoc /= 0 .and. StatLoc /= 2) call Error%Raise("Dqagi exited with non zero exit code : " //                       &
+                                                                                                ConvertToString(Value=StatLoc))
+  end if
 
-    if (This%TruncatedLeft) A = This%GetA()
-    if (This%TruncatedRight) B = This%GetB()
+  if (NumericalMoment /= NumericalMoment) call Error%Raise("Detected a NaN result from integrator", ProcName=ProcName)
 
-    allocate(iWork(Limit), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='iWork', ProcName=ProcName, stat=StatLoc)
-    allocate(Work(LenW), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Work', ProcName=ProcName, stat=StatLoc)
+  nullify(PIntegrand)
+  deallocate(iWork, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='iWork', ProcName=ProcName, stat=StatLoc)
+  deallocate(Work, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Work', ProcName=ProcName, stat=StatLoc)
 
-    PIntegrand => Integrand
+  ComputeMomentNumerical = NumericalMoment
 
-    NumericalMoment = Zero
+  contains
 
-    if (This%TruncatedLeft .and. This%TruncatedRight) then
-      call dqag(PIntegrand, A, B, EpsAbs, EpsRel, Key, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work)
-      if (StatLoc /= 0 .and. StatLoc /= 2) call Error%Raise("Dqag exited with non zero exit code : " //                        &
-                                                                                                  ConvertToString(Value=StatLoc))
-    elseif (This%TruncatedLeft) then
-      call dqagi(PIntegrand, A, 1, EpsAbs, EpsRel, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work)
-      if (StatLoc /= 0 .and. StatLoc /= 2) call Error%Raise("Dqagi exited with non zero exit code : " //                       &
-                                                                                                  ConvertToString(Value=StatLoc))
-    elseif (This%TruncatedRight) then
-      call dqagi(PIntegrand, B, -1, EpsAbs, EpsRel, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work)
-      if (StatLoc /= 0 .and. StatLoc /= 2) call Error%Raise("Dqagi exited with non zero exit code : " //                       &
-                                                                                                  ConvertToString(Value=StatLoc))
-    else
-      call dqagi(PIntegrand, Zero, 2, EpsAbs, EpsRel, NumericalMoment, AbsErr, NEval, StatLoc, Limit, LenW, Last, iWork, Work)
-      if (StatLoc /= 0 .and. StatLoc /= 2) call Error%Raise("Dqagi exited with non zero exit code : " //                       &
-                                                                                                  ConvertToString(Value=StatLoc))
-    end if
+    function Integrand(X)
 
-    if (NumericalMoment /= NumericalMoment) call Error%Raise("Detected a NaN result from integrator", ProcName=ProcName)
+      real(8)                                                             ::    Integrand
 
-    nullify(PIntegrand)
-    deallocate(iWork, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='iWork', ProcName=ProcName, stat=StatLoc)
-    deallocate(Work, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='Work', ProcName=ProcName, stat=StatLoc)
+      real(8), intent(in)                                                 ::    X
 
-    ComputeMomentNumerical = NumericalMoment
+      Integrand = X**Moment * This%PDF(X=X)
 
-    contains
+    end function
 
-      function Integrand(X)
-
-        real(8)                                                           ::    Integrand
-
-        real(8), intent(in)                                               ::    X
-
-        Integrand = X**Moment * This%PDF(X=X)
-
-      end function
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

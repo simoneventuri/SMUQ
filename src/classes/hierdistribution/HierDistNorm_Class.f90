@@ -30,6 +30,7 @@ use DistProb_Class                                                ,only:    Dist
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -43,9 +44,7 @@ type, extends(HierDistProb_Type)                                      ::    Hier
   class(IScalarValue_Type), allocatable                               ::    Mu
   class(IScalarValue_Type), allocatable                               ::    Sigma
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    Generate
   procedure, private                                                  ::    GenerateDistribution
@@ -59,22 +58,6 @@ real(rkp), parameter                                                  ::    dlog
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(HierDistNorm_Type), intent(inout)                             ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'hierarchical_normal'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(HierDistNorm_Type), intent(inout)                             ::    This
@@ -82,7 +65,6 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized = .false.
   This%Constructed = .false.
 
   if (allocated(This%A)) deallocate(This%A, stat=StatLoc)
@@ -97,21 +79,9 @@ subroutine Reset(This)
   if (allocated(This%Sigma)) deallocate(This%Sigma, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Sigma', ProcName=ProcName, stat=StatLoc)
 
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(HierDistNorm_Type), intent(inout)                             ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-
   This%TruncatedRight = .false.
   This%TruncatedLeft = .false.
-
+  
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
@@ -134,14 +104,17 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    PrefixLoc
   logical                                                             ::    MandatoryLoc
   type(IScalarFixed_Type)                                             ::    FixedScalar
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
-  
+  call This%Reset()
+
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   SectionName = 'a'
+  call InputVerifier%AddSection(Section=SectionName)
   if(Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call IScalarValue_Factory%Construct(Object=This%A, Input=InputSection, Prefix=PrefixLoc)
@@ -154,6 +127,7 @@ subroutine ConstructInput(This, Input, Prefix)
   end if
 
   SectionName = 'b'
+  call InputVerifier%AddSection(Section=SectionName)
   if(Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call IScalarValue_Factory%Construct(Object=This%B, Input=InputSection, Prefix=PrefixLoc)
@@ -166,14 +140,19 @@ subroutine ConstructInput(This, Input, Prefix)
   end if
 
   SectionName = 'mu'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%Mu, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SectionName = 'sigma'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%Sigma, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -212,25 +191,25 @@ function GetInput(This, Name, Prefix, Directory)
 
   if (This%TruncatedLeft) then
     SectionName = 'a'
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+    if (ExternalFlag) DirectorySub = DirectoryLoc // SectionName // '/'
     call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%A, Name=SectionName, Prefix=PrefixLoc,       &
                                                                          Directory=DirectorySub))
   end if
 
   if (This%TruncatedRight) then
     SectionName = 'b'
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+    if (ExternalFlag) DirectorySub = DirectoryLoc // SectionName // '/'
     call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%B, Name=SectionName, Prefix=PrefixLoc,       &
                                                                          Directory=DirectorySub))
   end if
 
   SectionName = 'mu'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Mu, Name=SectionName, Prefix=PrefixLoc,        &
                                                                        Directory=DirectorySub))
 
   SectionName = 'sigma'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName, Prefix=PrefixLoc,     &
                                                                        Directory=DirectorySub))
 
@@ -317,7 +296,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (HierDistNorm_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then

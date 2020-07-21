@@ -29,6 +29,7 @@ use IScalarValue_Class                                            ,only:    ISca
 use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -39,9 +40,7 @@ public                                                                ::    ITab
 type, extends(ITableValue_Type)                                       ::    ITableConstant_Type
   class(IScalarValue_Type), allocatable                               ::    Constant
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
@@ -52,21 +51,6 @@ end type
 logical   ,parameter                                                  ::    DebugGlobal = .false.
 
 contains
-  
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(ITableConstant_Type), intent(inout)                           ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  if (.not. This%Initialized) then
-    This%Name = 'ITableConstant'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
@@ -79,20 +63,7 @@ subroutine Reset(This)
   if (allocated(This%Constant)) deallocate(This%Constant, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Constant', ProcName=ProcName, stat=StatLoc)
 
-  This%Initialized = .false.
   This%Constructed = .false.
-
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(ITableConstant_Type), intent(inout)                           ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -111,16 +82,23 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    SectionName
   logical                                                             ::    Found
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  type(InputVerifier_Type)                                            ::    InputVerifier
+
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   SectionName = 'constant'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%Constant, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -198,7 +176,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (ITableConstant_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
         allocate(LHS%Constant, source=RHS%Constant, stat=StatLoc)

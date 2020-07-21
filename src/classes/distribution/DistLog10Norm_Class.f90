@@ -39,8 +39,7 @@ public                                                                ::    Dist
 type, extends(DistNorm_Type)                                          ::    DistLog10Norm_Type
   logical                                                             ::    DoubleTruncatedLeft
 contains
-  procedure, public                                                   ::    Initialize
-  procedure, public                                                   ::    SetDefaults
+  procedure, public                                                   ::    Reset
   procedure, private                                                  ::    AdditionalConstruction
   procedure, public                                                   ::    GetA
   procedure, public                                                   ::    GetB
@@ -57,279 +56,265 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(DistLog10Norm_Type), intent(inout)                          ::    This
+  class(DistLog10Norm_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Name = 'log10normal'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  This%Constructed = .false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%A = - huge(One)
+  This%B = huge(One)
+  This%Mu = Zero
+  This%Sigma = One
+  This%TruncatedRight = .false.
+  This%TruncatedLeft = .true.
+  This%DoubleTruncatedLeft = .false.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistLog10Norm_Type), intent(inout)                          ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine AdditionalConstruction(This)
+  
+  class(DistLog10Norm_Type), intent(inout)                            ::    This 
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
 
-    This%A = - huge(One)
-    This%B = huge(One)
-    This%Mu = Zero
-    This%Sigma = One
-    This%TruncatedRight = .false.
-    This%TruncatedLeft = .true.
-    This%DoubleTruncatedLeft = .false.
+  if (This%A > -huge(One)) This%DoubleTruncatedLeft = .true.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AdditionalConstruction(This)
-    
-    class(DistLog10Norm_Type), intent(inout)                          ::    This 
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetA(This)
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
+  real(rkp)                                                           ::    GetA
 
-    if (This%A > -huge(One)) This%DoubleTruncatedLeft = .true.
+  class(DistLog10Norm_Type), intent(in)                               ::    This
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetA'
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetA(This)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    real(rkp)                                                         ::    GetA
+  if (This%DoubleTruncatedLeft) then
+    GetA = Ten**(This%A)
+  else
+    GetA = Zero
+  end if
 
-    class(DistLog10Norm_Type), intent(in)                             ::    This
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetA'
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetB(This)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  real(rkp)                                                           ::    GetB
 
-    if (This%DoubleTruncatedLeft) then
-      GetA = Ten**(This%A)
+  class(DistLog10Norm_Type), intent(in)                               ::    This
+
+  character(*), parameter                                             ::    ProcName='GetB'
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  if (.not. This%TruncatedRight) call Error%Raise(Line='Distribution was never right truncated', ProcName=ProcName)
+
+  GetB = Ten**(This%B)
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function PDF(This, X)
+
+  real(rkp)                                                           ::    PDF
+
+  class(DistLog10Norm_Type), intent(in)                               ::    This
+  real(rkp), intent(in)                                               ::    X
+
+  character(*), parameter                                             ::    ProcName='PDF'
+  logical                                                             ::    TripFlag
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  TripFlag = .false.
+
+  if (X <= Zero) then
+    PDF = Zero
+    TripFlag = .true.
+  end if
+
+  if (.not. TripFlag) then
+    if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
+      PDF = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+    else if (This%DoubleTruncatedLeft) then
+      PDF = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+    else if (This%TruncatedRight) then
+      PDF = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B)
     else
-      GetA = Zero
+      PDF = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma)
     end if
+    PDF = One/(X*dlogof10) * PDF
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetB(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function CDF(This, X)
 
-    real(rkp)                                                         ::    GetB
+  real(rkp)                                                           ::    CDF
 
-    class(DistLog10Norm_Type), intent(in)                             ::    This
+  class(DistLog10Norm_Type), intent(in)                               ::    This
+  real(rkp), intent(in)                                               ::    X
 
-    character(*), parameter                                           ::    ProcName='GetB'
+  character(*), parameter                                             ::    ProcName='CDF'
+  logical                                                             ::    TripFlag
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (.not. This%TruncatedRight) call Error%Raise(Line='Distribution was never right truncated', ProcName=ProcName)
+  TripFlag = .false.
 
-    GetB = Ten**(This%B)
+  if (X <= Zero) then
+    CDF = Zero
+    TripFlag = .true.
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. TripFlag) then
+    if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
+      CDF = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+    else if (This%DoubleTruncatedLeft) then
+      CDF = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+    else if (This%TruncatedRight) then
+      CDF = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B)
+    else
+      CDF = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma)
+    end if
+  end if
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF(This, X)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    real(rkp)                                                         ::    PDF
+!!------------------------------------------------------------------------------------------------------------------------------
+function InvCDF(This, P)
 
-    class(DistLog10Norm_Type), intent(in)                             ::    This
-    real(rkp), intent(in)                                             ::    X
+  real(rkp)                                                           ::    InvCDF
 
-    character(*), parameter                                           ::    ProcName='PDF'
-    logical                                                           ::    TripFlag
+  class(DistLog10Norm_Type), intent(in)                               ::    This
+  real(rkp), intent(in)                                               ::    P
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='InvCDF'
+  logical                                                             ::    TripFlag
 
-    TripFlag = .false.
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (X <= Zero) then
-      PDF = Zero
+  TripFlag = .false.
+
+  if (P == Zero) then
+    if (.not. This%DoubleTruncatedLeft) then
+      InvCDF = tiny(One)
       TripFlag = .true.
     end if
+  end if
 
-    if (.not. TripFlag) then
-      if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
-        PDF = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
-      else if (This%DoubleTruncatedLeft) then
-        PDF = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A)
-      else if (This%TruncatedRight) then
-        PDF = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B)
-      else
-        PDF = This%ComputeNormalPDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma)
-      end if
-      PDF = One/(X*dlogof10) * PDF
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF(This, X)
-
-    real(rkp)                                                         ::    CDF
-
-    class(DistLog10Norm_Type), intent(in)                             ::    This
-    real(rkp), intent(in)                                             ::    X
-
-    character(*), parameter                                           ::    ProcName='CDF'
-    logical                                                           ::    TripFlag
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    TripFlag = .false.
-
-    if (X <= Zero) then
-      CDF = Zero
-      TripFlag = .true.
-    end if
-  
-    if (.not. TripFlag) then
-      if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
-        CDF = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
-      else if (This%DoubleTruncatedLeft) then
-        CDF = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, A=This%A)
-      else if (This%TruncatedRight) then
-        CDF = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma, B=This%B)
-      else
-        CDF = This%ComputeNormalCDF(X=dlog10(X), Mu=This%Mu, Sigma=This%Sigma)
-      end if
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF(This, P)
-
-    real(rkp)                                                         ::    InvCDF
-
-    class(DistLog10Norm_Type), intent(in)                             ::    This
-    real(rkp), intent(in)                                             ::    P
-
-    character(*), parameter                                           ::    ProcName='InvCDF'
-    logical                                                           ::    TripFlag
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    TripFlag = .false.
-
-    if (P == Zero) then
-      if (.not. This%DoubleTruncatedLeft) then
-        InvCDF = tiny(One)
-        TripFlag = .true.
-      end if
-    end if
-
-    if (.not. TripFlag) then
-      if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
-        InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
-      else if (This%DoubleTruncatedLeft) then
-        InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
-      else if (This%TruncatedRight) then
-        InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
-      else
-        InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma)
-      end if
-      InvCDF = Ten**InvCDF
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment(This, Moment)
-
-    real(rkp)                                                         ::    GetMoment
-
-    class(DistLog10Norm_Type), intent(in)                             ::    This
-    integer, intent(in)                                               ::    Moment
-
-    character(*), parameter                                           ::    ProcName='GetMoment'
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
-
-    if (Moment > 0) then
-      GetMoment = This%ComputeMomentNumerical(Moment=Moment)
+  if (.not. TripFlag) then
+    if (This%TruncatedRight .and. This%DoubleTruncatedLeft) then
+      InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+    else if (This%DoubleTruncatedLeft) then
+      InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+    else if (This%TruncatedRight) then
+      InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
     else
-      GetMoment = One
+      InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma)
     end if
+    InvCDF = Ten**InvCDF
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo(This, File)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMoment(This, Moment)
 
-    class(DistLog10Norm_Type), intent(in)                             ::    This
-    type(SMUQFile_Type), intent(inout)                                ::    File
+  real(rkp)                                                           ::    GetMoment
 
-    character(*), parameter                                           ::    ProcName='WriteInfo'
-    integer                                                           ::    i
-    type(SMUQString_Type), dimension(5)                               ::    Strings
+  class(DistLog10Norm_Type), intent(in)                               ::    This
+  integer, intent(in)                                                 ::    Moment
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetMoment'
 
-    Strings(1) = 'log10normal'
-    Strings(2) = ConvertToString(Value=This%Mu)
-    Strings(3) = ConvertToString(Value=This%Sigma)
-    Strings(4) = '-Inf'
-    if (This%DoubleTruncatedLeft) Strings(4) = ConvertToString(Value=This%A)
-    Strings(5) = 'Inf'
-    if (This%TruncatedRight) Strings(5) = ConvertToString(Value=This%B)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    call File%Append(Strings=Strings)
+  if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (Moment > 0) then
+    GetMoment = This%ComputeMomentNumerical(Moment=Moment)
+  else
+    GetMoment = One
+  end if
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistLog10Norm_Type), intent(out)                            ::    LHS
-    class(DistProb_Type), intent(in)                                  ::    RHS
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine WriteInfo(This, File)
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  class(DistLog10Norm_Type), intent(in)                               ::    This
+  type(SMUQFile_Type), intent(inout)                                  ::    File
 
-    select type (RHS)
-  
-      type is (DistLog10Norm_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+  character(*), parameter                                             ::    ProcName='WriteInfo'
+  integer                                                             ::    i
+  type(SMUQString_Type), dimension(5)                                 ::    Strings
 
-        if (RHS%Constructed) then
-          LHS%A = RHS%A
-          LHS%B = RHS%B
-          LHS%Mu = RHS%Mu
-          LHS%Sigma = RHS%Sigma
-          LHS%TruncatedLeft = RHS%TruncatedLeft
-          LHS%TruncatedRight = RHS%TruncatedRight
-          LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedLeft
-        end if
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+  Strings(1) = 'log10normal'
+  Strings(2) = ConvertToString(Value=This%Mu)
+  Strings(3) = ConvertToString(Value=This%Sigma)
+  Strings(4) = '-Inf'
+  if (This%DoubleTruncatedLeft) Strings(4) = ConvertToString(Value=This%A)
+  Strings(5) = 'Inf'
+  if (This%TruncatedRight) Strings(5) = ConvertToString(Value=This%B)
 
-    end select
+  call File%Append(Strings=Strings)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
+
+  class(DistLog10Norm_Type), intent(out)                              ::    LHS
+  class(DistProb_Type), intent(in)                                    ::    RHS
+
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+
+  select type (RHS)
+
+    type is (DistLog10Norm_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
+
+      if (RHS%Constructed) then
+        LHS%A = RHS%A
+        LHS%B = RHS%B
+        LHS%Mu = RHS%Mu
+        LHS%Sigma = RHS%Sigma
+        LHS%TruncatedLeft = RHS%TruncatedLeft
+        LHS%TruncatedRight = RHS%TruncatedRight
+        LHS%DoubleTruncatedLeft = RHS%DoubleTruncatedLeft
+      end if
+
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+
+  end select
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

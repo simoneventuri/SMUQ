@@ -26,7 +26,8 @@ module CVKFold_Class
   use Logger_Class                                                  ,only:    Logger
   use Error_Class                                                   ,only:    Error
   use CVMethod_Class                                                ,only:    CVMethod_Type, CVFitTarget
-  
+  use InputVerifier_Class                                           ,only:    InputVerifier_Type
+
   implicit none
   
   private
@@ -36,9 +37,7 @@ module CVKFold_Class
   type, extends(CVMethod_Type)                                          ::    CVKFold_Type
     integer                                                             ::    NbFolds
   contains
-    procedure, public                                                   ::    Initialize
     procedure, public                                                   ::    Reset
-    procedure, public                                                   ::    SetDefaults
     generic, public                                                     ::    Construct               =>    ConstructCase1
     procedure, private                                                  ::    ConstructInput
     procedure, private                                                  ::    ConstructCase1
@@ -52,46 +51,17 @@ module CVKFold_Class
   contains
   
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
-  
-    class(CVKFold_Type), intent(inout)                                  ::    This
-  
-    character(*), parameter                                             ::    ProcName='Initialize'
-  
-    if (.not. This%Initialized) then
-      This%Name = 'CVKFold'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
-  
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-  
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset(This)
   
     class(CVKFold_Type), intent(inout)                                  ::    This
   
     character(*), parameter                                             ::    ProcName='Reset'
   
-    This%Initialized=.false.
     This%Constructed=.false.
-  
-    call This%SetDefaults()
-  
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-  
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
-  
-    class(CVKFold_Type), intent(inout)                                  ::    This
-  
-    character(*), parameter                                             ::    ProcName='SetDefaults'
   
     This%Normalized = .true.
     This%NbFolds = 10
-
+  
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
   
@@ -109,21 +79,28 @@ module CVKFold_Class
     character(:), allocatable                                           ::    ParameterName
     character(:), allocatable                                           ::    PrefixLoc
     logical                                                             ::    Found
-  
+    type(InputVerifier_Type)                                            ::    InputVerifier
+
     PrefixLoc = ''
     if (present(Prefix)) PrefixLoc = Prefix
   
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-  
+    call This%Reset()
+
+    call InputVerifier%Construct()
+
     ParameterName = 'normalized'
+    call InputVerifier%AddParameter(Parameter=ParameterName)
     call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
     if(Found) This%Normalized = VarL0D
   
     ParameterName = 'nb_folds'
+    call InputVerifier%AddParameter(Parameter=ParameterName)
     call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
     if(Found) This%NbFolds = VarI0D
     if (This%NbFolds < 1) call Error%Raise('Have to specify at least 1 fold', ProcName=ProcName)
+
+    call InputVerifier%Process(Input=Input)
+    call InputVerifier%Reset()
 
     This%Constructed = .true.
   
@@ -143,9 +120,8 @@ module CVKFold_Class
     character(:), allocatable                                           ::    ParameterName
     logical                                                             ::    Found
   
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-  
+    call This%Reset()
+
     if(present(Normalized)) This%Normalized = Normalized
   
     if(present(NbFolds)) This%NbFolds = NbFolds
@@ -352,7 +328,6 @@ module CVKFold_Class
     select type (RHS)
       type is (CVKFold_Type)
         call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
         LHS%Constructed = RHS%Constructed
         if (RHS%Constructed) then
           LHS%NbFolds = RHS%NbFolds

@@ -29,6 +29,7 @@ use IScalarValue_Class                                            ,only:    ISca
 use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -40,9 +41,7 @@ type, extends(ITableValue_Type)                                       ::    ITab
   type(IScalarValueContainer_Type), dimension(:), allocatable         ::    PolyCoeff
   integer                                                             ::    Order
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -57,21 +56,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(ITablePoly_Type), intent(inout)                               ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  if (.not. This%Initialized) then
-    This%Name = 'ITablepoly'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(ITablePoly_Type), intent(inout)                               ::    This
@@ -82,20 +66,7 @@ subroutine Reset(This)
   if (allocated(This%PolyCoeff)) deallocate(This%PolyCoeff, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc)
 
-  This%Initialized = .false.
   This%Constructed = .false.
-
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(ITablePoly_Type), intent(inout)                               ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
@@ -119,14 +90,17 @@ subroutine ConstructInput(This, Input, Prefix)
   logical                                                             ::    Found
   class(IScalarValue_Type), allocatable                               ::    PolyCoeff
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'order'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
   This%Order = VarI0D
   if (This%Order < 0) call Error%Raise(Line='Specified a polynomial of order less than 0', ProcName=ProcName)
@@ -135,10 +109,12 @@ subroutine ConstructInput(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Allocate(Name='PolyCoeff', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'coefficients'    
+  call InputVerifier%AddSection(Section=SectionName)
 
   i = 1
   do i = 1, This%Order + 1
     SubSectionName = SectionName // '>coefficient' // ConvertToString(i)
+    call InputVerifier%AddSection(Section='coefficient' // ConvertToString(i), ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call IScalarValue_Factory%Construct(Object=PolyCoeff, Input=InputSection, Prefix=PrefixLoc)
     call This%PolyCoeff(i)%Set(Object=PolyCoeff)
@@ -146,6 +122,9 @@ subroutine ConstructInput(This, Input, Prefix)
     if (StatLoc /= 0) call Error%Deallocate(Name='PolyCoeff', ProcName=ProcName, stat=StatLoc)
     nullify(InputSection)
   end do
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -161,8 +140,7 @@ subroutine ConstructCase1(This, PolyCoeff)
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   allocate(This%PolyCoeff, source=PolyCoeff, stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%PolyCoeff', ProcName=ProcName, stat=StatLoc)
@@ -210,7 +188,7 @@ function GetInput(This, Name, Prefix, Directory)
   i = 1
   do i = 1, size(This%PolyCoeff,1)
     PolyCoeffPointer => This%PolyCoeff(i)%GetPointer()
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/coefficient' // ConvertToString(Value=i)
+    if (ExternalFlag) DirectorySub = DirectoryLoc // 'coefficient' // ConvertToString(Value=i) // '/'
     SubSectionName = 'coefficient' // ConvertToString(Value=i)
     call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Name=SubSectionName, Object=PolyCoeffPointer,          &
                                                           Prefix=PrefixLoc, Directory=DIrectoryLoc), To_SubSection=SectionName)
@@ -265,7 +243,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (ITablePoly_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
         LHS%Order = RHS%Order

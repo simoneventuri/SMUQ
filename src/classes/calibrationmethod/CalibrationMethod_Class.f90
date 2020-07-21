@@ -33,17 +33,12 @@ private
 public                                                                ::    CalibrationMethod_Type
 
 type, abstract                                                        ::    CalibrationMethod_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_CalibrationMethod), deferred, public           ::    Initialize
   procedure(Reset_CalibrationMethod), deferred, public                ::    Reset
-  procedure(SetDefaults_CalibrationMethod), deferred, public          ::    SetDefaults
   procedure(ConstructInput_CalibrationMethod), deferred, private      ::    ConstructInput
   procedure(GetInput_CalibrationMethod), deferred, public             ::    GetInput
   procedure(Run_CalibrationMethod), deferred, public                  ::    Run
@@ -55,21 +50,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_CalibrationMethod(This)
-    import                                                            ::    CalibrationMethod_Type
-    class(CalibrationMethod_Type), intent(inout)                      ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_CalibrationMethod(This)
-    import                                                            ::    CalibrationMethod_Type
-    class(CalibrationMethod_Type), intent(inout)                      ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_CalibrationMethod(This)
     import                                                            ::    CalibrationMethod_Type
     class(CalibrationMethod_Type), intent(inout)                      ::    This
   end subroutine
@@ -123,18 +104,5 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
-
-    character(:), allocatable                                         ::    GetName
-    class(CalibrationMethod_Type), intent(inout)                      ::    This
-
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    GetName = This%Name
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

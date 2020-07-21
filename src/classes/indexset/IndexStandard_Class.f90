@@ -25,6 +25,7 @@ use LinkedList1D_Class                                            ,only:    Link
 use IndexSet_Class                                                ,only:    IndexSet_Type
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -51,280 +52,253 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(IndexStandard_Type), intent(inout)                          ::    This
+  class(IndexStandard_Type), intent(inout)                            ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Name         =   'standard'
-      This%Initialized  =   .true.
-      call This%SetDefaults()
-    end if
+  This%Constructed = .false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    class(IndexStandard_Type), intent(inout)                          ::    This
+  class(IndexStandard_Type), intent(inout)                            ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    ParameterName
+  logical                                                             ::    Found
+  real(rkp)                                                           ::    VarR0D
+  integer                                                             ::    VarI0D
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-    This%Initialized = .false.
-    This%Constructed = .false.
+  call This%Reset()
 
-    call This%Initialize()
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
+  
+  call InputVerifier%Construct()
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Constructed = .true.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(IndexStandard_Type), intent(inout)                          ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This)
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  class(IndexStandard_Type), intent(inout)                            ::    This  
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+  call This%Reset() 
 
-    class(IndexStandard_Type), intent(inout)                          ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+  This%Constructed = .true.
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    ParameterName
-    logical                                                           ::    Found
-    real(rkp)                                                         ::    VarR0D
-    integer                                                           ::    VarI0D
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  use StringConversion_Module
 
-    This%Constructed = .true.
+  type(InputSection_Type)                                             ::    GetInput
+  class(IndexStandard_Type), intent(in)                               ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This)
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    class(IndexStandard_Type), intent(inout)                          ::    This  
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize() 
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    This%Constructed = .true.
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GenerateIndices(This, Order, TupleSize, Indices)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  class(IndexStandard_Type), intent(in)                               ::    This
+  integer, intent(in)                                                 ::    Order
+  integer, intent(in)                                                 ::    TupleSize
+  integer, dimension(:,:), allocatable, intent(out)                   ::    Indices
 
-    use StringConversion_Module
+  character(*), parameter                                             ::    ProcName='GenerateIndices'
 
-    type(InputSection_Type)                                           ::    GetInput
-    class(IndexStandard_Type), intent(in)                             ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
+  call This%ComputeIndices(TupleSize, Order, Indices)
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ComputeIndices(This, M, Order, Indices)
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  class(IndexStandard_Type), intent(in)                               ::    This
+  integer, dimension(:,:), allocatable, intent(out)                   ::    Indices
+  integer, intent(in)                                                 ::    M
+  integer, intent(in)                                                 ::    Order
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  character(*), parameter                                             ::    ProcName='ComputeIndices'
+  type(LinkedList1D_Type), allocatable                                ::    IndicesRecord
+  integer                                                             ::    i, ii
+  integer                                                             ::    k, j
+  integer                                                             ::    jmax
+  integer                                                             ::    NbIndices, NbPermutations
+  integer, dimension(:,:), allocatable                                ::    Indices_Loc
+  integer, dimension(:), allocatable                                  ::    VarI1D
+  integer, dimension(:,:), allocatable                                ::    VarI2D
+  real(rkp), dimension(:), allocatable                                ::    VarR1D
+  integer                                                             ::    StatLoc=0
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  allocate(IndicesRecord, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GenerateIndices(This, Order, TupleSize, Indices)
+  allocate(VarR1D(M), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
+  VarR1D = Zero
 
-    class(IndexStandard_Type), intent(in)                             ::    This
-    integer, intent(in)                                               ::    Order
-    integer, intent(in)                                               ::    TupleSize
-    integer, dimension(:,:), allocatable, intent(out)                 ::    Indices
+  allocate(VarI1D(M), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
+  VarI1D = 0
 
-    character(*), parameter                                           ::    ProcName='GenerateIndices'
+  call IndicesRecord%Append(VarI1D)
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  do k = 1, Order
 
-    call This%ComputeIndices(TupleSize, Order, Indices)
+    jmax = min(M,k)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+    do j = 1, jmax
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeIndices(This, M, Order, Indices)
+      if (j == 1) then
 
-    class(IndexStandard_Type), intent(in)                             ::    This
-    integer, dimension(:,:), allocatable, intent(out)                 ::    Indices
-    integer, intent(in)                                               ::    M
-    integer, intent(in)                                               ::    Order
+        ii = 1
+        do ii = 1, M
+          VarI1D = Zero 
+          VarI1D(ii) = k
+          call IndicesRecord%Append(Values=VarI1D)
+        end do
 
-    character(*), parameter                                           ::    ProcName='ComputeIndices'
-    type(LinkedList1D_Type), allocatable                              ::    IndicesRecord
-    integer                                                           ::    i, ii
-    integer                                                           ::    k, j
-    integer                                                           ::    jmax
-    integer                                                           ::    NbIndices, NbPermutations
-    integer, dimension(:,:), allocatable                              ::    Indices_Loc
-    integer, dimension(:), allocatable                                ::    VarI1D
-    integer, dimension(:,:), allocatable                              ::    VarI2D
-    real(rkp), dimension(:), allocatable                              ::    VarR1D
-    integer                                                           ::    StatLoc=0
+        cycle
+      end if 
+      
+      call This%AlgorithmH(M, k, j, Indices_Loc)
 
-    allocate(IndicesRecord, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
+      NbPermutations = size(Indices_Loc,2)
 
-    allocate(VarR1D(M), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
-    VarR1D = Zero
+      i = 1
+      do i = 1, NbPermutations
+        VarR1D = real(Indices_Loc(:,i),rkp)
+        call dlasrt('I', M, VarR1D, StatLoc)
+        if (StatLoc /= 0) call Error%Raise("Something went wrong with lapack routine dlasrt")
+        VarI1D = nint(VarR1D)
 
-    allocate(VarI1D(M), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
-    VarI1D = 0
+        call This%AlgorithmL(VarI1D, M, VarI2D)
 
-    call IndicesRecord%Append(VarI1D)
+        NbIndices = size(VarI2D,2)
 
-    do k = 1, Order
-
-      jmax = min(M,k)
-
-      do j = 1, jmax
-
-        if (j == 1) then
-
-          ii = 1
-          do ii = 1, M
-            VarI1D = Zero 
-            VarI1D(ii) = k
-            call IndicesRecord%Append(Values=VarI1D)
-          end do
-
-          cycle
-        end if 
-        
-        call This%AlgorithmH(M, k, j, Indices_Loc)
-
-        NbPermutations = size(Indices_Loc,2)
-
-        i = 1
-        do i = 1, NbPermutations
-          VarR1D = real(Indices_Loc(:,i),rkp)
-          call dlasrt('I', M, VarR1D, StatLoc)
-          if (StatLoc /= 0) call Error%Raise("Something went wrong with lapack routine dlasrt")
-          VarI1D = nint(VarR1D)
-
-          call This%AlgorithmL(VarI1D, M, VarI2D)
-
-          NbIndices = size(VarI2D,2)
-
-          ii = 1
-          do ii = 1, NbIndices
-            call IndicesRecord%Append(VarI2D(:,ii))
-          end do
-
+        ii = 1
+        do ii = 1, NbIndices
+          call IndicesRecord%Append(VarI2D(:,ii))
         end do
 
       end do
 
     end do
 
-    StatLoc = 0
-    if (allocated(Indices_Loc)) deallocate(Indices_Loc, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Indices_Loc', stat=StatLoc)
-    if (allocated(VarI1D)) deallocate(VarI1D, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
-    if (allocated(VarI2D)) deallocate(VarI2D, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI2D', stat=StatLoc)
-    if (allocated(VarR1D)) deallocate(VarR1D, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
+  end do
 
-    NbIndices = IndicesRecord%GetLength()
+  StatLoc = 0
+  if (allocated(Indices_Loc)) deallocate(Indices_Loc, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='Indices_Loc', stat=StatLoc)
+  if (allocated(VarI1D)) deallocate(VarI1D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI1D', stat=StatLoc)
+  if (allocated(VarI2D)) deallocate(VarI2D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarI2D', stat=StatLoc)
+  if (allocated(VarR1D)) deallocate(VarR1D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='VarR1D', stat=StatLoc)
 
-    allocate(Indices(M,NbIndices), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='Indices', stat=StatLoc)
+  NbIndices = IndicesRecord%GetLength()
 
-    i = 1
-    do i = 1, NbIndices
-      call IndicesRecord%Get(i, VarI1D)
-      Indices(:,i) = VarI1D
-    end do
+  allocate(Indices(M,NbIndices), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(ProcName=ProcName, Name='Indices', stat=StatLoc)
 
-    deallocate(IndicesRecord, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
+  i = 1
+  do i = 1, NbIndices
+    call IndicesRecord%Get(i, VarI1D)
+    Indices(:,i) = VarI1D
+  end do
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  deallocate(IndicesRecord, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(ProcName=ProcName, Name='IndicesRecord', stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(IndexStandard_Type), intent(out)                            ::    LHS
-    class(IndexSet_Type), intent(in)                                  ::    RHS
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  class(IndexStandard_Type), intent(out)                              ::    LHS
+  class(IndexSet_Type), intent(in)                                    ::    RHS
 
-    select type (RHS)
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-      type is (IndexStandard_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+  select type (RHS)
 
-        if (RHS%Constructed) then
+    type is (IndexStandard_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
 
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+      if (RHS%Constructed) then
 
-    end select
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    type(IndexStandard_Type), intent(inout)                           ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+  type(IndexStandard_Type), intent(inout)                             ::    This
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module
 

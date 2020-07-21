@@ -32,6 +32,7 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -46,9 +47,7 @@ type, extends(HierCovFunction_Type)                                   ::    Hier
   real(rkp)                                                           ::    Tolerance
   character(:), allocatable                                           ::    CoordinateLabel
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Generate
@@ -61,22 +60,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(HierCovGExp1L_Type), intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'HierCovGExp1L'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(HierCovGExp1L_Type), intent(inout)                            ::    This
@@ -84,7 +67,6 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc = 0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%L)) deallocate(This%L, stat=StatLoc)
@@ -95,18 +77,6 @@ subroutine Reset(This)
 
   if (allocated(This%Gam)) deallocate(This%Gam, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Gam', ProcName=ProcName, stat=StatLoc)
-
-  call This%SetDefaults()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(HierCovGExp1L_Type), intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
   This%Tolerance = 1e-10
   This%CoordinateLabel = ''
@@ -133,35 +103,45 @@ subroutine ConstructInput(This, Input, Prefix)
   logical                                                             ::    Found
   character(:), allocatable                                           ::    PrefixLoc
   real(rkp), allocatable, dimension(:)                                ::    VarR1D
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   SectionName = 'l'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%L, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SectionName = 'sigma'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%Sigma, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SectionName = 'gamma'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%Gam, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   ParameterName = 'tolerance'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%Tolerance=VarR0D
 
   ParameterName = 'coordinate_label'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   if (Found) This%CoordinateLabel=VarC0D
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -205,19 +185,18 @@ function GetInput(This, Name, Prefix, Directory)
 
   call GetInput%AddParameter(Name='coordinate_label', Value=This%CoordinateLabel)
 
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
   SectionName = 'l'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%L, Name=SectionName,                           &
                                                                        Prefix=PrefixLoc, Directory=DirectorySub))
                                                                             
   SectionName = 'gamma'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Gam, Name=SectionName,                         &
                                                                        Prefix=PrefixLoc, Directory=DirectorySub))
 
   SectionName = 'sigma'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                       &
                                                                        Prefix=PrefixLoc, Directory=DirectorySub))
 
@@ -273,7 +252,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (HierCovGExp1L_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then

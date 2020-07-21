@@ -25,6 +25,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use Input_Class                                                   ,only:    Input_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -33,16 +34,12 @@ private
 public                                                                ::    InputProcessor_Type
 
 type                                                                  ::    InputTransform_Type
-  character(:), allocatable                                           ::    Name
   logical                                                             ::    Constructed=.false.
-  logical                                                             ::    Initialized=.false.
   type(SMUQString_Type), allocatable, dimension(:)                    ::    Transformation
   type(SMUQString_Type), allocatable, dimension(:)                    ::    Target
   integer                                                             ::    NbTargets
 contains
-  procedure, public                                                   ::    Initialize              =>    Initialize_IT
   procedure, public                                                   ::    Reset                   =>    Reset_IT
-  procedure, public                                                   ::    SetDefaults             =>    SetDefaults_IT
   generic, public                                                     ::    Construct               =>    ConstructInput_IT
   procedure, private                                                  ::    ConstructInput_IT    
   procedure, public                                                   ::    GetInput                =>    GetInput_IT
@@ -54,16 +51,12 @@ contains
 end type 
 
 type                                                                  ::    InputFixed_Type
-  character(:), allocatable                                           ::    Name
   logical                                                             ::    Constructed=.false.
-  logical                                                             ::    Initialized=.false.
   real(rkp), allocatable, dimension(:)                                ::    Value
   type(SMUQString_Type), allocatable, dimension(:)                    ::    Target
   integer                                                             ::    NbTargets
 contains
-  procedure, public                                                   ::    Initialize              =>    Initialize_IF
   procedure, public                                                   ::    Reset                   =>    Reset_IF
-  procedure, public                                                   ::    SetDefaults             =>    SetDefaults_IF
   generic, public                                                     ::    Construct               =>    ConstructInput_IF
   procedure, private                                                  ::    ConstructInput_IF    
   procedure, public                                                   ::    GetInput                =>    GetInput_IF
@@ -83,9 +76,7 @@ type                                                                  ::    Inpu
   type(InputFixed_Type), allocatable, dimension(:)                    ::    Fix
   type(InputTransform_Type), allocatable, dimension(:)                ::    Transform
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
@@ -104,23 +95,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(InputProcessor_Type), intent(inout)                           ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  integer                                                             ::    StatLoc=0
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = 'InputProcessor'
-    call This%SetDefaults()
-  end if
-
-  end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(InputProcessor_Type), intent(inout)                           ::    This
@@ -128,7 +102,6 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%Fix)) deallocate(This%Fix, stat=StatLoc)
@@ -139,20 +112,8 @@ subroutine Reset(This)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Transform', ProcName=ProcName, stat=StatLoc)
   This%NbTransforms = 0
 
-  call This%Initialize()
-
   end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(InputProcessor_Type),intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-
-  end subroutine
-!!-------------------------------------------------------------------------------------------------------------------------------- 
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput(This, Input, Prefix)
@@ -177,16 +138,18 @@ subroutine ConstructInput(This, Input, Prefix)
   real(rkp)                                                           ::    VarR0D
   type(SMUQString_Type), allocatable, dimension(:)                    ::    Targets1
   type(SMUQString_Type), allocatable, dimension(:)                    ::    Targets2
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
   
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   This%NbFixs = 0
   SectionName = 'fixed_values'
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     This%NbFixs = InputSection%GetNumberOfSubSections()
@@ -197,6 +160,7 @@ subroutine ConstructInput(This, Input, Prefix)
 
     i = 1
     do i = 1, This%NbFixs
+      call InputVerifier%AddSection(Section='fixed_value' // ConvertToString(Value=i), ToSubSection=SectionName)
       SubSectionName = SectionName // '>fixed_value' // ConvertToString(Value=i)
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
       call This%Fix(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
@@ -220,6 +184,7 @@ subroutine ConstructInput(This, Input, Prefix)
 
   This%NbTransforms = 0
   SectionName = 'transformations'
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     This%NbTransforms = InputSection%GetNumberOfSubSections()
@@ -230,6 +195,7 @@ subroutine ConstructInput(This, Input, Prefix)
     i = 1
     do i = 1, This%NbTransforms
       SubSectionName = SectionName // '>transformation' // ConvertToString(Value=i)
+      call InputVerifier%AddSection(Section='transformation' // ConvertToString(Value=i), ToSubSection=SectionName)
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
       call This%Transform(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
       nullify(InputSection)
@@ -266,6 +232,9 @@ subroutine ConstructInput(This, Input, Prefix)
       end do
     end if
   end if
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -413,7 +382,6 @@ impure elemental subroutine Copy(LHS, RHS)
   integer                                                             ::    i
 
   call LHS%Reset()
-  LHS%Initialized = RHS%Initialized
   LHS%Constructed = RHS%Constructed
 
   if (RHS%Constructed) then
@@ -450,23 +418,6 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize_IF(This)
-
-  class(InputFixed_Type), intent(inout)                               ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize_IF'
-  integer                                                             ::    StatLoc=0
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = 'InputFixed'
-    call This%SetDefaults()
-  end if
-
-  end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset_IF(This)
 
   class(InputFixed_Type), intent(inout)                               ::    This
@@ -481,22 +432,10 @@ subroutine Reset_IF(This)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Target', ProcName=ProcName, stat=StatLoc)
   This%NbTargets = 0
 
-  call This%Initialize()
-
-  end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults_IF(This)
-
-  class(InputFixed_Type),intent(inout)                                ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults_IF'
-
   This%Value = Zero
 
   end subroutine
-!!-------------------------------------------------------------------------------------------------------------------------------- 
+!!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput_IF(This, Input, Prefix)
@@ -515,23 +454,29 @@ subroutine ConstructInput_IF(This, Input, Prefix)
   logical                                                             ::    Found
   character(:), allocatable                                           ::    VarC0D
   real(rkp)                                                           ::    VarR0D
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
   
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   This%NbTargets = 0
+  call InputVerifier%AddParameter(Parameter='label')
   call Input%GetValue(Value=VarC0D, ParameterName='label', Mandatory=.true.)
   call ConvertToStrings(Value=VarC0D, Strings=This%Target, Separator=' ')
   This%NbTargets = size(This%Target,1)
 
   allocate(This%Value(This%NbTargets), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%Value', ProcName=ProcName, stat=StatLoc)
+  call InputVerifier%AddParameter(Parameter='value')
   call Input%GetValue(Value=VarR0D, ParameterName='value', Mandatory=.true.)
   This%Value = VarR0D
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -629,7 +574,6 @@ impure elemental subroutine Copy_IF(LHS, RHS)
   integer                                                             ::    i
 
   call LHS%Reset()
-  LHS%Initialized = RHS%Initialized
   LHS%Constructed = RHS%Constructed
 
   if (RHS%Constructed) then
@@ -665,23 +609,6 @@ end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize_IT(This)
-
-  class(InputTransform_Type), intent(inout)                           ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize_IT'
-  integer                                                             ::    StatLoc=0
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = 'InputTransform'
-    call This%SetDefaults()
-  end if
-
-  end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset_IT(This)
 
   class(InputTransform_Type), intent(inout)                           ::    This
@@ -689,7 +616,6 @@ subroutine Reset_IT(This)
   character(*), parameter                                             ::    ProcName='Reset_IT'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%Target)) deallocate(This%Target, stat=StatLoc)
@@ -699,20 +625,8 @@ subroutine Reset_IT(This)
   if (allocated(This%Transformation)) deallocate(This%Transformation, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Transformation', ProcName=ProcName, stat=StatLoc)
 
-  call This%Initialize()
-
   end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults_IT(This)
-
-  class(InputTransform_Type),intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults_IT'
-
-  end subroutine
-!!-------------------------------------------------------------------------------------------------------------------------------- 
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput_IT(This, Input, Prefix)
@@ -730,26 +644,32 @@ subroutine ConstructInput_IT(This, Input, Prefix)
   logical                                                             ::    Found
   character(:), allocatable                                           ::    VarC0D
   integer                                                             ::    i
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
   
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   This%NbTargets = 0
+  call InputVerifier%AddParameter(Parameter='label')
   call Input%GetValue(Value=VarC0D, ParameterName='label', Mandatory=.true.)
   call ConvertToStrings(Value=VarC0D, Strings=This%Target, Separator=' ')
   This%NbTargets = size(This%Target,1)
 
   allocate(This%Transformation(This%NbTargets), stat=StatLoc)
+  call InputVerifier%AddParameter(Parameter='transformation')
   if (StatLoc /= 0) call Error%Allocate(Name='This%Transformation', ProcName=ProcName, stat=StatLoc)
   call Input%GetValue(Value=VarC0D, ParameterName='transformation', Mandatory=.true.)
   i = 1
   do i = 1, This%NbTargets
     This%Transformation(i) = VarC0D
   end do
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -847,7 +767,6 @@ impure elemental subroutine Copy_IT(LHS, RHS)
   integer                                                             ::    i
 
   call LHS%Reset()
-  LHS%Initialized = RHS%Initialized
   LHS%Constructed = RHS%Constructed
 
   if (RHS%Constructed) then

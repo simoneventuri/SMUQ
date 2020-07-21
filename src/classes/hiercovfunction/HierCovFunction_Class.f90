@@ -32,18 +32,13 @@ private
 public                                                                ::    HierCovFunction_Type
 
 type, abstract                                                        ::    HierCovFunction_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
-  procedure, public                                                   ::    GetName
   procedure, public                                                   ::    IsConstructed
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_HierCovFunction), deferred, public             ::    Initialize
   procedure(Reset_HierCovFunction), deferred, public                  ::    Reset
-  procedure(SetDefaults_HierCovFunction), deferred, public            ::    SetDefaults
   procedure(ConstructInput_HierCovFunction), deferred, private        ::    ConstructInput
   procedure(GetInput_HierCovFunction), deferred, public               ::    GetInput
   procedure(Generate_HierCovFunction), deferred, public               ::    Generate
@@ -55,21 +50,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_HierCovFunction(This)
-    import                                                            ::    HierCovFunction_Type
-    class(HierCovFunction_Type), intent(inout)                        ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_HierCovFunction(This)
-    import                                                            ::    HierCovFunction_Type
-    class(HierCovFunction_Type), intent(inout)                        ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_HierCovFunction(This)
     import                                                            ::    HierCovFunction_Type
     class(HierCovFunction_Type), intent(inout)                        ::    This
   end subroutine
@@ -119,19 +100,6 @@ abstract interface
 end interface
 
 contains
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-function GetName(This)
-
-  character(:), allocatable                                           ::    GetName
-
-  class(HierCovFunction_Type), intent(in)                             ::    This
-  character(*), parameter                                             ::    ProcName='GetName'
-
-  GetName = This%Name
-
-end function
-!!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 function IsConstructed(This)

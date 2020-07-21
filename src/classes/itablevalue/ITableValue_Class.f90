@@ -33,17 +33,12 @@ private
 public                                                                ::    ITableValue_Type
 
 type, abstract                                                        ::    ITableValue_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure, public                                                   ::    GetStringValue
-  procedure(Initialize_ITableValue), deferred, public                 ::    Initialize
   procedure(Reset_ITableValue), deferred, public                      ::    Reset
-  procedure(SetDefaults_ITableValue), deferred, public                ::    SetDefaults
   procedure(ConstructInput_ITableValue), deferred, private            ::    ConstructInput
   procedure(GetInput_ITableValue), deferred, public                   ::    GetInput
   procedure(GetValue_ITableValue), deferred, public                   ::    GetValue
@@ -55,21 +50,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_ITableValue(This)
-    import                                                            ::    ITableValue_Type
-    class(ITableValue_Type), intent(inout)                            ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_ITableValue(This)
-    import                                                            ::    ITableValue_Type
-    class(ITableValue_Type), intent(inout)                            ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_ITableValue(This)
     import                                                            ::    ITableValue_Type
     class(ITableValue_Type), intent(inout)                            ::    This
   end subroutine
@@ -120,19 +101,6 @@ abstract interface
 end interface
 
 contains
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-function GetName(This)
-
-  character(:), allocatable                                             ::    GetName
-  class(ITableValue_Type), intent(inout)                                ::    This
-
-  character(*), parameter                                               ::    ProcName='GetName'
-
-  GetName = This%Name
-
-end function
-!!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 subroutine GetStringValue(This, Input, Abscissa, Strings, Format)

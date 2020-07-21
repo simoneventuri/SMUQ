@@ -27,6 +27,7 @@ use IScalarDirect_Class                                           ,only:    ISca
 use IScalarTransform_Class                                        ,only:    IScalarTransform_Type
 use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarNormalized_Class                                       ,only:    IScalarNormalized_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -79,8 +80,6 @@ subroutine Construct_C0D(Object, DesiredType)
 
   end select
 
-  call Object%Initialize()
-
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
@@ -101,9 +100,16 @@ subroutine Construct_Input(This, Object, Input, Prefix)
   character(:), allocatable                                           ::    PrefixLoc
   character(:), allocatable                                           ::    VarC0D
   integer                                                             ::    StatLoc=0 
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
+
+  call InputVerifier%Construct()
+  call InputVerifier%AddParameter(Parameter='type')
+  call InputVerifier%AddSection(Section='type')
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   ParameterName = 'type'
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)

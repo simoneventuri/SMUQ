@@ -36,7 +36,6 @@ public                                                                ::    Dist
 
 type, extends(DistUnif_Type)                                          ::    DistLog10Unif_Type
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    GetA
   procedure, public                                                   ::    GetB
   procedure, public                                                   ::    PDF
@@ -51,173 +50,157 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetA(This)
 
-    class(DistLog10Unif_Type), intent(inout)                          ::    This
+  real(rkp)                                                           ::    GetA
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  class(DistLog10Unif_Type), intent(in)                               ::    This
 
-    if (.not. This%Initialized) then
-      This%Name = 'log10uniform'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  character(*), parameter                                             ::    ProcName='GetA'
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetA(This)
+  GetA = Ten**(This%A)
 
-    real(rkp)                                                         ::    GetA
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistLog10Unif_Type), intent(in)                             ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetB(This)
 
-    character(*), parameter                                           ::    ProcName='GetA'
+  real(rkp)                                                           ::    GetB
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(DistLog10Unif_Type), intent(in)                               ::    This
 
-    GetA = Ten**(This%A)
+  character(*), parameter                                             ::    ProcName='GetB'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetB(This)
+  GetB = Ten**(This%B)
 
-    real(rkp)                                                         ::    GetB
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistLog10Unif_Type), intent(in)                             ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function PDF(This, X)
 
-    character(*), parameter                                           ::    ProcName='GetB'
+  real(rkp)                                                           ::    PDF
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(DistLog10Unif_Type), intent(in)                               ::    This
+  real(rkp), intent(in)                                               ::    X
 
-    GetB = Ten**(This%B)
+  character(*), parameter                                             ::    ProcName='PDF'
+  logical                                                             ::    TripFlag
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF(This, X)
+  TripFlag = .false.
 
-    real(rkp)                                                         ::    PDF
+  if (X <= Zero) then
+    PDF = Zero
+    TripFlag = .true.
+  end if
 
-    class(DistLog10Unif_Type), intent(in)                             ::    This
-    real(rkp), intent(in)                                             ::    X
+  if (.not. TripFlag) then
+    PDF = This%ComputeUnifPDF(dlog10(X), This%A, This%B)
+    PDF = One/(X*dlogof10) * PDF
+  end if
 
-    character(*), parameter                                           ::    ProcName='PDF'
-    logical                                                           ::    TripFlag
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+function CDF(This, X)
 
-    TripFlag = .false.
+  real(rkp)                                                           ::    CDF
 
-    if (X <= Zero) then
-      PDF = Zero
-      TripFlag = .true.
-    end if
+  class(DistLog10Unif_Type), intent(in)                               ::    This
+  real(rkp), intent(in)                                               ::    X
 
-    if (.not. TripFlag) then
-      PDF = This%ComputeUnifPDF(dlog10(X), This%A, This%B)
-      PDF = One/(X*dlogof10) * PDF
-    end if
+  character(*), parameter                                             ::    ProcName='CDF'
+  logical                                                             ::    TripFlag
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF(This, X)
+  TripFlag = .false.
 
-    real(rkp)                                                         ::    CDF
+  if (X <= Zero) then
+    CDF = Zero
+    TripFlag = .true.
+  end if
 
-    class(DistLog10Unif_Type), intent(in)                             ::    This
-    real(rkp), intent(in)                                             ::    X
+  if (.not. TripFlag) then
+    CDF = This%ComputeUnifCDF(dlog10(X), This%A, This%B)
+  end if
 
-    character(*), parameter                                           ::    ProcName='CDF'
-    logical                                                           ::    TripFlag
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+function InvCDF(This, P)
 
-    TripFlag = .false.
+  real(rkp)                                                           ::    InvCDF
 
-    if (X <= Zero) then
-      CDF = Zero
-      TripFlag = .true.
-    end if
-  
-    if (.not. TripFlag) then
-      CDF = This%ComputeUnifCDF(dlog10(X), This%A, This%B)
-    end if
+  class(DistLog10Unif_Type), intent(in)                               ::    This
+  real(rkp), intent(in)                                               ::    P
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='InvCDF'
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF(This, P)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    real(rkp)                                                         ::    InvCDF
+  InvCDF = This%ComputeUnifInvCDF(P, This%A, This%B)
+  InvCDF = Ten**InvCDF
 
-    class(DistLog10Unif_Type), intent(in)                             ::    This
-    real(rkp), intent(in)                                             ::    P
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='InvCDF'
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMoment(This, Moment)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  real(rkp)                                                           ::    GetMoment
 
-    InvCDF = This%ComputeUnifInvCDF(P, This%A, This%B)
-    InvCDF = Ten**InvCDF
+  class(DistLog10Unif_Type), intent(in)                               ::    This
+  integer, intent(in)                                                 ::    Moment
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetMoment'
+  real(rkp)                                                           ::    eA
+  real(rkp)                                                           ::    eB
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment(This, Moment)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    real(rkp)                                                         ::    GetMoment
+  if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-    class(DistLog10Unif_Type), intent(in)                             ::    This
-    integer, intent(in)                                               ::    Moment
+  if (Moment > 0) then
+    eA = Ten**(This%A)
+    eB = Ten**(This%B)
+    GetMoment = (eB**Moment - eA**Moment) / (real(Moment,rkp)*(This%B-This%A)) * One/dlogof10
+  else
+    GetMoment = One
+  end if
 
-    character(*), parameter                                           ::    ProcName='GetMoment'
-    real(rkp)                                                         ::    eA
-    real(rkp)                                                         ::    eB
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine WriteInfo(This, File)
 
-    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
+  class(DistLog10Unif_Type), intent(in)                               ::    This
+  type(SMUQFile_Type), intent(inout)                                  ::    File
 
-    if (Moment > 0) then
-      eA = Ten**(This%A)
-      eB = Ten**(This%B)
-      GetMoment = (eB**Moment - eA**Moment) / (real(Moment,rkp)*(This%B-This%A)) * One/dlogof10
-    else
-      GetMoment = One
-    end if
+  character(*), parameter                                             ::    ProcName='WriteInfo'
+  integer                                                             ::    i
+  type(SMUQString_Type), dimension(3)                                 ::    Strings
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo(This, File)
+  Strings(1) = 'log10uniform'
+  Strings(2) = ConvertToString(Value=This%A)
+  Strings(3) = ConvertToString(Value=This%B)
 
-    class(DistLog10Unif_Type), intent(in)                             ::    This
-    type(SMUQFile_Type), intent(inout)                                ::    File
+  call File%Append(Strings=Strings)
 
-    character(*), parameter                                           ::    ProcName='WriteInfo'
-    integer                                                           ::    i
-    type(SMUQString_Type), dimension(3)                               ::    Strings
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    Strings(1) = 'log10uniform'
-    Strings(2) = ConvertToString(Value=This%A)
-    Strings(3) = ConvertToString(Value=This%B)
-
-    call File%Append(Strings=Strings)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

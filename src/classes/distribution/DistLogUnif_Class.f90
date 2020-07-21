@@ -36,7 +36,6 @@ public                                                                ::    Dist
 
 type, extends(DistUnif_Type)                                          ::    DistLogUnif_Type
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    GetA
   procedure, public                                                   ::    GetB
   procedure, public                                                   ::    PDF
@@ -50,94 +49,78 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetA(This)
 
-    class(DistLogUnif_Type), intent(inout)                            ::    This
+  real(rkp)                                                           ::    GetA
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  class(DistLogUnif_Type), intent(in)                                 ::    This
 
-    if (.not. This%Initialized) then
-      This%Name = 'loguniform'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  character(*), parameter                                             ::    ProcName='GetA'
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetA(This)
+  GetA = dexp(This%A)
 
-    real(rkp)                                                         ::    GetA
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistLogUnif_Type), intent(in)                               ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetB(This)
 
-    character(*), parameter                                           ::    ProcName='GetA'
+  real(rkp)                                                           ::    GetB
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(DistLogUnif_Type), intent(in)                                 ::    This
 
-    GetA = dexp(This%A)
+  character(*), parameter                                             ::    ProcName='GetB'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetB(This)
+  GetB = dexp(This%B)
 
-    real(rkp)                                                         ::    GetB
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistLogUnif_Type), intent(in)                               ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function PDF(This, X)
 
-    character(*), parameter                                           ::    ProcName='GetB'
+  real(rkp)                                                           ::    PDF
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(DistLogUnif_Type), intent(in)                                 ::    This
+  real(rkp), intent(in)                                               ::    X
 
-    GetB = dexp(This%B)
+  character(*), parameter                                             ::    ProcName='PDF'
+  logical                                                             ::    TripFlag
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF(This, X)
+  TripFlag = .false.
 
-    real(rkp)                                                         ::    PDF
+  if (X <= Zero) then
+    PDF = Zero
+    TripFlag = .true.
+  end if
 
-    class(DistLogUnif_Type), intent(in)                               ::    This
-    real(rkp), intent(in)                                             ::    X
+  if (.not. TripFlag) then
+    PDF = This%ComputeUnifPDF(dlog(X), This%A, This%B)
+    PDF = One/X * PDF
+  end if
 
-    character(*), parameter                                           ::    ProcName='PDF'
-    logical                                                           ::    TripFlag
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    TripFlag = .false.
-
-    if (X <= Zero) then
-      PDF = Zero
-      TripFlag = .true.
-    end if
-
-    if (.not. TripFlag) then
-      PDF = This%ComputeUnifPDF(dlog(X), This%A, This%B)
-      PDF = One/X * PDF
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 !  !!------------------------------------------------------------------------------------------------------------------------------
 !  function PDF_R2D(This, NbNodes)
 
-!    real(rkp), allocatable, dimension(:,:)                            ::    PDF_R2D
+!    real(rkp), allocatable, dimension(:,:)                              ::    PDF_R2D
 
-!    class(DistLogUnif_Type), intent(in)                               ::    This
-!    integer, intent(in)                                               ::    NbNodes
+!    class(DistLogUnif_Type), intent(in)                                 ::    This
+!    integer, intent(in)                                                 ::    NbNodes
 
-!    character(*), parameter                                           ::    ProcName='PDF_R2D'
-!    real(rkp)                                                         ::    BinMass
-!    integer                                                           ::    StatLoc=0
-!    integer                                                           ::    i
+!    character(*), parameter                                             ::    ProcName='PDF_R2D'
+!    real(rkp)                                                           ::    BinMass
+!    integer                                                             ::    StatLoc=0
+!    integer                                                             ::    i
 
 
 !    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
@@ -162,97 +145,97 @@ contains
 !  end function
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF(This, X)
+!!------------------------------------------------------------------------------------------------------------------------------
+function CDF(This, X)
 
-    real(rkp)                                                         ::    CDF
+  real(rkp)                                                           ::    CDF
 
-    class(DistLogUnif_Type), intent(in)                               ::    This
-    real(rkp), intent(in)                                             ::    X
+  class(DistLogUnif_Type), intent(in)                                 ::    This
+  real(rkp), intent(in)                                               ::    X
 
-    character(*), parameter                                           ::    ProcName='CDF'
-    logical                                                           ::    TripFlag
+  character(*), parameter                                             ::    ProcName='CDF'
+  logical                                                             ::    TripFlag
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    TripFlag = .false.
+  TripFlag = .false.
 
-    if (X <= Zero) then
-      CDF = Zero
-      TripFlag = .true.
-    end if
+  if (X <= Zero) then
+    CDF = Zero
+    TripFlag = .true.
+  end if
 
-    if (.not. TripFlag) then
-      CDF = This%ComputeUnifCDF(dlog(X), This%A, This%B)
-    end if
+  if (.not. TripFlag) then
+    CDF = This%ComputeUnifCDF(dlog(X), This%A, This%B)
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF(This, P)
+!!------------------------------------------------------------------------------------------------------------------------------
+function InvCDF(This, P)
 
-    real(rkp)                                                         ::    InvCDF
+  real(rkp)                                                           ::    InvCDF
 
-    class(DistLogUnif_Type), intent(in)                               ::    This
-    real(rkp), intent(in)                                             ::    P
+  class(DistLogUnif_Type), intent(in)                                 ::    This
+  real(rkp), intent(in)                                               ::    P
 
-    character(*), parameter                                           ::    ProcName='InvCDF'
+  character(*), parameter                                             ::    ProcName='InvCDF'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    InvCDF = This%ComputeUnifInvCDF(P, This%A, This%B)
-    InvCDF = dexp(InvCDF)
+  InvCDF = This%ComputeUnifInvCDF(P, This%A, This%B)
+  InvCDF = dexp(InvCDF)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMoment(This, Moment)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMoment(This, Moment)
 
-    real(rkp)                                                         ::    GetMoment
+  real(rkp)                                                           ::    GetMoment
 
-    class(DistLogUnif_Type), intent(in)                               ::    This
-    integer, intent(in)                                               ::    Moment
+  class(DistLogUnif_Type), intent(in)                                 ::    This
+  integer, intent(in)                                                 ::    Moment
 
-    character(*), parameter                                           ::    ProcName='GetMoment'
-    real(rkp)                                                         ::    eA
-    real(rkp)                                                         ::    eB
+  character(*), parameter                                             ::    ProcName='GetMoment'
+  real(rkp)                                                           ::    eA
+  real(rkp)                                                           ::    eB
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
+  if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
 
-    if (Moment > 0) then
-      eA = dexp(This%A)
-      eB = dexp(This%B)
-      GetMoment = (eB**Moment - eA**Moment) / (real(Moment,rkp)*(This%B-This%A))
-    else
-      GetMoment = One
-    end if
+  if (Moment > 0) then
+    eA = dexp(This%A)
+    eB = dexp(This%B)
+    GetMoment = (eB**Moment - eA**Moment) / (real(Moment,rkp)*(This%B-This%A))
+  else
+    GetMoment = One
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo(This, File)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine WriteInfo(This, File)
 
-    class(DistLogUnif_Type), intent(in)                               ::    This
-    type(SMUQFile_Type), intent(inout)                                ::    File
+  class(DistLogUnif_Type), intent(in)                                 ::    This
+  type(SMUQFile_Type), intent(inout)                                  ::    File
 
-    character(*), parameter                                           ::    ProcName='WriteInfo'
-    integer                                                           ::    i
-    type(SMUQString_Type), dimension(3)                               ::    Strings
+  character(*), parameter                                             ::    ProcName='WriteInfo'
+  integer                                                             ::    i
+  type(SMUQString_Type), dimension(3)                                 ::    Strings
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    Strings(1) = 'loguniform'
-    Strings(2) = ConvertToString(Value=This%A)
-    Strings(3) = ConvertToString(Value=This%B)
+  Strings(1) = 'loguniform'
+  Strings(2) = ConvertToString(Value=This%A)
+  Strings(3) = ConvertToString(Value=This%B)
 
-    call File%Append(Strings=Strings)
+  call File%Append(Strings=Strings)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -27,6 +27,7 @@ use Error_Class                                                   ,only:    Erro
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use Input_Class                                                   ,only:    Input_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -39,9 +40,7 @@ type, extends(IScalarValue_Type)                                      ::    ISca
   type(SMUQString_Type), allocatable, dimension(:)                    ::    NormDependency
   integer                                                             ::    NbDependencies
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    GetValue
@@ -55,21 +54,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(IScalarNormalized_Type), intent(inout)                        ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  if (.not. This%Initialized) then
-    This%Name = 'IScalarNormalized'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(IScalarNormalized_Type), intent(inout)                        ::    This
@@ -81,18 +65,6 @@ subroutine Reset(This)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%NormDependency', ProcName=ProcName, stat=StatLoc)
   This%NbDependencies = 0
   
-  call This%SetDefaults()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(IScalarNormalized_Type), intent(inout)                        ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-
   This%Dependency=''
 
 end subroutine
@@ -114,18 +86,22 @@ subroutine ConstructInput(This, Input, Prefix)
   logical                                                             ::    Found
   integer                                                             ::    i 
   integer                                                             ::    ii
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'dependency'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   This%Dependency = VarC0D
 
   ParameterName = 'normalization_dependencies'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   call ConvertToStrings(Value=VarC0D, Strings=This%NormDependency, Separator=' ')
 
@@ -140,6 +116,9 @@ subroutine ConstructInput(This, Input, Prefix)
   end do
 
   if ( ii == 0 ) call Error%Raise('Main dependency must be one of the ones in the normalization factor list', ProcName=ProcName)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -161,6 +140,7 @@ function GetInput(This, Name, Prefix, Directory)
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub
   logical                                                             ::    ExternalFlag=.false.
+
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
   DirectoryLoc = ''
@@ -244,7 +224,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (IScalarNormalized_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
         LHS%Dependency = RHS%Dependency

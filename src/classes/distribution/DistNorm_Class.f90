@@ -28,6 +28,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type 
 
 implicit none
 
@@ -39,9 +40,7 @@ type, extends(DistProb_Type)                                          ::    Dist
   real(rkp)                                                           ::    Mu=Zero
   real(rkp)                                                           ::    Sigma=One
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -63,246 +62,226 @@ end type
 
 logical   ,parameter                                                  ::    DebugGlobal = .false.
 real(rkp), parameter                                                  ::    dlogof2pi=dlog(Two*pi)
+
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(DistNorm_Type), intent(inout)                               ::    This
+  class(DistNorm_Type), intent(inout)                                 ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Name = 'normal'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  This%Constructed = .false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%A = One
+  This%B = One
+  This%Mu = Zero
+  This%Sigma = One
+  This%TruncatedRight = .false.
+  This%TruncatedLeft = .false.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistNorm_Type), intent(inout)                               ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  class(DistNorm_Type), intent(inout)                                 ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    This%Initialized = .false.
-    This%Constructed = .false.
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    ParameterName
+  logical                                                             ::    Found
+  real(rkp)                                                           ::    VarR0D
+  logical                                                             ::    VarL0D
+  character(:), allocatable                                           ::    VarC0D
+  character(:), allocatable                                           ::    PrefixLoc
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-    call This%Initialize()
+  call This%Reset()
+  
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call InputVerifier%Construct()
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  ParameterName = 'mu'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true., Found=Found)
+  This%Mu = VarR0D
 
-    class(DistNorm_Type), intent(inout)                               ::    This
+  ParameterName = 'sigma'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true., Found=Found)
+  This%Sigma = VarR0D
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  ParameterName = 'a'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) then
+    This%A = VarR0D
+    This%TruncatedLeft = .true.
+  end if
 
-    This%A = One
-    This%B = One
-    This%Mu = Zero
-    This%Sigma = One
-    This%TruncatedRight = .false.
-    This%TruncatedLeft = .false.
+  ParameterName = 'b'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) then
+    This%B = VarR0D
+    This%TruncatedRight = .true.
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (This%Sigma <= Zero) call Error%Raise(Line='Standard deviation specified to be at or below zero', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+  if (This%TruncatedLeft .and. This%TruncatedRight) then
+    if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
+  end if
 
-    class(DistNorm_Type), intent(inout)                               ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+  call This%AdditionalConstruction()
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    ParameterName
-    logical                                                           ::    Found
-    real(rkp)                                                         ::    VarR0D
-    logical                                                           ::    VarL0D
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable                                         ::    PrefixLoc
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-    
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  This%Constructed = .true.
 
-    ParameterName = 'mu'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true., Found=Found)
-    This%Mu = VarR0D
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    ParameterName = 'sigma'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.true., Found=Found)
-    This%Sigma = VarR0D
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, Mu, Sigma, A, B)
+  
+  class(DistNorm_Type), intent(inout)                                 ::    This
+  real(rkp), intent(in)                                               ::    Mu
+  real(rkp), intent(in)                                               ::    Sigma
+  real(rkp), optional, intent(in)                                     ::    A
+  real(rkp), optional, intent(in)                                     ::    B 
 
-    ParameterName = 'a'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%A = VarR0D
-      This%TruncatedLeft = .true.
-    end if
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
 
-    ParameterName = 'b'
-    call Input%GetValue(VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) then
-      This%B = VarR0D
-      This%TruncatedRight = .true.
-    end if
+  call This%Reset()
 
-    if (This%Sigma <= Zero) call Error%Raise(Line='Standard deviation specified to be at or below zero', ProcName=ProcName)
+  This%Mu = Mu
 
-    if (This%TruncatedLeft .and. This%TruncatedRight) then
-      if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
-    end if
+  This%Sigma = Sigma
 
-    call This%AdditionalConstruction()
+  if (present(A)) then
+    This%A = A
+    This%TruncatedLeft = .true.
+  end if
 
-    This%Constructed = .true.
+  if (present(B)) then
+    This%B = B
+    This%TruncatedRight = .true.
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (This%Sigma <= Zero) call Error%Raise(Line='Standard deviation specified to be at or below zero', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, Mu, Sigma, A, B)
-    
-    class(DistNorm_Type), intent(inout)                               ::    This
-    real(rkp), intent(in)                                             ::    Mu
-    real(rkp), intent(in)                                             ::    Sigma
-    real(rkp), optional, intent(in)                                   ::    A
-    real(rkp), optional, intent(in)                                   ::    B 
+  if (This%TruncatedLeft .and. This%TruncatedRight) then
+    if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
+  end if
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
+  call This%AdditionalConstruction()
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  This%Constructed = .true.
 
-    This%Mu = Mu
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    This%Sigma = Sigma
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-    if (present(A)) then
-      This%A = A
-      This%TruncatedLeft = .true.
-    end if
+  use StringConversion_Module
 
-    if (present(B)) then
-      This%B = B
-      This%TruncatedRight = .true.
-    end if
+  type(InputSection_Type)                                             ::    GetInput
 
-    if (This%Sigma <= Zero) call Error%Raise(Line='Standard deviation specified to be at or below zero', ProcName=ProcName)
+  class(DistNorm_Type), intent(in)                                    ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    if (This%TruncatedLeft .and. This%TruncatedRight) then
-      if (This%B < This%A) call Error%Raise(Line='Upper limit < lower limit', ProcName=ProcName)
-    end if
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
 
-    call This%AdditionalConstruction()
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    This%Constructed = .true.
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  call GetInput%AddParameter(Name='mu', Value=ConvertToString(Value=This%Mu))
+  call GetInput%AddParameter(Name='sigma', Value=ConvertToString(Value=This%Sigma))
+  if (This%TruncatedLeft) call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
+  if (This%TruncatedRight) call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
 
-    use StringConversion_Module
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    type(InputSection_Type)                                           ::    GetInput
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine AdditionalConstruction(This)
+  
+  class(DistNorm_Type), intent(inout)                                 ::    This 
 
-    class(DistNorm_Type), intent(in)                                  ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+function PDF(This, X)
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  real(rkp)                                                           ::    PDF
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  class(DistNorm_Type), intent(in)                                    ::    This
+  real(rkp), intent(in)                                               ::    X
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
-    call GetInput%AddParameter(Name='mu', Value=ConvertToString(Value=This%Mu))
-    call GetInput%AddParameter(Name='sigma', Value=ConvertToString(Value=This%Sigma))
-    if (This%TruncatedLeft) call GetInput%AddParameter(Name='a', Value=ConvertToString(Value=This%A))
-    if (This%TruncatedRight) call GetInput%AddParameter(Name='b', Value=ConvertToString(Value=This%B))
+  character(*), parameter                                             ::    ProcName='PDF'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine AdditionalConstruction(This)
-    
-    class(DistNorm_Type), intent(inout)                               ::    This 
+  if (This%TruncatedRight .and. This%TruncatedLeft) then
+    PDF = This%ComputeNormalPDF(X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+  else if (This%TruncatedLeft) then
+    PDF = This%ComputeNormalPDF(X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+  else if (This%TruncatedRight) then
+    PDF = This%ComputeNormalPDF(X=X, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
+  else
+    PDF = This%ComputeNormalPDF(X=X, Mu=This%Mu, Sigma=This%Sigma)
+  end if
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function PDF(This, X)
-
-    real(rkp)                                                         ::    PDF
-
-    class(DistNorm_Type), intent(in)                                  ::    This
-    real(rkp), intent(in)                                             ::    X
-
-    character(*), parameter                                           ::    ProcName='PDF'
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    if (This%TruncatedRight .and. This%TruncatedLeft) then
-      PDF = This%ComputeNormalPDF(X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
-    else if (This%TruncatedLeft) then
-      PDF = This%ComputeNormalPDF(X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
-    else if (This%TruncatedRight) then
-      PDF = This%ComputeNormalPDF(X=X, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
-    else
-      PDF = This%ComputeNormalPDF(X=X, Mu=This%Mu, Sigma=This%Sigma)
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 !  !!------------------------------------------------------------------------------------------------------------------------------
 !  function PDF_R2D(This, NbNodes)
 
-!    real(rkp), allocatable, dimension(:,:)                            ::    PDF_R2D
+!    real(rkp), allocatable, dimension(:,:)                              ::    PDF_R2D
 
-!    class(DistNorm_Type), intent(in)                                  ::    This
-!    integer, intent(in)                                               ::    NbNodes
+!    class(DistNorm_Type), intent(in)                                    ::    This
+!    integer, intent(in)                                                 ::    NbNodes
 
-!    character(*), parameter                                           ::    ProcName='PDF_R2D'
-!    real(rkp)                                                         ::    BinMass
-!    real(8)                                                           ::    CDFLeft
-!    real(8)                                                           ::    CDFRight
-!    real(8)                                                           ::    Mu_8
-!    real(8)                                                           ::    Sigma_8
-!    real(8)                                                           ::    A_8
-!    real(8)                                                           ::    B_8
-!    real(8)                                                           ::    VarR0D
-!    integer                                                           ::    i
-!    integer                                                           ::    StatLoc=0
+!    character(*), parameter                                             ::    ProcName='PDF_R2D'
+!    real(rkp)                                                           ::    BinMass
+!    real(8)                                                             ::    CDFLeft
+!    real(8)                                                             ::    CDFRight
+!    real(8)                                                             ::    Mu_8
+!    real(8)                                                             ::    Sigma_8
+!    real(8)                                                             ::    A_8
+!    real(8)                                                             ::    B_8
+!    real(8)                                                             ::    VarR0D
+!    integer                                                             ::    i
+!    integer                                                             ::    StatLoc=0
 
 !    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -349,380 +328,379 @@ contains
 !  end function
 !  !!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeNormalPDF(X, Mu, Sigma, A, B)
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeNormalPDF(X, Mu, Sigma, A, B)
 
-    real(rkp)                                                         ::    ComputeNormalPDF
+  real(rkp)                                                           ::    ComputeNormalPDF
 
-    real(rkp), intent(in)                                             ::    X
-    real(rkp), intent(in)                                             ::    Mu
-    real(rkp), intent(in)                                             ::    Sigma
-    real(rkp), intent(in), optional                                   ::    A
-    real(rkp), intent(in), optional                                   ::    B
+  real(rkp), intent(in)                                               ::    X
+  real(rkp), intent(in)                                               ::    Mu
+  real(rkp), intent(in)                                               ::    Sigma
+  real(rkp), intent(in), optional                                     ::    A
+  real(rkp), intent(in), optional                                     ::    B
 
-    character(*), parameter                                           ::    ProcName='ComputeNormalPDF'
-    real(rkp)                                                         ::    CDFLeft
-    real(rkp)                                                         ::    CDFRight
-    real(rkp)                                                         ::    VarR0D
-    logical                                                           ::    TripFlag
+  character(*), parameter                                             ::    ProcName='ComputeNormalPDF'
+  real(rkp)                                                           ::    CDFLeft
+  real(rkp)                                                           ::    CDFRight
+  real(rkp)                                                           ::    VarR0D
+  logical                                                             ::    TripFlag
 
-    TripFlag = .false.
+  TripFlag = .false.
 
-    if (present(A)) then
-      if (X < A) then
-        ComputeNormalPDF = Zero
-        TripFlag=.true.
-      end if
-    end if
-
-    if (present(B)) then
-      if (X > B) then
-        ComputeNormalPDF = Zero
-        TripFlag=.true.
-      end if
-    end if
-
-    if (.not. TripFlag) then
-      CDFLeft = Zero
-      if (present(A)) CDFLeft = 0.5*(One+erf((A-Mu)/(Sigma*dsqrt(Two))))
-      CDFRight = One
-      if (present(B)) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
-      VarR0D = dexp(-(0.5*dlogof2pi + dlog(Sigma)) - 0.5*((X-Mu)/Sigma)**2)
-      ComputeNormalPDF = VarR0D / (CDFRight - CDFLeft)
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function CDF(This, X)
-
-    real(rkp)                                                         ::    CDF
-
-    class(DistNorm_Type), intent(in)                                  ::    This
-    real(rkp), intent(in)                                             ::    X
-
-    character(*), parameter                                           ::    ProcName='CDF'
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    if (This%TruncatedRight .and. This%TruncatedLeft) then
-      CDF = This%ComputeNormalCDF(X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
-    else if (This%TruncatedLeft) then
-      CDF = This%ComputeNormalCDF(X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
-    else if (This%TruncatedRight) then
-      CDF = This%ComputeNormalCDF(X=X, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
-    else
-      CDF = This%ComputeNormalCDF(X=X, Mu=This%Mu, Sigma=This%Sigma)
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeNormalCDF(X, Mu, Sigma, A, B)
-
-    real(rkp)                                                         ::    ComputeNormalCDF
-
-    real(rkp), intent(in)                                             ::    X
-    real(rkp), intent(in)                                             ::    Mu
-    real(rkp), intent(in)                                             ::    Sigma
-    real(rkp), intent(in), optional                                   ::    A
-    real(rkp), intent(in), optional                                   ::    B
-
-    character(*), parameter                                           ::    ProcName='ComputeNormalCDF'
-    real(rkp)                                                         ::    CDFLeft
-    real(rkp)                                                         ::    CDFRight
-    real(rkp)                                                         ::    VarR0D
-    logical                                                           ::    TripFlag
-
-    TripFlag = .false.
-
-    if (present(A)) then
-      if (X < A) then
-        ComputeNormalCDF = Zero
-        TripFlag=.true.
-      end if
-    end if
-
-    if (present(B)) then
-      if (X > B) then
-        ComputeNormalCDF = One
-        TripFlag=.true.
-      end if
-    end if
-
-    if (.not. TripFlag) then
-      CDFLeft = Zero
-      if (present(A)) CDFLeft = 0.5*(One+erf((A-Mu)/(Sigma*dsqrt(Two))))
-      CDFRight = One
-      if (present(B)) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
-      VarR0D = 0.5*(One+erf((X-Mu)/(Sigma*dsqrt(Two))))
-      ComputeNormalCDF = (VarR0D - CDFLeft) / (CDFRight - CDFLeft)
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function InvCDF(This, P)
-
-    real(rkp)                                                         ::    InvCDF
-
-    class(DistNorm_Type), intent(in)                                  ::    This
-    real(rkp), intent(in)                                             ::    P
-
-    character(*), parameter                                           ::    ProcName='InvCDF'
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    if (This%TruncatedRight .and. This%TruncatedLeft) then
-      InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
-    else if (This%TruncatedLeft) then
-      InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
-    else if (This%TruncatedRight) then
-      InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
-    else
-      InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma)
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function ComputeNormalInvCDF(P, Mu, Sigma, A, B)
-
-    real(rkp)                                                         ::    ComputeNormalInvCDF
-
-    real(rkp), intent(in)                                             ::    p
-    real(rkp), intent(in)                                             ::    Mu
-    real(rkp), intent(in)                                             ::    Sigma
-    real(rkp), intent(in), optional                                   ::    A
-    real(rkp), intent(in), optional                                   ::    B
-
-    character(*), parameter                                           ::    ProcName='ComputeNormalInvCDF'
-    real(rkp)                                                         ::    CDFLeft
-    real(rkp)                                                         ::    CDFRight
-    real(8)                                                           ::    VarR0D
-    real(8)                                                           ::    PLoc
-    real(8)                                                           ::    Mu_8
-    real(8)                                                           ::    Sigma_8
-    logical                                                           ::    TripFlag
-
-    if (P < Zero) call Error%Raise(Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName)
-    if (P > One) call Error%Raise(Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName)
-
-    TripFlag = .false.
-
-    if (P == Zero) then
-      if (present(A)) then
-        ComputeNormalInvCDF = A
-      else
-        ComputeNormalInvCDF = -huge(One)
-      end if
+  if (present(A)) then
+    if (X < A) then
+      ComputeNormalPDF = Zero
       TripFlag=.true.
     end if
+  end if
 
-    if (P == One) then
-      if (present(B)) then
-        ComputeNormalInvCDF = B
-      else
-        ComputeNormalInvCDF = huge(One)
-      end if
+  if (present(B)) then
+    if (X > B) then
+      ComputeNormalPDF = Zero
       TripFlag=.true.
     end if
+  end if
 
-    if (.not. TripFlag) then
-      CDFLeft = 0.0
-      if (present(A)) CDFLeft = 0.5*(One+erf((A-Mu)/(Sigma*dsqrt(Two))))
-      CDFRight = 1.0
-      if (present(B)) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
-      PLoc = real(CDFLeft+P*(CDFRight-CDFLeft),8)
-      Mu_8 = real(Mu,8)
-      Sigma_8 = real(Sigma,8)
-      call normal_cdf_inv (PLoc, Mu_8, Sigma_8, VarR0D)
-      ComputeNormalInvCDF = VarR0D
+  if (.not. TripFlag) then
+    CDFLeft = Zero
+    if (present(A)) CDFLeft = 0.5*(One+erf((A-Mu)/(Sigma*dsqrt(Two))))
+    CDFRight = One
+    if (present(B)) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
+    VarR0D = dexp(-(0.5*dlogof2pi + dlog(Sigma)) - 0.5*((X-Mu)/Sigma)**2)
+    ComputeNormalPDF = VarR0D / (CDFRight - CDFLeft)
+  end if
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function CDF(This, X)
+
+  real(rkp)                                                           ::    CDF
+
+  class(DistNorm_Type), intent(in)                                    ::    This
+  real(rkp), intent(in)                                               ::    X
+
+  character(*), parameter                                             ::    ProcName='CDF'
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  if (This%TruncatedRight .and. This%TruncatedLeft) then
+    CDF = This%ComputeNormalCDF(X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+  else if (This%TruncatedLeft) then
+    CDF = This%ComputeNormalCDF(X=X, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+  else if (This%TruncatedRight) then
+    CDF = This%ComputeNormalCDF(X=X, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
+  else
+    CDF = This%ComputeNormalCDF(X=X, Mu=This%Mu, Sigma=This%Sigma)
+  end if
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeNormalCDF(X, Mu, Sigma, A, B)
+
+  real(rkp)                                                           ::    ComputeNormalCDF
+
+  real(rkp), intent(in)                                               ::    X
+  real(rkp), intent(in)                                               ::    Mu
+  real(rkp), intent(in)                                               ::    Sigma
+  real(rkp), intent(in), optional                                     ::    A
+  real(rkp), intent(in), optional                                     ::    B
+
+  character(*), parameter                                             ::    ProcName='ComputeNormalCDF'
+  real(rkp)                                                           ::    CDFLeft
+  real(rkp)                                                           ::    CDFRight
+  real(rkp)                                                           ::    VarR0D
+  logical                                                             ::    TripFlag
+
+  TripFlag = .false.
+
+  if (present(A)) then
+    if (X < A) then
+      ComputeNormalCDF = Zero
+      TripFlag=.true.
     end if
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (present(B)) then
+    if (X > B) then
+      ComputeNormalCDF = One
+      TripFlag=.true.
+    end if
+  end if
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMu(This)
+  if (.not. TripFlag) then
+    CDFLeft = Zero
+    if (present(A)) CDFLeft = 0.5*(One+erf((A-Mu)/(Sigma*dsqrt(Two))))
+    CDFRight = One
+    if (present(B)) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
+    VarR0D = 0.5*(One+erf((X-Mu)/(Sigma*dsqrt(Two))))
+    ComputeNormalCDF = (VarR0D - CDFLeft) / (CDFRight - CDFLeft)
+  end if
 
-    real(rkp)                                                         ::    GetMu
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistNorm_Type), intent(in)                                  ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function InvCDF(This, P)
 
-    character(*), parameter                                           ::    ProcName='GetMu'
+  real(rkp)                                                           ::    InvCDF
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(DistNorm_Type), intent(in)                                    ::    This
+  real(rkp), intent(in)                                               ::    P
 
-    GetMu = This%Mu
+  character(*), parameter                                             ::    ProcName='InvCDF'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetSigma(This)
+  if (This%TruncatedRight .and. This%TruncatedLeft) then
+    InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A, B=This%B)
+  else if (This%TruncatedLeft) then
+    InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, A=This%A)
+  else if (This%TruncatedRight) then
+    InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma, B=This%B)
+  else
+    InvCDF = This%ComputeNormalInvCDF(P=P, Mu=This%Mu, Sigma=This%Sigma)
+  end if
 
-    real(rkp)                                                         ::    GetSigma
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(DistNorm_Type), intent(in)                                  ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function ComputeNormalInvCDF(P, Mu, Sigma, A, B)
 
-    character(*), parameter                                           ::    ProcName='GetSigma'
+  real(rkp)                                                           ::    ComputeNormalInvCDF
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  real(rkp), intent(in)                                               ::    p
+  real(rkp), intent(in)                                               ::    Mu
+  real(rkp), intent(in)                                               ::    Sigma
+  real(rkp), intent(in), optional                                     ::    A
+  real(rkp), intent(in), optional                                     ::    B
 
-    GetSigma = This%Sigma
+  character(*), parameter                                             ::    ProcName='ComputeNormalInvCDF'
+  real(rkp)                                                           ::    CDFLeft
+  real(rkp)                                                           ::    CDFRight
+  real(8)                                                             ::    VarR0D
+  real(8)                                                             ::    PLoc
+  real(8)                                                             ::    Mu_8
+  real(8)                                                             ::    Sigma_8
+  logical                                                             ::    TripFlag
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (P < Zero) call Error%Raise(Line='P value below the minimum of 0 in the inverse CDF calculation', ProcName=ProcName)
+  if (P > One) call Error%Raise(Line='P value above the maximum of 1 in the inverse CDF calculation', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  ! Based on formulas given in :
-  ! https://people.sc.fsu.edu/~%20jburkardt/presentations/truncated_normal.pdf
-  function GetMoment(This, Moment)
+  TripFlag = .false.
 
-    real(rkp)                                                         ::    GetMoment
-
-    class(DistNorm_Type), intent(in)                                  ::    This
-    integer, intent(in)                                               ::    Moment
-
-    character(*), parameter                                           ::    ProcName='GetMoment'
-    integer                                                           ::    i
-    integer                                                           ::    imax
-    real(rkp)                                                         ::    L
-    real(rkp)                                                         ::    Lim1
-    real(rkp)                                                         ::    Lim2
-    real(rkp)                                                         ::    PDF_A
-    real(rkp)                                                         ::    PDF_B
-    real(rkp)                                                         ::    CDF_A
-    real(rkp)                                                         ::    CDF_B
-    real(rkp)                                                         ::    Alpha
-    real(rkp)                                                         ::    Beta
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
-
-    if (Moment == 0) then
-      GetMoment = One
-    elseif (.not. (This%TruncatedLeft .or. This%TruncatedRight)) then
-      GetMoment = Zero
-      i = 0
-      imax = floor(real(Moment,rkp)/Two) 
-      do i = 0, imax
-        GetMoment = GetMoment + real(BinomialCoeff(Top=Moment , Bottom=2*i),rkp) * real(DoubleFactorial(N=(2*i-1)),rkp) *     &
-                                                                                         This%Sigma**(2*i) * This%Mu**(Moment-2*i)
-      end do
+  if (P == Zero) then
+    if (present(A)) then
+      ComputeNormalInvCDF = A
     else
-      Alpha = One
-      Beta = One
-      PDF_A = Zero
-      PDF_B = Zero
-      CDF_A = Zero
-      CDF_B = One
-      if (This%TruncatedLeft) then
-        Alpha = (This%A-This%Mu)/This%Sigma
-        PDF_A = This%ComputeNormalPDF(X=Alpha, Mu=Zero, Sigma=One)
-        CDF_A = This%ComputeNormalCDF(X=Alpha, Mu=Zero, Sigma=One)
-      end if
-      if (This%TruncatedRight) then
-        Beta = (This%B-This%Mu)/This%Sigma
-        PDF_B = This%ComputeNormalPDF(X=Beta, Mu=Zero, Sigma=One)
-        CDF_B = This%ComputeNormalCDF(X=Beta, Mu=Zero, Sigma=One)
-      end if
-      GetMoment = Zero
-      L = One
-      Lim1 = One
-      Lim2 = One
-      i = 0
-      do i = 0, Moment
-        if (i > 1) then
-          L = - (Beta**(i-1)*PDF_B - Alpha**(i-1)*PDF_A)/(CDF_B - CDF_A) + real(i-1,rkp)*Lim2
-        elseif (i == 1) then
-          L = - (PDF_B - PDF_A)/(CDF_B - CDF_A)
-        else
-          L = One
-        end if
-        GetMoment = GetMoment + real(BinomialCoeff(Top=Moment, Bottom=i),rkp) * This%Sigma**i * This%Mu**(Moment-i) * L
-        Lim2 = Lim1
-        Lim1 = L
-      end do
-
+      ComputeNormalInvCDF = -huge(One)
     end if
+    TripFlag=.true.
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (P == One) then
+    if (present(B)) then
+      ComputeNormalInvCDF = B
+    else
+      ComputeNormalInvCDF = huge(One)
+    end if
+    TripFlag=.true.
+  end if
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteInfo(This, File)
+  if (.not. TripFlag) then
+    CDFLeft = 0.0
+    if (present(A)) CDFLeft = 0.5*(One+erf((A-Mu)/(Sigma*dsqrt(Two))))
+    CDFRight = 1.0
+    if (present(B)) CDFRight = 0.5*(One+erf((B-Mu)/(Sigma*dsqrt(Two))))
+    PLoc = real(CDFLeft+P*(CDFRight-CDFLeft),8)
+    Mu_8 = real(Mu,8)
+    Sigma_8 = real(Sigma,8)
+    call normal_cdf_inv (PLoc, Mu_8, Sigma_8, VarR0D)
+    ComputeNormalInvCDF = VarR0D
+  end if
 
-    class(DistNorm_Type), intent(in)                                  ::    This
-    type(SMUQFile_Type), intent(inout)                                ::    File
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='WriteInfo'
-    integer                                                           ::    i
-    type(SMUQString_Type), dimension(5)                               ::    Strings
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMu(This)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  real(rkp)                                                           ::    GetMu
 
-    Strings(1) = 'normal'
-    Strings(2) = ConvertToString(Value=This%Mu)
-    Strings(3) = ConvertToString(Value=This%Sigma)
-    Strings(4) = '-Inf'
-    if (This%TruncatedLeft) Strings(4) = ConvertToString(Value=This%A)
-    Strings(5) = 'Inf'
-    if (This%TruncatedRight) Strings(5) = ConvertToString(Value=This%B)
+  class(DistNorm_Type), intent(in)                                    ::    This
 
-    call File%Append(Strings=Strings)
+  character(*), parameter                                             ::    ProcName='GetMu'
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+  GetMu = This%Mu
 
-    class(DistNorm_Type), intent(out)                                 ::    LHS
-    class(DistProb_Type), intent(in)                                  ::    RHS
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetSigma(This)
 
-    select type (RHS)
-  
-      type is (DistNorm_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+  real(rkp)                                                           ::    GetSigma
 
-        if (RHS%Constructed) then
-          LHS%A = RHS%A
-          LHS%B = RHS%B
-          LHS%Mu = RHS%Mu
-          LHS%Sigma = RHS%Sigma
-          LHS%TruncatedLeft = RHS%TruncatedLeft
-          LHS%TruncatedRight = RHS%TruncatedRight
-        end if
+  class(DistNorm_Type), intent(in)                                    ::    This
 
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetSigma'
 
-    end select
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  GetSigma = This%Sigma
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-  
-    type(DistNorm_Type), intent(inout)                                ::    This
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+!!------------------------------------------------------------------------------------------------------------------------------
+! Based on formulas given in :
+! https://people.sc.fsu.edu/~%20jburkardt/presentations/truncated_normal.pdf
+function GetMoment(This, Moment)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  real(rkp)                                                           ::    GetMoment
+
+  class(DistNorm_Type), intent(in)                                    ::    This
+  integer, intent(in)                                                 ::    Moment
+
+  character(*), parameter                                             ::    ProcName='GetMoment'
+  integer                                                             ::    i
+  integer                                                             ::    imax
+  real(rkp)                                                           ::    L
+  real(rkp)                                                           ::    Lim1
+  real(rkp)                                                           ::    Lim2
+  real(rkp)                                                           ::    PDF_A
+  real(rkp)                                                           ::    PDF_B
+  real(rkp)                                                           ::    CDF_A
+  real(rkp)                                                           ::    CDF_B
+  real(rkp)                                                           ::    Alpha
+  real(rkp)                                                           ::    Beta
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  if (Moment < 0) call Error%Raise("Requested a distribution moment below 0", ProcName=ProcName)
+
+  if (Moment == 0) then
+    GetMoment = One
+  elseif (.not. (This%TruncatedLeft .or. This%TruncatedRight)) then
+    GetMoment = Zero
+    i = 0
+    imax = floor(real(Moment,rkp)/Two) 
+    do i = 0, imax
+      GetMoment = GetMoment + real(BinomialCoeff(Top=Moment , Bottom=2*i),rkp) * real(DoubleFactorial(N=(2*i-1)),rkp) *     &
+                                                                                        This%Sigma**(2*i) * This%Mu**(Moment-2*i)
+    end do
+  else
+    Alpha = One
+    Beta = One
+    PDF_A = Zero
+    PDF_B = Zero
+    CDF_A = Zero
+    CDF_B = One
+    if (This%TruncatedLeft) then
+      Alpha = (This%A-This%Mu)/This%Sigma
+      PDF_A = This%ComputeNormalPDF(X=Alpha, Mu=Zero, Sigma=One)
+      CDF_A = This%ComputeNormalCDF(X=Alpha, Mu=Zero, Sigma=One)
+    end if
+    if (This%TruncatedRight) then
+      Beta = (This%B-This%Mu)/This%Sigma
+      PDF_B = This%ComputeNormalPDF(X=Beta, Mu=Zero, Sigma=One)
+      CDF_B = This%ComputeNormalCDF(X=Beta, Mu=Zero, Sigma=One)
+    end if
+    GetMoment = Zero
+    L = One
+    Lim1 = One
+    Lim2 = One
+    i = 0
+    do i = 0, Moment
+      if (i > 1) then
+        L = - (Beta**(i-1)*PDF_B - Alpha**(i-1)*PDF_A)/(CDF_B - CDF_A) + real(i-1,rkp)*Lim2
+      elseif (i == 1) then
+        L = - (PDF_B - PDF_A)/(CDF_B - CDF_A)
+      else
+        L = One
+      end if
+      GetMoment = GetMoment + real(BinomialCoeff(Top=Moment, Bottom=i),rkp) * This%Sigma**i * This%Mu**(Moment-i) * L
+      Lim2 = Lim1
+      Lim1 = L
+    end do
+
+  end if
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine WriteInfo(This, File)
+
+  class(DistNorm_Type), intent(in)                                    ::    This
+  type(SMUQFile_Type), intent(inout)                                  ::    File
+
+  character(*), parameter                                             ::    ProcName='WriteInfo'
+  integer                                                             ::    i
+  type(SMUQString_Type), dimension(5)                                 ::    Strings
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  Strings(1) = 'normal'
+  Strings(2) = ConvertToString(Value=This%Mu)
+  Strings(3) = ConvertToString(Value=This%Sigma)
+  Strings(4) = '-Inf'
+  if (This%TruncatedLeft) Strings(4) = ConvertToString(Value=This%A)
+  Strings(5) = 'Inf'
+  if (This%TruncatedRight) Strings(5) = ConvertToString(Value=This%B)
+
+  call File%Append(Strings=Strings)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
+
+  class(DistNorm_Type), intent(out)                                   ::    LHS
+  class(DistProb_Type), intent(in)                                    ::    RHS
+
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+
+  select type (RHS)
+
+    type is (DistNorm_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
+
+      if (RHS%Constructed) then
+        LHS%A = RHS%A
+        LHS%B = RHS%B
+        LHS%Mu = RHS%Mu
+        LHS%Sigma = RHS%Sigma
+        LHS%TruncatedLeft = RHS%TruncatedLeft
+        LHS%TruncatedRight = RHS%TruncatedRight
+      end if
+
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+
+  end select
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
+
+  type(DistNorm_Type), intent(inout)                                  ::    This
+
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

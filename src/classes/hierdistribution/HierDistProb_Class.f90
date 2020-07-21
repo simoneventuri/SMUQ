@@ -32,21 +32,16 @@ private
 public                                                                ::    HierDistProb_Type
 
 type, abstract                                                        ::    HierDistProb_Type
-  character(:), allocatable                                           ::    Name
   logical                                                             ::    TruncatedLeft=.false.
   logical                                                             ::    TruncatedRight=.false.
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
 contains
   private
-  procedure, public                                                   ::    GetName
   procedure, public                                                   ::    IsTruncatedLeft
   procedure, public                                                   ::    IsTruncatedRight
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_HierDistProb), deferred, public                ::    Initialize
   procedure(Reset_HierDistProb), deferred, public                     ::    Reset
-  procedure(SetDefaults_HierDistProb), deferred, public               ::    SetDefaults
   procedure(ConstructInput_HierDistProb), deferred, private           ::    ConstructInput
   procedure(GetInput_HierDistProb), deferred, public                  ::    GetInput
   procedure(Generate_HierDistProb), deferred, public                  ::    Generate
@@ -58,21 +53,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_HierDistProb(This)
-    import                                                            ::    HierDistProb_Type
-    class(HierDistProb_Type), intent(inout)                           ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_HierDistProb(This)
-    import                                                            ::    HierDistProb_Type
-    class(HierDistProb_Type), intent(inout)                           ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_HierDistProb(This)
     import                                                            ::    HierDistProb_Type
     class(HierDistProb_Type), intent(inout)                           ::    This
   end subroutine
@@ -122,19 +103,6 @@ abstract interface
 end interface
 
 contains
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-function GetName(This)
-
-  character(:), allocatable                                           ::    GetName
-  class(HierDistProb_Type), intent(in)                                ::    This
-
-  character(*), parameter                                             ::    ProcName='GetName'
-
-  GetName = This%Name
-
-end function
-!!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 function IsTruncatedLeft(This)

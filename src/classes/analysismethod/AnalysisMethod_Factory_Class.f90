@@ -19,7 +19,6 @@
 module AnalysisMethod_Factory_class
 
 use Input_Library
-use InputRoutines_Module
 use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
@@ -28,6 +27,7 @@ use AnalysisSurrogate_Class                                       ,only:    Anal
 use AnalysisCalibration_Class                                     ,only:    AnalysisCalibration_Type
 use AnalysisUQ_Class                                              ,only:    AnalysisUQ_Type
 use AnalysisSA_Class                                              ,only:    AnalysisSA_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -98,11 +98,16 @@ subroutine Construct_Input(This, Object, Input, SectionChain, Prefix)
   character(:), allocatable                                           ::    PrefixLoc
   character(:), allocatable                                           ::    VarC0D
   integer                                                             ::    StatLoc=0 
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
-  call VerifyInput(Input=Input, SubSection='type', Parameter='type')
+  call InputVerifier%Construct()
+  call InputVerifier%AddParameter(Parameter='type')
+  call InputVerifier%AddSection(Section='type')
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   ParameterName = 'type'
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
@@ -179,7 +184,7 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
 
   call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
 
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/type'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'type/'
 
   call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectorySub))
 

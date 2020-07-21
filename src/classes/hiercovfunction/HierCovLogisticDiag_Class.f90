@@ -31,6 +31,7 @@ use CovLogisticDiag_Class                                         ,only:    CovL
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarFixed_Class                                            ,only:    IScalarFixed_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -44,9 +45,7 @@ type, extends(HierCovFunction_Type)                                   ::    Hier
   class(IScalarValue_Type), allocatable                               ::    X0
   character(:), allocatable                                           ::    CoordinateLabel
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Generate
@@ -59,22 +58,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(HierCovLogisticDiag_Type), intent(inout)                      ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'HierCovLogisticDiag'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(HierCovLogisticDiag_Type), intent(inout)                      ::    This
@@ -82,7 +65,6 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc = 0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%Sigma)) deallocate(This%Sigma, stat=StatLoc)
@@ -94,18 +76,6 @@ subroutine Reset(This)
   if (allocated(This%X0)) deallocate(This%X0, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%X0', ProcName=ProcName, stat=StatLoc)
 
-  call This%SetDefaults()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(HierCovLogisticDiag_Type), intent(inout)                      ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-  
   This%CoordinateLabel = ''
 
 end subroutine
@@ -130,34 +100,40 @@ subroutine ConstructInput(This, Input, Prefix)
   logical                                                             ::    Found
   character(:), allocatable                                           ::    PrefixLoc
   real(rkp), allocatable, dimension(:)                                ::    VarR1D
-  logical                                                             ::    MandatoryLoc
+  type(InputVerifier_Type)                                            ::    InputVerifier 
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
-  MandatoryLoc = .false.
+  call InputVerifier%Construct()
 
   SectionName = 'sigma'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%Sigma, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SectionName = 'k'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%K, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SectionName = 'x0'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%X0, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   ParameterName = 'coordinate_label'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   if (Found) This%CoordinateLabel=VarC0D
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -200,17 +176,17 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddParameter(Name='coordinate_label', Value=This%CoordinateLabel)
 
   SectionName = 'sigma'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Sigma, Name=SectionName,                       &
                                                                        Prefix=PrefixLoc, Directory=DirectorySub))
 
   SectionName = 'k'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%K, Name=SectionName,                           &
                                                                        Prefix=PrefixLoc, Directory=DirectorySub))
 
   SectionName = 'x0'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%X0, Name=SectionName,                          &
                                                                        Prefix=PrefixLoc, Directory=DirectorySub))
 
@@ -264,7 +240,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (HierCovLogisticDiag_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then

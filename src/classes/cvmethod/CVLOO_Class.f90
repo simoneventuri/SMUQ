@@ -25,6 +25,7 @@ use StatisticsRoutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use CVMethod_Class                                                ,only:    CVMethod_Type, CVFitTarget
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -34,9 +35,7 @@ public                                                                ::    CVLO
 
 type, extends(CVMethod_Type)                                          ::    CVLOO_Type
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -50,42 +49,13 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(CVLOO_Type), intent(inout)                                    ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'CVloo'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(CVLOO_Type), intent(inout)                                    ::    This
 
   character(*), parameter                                             ::    ProcName='Reset'
 
-  This%Initialized=.false.
   This%Constructed=.false.
-
-  call This%SetDefaults()
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(CVLOO_Type), intent(inout)                                    ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
   This%Normalized=.true.
 
@@ -105,16 +75,22 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    ParameterName
   character(:), allocatable                                           ::    PrefixLoc
   logical                                                             ::    Found
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
+
+  call InputVerifier%Construct()
 
   ParameterName = 'normalized'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if(Found) This%Normalized = VarL0D
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -133,8 +109,7 @@ subroutine ConstructCase1(This, Normalized)
   character(:), allocatable                                           ::    ParameterName
   logical                                                             ::    Found
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   if(present(Normalized)) This%Normalized = Normalized
 
@@ -253,7 +228,6 @@ impure elemental subroutine Copy(LHS, RHS)
   select type (RHS)
     type is (CVLOO_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
         LHS%Normalized = RHS%Normalized

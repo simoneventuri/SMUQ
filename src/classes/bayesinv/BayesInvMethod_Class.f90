@@ -35,16 +35,12 @@ public                                                                ::    Baye
 
 type, abstract                                                        ::    BayesInvMethod_Type
   character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_BayesInvMethod), deferred, public              ::    Initialize
   procedure(Reset_BayesInvMethod), deferred, public                   ::    Reset
-  procedure(SetDefaults_BayesInvMethod), deferred, public             ::    SetDefaults
   procedure(ConstructInput_BayesInvMethod), deferred, private         ::    ConstructInput
   procedure(GetInput_BayesInvMethod), deferred, public                ::    GetInput
   procedure(Calibrate_BayesInvMethod), deferred, public               ::    Calibrate
@@ -56,21 +52,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_BayesInvMethod(This)
-    import                                                            ::    BayesInvMethod_Type
-    class(BayesInvMethod_Type), intent(inout)                         ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_BayesInvMethod(This)
-    import                                                            ::    BayesInvMethod_Type
-    class(BayesInvMethod_Type), intent(inout)                         ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_BayesInvMethod(This)
     import                                                            ::    BayesInvMethod_Type
     class(BayesInvMethod_Type), intent(inout)                         ::    This
   end subroutine
@@ -126,18 +108,5 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
-
-    character(:), allocatable                                         ::    GetName
-    class(BayesInvMethod_Type), intent(inout)                         ::    This
-
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    GetName = This%Name
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

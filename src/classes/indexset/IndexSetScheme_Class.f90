@@ -27,6 +27,7 @@ use IndexHyperbolic_Class                                         ,only:    Inde
 use IndexSet_Factory_Class                                        ,only:    IndexSet_Factory
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -35,17 +36,13 @@ private
 public                                                                ::    IndexSetScheme_Type
 
 type                                                                  ::    IndexSetScheme_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   class(IndexSet_Type), allocatable                                   ::    IndexSet
   integer                                                             ::    Order=1
   integer                                                             ::    MinOrder=1
   integer                                                             ::    MaxOrder=huge(1)
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructInput,         &
                                                                                                           ConstructCase1
   procedure, public                                                   ::    ConstructInput
@@ -65,315 +62,292 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
+
+  class(IndexSetScheme_Type), intent(inout)                           ::    This
 
-    class(IndexSetScheme_Type), intent(inout)                         ::    This
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    character(*), parameter                                           ::    ProcName='Initialize'
-    integer(8)                                                        ::    SysTimeCount
+  This%Constructed=.false.
+
+  call This%IndexSet%Reset()
 
-    if (.not. This%Initialized) then
-      This%Initialized = .true.
-      This%Name = 'lhs'
-      call This%SetDefaults()
-    end if
+  This%Order = 1
+  This%MinOrder = 1
+  This%MaxOrder = huge(1)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput (This, Input, Prefix)
+
+  class(IndexSetScheme_Type), intent(inout)                           ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
+
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  logical                                                             ::    Found
+  logical                                                             ::    VarL0D
+  character(:), allocatable                                           ::    VarC0D
+  integer                                                             ::    VarI0D
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
+
+  call This%Reset()
+
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
+
+  call InputVerifier%Construct()
+
+  ParameterName = 'order'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%Order = VarI0D
+
+  ParameterName = 'max_order'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%MaxOrder = VarI0D
+
+  ParameterName = 'min_order'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%MinOrder = VarI0D
+
+  if (This%MinOrder < 0) call Error%Raise(Line='Min order set lower than 0', ProcName=ProcName)
+  if (This%MaxOrder < This%MinOrder) call Error%Raise(Line='Max Order set lower than min order', ProcName=ProcName)
+  if (This%Order > This%MaxOrder .or. This%Order < This%MinOrder) call Error%Raise(                                        &
+                                                              Line='Specified order that exceeds min or max', ProcName=ProcName)  
+
+  SectionName = 'index_set'
+  call InputVerifier%AddSection(Section=SectionName)
+  if (Input%HasSection(SubSectionName=SectionName)) then
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call IndexSet_Factory%Construct(Object=This%IndexSet, Input=InputSection, Prefix=PrefixLoc)
+  else
+    allocate(IndexHyperbolic_Type   :: This%IndexSet)
+    select type (Object => This%IndexSet)
+      type is (IndexHyperbolic_Type)
+        call Object%Construct(NormQ=0.4_rkp)
+      class default
+        call Error%Raise('Something went wrong', ProcName=ProcName)
+    end select
+  end if
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
+
+  This%Constructed = .true.
+
+end subroutine 
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1 (This, Order, MinOrder, MaxOrder, IndexSet)
+
+  integer, optional, intent(in)                                       ::    Order
+  integer, optional, intent(in)                                       ::    MinOrder
+  integer, optional, intent(in)                                       ::    MaxOrder
+  class(IndexSet_Type), optional, intent(in)                          ::    IndexSet
 
-    class(IndexSetScheme_Type), intent(inout)                         ::    This
+  class(IndexSetScheme_Type), intent(inout)                           ::    This
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  integer                                                             ::    StatLoc=0
 
-    This%Initialized=.false.
-    This%Constructed=.false.
+  call This%Reset()
 
-    call This%IndexSet%Reset()
+  This%Order = 1
+  if (present(Order)) This%Order = Order
 
-    call This%Initialize()
+  This%MinOrder = 1
+  if (present(MinOrder)) This%MinOrder = MinOrder
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%MaxOrder = huge(1)
+  if (present(MaxOrder)) This%MaxOrder = MaxOrder
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  if (This%MinOrder < 0) call Error%Raise(Line='Min order set lower than 0', ProcName=ProcName)
+  if (This%MaxOrder < This%MinOrder) call Error%Raise(Line='Max Order set lower than min order', ProcName=ProcName)
+  if (This%Order > This%MaxOrder .or. This%Order < This%MinOrder) call Error%Raise(                                        &
+                                                              Line='Specified order that exceeds min or max', ProcName=ProcName)
 
-    class(IndexSetScheme_Type), intent(inout)                         ::    This
+  if (present(IndexSet)) then
+    if (.not. IndexSet%IsConstructed()) call Error%Raise('Index set not constructed', ProcName=ProcName)
+    allocate(This%IndexSet, source=IndexSet, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='This%IndexSet', ProcName=ProcName, stat=StatLoc)
+  else
+    allocate(IndexHyperbolic_Type   :: This%IndexSet)
+    select type (Object => This%IndexSet)
+      type is (IndexHyperbolic_Type)
+        call Object%Construct(NormQ=0.4_rkp)
+      class default
+        call Error%Raise('Something went wrong', ProcName=ProcName)
+    end select
+  end if
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  This%Constructed = .true.
 
-    This%Order = 1
-    This%MinOrder = 1
-    This%MaxOrder = huge(1)
+end subroutine 
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput (This, Input, Prefix)
+  type(InputSection_Type)                                             ::    GetInput
+  class(IndexSetScheme_Type), intent(in)                              ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    class(IndexSetScheme_Type), intent(inout)                         ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  character(:), allocatable                                           ::    FileName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  character(:), allocatable                                           ::    VarC0D
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    logical                                                           ::    Found
-    logical                                                           ::    VarL0D
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    VarI0D
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
-
-    ParameterName = 'order'
-    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%Order = VarI0D
-
-    ParameterName = 'max_order'
-    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%MaxOrder = VarI0D
-
-    ParameterName = 'min_order'
-    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%MinOrder = VarI0D
-
-    if (This%MinOrder < 0) call Error%Raise(Line='Min order set lower than 0', ProcName=ProcName)
-    if (This%MaxOrder < This%MinOrder) call Error%Raise(Line='Max Order set lower than min order', ProcName=ProcName)
-    if (This%Order > This%MaxOrder .or. This%Order < This%MinOrder) call Error%Raise(                                        &
-                                                               Line='Specified order that exceeds min or max', ProcName=ProcName)  
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    SectionName = 'index_set'
-    if (Input%HasSection(SubSectionName=SectionName)) then
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      call IndexSet_Factory%Construct(Object=This%IndexSet, Input=InputSection, Prefix=PrefixLoc)
-    else
-      allocate(IndexHyperbolic_Type :: This%IndexSet)
-      select type (Object => This%IndexSet)
-        type is (IndexHyperbolic_Type)
-          call Object%Construct(NormQ=0.4_rkp)
-        class default
-          call Error%Raise('Something went wrong', ProcName=ProcName)
-      end select
-    end if
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    This%Constructed = .true.
+  call GetInput%AddParameter(Name='order', Value=ConvertToString(Value=This%Order))
+  call GetInput%AddParameter(Name='min_order', Value=ConvertToString(Value=This%MinOrder))
+  call GetInput%AddParameter(Name='max_order', Value=ConvertToString(Value=This%MaxOrder))
 
-  end subroutine 
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'index_set/'
+  call GetInput%AddSection(Section=IndexSet_Factory%GetObjectInput(Object=This%IndexSet, Name='index_set',                  &
+                                                                        Prefix=PrefixLoc, Directory=DirectorySub))
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1 (This, Order, MinOrder, MaxOrder, IndexSet)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    integer, optional, intent(in)                                     ::    Order
-    integer, optional, intent(in)                                     ::    MinOrder
-    integer, optional, intent(in)                                     ::    MaxOrder
-    class(IndexSet_Type), optional, intent(in)                        ::    IndexSet
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetIndexSet(This)
 
-    class(IndexSetScheme_Type), intent(inout)                         ::    This
+  class(IndexSet_Type), allocatable                                   ::    GetIndexSet
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    integer                                                           ::    StatLoc=0
+  class(IndexSetScheme_Type), intent(in)                              ::    This
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  character(*), parameter                                             ::    ProcName='GetIndexSet'
+  integer                                                             ::    StatLoc=0
 
-    This%Order = 1
-    if (present(Order)) This%Order = Order
+  allocate(GetIndexSet, source=This%IndexSet, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='GetIndexSet', ProcName=ProcName, stat=StatLoc)
 
-    This%MinOrder = 1
-    if (present(MinOrder)) This%MinOrder = MinOrder
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    This%MaxOrder = huge(1)
-    if (present(MaxOrder)) This%MaxOrder = MaxOrder
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetIndexSetPointer(This)
 
-    if (This%MinOrder < 0) call Error%Raise(Line='Min order set lower than 0', ProcName=ProcName)
-    if (This%MaxOrder < This%MinOrder) call Error%Raise(Line='Max Order set lower than min order', ProcName=ProcName)
-    if (This%Order > This%MaxOrder .or. This%Order < This%MinOrder) call Error%Raise(                                        &
-                                                               Line='Specified order that exceeds min or max', ProcName=ProcName)
+  class(IndexSet_Type), pointer                                       ::    GetIndexSetPointer
 
-    if (present(IndexSet)) then
-      if (.not. IndexSet%IsConstructed()) call Error%Raise('Index set not constructed', ProcName=ProcName)
-      allocate(This%IndexSet, source=IndexSet, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='This%IndexSet', ProcName=ProcName, stat=StatLoc)
-    else
-      allocate(IndexHyperbolic_Type :: This%IndexSet)
-      select type (Object => This%IndexSet)
-        type is (IndexHyperbolic_Type)
-          call Object%Construct(NormQ=0.4_rkp)
-        class default
-          call Error%Raise('Something went wrong', ProcName=ProcName)
-      end select
-    end if
+  class(IndexSetScheme_Type), target, intent(in)                      ::    This
 
-    This%Constructed = .true.
+  character(*), parameter                                             ::    ProcName='GetIndexSetPointer'
 
-  end subroutine 
-  !!------------------------------------------------------------------------------------------------------------------------------
+  GetIndexSetPointer => This%IndexSet
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    type(InputSection_Type)                                           ::    GetInput
-    class(IndexSetScheme_Type), intent(in)                            ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetOrder(This)
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    character(:), allocatable                                         ::    FileName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    VarC0D
+  integer                                                             ::    GetOrder
 
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+  class(IndexSetScheme_Type), intent(in)                              ::    This
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  character(*), parameter                                             ::    ProcName='GetOrder'
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  GetOrder = This%Order
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    call GetInput%AddParameter(Name='order', Value=ConvertToString(Value=This%Order))
-    call GetInput%AddParameter(Name='min_order', Value=ConvertToString(Value=This%MinOrder))
-    call GetInput%AddParameter(Name='max_order', Value=ConvertToString(Value=This%MaxOrder))
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMinOrder(This)
 
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/index_set'
-    call GetInput%AddSection(Section=IndexSet_Factory%GetObjectInput(Object=This%IndexSet, Name='index_set',                  &
-                                                                         Prefix=PrefixLoc, Directory=DirectorySub))
+  integer                                                             ::    GetMinOrder
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  class(IndexSetScheme_Type), intent(in)                              ::    This
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetIndexSet(This)
+  character(*), parameter                                             ::    ProcName='GetMinOrder'
 
-    class(IndexSet_Type), allocatable                                 ::    GetIndexSet
+  GetMinOrder = This%MinOrder
 
-    class(IndexSetScheme_Type), intent(in)                            ::    This
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetIndexSet'
-    integer                                                           ::    StatLoc=0
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMaxOrder(This)
 
-    allocate(GetIndexSet, source=This%IndexSet, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetIndexSet', ProcName=ProcName, stat=StatLoc)
+  integer                                                             ::    GetMaxOrder
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  class(IndexSetScheme_Type), intent(in)                              ::    This
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetIndexSetPointer(This)
+  character(*), parameter                                             ::    ProcName='GetMaxOrder'
 
-    class(IndexSet_Type), pointer                                     ::    GetIndexSetPointer
+  GetMaxOrder = This%MaxOrder
 
-    class(IndexSetScheme_Type), target, intent(in)                    ::    This
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetIndexSetPointer'
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    GetIndexSetPointer => This%IndexSet
+  class(IndexSetScheme_Type), intent(out)                             ::    LHS
+  class(IndexSetScheme_Type), intent(in)                              ::    RHS
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOrder(This)
+  call LHS%Reset()
+  LHS%Constructed = RHS%Constructed
 
-    integer                                                           ::    GetOrder
+  if (RHS%Constructed) then
+    LHS%Order = RHS%Order
+    LHS%MinOrder = RHS%MinOrder
+    LHS%MaxOrder = RHS%MaxOrder
+    allocate(LHS%IndexSet, source=RHS%IndexSet, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='LHS%IndexSet', ProcName=ProcName, stat=StatLoc)
+  end if
 
-    class(IndexSetScheme_Type), intent(in)                            ::    This
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetOrder'
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    GetOrder = This%Order
+  type(IndexSetScheme_Type), intent(inout)                            ::    This
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMinOrder(This)
+  if (allocated(This%IndexSet)) deallocate(This%IndexSet, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%IndexSet', ProcName=ProcName, stat=StatLoc)
 
-    integer                                                           ::    GetMinOrder
-
-    class(IndexSetScheme_Type), intent(in)                            ::    This
-
-    character(*), parameter                                           ::    ProcName='GetMinOrder'
-
-    GetMinOrder = This%MinOrder
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMaxOrder(This)
-
-    integer                                                           ::    GetMaxOrder
-
-    class(IndexSetScheme_Type), intent(in)                            ::    This
-
-    character(*), parameter                                           ::    ProcName='GetMaxOrder'
-
-    GetMaxOrder = This%MaxOrder
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
-
-    class(IndexSetScheme_Type), intent(out)                           ::    LHS
-    class(IndexSetScheme_Type), intent(in)                            ::    RHS
-
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    call LHS%Reset()
-    LHS%Initialized = RHS%Initialized
-    LHS%Constructed = RHS%Constructed
-
-    if (RHS%Constructed) then
-      LHS%Order = RHS%Order
-      LHS%MinOrder = RHS%MinOrder
-      LHS%MaxOrder = RHS%MaxOrder
-      allocate(LHS%IndexSet, source=RHS%IndexSet, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='LHS%IndexSet', ProcName=ProcName, stat=StatLoc)
-    end if
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(IndexSetScheme_Type), intent(inout)                          ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-    if (allocated(This%IndexSet)) deallocate(This%IndexSet, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%IndexSet', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -29,6 +29,7 @@ use Error_Class                                                   ,only:    Erro
 use CovFunction_Class                                             ,only:    CovFunction_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -39,9 +40,7 @@ public                                                                ::    CovI
 type, extends(CovFunction_Type)                                       ::    CovIID_Type
   real(rkp)                                                           ::    Sigma
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    ConstructCase1
@@ -55,213 +54,188 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(CovIID_Type), intent(inout)                                 ::    This
+  class(CovIID_Type), intent(inout)                                   ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc = 0
 
-    if (.not. This%Initialized) then
-      This%Name = 'CovIID'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  This%Constructed=.false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Sigma = One
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(CovIID_Type), intent(inout)                                 ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc = 0
+  class(CovIID_Type), intent(inout)                                   ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    This%Initialized=.false.
-    This%Constructed=.false.
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  real(rkp)                                                           ::    VarR0D
+  character(:), allocatable                                           ::    VarC0D
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  integer                                                             ::    i
+  logical                                                             ::    Found
+  character(:), allocatable                                           ::    PrefixLoc
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-    call This%SetDefaults()
+  call This%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  call InputVerifier%Construct()
 
-    class(CovIID_Type), intent(inout)                                 ::    This
+  ParameterName = 'sigma'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%Sigma=VarR0D
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  if (This%Sigma < Zero) call Error%Raise(Line='Sigma value below 0', ProcName=ProcName)
 
-    This%Sigma = One
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Constructed = .true.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(CovIID_Type), intent(inout)                                 ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, Sigma)
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    integer                                                           ::    StatLoc=0
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    real(rkp)                                                         ::    VarR0D
-    character(:), allocatable                                         ::    VarC0D
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    integer                                                           ::    i
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    PrefixLoc
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+  class(CovIID_Type), intent(inout)                                   ::    This
+  real(rkp), intent(in)                                               ::    Sigma
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  integer                                                             ::    StatLoc=0
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  call This%Reset()
 
-    ParameterName = 'sigma'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%Sigma=VarR0D
+  This%Sigma = Sigma
+  if (This%Sigma < Zero) call Error%Raise(Line='Sigma value below 0', ProcName=ProcName)
 
-    if (This%Sigma < Zero) call Error%Raise(Line='Sigma value below 0', ProcName=ProcName)
+  This%Constructed = .true.
 
-    This%Constructed = .true.
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, Sigma)
+  type(InputSection_Type)                                             ::    GetInput
 
-    class(CovIID_Type), intent(inout)                                 ::    This
-    real(rkp), intent(in)                                             ::    Sigma
+  class(CovIID_Type), intent(in)                                      ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  character(:), allocatable                                           ::    FileName
+  type(SMUQFile_Type)                                                 ::    File
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    This%Sigma = Sigma
-    if (This%Sigma < Zero) call Error%Raise(Line='Sigma value below 0', ProcName=ProcName)
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    This%Constructed = .true.
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  call GetInput%AddParameter(Name='sigma', Value=ConvertToString(This%Sigma))
 
-    type(InputSection_Type)                                           ::    GetInput
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(CovIID_Type), intent(in)                                    ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Evaluate_1D(This, Coordinates, CoordinateLabels, Covariance)
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    FileName
-    type(SMUQFile_Type)                                               ::    File
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
+  class(CovIID_Type), intent(in)                                      ::    This
+  real(rkp), dimension(:,:), intent(in)                               ::    Coordinates
+  type(SMUQString_Type), dimension(:), intent(in)                     ::    CoordinateLabels
+  real(rkp), dimension(:,:), intent(inout)                            ::    Covariance
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='Evaluate_1D'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    NbNodes
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
-    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
+  NbNodes = size(Coordinates,1)
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  if (size(Covariance,1) /= size(Covariance,2)) call Error%Raise('Passed non-square array', ProcName=ProcName)
+  if (size(Covariance,1) /= NbNodes) call Error%Raise('Covariance array dimensions and number of coordinates mismatch',      &
+                                                                                                              ProcName=ProcName)
 
-    call GetInput%AddParameter(Name='sigma', Value=ConvertToString(This%Sigma))
+  call Eye(Array=Covariance)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  Covariance = Covariance * This%Sigma**2
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Evaluate_1D(This, Coordinates, CoordinateLabels, Covariance)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(CovIID_Type), intent(in)                                    ::    This
-    real(rkp), dimension(:,:), intent(in)                             ::    Coordinates
-    type(SMUQString_Type), dimension(:), intent(in)                   ::    CoordinateLabels
-    real(rkp), dimension(:,:), intent(inout)                          ::    Covariance
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    character(*), parameter                                           ::    ProcName='Evaluate_1D'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    NbNodes
+  class(CovIID_Type), intent(out)                                     ::    LHS
+  class(CovFunction_Type), intent(in)                                 ::    RHS
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    i
+  integer                                                             ::    StatLoc=0
 
-    NbNodes = size(Coordinates,1)
+  select type (RHS)
 
-    if (size(Covariance,1) /= size(Covariance,2)) call Error%Raise('Passed non-square array', ProcName=ProcName)
-    if (size(Covariance,1) /= NbNodes) call Error%Raise('Covariance array dimensions and number of coordinates mismatch',      &
-                                                                                                               ProcName=ProcName)
+    type is (CovIID_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
 
-    call Eye(Array=Covariance)
+      if (RHS%Constructed) then
+        LHS%Sigma = RHS%Sigma
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-    Covariance = Covariance * This%Sigma**2
+  end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    class(CovIID_Type), intent(out)                                   ::    LHS
-    class(CovFunction_Type), intent(in)                               ::    RHS
+  type(CovIID_Type), intent(inout)                                    ::    This
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    i
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-    select type (RHS)
-  
-      type is (CovIID_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-
-        if (RHS%Constructed) then
-          LHS%Sigma = RHS%Sigma
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
-
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(CovIID_Type), intent(inout)                                  ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -26,6 +26,7 @@ use String_Module
 use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -46,68 +47,66 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_C0D(Object, DesiredType)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Construct_C0D(Object, DesiredType)
 
-    class(DistProb_Type), allocatable, intent(inout)                  ::    Object                                             
-    character(*), intent(in)                                          ::    DesiredType                                               
+  class(DistProb_Type), allocatable, intent(inout)                    ::    Object                                             
+  character(*), intent(in)                                            ::    DesiredType                                               
 
-    character(*), parameter                                           ::    ProcName='Construct_C0D' 
+  character(*), parameter                                             ::    ProcName='Construct_C0D' 
 
-    if (allocated(Object)) call Error%Raise(Line="Object already allocated", ProcName=ProcName)
+  if (allocated(Object)) call Error%Raise(Line="Object already allocated", ProcName=ProcName)
 
-    select case (LowerCase(DesiredType))
+  select case (LowerCase(DesiredType))
 
-      case('uniform')
-        allocate(DistUnif_Type :: Object)
-        select type (Object) 
-          type is (DistUnif_Type)
-            call Object%Construct(A=-One, B=One)
-          class default
-            call Error%Raise('Something went wrong', ProcName=ProcName)
-        end select
-      case('normal')
-        allocate(DistNorm_Type :: Object)
-        select type (Object) 
-          type is (DistNorm_Type)
-            call Object%Construct(Mu=Zero, Sigma=One)
-          class default
-            call Error%Raise('Something went wrong', ProcName=ProcName)
-        end select
+    case('uniform')
+      allocate(DistUnif_Type   :: Object)
+      select type (Object) 
+        type is (DistUnif_Type)
+          call Object%Construct(A=-One, B=One)
+        class default
+          call Error%Raise('Something went wrong', ProcName=ProcName)
+      end select
+    case('normal')
+      allocate(DistNorm_Type   :: Object)
+      select type (Object) 
+        type is (DistNorm_Type)
+          call Object%Construct(Mu=Zero, Sigma=One)
+        class default
+          call Error%Raise('Something went wrong', ProcName=ProcName)
+      end select
 
-      case default
-        call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
+    case default
+      call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
 
-    end select
+  end select
 
-    call Object%Initialize()
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetOption(Object)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOption(Object)
+  character(:), allocatable                                           ::    GetOption
 
-    character(:), allocatable                                         ::    GetOption
+  class(DistProb_Type), intent(in)                                    ::    Object                                                                                            
 
-    class(DistProb_Type), intent(in)                                  ::    Object                                                                                            
+  character(*), parameter                                             ::    ProcName='GetOption' 
 
-    character(*), parameter                                           ::    ProcName='GetOption' 
+  select type (Object)
 
-    select type (Object)
+    type is (DistUnif_Type)
+      GetOption = 'uniform'
 
-      type is (DistUnif_Type)
-        GetOption = 'uniform'
+    type is (DistNorm_Type)
+      GetOption = 'normal'
 
-      type is (DistNorm_Type)
-        GetOption = 'normal'
+    class default
+      call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
 
-      class default
-        call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
+  end select
 
-    end select
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module
