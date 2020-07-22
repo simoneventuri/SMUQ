@@ -26,6 +26,7 @@ use ModelInternal_Class                                           ,only:    Mode
 use Model_Class                                                   ,only:    Model_Type
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -36,9 +37,7 @@ public                                                                ::    NULL
 type, extends(ModelInternal_Type)                                     ::    NULLPI_Type
 
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run_0D
@@ -49,153 +48,138 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(NULLPI_Type), intent(inout)                                 ::    This
+  class(NULLPI_Type), intent(inout)                                   ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Name = 'NULLPIModel'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  This%Constructed = .false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Label = 'null'
+  This%NbOutputs = 0
+  This%Silent = .false.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(NULLPI_Type), intent(inout)                                 ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  class(NULLPI_Type), intent(inout)                                   ::    This
+  class(InputSection_Type), intent(in)                                ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    call This%SetDefaults()
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    SectionName
+  logical                                                             ::    Found 
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call This%Reset()
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    class(NULLPI_Type), intent(inout)                                 ::    This
+  call InputVerifier%Construct()
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  Found = .false.
+  ParameterName = 'label'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%Label = VarC0D
 
-    This%Label = 'null'
-    This%NbOutputs = 0
-    This%Silent = .false.
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Constructed = .true.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(NULLPI_Type), intent(inout)                                 ::    This
-    class(InputSection_Type), intent(in)                              ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    character(:), allocatable                                         ::    SectionName
+  type(InputSection_Type)                                             ::    GetInput
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  class(NULLPI_Type), intent(in)                                      ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
 
-    This%Constructed = .true.
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    type(InputSection_Type)                                           ::    GetInput
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    class(NULLPI_Type), intent(in)                                    ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  call GetInput%AddParameter(Name='label', Value=This%Label)
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Run_0D(This, Input, Output, Stat)
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  class(NULLPI_Type), intent(inout)                                   ::    This
+  type(Input_Type), intent(in)                                        ::    Input
+  type(Output_Type), dimension(:), intent(inout)                      ::    Output
+  integer, optional, intent(out)                                      ::    Stat
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  character(*), parameter                                             ::    ProcName='Run_0D'
+  integer                                                             ::    StatRun=0
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  if (present(Stat)) then
+    Stat = 1
+  else
+    call Error%Raise('NULL model is not meant to be invoked to run', ProcName=ProcName)
+  end if
 
-    call GetInput%AddParameter(Name='label', Value=This%Label)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_0D(This, Input, Output, Stat)
+  class(NULLPI_Type), intent(out)                                     ::    LHS
+  class(Model_Type), intent(in)                                       ::    RHS
 
-    class(NULLPI_Type), intent(inout)                                 ::    This
-    type(Input_Type), intent(in)                                      ::    Input
-    type(Output_Type), dimension(:), intent(inout)                    ::    Output
-    integer, optional, intent(out)                                    ::    Stat
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-    character(*), parameter                                           ::    ProcName='Run_0D'
-    integer                                                           ::    StatRun=0
+  select type (RHS)
 
-    if (present(Stat)) then
-      Stat = 1
-    else
-      call Error%Raise('NULL model is not meant to be invoked to run', ProcName=ProcName)
-    end if
+    type is (NULLPI_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+      if (RHS%Constructed) then
+        LHS%NbOutputs = RHS%NbOutputs
+        LHS%Label = RHS%Label
+      end if
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-    class(NULLPI_Type), intent(out)                                   ::    LHS
-    class(Model_Type), intent(in)                                     ::    RHS
+  end select
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    select type (RHS)
-  
-      type is (NULLPI_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-
-        if (RHS%Constructed) then
-          LHS%NbOutputs = RHS%NbOutputs
-          LHS%Label = RHS%Label
-        end if
-
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
-
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

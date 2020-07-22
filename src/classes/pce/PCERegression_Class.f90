@@ -53,6 +53,7 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use List2D_Class                                                  ,only:    List2D_Type
 use Model_Class                                                   ,only:    Model_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -61,7 +62,6 @@ private
 public                                                                ::    PCERegression_Type
 
 type                                                                  ::    Cell_Type
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   type(LinkedList0D_Type)                                             ::    OutputRecord
   real(rkp), dimension(:), allocatable                                ::    Coefficients
@@ -75,9 +75,7 @@ type                                                                  ::    Cell
   type(LinkedList0D_Type)                                             ::    CVErrorHistory
   type(LinkedList1D_Type)                                             ::    SobolIndicesHistory
 contains
-  procedure, public                                                   ::    Initialize              =>    Initialize_Cell
   procedure, public                                                   ::    Reset                   =>    Reset_Cell
-  procedure, public                                                   ::    SetDefaults             =>    SetDefaults_Cell
   generic, public                                                     ::    Construct               =>    ConstructInput,         &
                                                                                                           ConstructCase1
   procedure, private                                                  ::    ConstructInput          =>    ConstructInput_Cell
@@ -125,9 +123,7 @@ type, extends(PCEMethod_Type)                                         ::    PCER
   integer                                                             ::    NbSamples
   integer                                                             ::    iStage
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    BuildModel
@@ -141,28 +137,14 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(PCERegression_Type), intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'gPC_sparse'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(PCERegression_Type), intent(inout)                            ::    This
 
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc = 0
+
+  This%Constructed=.false.
 
   if (allocated(This%Cells)) deallocate(This%Cells, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Cells', ProcName=ProcName, stat=StatLoc)
@@ -182,21 +164,6 @@ subroutine Reset(This)
 
   call This%SampleEnrichScheme%Reset()
   This%iStage = 0
-
-  This%Initialized=.false.
-  This%Constructed=.false.
-
-  call This%SetDefaults()
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(PCERegression_Type), intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
   This%MaxNumOverfit = 3
   This%StopError = Zero
@@ -241,37 +208,45 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   character(:), allocatable                                           ::    CellSource
   character(:), allocatable                                           ::    CellFile
   type(InputReader_Type)                                              ::    CellSection
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   This%SectionChain = SectionChain
 
   ParameterName= 'silent'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%Silent=VarL0D
 
   ParameterName = 'nb_samples'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
   This%NbSamples = VarI0D
   if (This%NbSamples <= 0) call Error%Raise('Must specify number of samples above 0', ProcName=ProcName)
 
   ParameterName = "max_num_overfit"
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%MaxNumOverfit = VarI0D
 
   ParameterName = "checkpoint_frequency"
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%CheckpointFreq = VarI0D
 
   ParameterName = "stop_error"
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%StopError = VarR0D
 
   SectionName = 'sampler'
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call SampleMethod_Factory%Construct(Object=This%Sampler, Input=InputSection, Prefix=PrefixLoc)
@@ -286,6 +261,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   end if
 
   SectionName = 'sample_enrichment'
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call This%SampleEnrichScheme%Construct(Input=InputSection, Prefix=PrefixLoc)
@@ -298,6 +274,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
                                         'Specified number of samples greater than maximum number of samples', ProcName=ProcName)
 
   SectionName = "solver"
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call LinSolverMethod_Factory%Construct(Object=This%Solver, Input=InputSection, Prefix=PrefixLoc)
@@ -313,13 +290,16 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   end if
 
   SectionName = 'restart'
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName)) then
 
     ParameterName = 'model_run_counter'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     This%ModelRunCounter = VarI0D
 
     SubSectionName = SectionName // '>param_record'
+    call InputVerifier%AddSection(Section='param_record', ToSubSection=SectionName)
     if (Input%HasSection(SubSectionName=SubSectionName)) then
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
       call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
@@ -330,6 +310,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
     end if
 
     SubSectionName = SectionName // '>param_sample'
+    call InputVerifier%AddSection(Section='param_sample' ,ToSubSection=SectionName)
     if (Input%HasSection(SubSectionName=SubSectionName)) then
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
       call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
@@ -339,37 +320,45 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
       if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
       SubSectionName = SectionName // '>param_sample_ran'
+      call InputVerifier%AddSection(Section='param_sample_ran' ,ToSubSection=SectionName)
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
       call ImportArray(Input=InputSection, Array=VarI1D, Prefix=PrefixLoc)
       nullify(InputSection)
       This%ParamSampleRan = VarI1D
 
       ParameterName = 'param_sample_step'
+      call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
       call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
       This%ParamSampleStep = VarI0D
     end if
 
     ParameterName = 'stage'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     This%iStage = VarI0D
 
     ParameterName = 'samples_obtained'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     This%SamplesObtained= VarL0D
 
     ParameterName = 'samples_ran'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     This%SamplesRan = VarL0D
 
     ParameterName = 'samples_analyzed'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     This%SamplesAnalyzed = VarL0D
 
     ParameterName = 'cell_source'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     CellSource = VarC0D 
 
     SubSectionName = SectionName // '>cells'
+    call InputVerifier%AddSection(Section='cells', ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
 
     select case (CellSource)
@@ -382,6 +371,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
         i = 1
         do i = 1, NbCells
           ParameterName = 'cell' // ConvertToString(Value=i) // '_file'
+          call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SubSectionName)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
           CellFile = PrefixLoc // VarC0D
           call CellSection%Read(FileName=CellFile)
@@ -396,6 +386,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
     
         i = 1
         do i = 1, NbCells
+          call InputVerifier%AddSection(Section='cell' // ConvertToString(Value=i), ToSubSection=SubSectionName)
           call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName // '>cell' // &
                                        ConvertToString(Value=i), Mandatory=.true.)
           call This%Cells(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
@@ -410,6 +401,9 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   if (This%MaxNumOverfit < 2) call Error%Raise(Line='Number of allowable overfits below minimum off 2', ProcName=ProcName)
 
   if (This%StopError < Zero) call Error%Raise(Line='Stop error below minimum of zero', ProcName=ProcName)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -462,18 +456,18 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddParameter(Name='stop_error', Value=ConvertToString(Value=This%StopError))
   call GetInput%AddParameter(Name='checkpoint_frequency', Value=ConvertToString(Value=This%CheckpointFreq))
 
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/sample_enrichment'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'sample_enrichment/'
   SectionName = 'sample_enrichment'
   call GetInput%AddSection(Section=This%SampleEnrichScheme%GetInput(Name=SectionName,                               &
                                                                                       Prefix=PrefixLoc, Directory=DirectorySub))
 
   call GetInput%AddParameter(Name='nb_samples', Value=ConvertToString(Value=This%NbSamples))
 
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/sampler'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'sampler/'
   call GetInput%AddSection(Section=SampleMethod_Factory%GetObjectInput(Object=This%Sampler, Name='sampler',        &
                                                                                     Prefix=PrefixLoc, Directory=DirectorySub))
 
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/sparse_solver'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'sparse_solver/'
   SectionName='solver'
   call GetInput%AddSection(Section=LinSolverMethod_Factory%GetObjectInput(Object=This%Solver, Name=SectionName,  &
                                                                                     Prefix=PrefixLoc, Directory=DirectorySub))
@@ -484,7 +478,7 @@ function GetInput(This, Name, Prefix, Directory)
 
     if (ExternalFlag) then
       DirectorySub = DirectoryLoc // 'cells/'
-      CellInputDir = DirectorySub // '/cell_inputs/'
+      CellInputDir = DirectorySub // 'cell_inputs/'
 
       call MakeDirectory(Path=PrefixLoc // DirectorySub, Options='-p')
       call MakeDirectory(Path=PrefixLoc // CellInputDir, Options='-p')
@@ -512,7 +506,7 @@ function GetInput(This, Name, Prefix, Directory)
         call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
                                                                                                               Mandatory=.true.)
-        FileName = DirectoryLoc // '/param_record.dat'
+        FileName = DirectoryLoc // 'param_record.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Input=InputSection, Array=This%ParamRecord, File=File)
         nullify(InputSection)
@@ -523,7 +517,7 @@ function GetInput(This, Name, Prefix, Directory)
         call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
                                                                                                               Mandatory=.true.)
-        FileName = DirectoryLoc // '/param_sample.dat'
+        FileName = DirectoryLoc // 'param_sample.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Input=InputSection, Array=This%ParamSample, File=File)
         nullify(InputSection)
@@ -532,7 +526,7 @@ function GetInput(This, Name, Prefix, Directory)
         call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
         call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName // '>' // SubSectionName,       &
                                                                                                               Mandatory=.true.)
-        FileName = DirectoryLoc // '/param_sample_ran.dat'
+        FileName = DirectoryLoc // 'param_sample_ran.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Input=InputSection, Array=This%ParamSampleRan, File=File)
         nullify(InputSection)
@@ -1147,11 +1141,11 @@ subroutine WriteOutput(This, Directory, Responses)
 
     NbOutputs = size(Responses,1)
 
-    FileName = '/nbresponses.dat'
+    FileName = 'nbresponses.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call File%Export(String=ConvertToString(Value=NbOutputs))
 
-    FileName = '/sampled_parameters.dat'
+    FileName = 'sampled_parameters.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Array=This%ParamRecord, File=File)
 
@@ -1176,54 +1170,54 @@ subroutine WriteOutput(This, Directory, Responses)
         DirectoryLoc = '/' // Responses(i)%GetLabel() // '/cell' // ConvertToString(Value=iii)
         call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-        FileName = DirectoryLoc // '/cverror.dat'
+        FileName = DirectoryLoc // 'cverror.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call File%Export(String=ConvertToString(Value=This%Cells(ii)%GetCVError()))
 
         VarR1DPtr => This%Cells(ii)%GetCoefficientsPointer()
-        FileName = DirectoryLoc // '/coefficients.dat'
+        FileName = DirectoryLoc // 'coefficients.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=VarR1DPtr, File=File)
         nullify(VarR1DPtr)
 
         VarI2DPtr => This%Cells(ii)%GetIndicesPointer()
-        FileName = DirectoryLoc // '/indices.dat'
+        FileName = DirectoryLoc // 'indices.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=VarI2DPtr, File=File)
         nullify(VarI2DPtr)
 
         call This%Cells(ii)%GetRecord(Values=VarR1D)
-        FileName = DirectoryLoc // '/sampled_output.dat'
+        FileName = DirectoryLoc // 'sampled_output.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=VarR1D, File=File)
 
         call This%Cells(ii)%GetCVErrorHistory(Values=VarR1D)
-        FileName = DirectoryLoc // '/cverror_history.dat'
+        FileName = DirectoryLoc // 'cverror_history.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=VarR1D, File=File)
 
         call This%Cells(ii)%GetOrderHistory(Values=VarI1D)
-        FileName = DirectoryLoc // '/order_history.dat'
+        FileName = DirectoryLoc // 'order_history.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=VarI1D, File=File)
 
         call This%Cells(ii)%GetNbRunsHistory(Values=VarI1D)
-        FileName = DirectoryLoc // '/nb_runs_history.dat'
+        FileName = DirectoryLoc // 'nb_runs_history.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=VarI1D, File=File)
 
         call This%Cells(ii)%GetCardinalityHistory(Values=VarI1D)
-        FileName = DirectoryLoc // '/cardinality_history.dat'
+        FileName = DirectoryLoc // 'cardinality_history.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=VarI1D, File=File)
 
         call This%Cells(ii)%GetSobolIndicesHistory(Values=VarR2D)
-        FileName = DirectoryLoc // '/sobol_indices_history.dat'
+        FileName = DirectoryLoc // 'sobol_indices_history.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=VarR2D, File=File)
 
         call This%Cells(ii)%GetSobolIndices(Values=SobolIndices)
-        FileName = DirectoryLoc // '/sobol_indices.dat'
+        FileName = DirectoryLoc // 'sobol_indices.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call ExportArray(Array=SobolIndices, File=File)
 
@@ -1261,7 +1255,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (PCERegression_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then
@@ -1316,21 +1309,6 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize_Cell(This)
-
-  class(Cell_Type), intent(inout)                                     ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize_Cell'
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset_Cell(This)
 
   class(Cell_Type), intent(inout)                                     ::    This
@@ -1338,7 +1316,6 @@ subroutine Reset_Cell(This)
   character(*), parameter                                             ::    ProcName='Reset_Cell'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%Coefficients)) deallocate(This%Coefficients, stat=StatLoc)
@@ -1356,18 +1333,6 @@ subroutine Reset_Cell(This)
   call This%CardinalityHistory%Purge()
   call This%CVErrorHistory%Purge()
   call This%SobolIndicesHistory%Purge()
-
-  call This%SetDefaults()
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults_Cell(This)
-
-  class(Cell_Type), intent(inout)                                     ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults_Cell'
 
   This%CVError = huge(One)
   This%IndexOrder = 0
@@ -1400,22 +1365,27 @@ subroutine ConstructInput_Cell(This, Input, Prefix)
   logical                                                             ::    Found
   character(:), allocatable                                           ::    PrefixLoc
   integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'cv_error'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call input%GetValue(Value=VarR0D, ParameterName=Parametername, Mandatory=.true.)
   This%CVError = VarR0D
 
   ParameterName = 'index_order'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call input%GetValue(Value=VarI0D, ParameterName=Parametername, Mandatory=.false., Found=Found)
   if (Found) This%IndexOrder = VarI0D
 
   SectionName = 'sobol_indices'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarR1D, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -1425,6 +1395,7 @@ subroutine ConstructInput_Cell(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'output'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarR1D, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -1433,6 +1404,7 @@ subroutine ConstructInput_Cell(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'coefficients'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarR1D, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -1442,6 +1414,7 @@ subroutine ConstructInput_Cell(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'indices'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarI2D, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -1451,6 +1424,7 @@ subroutine ConstructInput_Cell(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarI2D', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'cverror_history'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarR1D, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -1459,6 +1433,7 @@ subroutine ConstructInput_Cell(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'order_history'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarI1D, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -1467,6 +1442,7 @@ subroutine ConstructInput_Cell(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'nb_runs_history'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarI1D, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -1475,6 +1451,7 @@ subroutine ConstructInput_Cell(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'cardinality_history'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarI1D, Prefix=PrefixLoc)
   nullify(InputSection)
@@ -1483,12 +1460,16 @@ subroutine ConstructInput_Cell(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'sobol_indices_history'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
   nullify(InputSection)
   call This%SobolIndicesHistory%Append(Values=VarR2D)
   deallocate(VarR2D, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -1504,8 +1485,7 @@ subroutine ConstructCase1_Cell(This)
   integer                                                             ::    i
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   allocate(This%Coefficients(1), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='This%Coefficients', ProcName=ProcName, stat=StatLoc)
@@ -1576,7 +1556,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
     SectionName = 'sobol_indices'
     call GetInput_Cell%AddSection(SectionName=SectionName)
     call GetInput_Cell%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    FileName = DirectoryLoc // '/sobol_indices.dat'
+    FileName = DirectoryLoc // 'sobol_indices.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Input=InputSection, Array=This%SobolIndices, File=File)
     nullify(InputSection)
@@ -1584,7 +1564,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
     SectionName = 'output'
     call GetInput_Cell%AddSection(SectionName=SectionName)
     call GetInput_Cell%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    FileName = DirectoryLoc // '/output.dat'
+    FileName = DirectoryLoc // 'output.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call This%OutputRecord%Get(Values=VarR1D)
     call ExportArray(Input=InputSection, Array=VarR1D, File=File)
@@ -1595,7 +1575,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
     SectionName = 'coefficients'
     call GetInput_Cell%AddSection(SectionName=SectionName)
     call GetInput_Cell%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    FileName = DirectoryLoc // '/coefficients.dat'
+    FileName = DirectoryLoc // 'coefficients.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Input=InputSection, Array=This%Coefficients, File=File)
     nullify(InputSection)
@@ -1603,7 +1583,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
     SectionName = 'indices'
     call GetInput_Cell%AddSection(SectionName=SectionName)
     call GetInput_Cell%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    FileName = DirectoryLoc // '/indices.dat'
+    FileName = DirectoryLoc // 'indices.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Input=InputSection, Array=This%Indices, File=File)
     nullify(InputSection)
@@ -1612,7 +1592,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
       SectionName = 'cverror_history'
       call GetInput_Cell%AddSection(SectionName=SectionName)
       call GetInput_Cell%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      FileName = DirectoryLoc // '/cverror_history.dat'
+      FileName = DirectoryLoc // 'cverror_history.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
       call This%CVErrorHistory%Get(Values=VarR1D)
       call ExportArray(Input=InputSection, Array=VarR1D, File=File)
@@ -1623,7 +1603,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
       SectionName = 'order_history'
       call GetInput_Cell%AddSection(SectionName=SectionName)
       call GetInput_Cell%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      FileName = DirectoryLoc // '/order_history.dat'
+      FileName = DirectoryLoc // 'order_history.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
       call This%OrderHistory%Get(Values=VarI1D)
       call ExportArray(Input=InputSection, Array=VarI1D, File=File)
@@ -1634,7 +1614,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
       SectionName = 'nb_runs_history'
       call GetInput_Cell%AddSection(SectionName=SectionName)
       call GetInput_Cell%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      FileName = DirectoryLoc // '/nb_runs_history.dat'
+      FileName = DirectoryLoc // 'nb_runs_history.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
       call This%NbRunsHistory%Get(Values=VarI1D)
       call ExportArray(Input=InputSection, Array=VarI1D, File=File)
@@ -1645,7 +1625,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
       SectionName = 'cardinality_history'
       call GetInput_Cell%AddSection(SectionName=SectionName)
       call GetInput_Cell%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      FileName = DirectoryLoc // '/cardinality_history.dat'
+      FileName = DirectoryLoc // 'cardinality_history.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
       call This%CardinalityHistory%Get(Values=VarI1D)
       call ExportArray(Input=InputSection, Array=VarI1D, File=File)
@@ -1656,7 +1636,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
       SectionName = 'sobol_indices_history'
       call GetInput_Cell%AddSection(SectionName=SectionName)
       call GetInput_Cell%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      FileName = DirectoryLoc // '/sobol_indices_history.dat'
+      FileName = DirectoryLoc // 'sobol_indices_history.dat'
       call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
       call This%SobolIndicesHistory%Get(Values=VarR2D)
       call ExportArray(Input=InputSection, Array=VarR2D, File=File)
@@ -2062,7 +2042,6 @@ impure elemental subroutine Copy_Cell(LHS, RHS)
   integer                                                             ::    StatLoc=0
 
   call LHS%Reset()
-  LHS%Initialized = RHS%Initialized
   LHS%Constructed = RHS%Constructed
 
   if (RHS%Constructed) then

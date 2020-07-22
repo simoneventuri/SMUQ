@@ -183,6 +183,8 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
 
   call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
 
+
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'type/'
   call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectoryLoc))
 
 end function

@@ -26,6 +26,7 @@ use Logger_Class                                                  ,only:  Logger
 use Error_Class                                                   ,only:  Error
 use OrthoPoly_class
 use StringConversion_Module
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -35,9 +36,7 @@ public                                                                ::    Orth
 
 type, public, extends(OrthoPoly_Type)                                 ::    OrthoHermite_Type
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -53,297 +52,273 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
-    class(OrthoHermite_Type), intent(inout)                           ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  class(OrthoHermite_Type), intent(inout)                             ::    This
 
-    if (.not. This%Initialized) then
-      This%Name = 'hermite'
-      This%Initialized=.true.
-      call This%SetDefaults()
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
+
+  This%Constructed = .false.
+
+  This%Normalized = .false.
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
+
+  class(OrthoHermite_Type), intent(inout)                             ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
+
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    ParameterName
+  logical                                                             ::    VarL0D
+  logical                                                             ::    Found
+  integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
+
+  call This%Reset()
+
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
+
+  call InputVerifier%Construct()
+
+  ParameterName = 'normalized'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%Normalized = VarL0D
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
+
+  This%Constructed = .true.
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, Normalized)
+  
+  class(OrthoHermite_Type), intent(inout)                             ::    This
+  logical, optional, intent(in)                                       ::    Normalized 
+
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+
+  call This%Reset()
+
+  if (present(Normalized)) This%Normalized = Normalized
+
+  This%Constructed = .true.
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
+
+  type(InputSection_Type)                                             ::    GetInput
+  class(OrthoHermite_Type), intent(in)                                ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
+
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  character(:), allocatable                                           ::    SectionName
+
+  if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
+
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
+
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
+
+  call GetInput%AddParameter(Name='normalized', Value=ConvertToString(Value=This%Normalized))
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Eval_N(This, Order, X, Value, Normalized)
+
+  class(OrthoHermite_Type), intent(inout)                             ::    This
+  real(rkp), intent(in)                                               ::    X
+  integer, intent(in)                                                 ::    Order
+  real(rkp), intent(out)                                              ::    Value
+  logical, optional, intent(in)                                       ::    Normalized
+
+  character(*), parameter                                             ::    ProcName='Eval_N'
+  real(rkp)                                                           ::    valnm1
+  real(rkp)                                                           ::    valnp0
+  real(rkp)                                                           ::    valnp1
+  real(rkp)                                                           ::    nt
+  integer                                                             ::    i
+  logical                                                             ::    NormalizedLoc
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  NormalizedLoc = This%Normalized
+  if (present(Normalized)) NormalizedLoc = Normalized
+
+  if (Order < -1) call Error%Raise("An order of below -1 was requested but is not supported")
+
+  Value = Zero
+
+  if (Order == -1) then
+    Value = This%polyorderm1
+  elseif (Order == 0) then
+    Value = This%polyorder0
+  else
+    i = 1
+    valnm1 = This%polyorderm1
+    valnp0 = This%polyorder0
+    do i = 1, Order
+      nt = real(i-1,rkp)
+      valnp1 = X*valnp0-nt*valnm1
+      valnm1 = valnp0
+      valnp0 = valnp1
+    end do
+    Value = valnp1
+  end if
+
+  if (NormalizedLoc) Value = Value / This%NFactor(Order=Order)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Eval_MN(This, MinOrder, MaxOrder, X, Values, Normalized)
+
+  class(OrthoHermite_Type), intent(inout)                             ::    This
+  real(rkp), intent(in)                                               ::    X
+  integer, intent(in)                                                 ::    MinOrder
+  integer, intent(in)                                                 ::    MaxOrder
+  real(rkp), dimension(:), intent(inout)                              ::    Values
+  logical, optional, intent(in)                                       ::    Normalized
+
+  character(*), parameter                                             ::    ProcName='Eval_MN'
+  real(rkp)                                                           ::    valnm1
+  real(rkp)                                                           ::    valnp0
+  real(rkp)                                                           ::    valnp1
+  real(rkp)                                                           ::    nt
+  logical                                                             ::    TripFlag=.false.
+  integer                                                             ::    i, i_offset, ii
+  integer                                                             ::    StatLoc=0
+  logical                                                             ::    NormalizedLoc
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  NormalizedLoc = This%Normalized
+  if (present(Normalized)) NormalizedLoc = Normalized
+
+  if (MinOrder < -1) call Error%Raise("A starting order of below -1 was requested but is not supported")
+  if (MinOrder > MaxOrder) call Error%Raise("Starting order was specified to be larger than the final order")
+
+  if (size(Values,1) /= MaxOrder-MinOrder + 1) call Error%Raise('Incompatible values array', ProcName=ProcName)
+  Values = Zero
+
+  if (MinOrder == MaxOrder) then
+    call This%Eval(Order=MinOrder, X=X, Value=Values(1), Normalized=NormalizedLoc)
+  else
+    i_offset = 0
+    if (MinOrder == -1)  then
+      call This%Eval(Order=-1, X=X, Value=Values(1), Normalized=NormalizedLoc)
+      call This%Eval(Order=0, X=X, Value=Values(2), Normalized=NormalizedLoc)
+      i_offset = 2
+    elseif (MinOrder == 0) then
+      call This%Eval(Order=0, X=X, Value=Values(1), Normalized=NormalizedLoc)
+      i_offset = 1
     end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+    i = 1
+    valnm1 = This%polyorderm1
+    valnp0 = This%polyorder0
+    ii = 0
+    do i = 1, MaxOrder
+      nt = real(i-1,rkp)
+      valnp1 = X*valnp0-nt*valnm1
+      valnm1 = valnp0
+      valnp0 = valnp1
+      if (i >= MinOrder) then
+        Values(i+i_offset-ii) = valnp1
+        if (NormalizedLoc) Values(i+i_offset-ii) = Values(i+i_offset-ii) / This%NFactor(Order=i)
+      else
+        ii = ii + 1
+      end if
+    end do
+  end if
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(OrthoHermite_Type), intent(inout)                           ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+function NFactor(Order)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  real(rkp)                                                           ::    NFactor
 
-    This%Initialized = .false.
-    This%Constructed = .false.
+  integer, intent(in)                                                 ::    Order
 
-    call This%Initialize()
+  character(*), parameter                                             ::    ProcName='NFactor'
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (Order > 0) then
+    NFactor = SQRTFactorial(Order)
+  else
+    NFactor = One
+  end if
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(OrthoHermite_Type), intent(inout)                           ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  class(OrthoHermite_Type), intent(out)                               ::    LHS
+  class(OrthoPoly_Type), intent(in)                                   ::    RHS
 
-    This%Normalized = .false.
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  select type (RHS)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+    type is (OrthoHermite_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
 
-    class(OrthoHermite_Type), intent(inout)                           ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    ParameterName
-    logical                                                           ::    VarL0D
-    logical                                                           ::    Found
-    integer                                                           ::    StatLoc=0
-
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
-
-    ParameterName = 'normalized'
-    call Input%GetValue(value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%Normalized = VarL0D
-
-    This%Constructed = .true.
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, Normalized)
-    
-    class(OrthoHermite_Type), intent(inout)                           ::    This
-    logical, optional, intent(in)                                     ::    Normalized 
-
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-
-    if (present(Normalized)) This%Normalized = Normalized
-
-    This%Constructed = .true.
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
-
-    type(InputSection_Type)                                           ::    GetInput
-    class(OrthoHermite_Type), intent(in)                              ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
-
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    character(:), allocatable                                         ::    SectionName
-
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
-
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
-
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
-
-    call GetInput%AddParameter(Name='normalized', Value=ConvertToString(Value=This%Normalized))
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Eval_N(This, Order, X, Value, Normalized)
-
-    class(OrthoHermite_Type), intent(inout)                           ::    This
-    real(rkp), intent(in)                                             ::    X
-    integer, intent(in)                                               ::    Order
-    real(rkp), intent(out)                                            ::    Value
-    logical, optional, intent(in)                                     ::    Normalized
-
-    character(*), parameter                                           ::    ProcName='Eval_N'
-    real(rkp)                                                         ::    valnm1
-    real(rkp)                                                         ::    valnp0
-    real(rkp)                                                         ::    valnp1
-    real(rkp)                                                         ::    nt
-    integer                                                           ::    i
-    logical                                                           ::    NormalizedLoc
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    NormalizedLoc = This%Normalized
-    if (present(Normalized)) NormalizedLoc = Normalized
-
-    if (Order < -1) call Error%Raise("An order of below -1 was requested but is not supported")
-
-    Value = Zero
-
-    if (Order == -1) then
-      Value = This%polyorderm1
-    elseif (Order == 0) then
-      Value = This%polyorder0
-    else
-      i = 1
-      valnm1 = This%polyorderm1
-      valnp0 = This%polyorder0
-      do i = 1, Order
-        nt = real(i-1,rkp)
-        valnp1 = X*valnp0-nt*valnm1
-        valnm1 = valnp0
-        valnp0 = valnp1
-      end do
-      Value = valnp1
-    end if
-
-    if (NormalizedLoc) Value = Value / This%NFactor(Order=Order)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Eval_MN(This, MinOrder, MaxOrder, X, Values, Normalized)
-
-    class(OrthoHermite_Type), intent(inout)                           ::    This
-    real(rkp), intent(in)                                             ::    X
-    integer, intent(in)                                               ::    MinOrder
-    integer, intent(in)                                               ::    MaxOrder
-    real(rkp), dimension(:), intent(inout)                            ::    Values
-    logical, optional, intent(in)                                     ::    Normalized
-
-    character(*), parameter                                           ::    ProcName='Eval_MN'
-    real(rkp)                                                         ::    valnm1
-    real(rkp)                                                         ::    valnp0
-    real(rkp)                                                         ::    valnp1
-    real(rkp)                                                         ::    nt
-    logical                                                           ::    TripFlag=.false.
-    integer                                                           ::    i, i_offset, ii
-    integer                                                           ::    StatLoc=0
-    logical                                                           ::    NormalizedLoc
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    NormalizedLoc = This%Normalized
-    if (present(Normalized)) NormalizedLoc = Normalized
-
-    if (MinOrder < -1) call Error%Raise("A starting order of below -1 was requested but is not supported")
-    if (MinOrder > MaxOrder) call Error%Raise("Starting order was specified to be larger than the final order")
-
-    if (size(Values,1) /= MaxOrder-MinOrder + 1) call Error%Raise('Incompatible values array', ProcName=ProcName)
-    Values = Zero
-
-    if (MinOrder == MaxOrder) then
-      call This%Eval(Order=MinOrder, X=X, Value=Values(1), Normalized=NormalizedLoc)
-    else
-      i_offset = 0
-      if (MinOrder == -1)  then
-        call This%Eval(Order=-1, X=X, Value=Values(1), Normalized=NormalizedLoc)
-        call This%Eval(Order=0, X=X, Value=Values(2), Normalized=NormalizedLoc)
-        i_offset = 2
-      elseif (MinOrder == 0) then
-        call This%Eval(Order=0, X=X, Value=Values(1), Normalized=NormalizedLoc)
-        i_offset = 1
+      if (RHS%Constructed) then
+        LHS%Normalized = RHS%Normalized
       end if
 
-      i = 1
-      valnm1 = This%polyorderm1
-      valnp0 = This%polyorder0
-      ii = 0
-      do i = 1, MaxOrder
-        nt = real(i-1,rkp)
-        valnp1 = X*valnp0-nt*valnm1
-        valnm1 = valnp0
-        valnp0 = valnp1
-        if (i >= MinOrder) then
-          Values(i+i_offset-ii) = valnp1
-          if (NormalizedLoc) Values(i+i_offset-ii) = Values(i+i_offset-ii) / This%NFactor(Order=i)
-        else
-          ii = ii + 1
-        end if
-      end do
-    end if
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function NFactor(Order)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    real(rkp)                                                         ::    NFactor
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    integer, intent(in)                                               ::    Order
+  type(OrthoHermite_Type), intent(inout)                              ::    This
 
-    character(*), parameter                                           ::    ProcName='NFactor'
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-    if (Order > 0) then
-      NFactor = SQRTFactorial(Order)
-    else
-      NFactor = One
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
-
-    class(OrthoHermite_Type), intent(out)                             ::    LHS
-    class(OrthoPoly_Type), intent(in)                                 ::    RHS
-
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    select type (RHS)
-  
-      type is (OrthoHermite_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-
-        if (RHS%Constructed) then
-          LHS%Normalized = RHS%Normalized
-        end if
-
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
-
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(OrthoHermite_Type), intent(inout)                            ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

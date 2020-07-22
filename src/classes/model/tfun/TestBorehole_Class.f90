@@ -28,6 +28,7 @@ use Error_Class                                                   ,only:    Erro
 use Input_Class                                                   ,only:    Input_Type
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -45,9 +46,7 @@ type, extends(TestFunction_Type)                                      ::    Test
   class(IScalarValue_Type), allocatable                               ::    L
   class(IScalarValue_Type), allocatable                               ::    KW
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, public                                                   ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run
@@ -61,23 +60,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(TestBorehole_Type), intent(inout)                             ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'borehole'
-    This%Initialized = .true.
-  end if
-
-  call This%SetDefaults()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(TestBorehole_Type), intent(inout)                             ::    This
@@ -85,7 +67,6 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized = .false.
   This%Constructed = .false.
 
   if (allocated(This%R)) deallocate(This%R, stat=StatLoc)
@@ -112,19 +93,6 @@ subroutine Reset(This)
   if (allocated(This%KW)) deallocate(This%KW, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%KW', ProcName=ProcName, stat=StatLoc)
 
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(TestBorehole_Type), intent(inout)                             ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-  integer                                                             ::    StatLoc=0
-
   This%Label = 'borehole'
 
 end subroutine
@@ -150,58 +118,73 @@ subroutine ConstructInput(This, Input, Prefix)
   integer                                                             ::    i
   logical                                                             ::    MandatoryLoc
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'label'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   This%Label = VarC0D
 
   SectionName = 'parameters'
+  call InputVerifier%AddSection(Section=SectionName)
 
   SubSectionName = SectionName // '>r'
+  call InputVerifier%AddSection(Section='r', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%R, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>rw'
+  call InputVerifier%AddSection(Section='rw', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%RW, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>tu'
+  call InputVerifier%AddSection(Section='tu', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%TU, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>hu'
+  call InputVerifier%AddSection(Section='hu', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%HU, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>tl'
+  call InputVerifier%AddSection(Section='tl', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%TL, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>hl'
+  call InputVerifier%AddSection(Section='hl', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%HL, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>l'
+  call InputVerifier%AddSection(Section='l', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%L, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>kw'
+  call InputVerifier%AddSection(Section='kw', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%KW, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -247,42 +230,42 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddSection(SectionName=SectionName)
 
   SubSectionName = 'r'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%R, Name=SubSectionName, Prefix=PrefixLoc,      &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
   
   SubSectionName = 'rw'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%RW, Name=SubSectionName, Prefix=PrefixLoc,     &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'tu'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%TU, Name=SubSectionName, Prefix=PrefixLoc,     &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'hu'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%HU, Name=SubSectionName, Prefix=PrefixLoc,     &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'tl'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%TL, Name=SubSectionName, Prefix=PrefixLoc,     &
                                                                       Directory=DirectorySub), To_SubSection=SectionName)
   
   SubSectionName = 'hl'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%HL, Name=SubSectionName, Prefix=PrefixLoc,     &
                                                                       Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'l'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%L, Name=SubSectionName, Prefix=PrefixLoc,      &
                                                                       Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'kw'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%KW, Name=SubSectionName, Prefix=PrefixLoc,     &
                                                                       Directory=DirectorySub), To_SubSection=SectionName)
 
@@ -369,7 +352,6 @@ impure elemental subroutine Copy(LHS, RHS)
   select type (RHS)
     type is (TestBorehole_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if(RHS%Constructed) then
         LHS%Label = RHS%Label

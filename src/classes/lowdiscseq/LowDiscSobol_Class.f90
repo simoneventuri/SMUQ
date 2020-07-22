@@ -24,6 +24,7 @@ use Logger_Class                                                  ,only:  Logger
 use Error_Class                                                   ,only:  Error
 use LowDiscSequence_Class                                         ,only:  LowDiscSequence_Type
 use Sobol_Library
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -35,9 +36,7 @@ type, extends(LowDiscSequence_Type)                                   ::    LowD
   integer                                                             ::    Skip=0
   integer                                                             ::    Leap=0
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1      
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -53,23 +52,6 @@ logical, parameter                                                    ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(LowDiscSobol_Type), intent(inout)                             ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Constructed) then
-    This%Name = 'lowdiscsobol'
-    This%Initialized = .True.
-  end if
-
-  call This%SetDefaults()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(LowDiscSobol_Type), intent(inout)                             ::    This
@@ -77,20 +59,7 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
-
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(LowDiscSobol_Type), intent(inout)                             ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
   This%Skip = 0
   This%Leap = 0
@@ -116,14 +85,17 @@ subroutine ConstructInput(This, Input, Prefix)
   logical                                                             ::    VarL0D
   character(:), allocatable                                           ::    PrefixLoc
   integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'skip'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) then
     This%Skip = VarI0D
@@ -132,12 +104,16 @@ subroutine ConstructInput(This, Input, Prefix)
   end if
 
   ParameterName = 'leap'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) then
     This%Leap = VarI0D
     if (This%Leap < 0) call Error%Raise(Line="Leap < 0 was specified, please supply a value at or above 0",                  &
                                                                                                               ProcName=ProcName)
   end if
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed=.true.
 
@@ -154,8 +130,7 @@ subroutine ConstructCase1 (This, Skip, Leap)
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   if (present(Skip)) then
     This%Skip = Skip 
@@ -307,7 +282,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (LowDiscSobol_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then

@@ -33,23 +33,18 @@ private
 public                                                                ::    Model_Type
 
 type, abstract                                                        ::    Model_Type
-  character(:), allocatable                                           ::    Name
   character(:), allocatable                                           ::    Label
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   integer                                                             ::    NbOutputs
   logical                                                             ::    Silent
 contains
-  procedure, public                                                   ::    GetName
   procedure, public                                                   ::    GetLabel
   procedure, public                                                   ::    GetNbOutputs
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    Run                     =>    Run_0D,                 &
                                                                                                           Run_1D
   generic, public                                                     ::    assignment(=)           =>    Copy
-  procedure(Initialize_Model), deferred, public                       ::    Initialize
   procedure(Reset_Model), deferred, public                            ::    Reset
-  procedure(SetDefaults_Model), deferred, public                      ::    SetDefaults
   procedure(ConstructInput_Model), deferred, private                  ::    ConstructInput
   procedure(GetInput_Model), deferred, public                         ::    GetInput
   procedure(Run_0D_Model), deferred, public                           ::    Run_0D
@@ -62,21 +57,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_Model(This)
-    import                                                            ::    Model_Type
-    class(Model_Type), intent(inout)                                  ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_Model(This)
-    import                                                            ::    Model_Type
-    class(Model_Type), intent(inout)                                  ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_Model(This)
     import                                                            ::    Model_Type
     class(Model_Type), intent(inout)                                  ::    This
   end subroutine
@@ -139,19 +120,6 @@ abstract interface
 end interface
 
 contains
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-function GetName(This)
-
-  character(:), allocatable                                           ::    GetName
-  class(Model_Type), intent(inout)                                    ::    This
-
-  character(*), parameter                                             ::    ProcName='GetName'
-
-  GetName = This%Name
-
-end function
-!!--------------------------------------------------------------------------------------------------------------------------------
 
 !!--------------------------------------------------------------------------------------------------------------------------------
 function GetLabel(This)

@@ -34,6 +34,7 @@ use Model_Factory_Class                                           ,only:    Mode
 use Restart_Class                                                 ,only:    RestartUtility
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -42,8 +43,6 @@ private
 public                                                                ::    Root_Type
 
 type                                                                  ::    Root_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   class(AnalysisMethod_Type), allocatable                             ::    AnalysisMethod
   type(Response_Type), allocatable, dimension(:)                      ::    Responses
@@ -52,9 +51,7 @@ type                                                                  ::    Root
   character(:), allocatable                                           ::    SectionChain  
   integer                                                             ::    NbRepetitions                                           
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
@@ -68,66 +65,27 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(Root_Type), intent(inout)                                   ::    This
-
-  character(*), parameter                                           ::    ProcName='Initialize'
-  integer                                                           ::    StatLoc=0
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = 'root'
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
-  class(Root_Type), intent(inout)                                   ::    This
+  class(Root_Type), intent(inout)                                     ::    This
 
-  character(*), parameter                                           ::    ProcName='Reset'
-  integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%Model)) deallocate(This%Model, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Model',                  &
-                                          ProcName=ProcName,                  &
-                                          stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
 
-  if (allocated(This%AnalysisMethod)) deallocate(This%AnalysisMethod,         &
-                                                 stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%AnalysisMethod',         &
-                                          ProcName=ProcName,                  &
-                                          stat=StatLoc)
+  if (allocated(This%AnalysisMethod)) deallocate(This%AnalysisMethod, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%AnalysisMethod', ProcName=ProcName, stat=StatLoc)
 
   if (allocated(This%Responses)) deallocate(This%Responses, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Responses',              &
-                                          ProcName=ProcName,                  &
-                                          stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Responses', ProcName=ProcName, stat=StatLoc)
 
   call This%ParameterSpace%Reset()
 
-  call This%Initialize()
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(Root_Type), intent(inout)                                   ::    This
-
-  character(*), parameter                                           ::    ProcName='SetDefaults'
-  integer                                                           ::    StatLoc=0
-
   This%NbRepetitions = 1
-
   This%SectionChain = ''
 
 end subroutine
@@ -138,57 +96,64 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
 
   use StringConversion_Module
 
-  class(Root_Type), intent(inout)                                   ::    This
-  class(InputSection_Type), intent(in)                              ::    Input
-  character(*), intent(in)                                          ::    SectionChain
-  character(*), optional, intent(in)                                ::    Prefix
+  class(Root_Type), intent(inout)                                     ::    This
+  class(InputSection_Type), intent(in)                                ::    Input
+  character(*), intent(in)                                            ::    SectionChain
+  character(*), optional, intent(in)                                  ::    Prefix
 
-  character(*), parameter                                           ::    ProcName='ConstructInput'
-  integer                                                           ::    StatLoc=0
-  character(:), allocatable                                         ::    PrefixLoc
-  type(InputSection_Type), pointer                                  ::    InputSection=>null()
-  character(:), allocatable                                         ::    SectionName
-  character(:), allocatable                                         ::    SubSectionName
-  character(:), allocatable                                         ::    ParameterName
-  integer                                                           ::    VarI0D
-  integer                                                           ::    NbResponses
-  integer                                                           ::    i
-  integer                                                           ::    ii
-  character(:), allocatable                                         ::    Label1
-  character(:), allocatable                                         ::    Label2
-  character(:), allocatable                                         ::    VarC0D
-  type(InputReader_Type)                                            ::    ModelInput
-  character(:), allocatable                                         ::    FileName
-  logical                                                           ::    Found
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    PrefixLoc
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  character(:), allocatable                                           ::    ParameterName
+  integer                                                             ::    VarI0D
+  integer                                                             ::    NbResponses
+  integer                                                             ::    i
+  integer                                                             ::    ii
+  character(:), allocatable                                           ::    Label1
+  character(:), allocatable                                           ::    Label2
+  character(:), allocatable                                           ::    VarC0D
+  type(InputReader_Type)                                              ::    ModelInput
+  character(:), allocatable                                           ::    FileName
+  logical                                                             ::    Found
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   This%SectionChain = SectionChain
 
   call Input%GetValue(Value=VarI0D, ParameterName='nb_repetitions', Mandatory=.false., Found=Found)
+  call InputVerifier%AddParameter(parameter='nb_repetitions')
   if (Found) This%NbRepetitions = VarI0D
 
   SectionName = 'model'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call Model_Factory%Construct(Object=This%Model, Input=InputSection, Prefix=PrefixLoc)
   nullify (InputSection)
 
   SectionName = "parameter_space"
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call This%ParameterSpace%Construct(Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SectionName = 'analysis'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call AnalysisMethod_Factory%Construct(Object=This%AnalysisMethod, Input=InputSection, &
                                         SectionChain=This%SectionChain // '>analysis', Prefix=PrefixLoc)
   nullify (InputSection)
 
   SectionName = "responses"
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   NbResponses = InputSection%GetNumberofSubSections()
   if (NbResponses < 1) call Error%Raise(Line='Number of specified responses below minimum of 1', ProcName=ProcName)
@@ -198,6 +163,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   i = 1
   do i = 1, NbResponses
     SubSectionName = SectionName // ">response" // ConvertToString(Value=i)
+    call InputVerifier%AddSection(Section="response" // ConvertToString(Value=i), ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.) 
     call This%Responses(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
     nullify (InputSection)
@@ -214,30 +180,33 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
     end do
   end do
 
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
+
   This%Constructed = .true.
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 
-!!-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+!!--------------------------------------------------------------------------------------------------------------------------------
 function GetInput(This, Name, Prefix, Directory)
 
   use StringConversion_Module
 
-  type(InputSection_Type)                                           ::    GetInput
-  class(Root_Type), intent(inout)                                   ::    This
-  character(*), intent(in)                                          ::    Name
-  character(*), optional, intent(in)                                ::    Prefix
-  character(*), optional, intent(in)                                ::    Directory
+  type(InputSection_Type)                                             ::    GetInput
+  class(Root_Type), intent(inout)                                     ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-  character(*), parameter                                           ::    ProcName='GetInput'
-  character(:), allocatable                                         ::    PrefixLoc
-  character(:), allocatable                                         ::    DirectoryLoc
-  character(:), allocatable                                         ::    DirectorySub
-  logical                                                           ::    ExternalFlag=.false.
-  character(:), allocatable                                         ::    SectionName
-  character(:), allocatable                                         ::    SubSectionName
-  integer                                                           ::    i
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  integer                                                             ::    i
 
   if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
 
@@ -254,12 +223,12 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddParameter(Name='nb_repetitions', Value=ConvertToString(Value=This%NbRepetitions))
 
   SectionName = 'model'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/model'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'model/'
   call GetInput%AddSection(Section=Model_Factory%GetObjectInput(Object=This%Model, Name=SectionName,                &
                                                                                      Prefix=PrefixLoc, Directory=DirectorySub))
 
   SectionName = 'parameter_space'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/parameter_space'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'parameter_space/'
   call GetInput%AddSection(Section=This%ParameterSpace%GetInput(Name=SectionName, Prefix=PrefixLoc,                 &
                                                                                                        Directory=DirectorySub))
 
@@ -267,13 +236,13 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddSection(SectionName=SectionName)
   do i = 1, size(This%Responses,1)
     SubSectionName = 'response' // ConvertToString(Value=i)
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/response' // ConvertToString(i)
+    if (ExternalFlag) DirectorySub = DirectoryLoc // 'response' // ConvertToString(i) // '/'
     call GetInput%AddSection(Section=This%Responses(i)%GetInput(Name=SubSectionName, Prefix=PrefixLoc,              &
                                                                             Directory=DirectorySub), To_SubSection=SectionName)
   end do
 
   SectionName = 'analysis'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/analysis'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'analysis/'
   call GetInput%AddSection(Section=AnalysisMethod_Factory%GetObjectInput(Object=This%AnalysisMethod,                             &
                                                         Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
 
@@ -283,18 +252,18 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine Run(This)
 
-  class(Root_Type), intent(inout)                                   ::    This
+  class(Root_Type), intent(inout)                                     ::    This
 
-  character(*), parameter                                           ::    ProcName='Run'
-  integer                                                           ::    StatLoc=0
-  character(:), allocatable                                         ::    OutputDirectory
-  character(:), allocatable                                         ::    OutputDirectoryLoc
-  integer                                                           ::    i
-  character(:), allocatable                                         ::    Line
-  character(:), allocatable                                         ::    LineLoc
+  character(*), parameter                                             ::    ProcName='Run'
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    OutputDirectory
+  character(:), allocatable                                           ::    OutputDirectoryLoc
+  integer                                                             ::    i
+  character(:), allocatable                                           ::    Line
+  character(:), allocatable                                           ::    LineLoc
 
   OutputDirectory = ProgramDefs%GetOutputDir()
-  if (len_trim(OutputDirectory) > 0) OutputDirectory = OutputDirectory // '/analysis'
+  if (len_trim(OutputDirectory) > 0) OutputDirectory = OutputDirectory // 'analysis/'
   OutputDirectoryLoc = OutputDirectory
 
   Line = 'Running Analysis'
@@ -302,12 +271,12 @@ subroutine Run(This)
 
   i = 1
   do i = 1, This%NbRepetitions
-    if (This%NbRepetitions > 1 .and. len_trim(OutputDirectory) > 0) OutputDirectoryLoc = OutputDirectory // '_' //              &
-                                                                                           ConvertToString(Value=i)
+    if (This%NbRepetitions > 1 .and. len_trim(OutputDirectory) > 0) OutputDirectoryLoc = OutputDirectory // '_' // &
+                                                                                         ConvertToString(Value=i) // '/'
     if (This%NbRepetitions > 1) LineLoc = Line // ' ' // ConvertToString(Value=i)
     write(*,*)
     write(*,'(A)') LineLoc
-    call This%AnalysisMethod%Run(SampleSpace=This%ParameterSpace, Responses=This%Responses, Model=This%Model,                     &                                            
+    call This%AnalysisMethod%Run(SampleSpace=This%ParameterSpace, Responses=This%Responses, Model=This%Model, &                                            
                                  OutputDirectory=OutputDirectoryLoc)
   end do
 
@@ -319,18 +288,18 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine WriteOutput(This, Directory)
 
-  class(Root_Type), intent(inout)                                   ::    This
-  character(*), intent(in)                                          ::    Directory
+  class(Root_Type), intent(inout)                                     ::    This
+  character(*), intent(in)                                            ::    Directory
 
-  character(*), parameter                                           ::    ProcName='WriteOutput'
-  integer                                                           ::    StatLoc=0
-  integer                                                           ::    i
-  character(:), allocatable                                         ::    Label
-  character(:), allocatable                                         ::    PrefixLoc
-  type(SMUQString_Type), allocatable, dimension(:)                  ::    ResponseLabels
-  integer                                                           ::    NbResponses
-  type(SMUQFile_Type)                                               ::    File
-  character(:), allocatable                                         ::    FileName
+  character(*), parameter                                             ::    ProcName='WriteOutput'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  character(:), allocatable                                           ::    Label
+  character(:), allocatable                                           ::    PrefixLoc
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    ResponseLabels
+  integer                                                             ::    NbResponses
+  type(SMUQFile_Type)                                                 ::    File
+  character(:), allocatable                                           ::    FileName
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -338,7 +307,7 @@ subroutine WriteOutput(This, Directory)
 
     call MakeDirectory(Path=Directory, Options='-p')
 
-    PrefixLoc = Directory // '/sample_space'
+    PrefixLoc = Directory // 'sample_space/'
     call This%ParameterSpace%WriteInfo(Directory=PrefixLoc)
 
     NbResponses = size(This%Responses,1)
@@ -348,13 +317,13 @@ subroutine WriteOutput(This, Directory)
     i = 1
     do i = 1, NbResponses
       Label = This%Responses(i)%GetLabel()
-      PrefixLoc = Directory // '/responses/' // Label
+      PrefixLoc = Directory // 'responses/' // Label // '/'
       call This%Responses(i)%WriteInfo(Directory=PrefixLoc)
       ResponseLabels(i) = Label
     end do
 
-    PrefixLoc = Directory // '/responses'
-    FileName = '/responses.dat'
+    PrefixLoc = Directory // 'responses/'
+    FileName = 'responses.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call File%Export(Strings=ResponseLabels)
 
@@ -369,14 +338,13 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Copy(LHS, RHS)
 
-  class(Root_Type), intent(out)                                     ::    LHS
-  class(Root_Type), intent(in)                                      ::    RHS
+  class(Root_Type), intent(out)                                       ::    LHS
+  class(Root_Type), intent(in)                                        ::    RHS
 
-  character(*), parameter                                           ::    ProcName='Copy'
-  integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
   call LHS%Reset()
-  LHS%Initialized = RHS%Initialized
   LHS%Constructed = RHS%Constructed
 
   if (RHS%Constructed) then
@@ -396,10 +364,10 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Finalizer(This)
 
-  type(Root_Type), intent(inout)                                    ::    This
+  type(Root_Type), intent(inout)                                      ::    This
 
-  character(*), parameter                                           ::    ProcName='Finalizer'
-  integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
   if (allocated(This%Model)) deallocate(This%Model, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Model', ProcName=ProcName, stat=StatLoc) 

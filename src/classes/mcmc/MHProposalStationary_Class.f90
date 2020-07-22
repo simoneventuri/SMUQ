@@ -23,6 +23,7 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use MHProposalMethod_Class                                        ,only:    MHProposalMethod_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 

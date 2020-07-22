@@ -34,6 +34,7 @@ use IScalarValue_Class                                            ,only:    ISca
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -51,9 +52,7 @@ type, extends(ModelInternal_Type)                                     ::    SMD_
   class(IScalarValue_Type), allocatable                               ::    K
   class(IScalarValue_Type), allocatable                               ::    C
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run_0D
@@ -66,22 +65,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(SMD_Type), intent(inout)                                      ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'smd'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(SMD_Type), intent(inout)                                      ::    This
@@ -89,7 +72,6 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized = .false.
   This%Constructed = .false.
 
   if (allocated(This%Abscissa)) deallocate(This%Abscissa, stat=StatLoc)
@@ -103,19 +85,6 @@ subroutine Reset(This)
 
   if (allocated(This%C)) deallocate(This%C, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%C', ProcName=ProcName, stat=StatLoc)
-
-
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(SMD_Type), intent(inout)                                      ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
   This%Label = 'smd'
   This%OutputLabel = 'smd'
@@ -148,47 +117,59 @@ subroutine ConstructInput(This, Input, Prefix)
   logical                                                             ::    VarL0D
   logical                                                             ::    MandatoryLoc
   logical                                                             ::    Found
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'label'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   This%Label = VarC0D
 
   ParameterName = 'output_label'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   This%OutputLabel = VarC0D
 
   ParameterName = 'silent'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%Silent = VarL0D
 
   SectionName = 'initial_conditions'
+  call InputVerifier%AddSection(Section=SectionName)
   if (.not. Input%HasSection(SubSectionName=SectionName)) then
     call Error%Raise(Line='Mandatory initial conditions section missing', ProcName=ProcName)
   else
     ParameterName = 'position'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     This%X0 = VarR0D
     ParameterName = 'velocity'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     This%Xdot0 = VarR0D
   end if
 
   SectionName = 'abscissa'
+  call InputVerifier%AddSection(Section=SectionName)
   if (.not. Input%HasSection(SubSectionName=SectionName)) then
     call Error%Raise(Line='Mandatory section missing', ProcName=ProcName)
   else
     ParameterName = 'source'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     SubSectionName = SectionName // '>source'
+    call InputVerifier%AddSection(Section='source', ToSubSection=SectionName)
     select case (VarC0D)
       case('internal')
         ParameterName = 'value'
+        call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SubSectionName)
         call Input%GetValue(Values=VarR1D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
         allocate(This%Abscissa, source=VarR1D, stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='This%Abscissa', ProcName=ProcName, stat=StatLoc)
@@ -202,21 +183,28 @@ subroutine ConstructInput(This, Input, Prefix)
   end if
 
   SectionName = 'parameters'
+  call InputVerifier%AddSection(Section=SectionName)
 
   SubSectionName = SectionName // '>m'
+  call InputVerifier%AddSection(Section='m', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%M, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>k'
+  call InputVerifier%AddSection(Section='k', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%K, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>c'
+  call InputVerifier%AddSection(Section='c', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%C, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -261,17 +249,17 @@ function GetInput(This, Name, Prefix, Directory)
   SectionName='parameters'
   call GetInput%AddSection(SectionName=SectionName)
   SubSectionName = 'm'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%M, Name=SubSectionName, Prefix=PrefixLoc,      &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'k'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%K, Name=SubSectionName, Prefix=PrefixLoc,      &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'c'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%C, Name=SubSectionName, Prefix=PrefixLoc,      &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
@@ -342,7 +330,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (SMD_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if(RHS%Constructed) then
         LHS%Label = RHS%Label

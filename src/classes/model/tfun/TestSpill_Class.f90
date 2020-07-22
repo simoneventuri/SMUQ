@@ -32,6 +32,7 @@ use Input_Class                                                   ,only:    Inpu
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -49,9 +50,7 @@ type, extends(TestFunction_Type)                                      ::    Test
   class(IScalarValue_Type), allocatable                               ::    L
   class(IScalarValue_Type), allocatable                               ::    Tau
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, public                                                   ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run
@@ -65,23 +64,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(TestSpill_Type), intent(inout)                                ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'spill'
-    This%Initialized = .true.
-  end if
-
-  call This%SetDefaults()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(TestSpill_Type), intent(inout)                                ::    This
@@ -89,7 +71,6 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized = .false.
   This%Constructed = .false.
 
   if (allocated(This%Time)) deallocate(This%Time, stat=StatLoc)
@@ -112,19 +93,6 @@ subroutine Reset(This)
 
   This%NbTimes = 0
   This%NbLocations = 0
-
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(TestSpill_Type), intent(inout)                                ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-  integer                                                             ::    StatLoc=0
 
   This%Label = 'spill'
 
@@ -152,20 +120,24 @@ subroutine ConstructInput(This, Input, Prefix)
   real(rkp), allocatable, dimension(:)                                ::    TimeRange
   logical                                                             ::    MandatoryLoc
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   Found = .false.
 
   ParameterName = 'label'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found, SectionName=SectionName)
   if (Found) This%Label = VarC0D
 
   ParameterName = 'time_range'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
   call ConvertToReals(String=VarC0D, Values=TimeRange)
   if (size(TimeRange,1) /= 2) call Error%Raise('Incompatible time range specification', ProcName=ProcName)
@@ -173,6 +145,7 @@ subroutine ConstructInput(This, Input, Prefix)
   if (TimeRange(2) < TimeRange(1)) call Error%Raise(Line='Minimum time larger than maximum', ProcName=ProcName)
       
   ParameterName = 'nb_times'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
   This%NbTimes = VarI0D
 
@@ -181,6 +154,7 @@ subroutine ConstructInput(This, Input, Prefix)
   call LinSpace(Min=TimeRange(1), Max=TimeRange(2), NbNodes=This%NbTimes, Values=This%Time)
 
   ParameterName = 'location'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   call ConvertToReals(String=VarC0D, Values=This%Location, Separator=' ')
   if (any(This%Location > 3.0) .or. any(This%Location < 0.0)) call Error%Raise(Line='Location must be in between 0 and 3',        &
@@ -189,26 +163,34 @@ subroutine ConstructInput(This, Input, Prefix)
   if (THis%NbLocations <= 0) call Error%Raise('Must specify at least one location', ProcName=ProcName)
 
   SectionName = 'parameters'
+  call InputVerifier%AddSection(Section=SectionName)
 
   SubSectionName = SectionName // '>m'
+  call InputVerifier%AddSection(Section='m', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%M, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>d'
+  call InputVerifier%AddSection(Section='d', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%D, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>l'
+  call InputVerifier%AddSection(Section='l', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%L, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>tau'
+  call InputVerifier%AddSection(Section='tau', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%Tau, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -260,22 +242,22 @@ function GetInput(This, Name, Prefix, Directory)
   SectionName='parameters'
   call GetInput%AddSection(SectionName=SectionName)
   SubSectionName = 'm'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%M, Name=SubSectionName, Prefix=PrefixLoc,      &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'd'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%D, Name=SubSectionName, Prefix=PrefixLoc,      &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'l'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%L, Name=SubSectionName, Prefix=PrefixLoc,      &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'tau'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%Tau, Name=SubSectionName, Prefix=PrefixLoc,    &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
@@ -368,7 +350,6 @@ impure elemental subroutine Copy(LHS, RHS)
   select type (RHS)
     type is (TestSpill_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if(RHS%Constructed) then
         LHS%NbLocations = RHS%NbLocations

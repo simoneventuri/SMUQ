@@ -29,6 +29,7 @@ use Input_Class                                                   ,only:    Inpu
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -41,9 +42,7 @@ type, extends(TestFunction_Type)                                      ::    Test
   type(IScalarValueContainer_Type), allocatable, dimension(:)         ::    Parameters
   real(rkp), allocatable, dimension(:)                                ::    c
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, public                                                   ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run
@@ -57,23 +56,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(TestGFun_Type), intent(inout)                                 ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'GFun'
-    This%Initialized = .true.
-  end if
-
-  call This%SetDefaults()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(TestGFun_Type), intent(inout)                                 ::    This
@@ -81,7 +63,6 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized = .false.
   This%Constructed = .false.
 
   This%NbParams = 0
@@ -93,19 +74,6 @@ subroutine Reset(This)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Parameters', ProcName=ProcName, stat=StatLoc)
   This%NbParams = 0
   
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(TestGFun_Type), intent(inout)                                 ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-  integer                                                             ::    StatLoc=0
-
   This%Label = 'gfunction'
 
 end subroutine
@@ -134,18 +102,22 @@ subroutine ConstructInput(This, Input, Prefix)
   logical                                                             ::    MandatoryLoc
   class(IScalarValue_Type), allocatable                               ::    ScalarParameter
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'label'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   This%Label = VarC0D
 
   ParameterName = 'nb_dimensions'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
   This%NbParams = VarI0D
 
@@ -153,6 +125,7 @@ subroutine ConstructInput(This, Input, Prefix)
   if (StatLoc /= 0) call Error%Allocate(Name='This%Parameters', ProcName=ProcName, stat=StatLoc)
 
   SectionName = 'parameters'
+  call InputVerifier%AddSection(Section=SectionName)
 
   if (allocated(ScalarParameter)) deallocate(ScalarParameter, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='ScalarParameter', ProcName=ProcName, stat=StatLoc)
@@ -160,6 +133,7 @@ subroutine ConstructInput(This, Input, Prefix)
   i = 1
   do i = 1, This%NbParams
     SubSectionName = SectionName // '>x' // ConvertToString(Value=i)
+    call InputVerifier%AddSection(Section='x' // ConvertToString(Value=i), ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call IScalarValue_Factory%Construct(Object=ScalarParameter, Input=InputSection, Prefix=PrefixLoc)
     nullify(InputSection)
@@ -171,10 +145,12 @@ subroutine ConstructInput(This, Input, Prefix)
   allocate(This%c(This%NbParams), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='c', ProcName=ProcName, stat=StatLoc)
   SectionName = 'c'
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName, CaseSensitive=.false.)) then
     i = 1
     do i = 1, This%NbParams
       ParameterName = 'c' // ConvertToString(Value=i)
+      call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
       call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
       This%c(i) = VarR0D
     end do
@@ -184,6 +160,9 @@ subroutine ConstructInput(This, Input, Prefix)
       This%c(i) = (real(i,8) - Two) / Two
     end do
   end if
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -233,7 +212,7 @@ function GetInput(This, Name, Prefix, Directory)
   i = 1
   do i = 1, This%NbParams
     SubSectionName = 'x' // ConvertToString(Value=i)
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+    if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
     ScalarParameterPtr => This%Parameters(i)%GetPointer()
     call GetInput%AddSection(Section=ScalarParameterPtr%GetInput(Name=SubSectionName, Prefix=PrefixLoc, Directory=DirectorySub),  &
                                                                                                          To_SubSection=SectionName)
@@ -330,7 +309,6 @@ impure elemental subroutine Copy(LHS, RHS)
   select type (RHS)
     type is (TestGFun_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
         LHS%Label = RHS%Label

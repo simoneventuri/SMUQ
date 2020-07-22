@@ -30,16 +30,11 @@ private
 public                                                                ::    LinSolverMethod_Type
 
 type, abstract                                                        ::    LinSolverMethod_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_LinSolverMethod), deferred, public             ::    Initialize
   procedure(Reset_LinSolverMethod), deferred, public                  ::    Reset
-  procedure(SetDefaults_LinSolverMethod), deferred, public            ::    SetDefaults
   procedure(ConstructInput_LinSolverMethod), deferred, private        ::    ConstructInput
   procedure(GetInput_LinSolverMethod), deferred, public               ::    GetInput
   procedure(Solve_LinSolverMethod), deferred, public                  ::    Solve
@@ -51,21 +46,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_LinSolverMethod(This)
-    import                                                            ::    LinSolverMethod_Type
-    class(LinSolverMethod_Type), intent(inout)                        ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_LinSolverMethod(This)
-    import                                                            ::    LinSolverMethod_Type
-    class(LinSolverMethod_Type), intent(inout)                        ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_LinSolverMethod(This)
     import                                                            ::    LinSolverMethod_Type
     class(LinSolverMethod_Type), intent(inout)                        ::    This
   end subroutine
@@ -116,19 +97,5 @@ abstract interface
 end interface
 
 contains
-
-!!------------------------------------------------------------------------------------------------------------------------------
-function GetName(This)
-
-  character(:), allocatable                                           ::    GetName
-
-  class(LinSolverMethod_Type), intent(inout)                          ::    This
-
-  character(*), parameter                                             ::    ProcName='GetName'
-
-  GetName = This%Name
-
-end function
-!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -27,6 +27,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use MT64_Class                                                    ,only:    MT64_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -35,7 +36,6 @@ private
 public                                                                ::    RandPseudo_Type
 
 type                                                                  ::    RandPseudo_Type
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Name
   integer(8)                                                          ::    Seed=1
@@ -43,9 +43,7 @@ type                                                                  ::    Rand
   type(MT64_Type)                                                     ::    PRNG
   integer                                                             ::    DrawType=2
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructInput, &
                                                                                                           ConstructCase1
   procedure, public                                                   ::    ConstructInput
@@ -67,27 +65,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!----------------------------------------------------------------------------------------------------------------------------!!
-subroutine Initialize(This)
-
-  class(RandPseudo_Type), intent(inout)                               ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  integer(8)                                                          ::    SysTimeCount
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = 'pseudo'
-
-    call system_clock(SysTimeCount)
-    This%SeedDefault = SysTimeCount
-
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!----------------------------------------------------------------------------------------------------------------------------!!
-
-!!----------------------------------------------------------------------------------------------------------------------------!!
 subroutine Reset(This)
 
   class(RandPseudo_Type), intent(inout)                               ::    This
@@ -95,20 +72,7 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
-
-  call This%Initialize()
-
-end subroutine
-!!----------------------------------------------------------------------------------------------------------------------------!!
-
-!!----------------------------------------------------------------------------------------------------------------------------!!
-subroutine SetDefaults(This)
-
-  class(RandPseudo_Type), intent(inout)                               ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
   This%Seed = This%SeedDefault
   call This%PRNG%init_genrand64(This%Seed)
@@ -136,14 +100,17 @@ subroutine ConstructInput (This, Input, Prefix)
   integer(8), allocatable, dimension(:)                               ::    VarI1D_8
   character(:), allocatable                                           ::    PrefixLoc
   integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'seed'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) then 
     This%Seed = ConvertToInteger8(String=VarC0D)
@@ -151,16 +118,20 @@ subroutine ConstructInput (This, Input, Prefix)
   end if
 
   ParameterName = 'draw_type'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%DrawType=VarI0D
 
   SectionName = 'internal_generator'
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName)) then
     ParameterName = 'mti'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName)
     This%PRNG%mti = VarI0D
 
     SubSectionName = SectionName // '>mt'
+    call InputVerifier%AddSection(Section='mt', ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call ImportArray(Input=InputSection, Array=VarI1D_8, Prefix=PrefixLoc)
     nullify(InputSection)
@@ -168,6 +139,9 @@ subroutine ConstructInput (This, Input, Prefix)
     deallocate(VarI1D_8, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='VarI1D_8', ProcName=ProcName, stat=StatLoc)
   end if
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -184,8 +158,7 @@ subroutine ConstructCase1 (This, Seed, DrawType)
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   if (present(seed)) then
     This%Seed = Seed
@@ -247,7 +220,7 @@ function GetInput(This, Name, Prefix, Directory)
   SubSectionName = SectionName // '>' // SubSectionName
   call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   if (ExternalFlag) then
-    FileName = DirectoryLoc // '/mt.dat'
+    FileName = DirectoryLoc // 'mt.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Input=InputSection, Array=This%PRNG%mt, File=File)
   else
@@ -401,7 +374,6 @@ impure elemental subroutine Copy(LHS, RHS)
   integer                                                             ::    StatLoc=0
 
   call LHS%Reset()
-  LHS%Initialized = RHS%Initialized
   LHS%Constructed = RHS%Constructed
 
   if (RHS%Constructed) then

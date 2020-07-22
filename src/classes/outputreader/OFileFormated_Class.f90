@@ -31,8 +31,6 @@ private
 public                                                                ::    OFileFormated_Type
 
 type, abstract                                                        ::    OFileFormated_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   type(SMUQFile_Type)                                                 ::    OutputFile
 contains
@@ -54,21 +52,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_OFileFormated(This)
-    import                                                            ::    OFileFormated_Type  
-    class(OFileFormated_Type), intent(inout)                          ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_OFileFormated(This)
-    import                                                            ::    OFileFormated_Type  
-    class(OFileFormated_Type), intent(inout)                          ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_OFileFormated(This)
     import                                                            ::    OFileFormated_Type  
     class(OFileFormated_Type), intent(inout)                          ::    This
   end subroutine
@@ -117,19 +101,6 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
-
-    character(:), allocatable                                         ::    GetName
-    class(OFileFormated_Type), intent(inout)                          ::    This
-
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    GetName = This%Name
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
 
   !!------------------------------------------------------------------------------------------------------------------------------
   function Exists(This)

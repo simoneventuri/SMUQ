@@ -22,6 +22,7 @@ use Parameters_Library
 use Input_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -30,17 +31,13 @@ private
 public                                                                ::    LowDiscSequence_Type
 
 type, abstract                                                        ::    LowDiscSequence_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
 contains
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    GetSequence             =>    Get0D, &
                                                                                                           Get1D                   
-  procedure(Initialize_LowDiscSequence), deferred, public             ::    Initialize
   procedure(Reset_LowDiscSequence), deferred, public                  ::    Reset
-  procedure(SetDefaults_LowDiscSequence), deferred, public            ::    SetDefaults
   procedure(ConstructInput_LowDiscSequence), deferred, private        ::    ConstructInput
   procedure(GetInput_LowDiscSequence), deferred, public               ::    GetInput
   procedure(Get0D_LowDiscSequence), deferred, private                 ::    Get0D
@@ -53,21 +50,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_LowDiscSequence(This)
-    import                                                            ::    LowDiscSequence_Type
-    class(LowDiscSequence_Type), intent(inout)                        ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_LowDiscSequence(This)
-    import                                                            ::    LowDiscSequence_Type
-    class(LowDiscSequence_Type), intent(inout)                        ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_LowDiscSequence(This)
     import                                                            ::    LowDiscSequence_Type
     class(LowDiscSequence_Type), intent(inout)                        ::    This
   end subroutine
@@ -129,19 +112,5 @@ abstract interface
 end interface
 
 contains
-
-!!------------------------------------------------------------------------------------------------------------------------------
-function GetName(This)
-
-  character(:), allocatable                                           ::    GetName
-
-  class(LowDiscSequence_Type), intent(inout)                          ::    This
-
-  character(*), parameter                                             ::    ProcName='GetName'
-
-  GetName = This%Name
-
-end function
-!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

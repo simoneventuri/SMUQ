@@ -41,9 +41,7 @@ type, extends(Model_Type)                                             ::    Mode
   class(TransfSampleSpace_Type), allocatable                          ::    SpaceTransform
   type(SMUQString_Type), allocatable, dimension(:)                    ::    InputLabels
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, public                                                   ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -58,276 +56,253 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(ModelTransform_Type), intent(inout)                         ::    This
+  class(ModelTransform_Type), intent(inout)                           ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
-    if (.not. This%Initialized) then
-      This%Name = 'modeltransform'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%SpaceTransform)) deallocate(This%SpaceTransform, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%SpaceTransform', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+  if (allocated(This%Model)) deallocate(This%Model, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
 
-    class(ModelTransform_Type), intent(inout)                         ::    This
+  if (allocated(This%InputLabels)) deallocate(This%InputLabels, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%InputLabels', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
-    if (allocated(This%SpaceTransform)) deallocate(This%SpaceTransform, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%SpaceTransform', ProcName=ProcName, stat=StatLoc)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (allocated(This%Model)) deallocate(This%Model, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    if (allocated(This%InputLabels)) deallocate(This%InputLabels, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%InputLabels', ProcName=ProcName, stat=StatLoc)
+  class(ModelTransform_Type), intent(inout)                           ::    This
+  class(InputSection_Type), intent(in)                                ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    call This%SetDefaults()
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    SectionName
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call This%Reset()
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    class(ModelTransform_Type), intent(inout)                         ::    This
+  call InputVerifier%Construct()
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  SectionName = 'model'
+  call InputVerifier%AddSection(Section=SectionName)
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call Model_Factory%Construct(Object=This%Model, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Label = This%Model%GetLabel()
+  This%NbOutputs = This%Model%GetNbOutputs()
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+  SectionName = 'transformed_space'
+  call InputVerifier%AddSection(Section=SectionName)
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call TransfSampleSpace_Factory%Construct(Object=This%SpaceTransform, Input=InputSection, Prefix=PrefixLoc)
+  nullify(InputSection)
 
-    class(ModelTransform_Type), intent(inout)                         ::    This
-    class(InputSection_Type), intent(in)                              ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+  allocate(This%InputLabels(This%SpaceTransform%GetNbDim()), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%InputLabels', ProcName=ProcName, stat=StatLoc)
+  call This%SpaceTransform%GetLabels(Labels=This%InputLabels)
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    character(:), allocatable                                         ::    SectionName
+  This%Constructed = .true.
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, SpaceTransform, Model)
 
-    SectionName = 'model'
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call Model_Factory%Construct(Object=This%Model, Input=InputSection, Prefix=PrefixLoc)
-    nullify(InputSection)
+  class(ModelTransform_Type), intent(inout)                           ::    This
+  class(TransfSampleSpace_Type), intent(in)                           ::    SpaceTransform
+  class(Model_Type), intent(in)                                       ::    Model
 
-    This%Label = This%Model%GetLabel()
-    This%NbOutputs = This%Model%GetNbOutputs()
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  integer                                                             ::    StatLoc=0
 
-    SectionName = 'transformed_space'
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call TransfSampleSpace_Factory%Construct(Object=This%SpaceTransform, Input=InputSection, Prefix=PrefixLoc)
-    nullify(InputSection)
+  call This%Reset()
 
-    allocate(This%InputLabels(This%SpaceTransform%GetNbDim()), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%InputLabels', ProcName=ProcName, stat=StatLoc)
-    call This%SpaceTransform%GetLabels(Labels=This%InputLabels)
+  allocate(This%SpaceTransform, source=SpaceTransform, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%SpaceTransform', ProcName=ProcName, stat=StatLoc)
 
-    This%Constructed = .true.
+  allocate(This%Model, source=Model, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  allocate(This%InputLabels(This%SpaceTransform%GetNbDim()), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%InputLabels', ProcName=ProcName, stat=StatLoc)
+  call This%SpaceTransform%GetLabels(Labels=This%InputLabels)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, SpaceTransform, Model)
+  This%NbOutputs = This%Model%GetNbOutputs()
+  This%Label = This%Model%GetLabel()
 
-    class(ModelTransform_Type), intent(inout)                         ::    This
-    class(TransfSampleSpace_Type), intent(in)                         ::    SpaceTransform
-    class(Model_Type), intent(in)                                     ::    Model
+  This%Constructed = .true.
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    integer                                                           ::    StatLoc=0
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    allocate(This%SpaceTransform, source=SpaceTransform, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%SpaceTransform', ProcName=ProcName, stat=StatLoc)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-    allocate(This%Model, source=Model, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
+  type(InputSection_Type)                                             ::    GetInput
 
-    allocate(This%InputLabels(This%SpaceTransform%GetNbDim()), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%InputLabels', ProcName=ProcName, stat=StatLoc)
-    call This%SpaceTransform%GetLabels(Labels=This%InputLabels)
+  class(ModelTransform_Type), intent(in)                              ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    This%NbOutputs = This%Model%GetNbOutputs()
-    This%Label = This%Model%GetLabel()
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
 
-    This%Constructed = .true.
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    type(InputSection_Type)                                           ::    GetInput
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    class(ModelTransform_Type), intent(in)                            ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'model/'
+  call GetInput%AddSection(Section=Model_Factory%GetObjectInput(Object=This%Model, Name='model',                   &
+                                                                                    Prefix=PrefixLoc, Directory=DirectorySub))
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'transformed_space/'
+  call GetInput%AddSection(Section=TransfSampleSpace_Factory%GetObjectInput(Object=This%SpaceTransform,                       &
+                                                Name='transformed_space', Prefix=PrefixLoc, Directory=DirectorySub))
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Run_0D(This, Input, Output, Stat)
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  class(ModelTransform_Type), intent(inout)                           ::    This
+  type(Input_Type), intent(in)                                        ::    Input
+  type(Output_Type), dimension(:), intent(inout)                      ::    Output
+  integer, optional, intent(out)                                      ::    Stat
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+  character(*), parameter                                             ::    ProcName='Run_0D'
+  integer                                                             ::    StatLoc=0
+  logical                                                             ::    ExternalFlag=.false.
+  type(Input_Type)                                                    ::    InputLoc
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
 
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/model'
-    call GetInput%AddSection(Section=Model_Factory%GetObjectInput(Object=This%Model, Name='model',                   &
-                                                                                      Prefix=PrefixLoc, Directory=DirectorySub))
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/transformed_space'
-    call GetInput%AddSection(Section=TransfSampleSpace_Factory%GetObjectInput(Object=This%SpaceTransform,                       &
-                                                 Name='transformed_space', Prefix=PrefixLoc, Directory=DirectorySub))
+  call Input%GetValue(Values=VarR1D, Labels=This%InputLabels)
+  call This%SpaceTransform%InvTransform(Z=VarR1D)
+  call InputLoc%Construct(Input=VarR1D, Labels=This%InputLabels)
+  deallocate(VarR1D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+  
+  call This%Model%Run(Input=InputLoc, Output=Output, Stat=Stat)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_0D(This, Input, Output, Stat)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Run_1D(This, Input, Output, Stat)
 
-    class(ModelTransform_Type), intent(inout)                         ::    This
-    type(Input_Type), intent(in)                                      ::    Input
-    type(Output_Type), dimension(:), intent(inout)                    ::    Output
-    integer, optional, intent(out)                                    ::    Stat
+  class(ModelTransform_Type), intent(inout)                           ::    This
+  type(Input_Type), dimension(:), intent(in)                          ::    Input
+  type(Output_Type), dimension(:,:), intent(inout)                    ::    Output
+  integer, dimension(:), optional, intent(inout)                      ::    Stat
 
-    character(*), parameter                                           ::    ProcName='Run_0D'
-    integer                                                           ::    StatLoc=0
-    logical                                                           ::    ExternalFlag=.false.
-    type(Input_Type)                                                  ::    InputLoc
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
+  character(*), parameter                                             ::    ProcName='Run_1D'
+  integer                                                             ::    StatLoc=0
+  logical                                                             ::    ExternalFlag=.false.
+  type(Input_Type), allocatable, dimension(:)                         ::    InputLoc
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D
+  integer                                                             ::    NbInputs
+  integer                                                             ::    i
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    call Input%GetValue(Values=VarR1D, Labels=This%InputLabels)
+  NbInputs = size(Input,1)
+
+  allocate(InputLoc(NbInputs), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='InputLoc', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, NbInputs
+    call Input(i)%GetValue(Values=VarR1D, Labels=This%InputLabels)
     call This%SpaceTransform%InvTransform(Z=VarR1D)
-    call InputLoc%Construct(Input=VarR1D, Labels=This%InputLabels)
-    deallocate(VarR1D, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
-   
-    call This%Model%Run(Input=InputLoc, Output=Output, Stat=Stat)
+    call InputLoc(i)%Construct(Input=VarR1D, Labels=This%InputLabels)
+  end do
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  deallocate(VarR1D, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_1D(This, Input, Output, Stat)
+  call This%Model%Run(Input=InputLoc, Output=Output, Stat=Stat)
 
-    class(ModelTransform_Type), intent(inout)                         ::    This
-    type(Input_Type), dimension(:), intent(in)                        ::    Input
-    type(Output_Type), dimension(:,:), intent(inout)                  ::    Output
-    integer, dimension(:), optional, intent(inout)                    ::    Stat
+  deallocate(InputLoc, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='InputLoc', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='Run_1D'
-    integer                                                           ::    StatLoc=0
-    logical                                                           ::    ExternalFlag=.false.
-    type(Input_Type), allocatable, dimension(:)                       ::    InputLoc
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D
-    integer                                                           ::    NbInputs
-    integer                                                           ::    i
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    NbInputs = size(Input,1)
+  class(ModelTransform_Type), intent(out)                             ::    LHS
+  class(Model_Type), intent(in)                                       ::    RHS
 
-    allocate(InputLoc(NbInputs), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='InputLoc', ProcName=ProcName, stat=StatLoc)
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    i
+  integer                                                             ::    StatLoc=0
 
-    i = 1
-    do i = 1, NbInputs
-      call Input(i)%GetValue(Values=VarR1D, Labels=This%InputLabels)
-      call This%SpaceTransform%InvTransform(Z=VarR1D)
-      call InputLoc(i)%Construct(Input=VarR1D, Labels=This%InputLabels)
-    end do
+  select type (RHS)
+    type is (ModelTransform_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
+      if (RHS%Constructed) then
+        allocate(LHS%SpaceTransform, source=RHS%SpaceTransform, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%SpaceTransform', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%Model, source=RHS%Model, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%Model', ProcName=ProcName, stat=StatLoc)
+      end if
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+  end select
 
-    deallocate(VarR1D, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    call This%Model%Run(Input=InputLoc, Output=Output, Stat=Stat)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    deallocate(InputLoc, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='InputLoc', ProcName=ProcName, stat=StatLoc)
+  type(ModelTransform_Type),intent(inout)                             ::    This
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+  if (allocated(This%SpaceTransform)) deallocate(This%SpaceTransform, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%SpaceTransform', ProcName=ProcName, stat=StatLoc)
 
-    class(ModelTransform_Type), intent(out)                           ::    LHS
-    class(Model_Type), intent(in)                                     ::    RHS
+  if (allocated(This%Model)) deallocate(This%Model, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    i
-    integer                                                           ::    StatLoc=0
+  if (allocated(This%InputLabels)) deallocate(This%InputLabels, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%InputLabels', ProcName=ProcName, stat=StatLoc)
 
-    select type (RHS)
-      type is (ModelTransform_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-        if (RHS%Constructed) then
-          allocate(LHS%SpaceTransform, source=RHS%SpaceTransform, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%SpaceTransform', ProcName=ProcName, stat=StatLoc)
-          allocate(LHS%Model, source=RHS%Model, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Model', ProcName=ProcName, stat=StatLoc)
-        end if
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(ModelTransform_Type),intent(inout)                           ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-    if (allocated(This%SpaceTransform)) deallocate(This%SpaceTransform, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%SpaceTransform', ProcName=ProcName, stat=StatLoc)
-
-    if (allocated(This%Model)) deallocate(This%Model, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
-
-    if (allocated(This%InputLabels)) deallocate(This%InputLabels, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%InputLabels', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

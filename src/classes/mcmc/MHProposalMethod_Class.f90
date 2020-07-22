@@ -22,6 +22,7 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use MultiVarDistNorm_Class                                        ,only:    MultiVarDistNorm_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 

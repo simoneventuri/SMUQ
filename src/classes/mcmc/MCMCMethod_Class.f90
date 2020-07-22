@@ -25,6 +25,7 @@ use Error_Class                                                   ,only:    Erro
 use SampleSpace_Class                                             ,only:    SampleSpace_Type
 use DistProb_Class                                                ,only:    DistProb_Type
 use Input_Class                                                   ,only:    Input_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -34,19 +35,13 @@ public                                                                ::    MCMC
 public                                                                ::    MCMCSamplingTarget
 
 type, abstract                                                        ::    MCMCMethod_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
-  procedure, public                                                   ::    GetName
   procedure, public                                                   ::    IsConstructed
-  procedure, public                                                   ::    IsInitialized
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_MCMCMethod), deferred, public                  ::    Initialize
   procedure(Reset_MCMCMethod), deferred, public                       ::    Reset
-  procedure(SetDefaults_MCMCMethod), deferred, public                 ::    SetDefaults
   procedure(ConstructInput_MCMCMethod), deferred, private             ::    ConstructInput
   procedure(GetInput_MCMCMethod), deferred, public                    ::    GetInput
   procedure(GenerateChain_MCMCMethod), deferred, public               ::    GenerateChain
@@ -58,21 +53,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_MCMCMethod(This)
-    import                                                            ::    MCMCMethod_Type
-    class(MCMCMethod_Type), intent(inout)                             ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_MCMCMethod(This)
-    import                                                            ::    MCMCMethod_Type
-    class(MCMCMethod_Type), intent(inout)                             ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_MCMCMethod(This)
     import                                                            ::    MCMCMethod_Type
     class(MCMCMethod_Type), intent(inout)                             ::    This
   end subroutine
@@ -139,51 +120,17 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function IsConstructed(This)
 
-    character(:), allocatable                                         ::    GetName
-    class(MCMCMethod_Type), intent(inout)                             ::    This
+  logical                                                             ::    IsConstructed
+  class(MCMCMethod_Type), intent(in)                                  ::    This
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  character(*), parameter                                             ::    ProcName='IsConstructed'
 
-    GetName = This%Name
+  IsConstructed = This%Constructed
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsInitialized(This)
-
-    logical                                                           ::    IsInitialized
-    class(MCMCMethod_Type), intent(in)                                ::    This
-
-    character(*), parameter                                           ::    ProcName='IsInitialized'
-
-    if (This%Initialized) then
-      IsInitialized = .true.
-    else
-      IsInitialized = .false.
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed(This)
-
-    logical                                                           ::    IsConstructed
-    class(MCMCMethod_Type), intent(in)                                ::    This
-
-    character(*), parameter                                           ::    ProcName='IsConstructed'
-
-    if (This%Constructed) then
-      IsConstructed = .true.
-    else
-      IsConstructed = .false.
-    end if
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

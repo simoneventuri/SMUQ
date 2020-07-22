@@ -33,16 +33,12 @@ private
 public                                                                ::    MFileInput_Type
 
 type, abstract                                                        ::    MFileInput_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
 contains
   procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_MFileInput), deferred, public                  ::    Initialize
   procedure(Reset_MFileInput), deferred, public                       ::    Reset
-  procedure(SetDefaults_MFileInput), deferred, public                 ::    SetDefaults
   procedure(ConstructInput_MFileInput), deferred, private             ::    ConstructInput
   procedure(GetInput_MFileInput), deferred, public                    ::    GetInput
   procedure(WriteInput_MFileInput), deferred, public                  ::    WriteInput
@@ -54,21 +50,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_MFileInput(This)
-    import                                                            ::    MFileInput_Type
-    class(MFileInput_Type), intent(inout)                             ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_MFileInput(This)
-    import                                                            ::    MFileInput_Type
-    class(MFileInput_Type), intent(inout)                             ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_MFileInput(This)
     import                                                            ::    MFileInput_Type
     class(MFileInput_Type), intent(inout)                             ::    This
   end subroutine
@@ -121,18 +103,5 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
-
-    character(:), allocatable                                         ::    GetName
-    class(MFileInput_Type), intent(inout)                             ::    This
-
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    GetName = This%Name
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

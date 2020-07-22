@@ -25,6 +25,7 @@ use Input_Library
 use String_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -47,142 +48,149 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_C0D(Object, DesiredType)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Construct_C0D(Object, DesiredType)
 
-    class(MHProposalMethod_Type), allocatable, intent(inout)          ::    Object                                             
-    character(*), intent(in)                                          ::    DesiredType                                               
+  class(MHProposalMethod_Type), allocatable, intent(inout)            ::    Object                                             
+  character(*), intent(in)                                            ::    DesiredType                                               
 
-    character(*), parameter                                           ::    ProcName='Construct_C0D' 
+  character(*), parameter                                             ::    ProcName='Construct_C0D' 
 
-    if (allocated(Object)) call Error%Raise(Line="Object already allocated", ProcName=ProcName)
+  if (allocated(Object)) call Error%Raise(Line="Object already allocated", ProcName=ProcName)
 
-    select case (LowerCase(DesiredType))
+  select case (LowerCase(DesiredType))
 
-      case('stationary')
-        allocate(MHProposalStationary_Type :: Object)
+    case('stationary')
+      allocate(MHProposalStationary_Type   :: Object)
 
-      case('last_reject')
-        allocate(MHProposalLastReject_Type :: Object)
+    case('last_reject')
+      allocate(MHProposalLastReject_Type   :: Object)
 
-      case default
-        call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
+    case default
+      call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
 
-    end select
+  end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Construct_Input(This, Object, Input, Prefix, Mandatory)
-    
-    use Input_Library
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Construct_Input(This, Object, Input, Prefix, Mandatory)
+  
+  use Input_Library
 
-    class(MHProposalMethod_Factory_Type), intent(in)                  ::    This
-    class(MHProposalMethod_Type), allocatable, intent(inout)          ::    Object
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-    logical, optional, intent(in)                                     ::    Mandatory
+  class(MHProposalMethod_Factory_Type), intent(in)                    ::    This
+  class(MHProposalMethod_Type), allocatable, intent(inout)            ::    Object
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
+  logical, optional, intent(in)                                       ::    Mandatory
 
-    character(*), parameter                                           ::    ProcName='Construct_Input'                                   
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    VarC0D
-    integer                                                           ::    StatLoc=0
-    logical                                                           ::    Found
-    logical                                                           ::    MandatoryLoc 
+  character(*), parameter                                             ::    ProcName='Construct_Input'                                   
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    VarC0D
+  integer                                                             ::    StatLoc=0
+  logical                                                             ::    Found
+  logical                                                             ::    MandatoryLoc 
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    ParameterName = 'type'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
-    call This%Construct(Object=Object, DesiredType=VarC0D)
+  call InputVerifier%Construct()
+  call InputVerifier%AddParameter(Parameter='type')
+  call InputVerifier%AddSection(Section='type')
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
-    SectionName = 'type'
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=MandatoryLoc,                 &
-                                                                                                              FoundSection=Found)
-    if (Found) then
-      call Object%Construct(Input=InputSection, Prefix=PrefixLoc)
-      nullify(InputSection)
-    end if
+  ParameterName = 'type'
+  call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
+  call This%Construct(Object=Object, DesiredType=VarC0D)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  SectionName = 'type'
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=MandatoryLoc,                 &
+                                                                                                            FoundSection=Found)
+  if (Found) then
+    call Object%Construct(Input=InputSection, Prefix=PrefixLoc)
+    nullify(InputSection)
+  end if
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetOption(Object)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(:), allocatable                                         ::    GetOption
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetOption(Object)
 
-    class(MHProposalMethod_Type), intent(in)                          ::    Object                                                                                            
+  character(:), allocatable                                           ::    GetOption
 
-    character(*), parameter                                           ::    ProcName='GetOption' 
+  class(MHProposalMethod_Type), intent(in)                            ::    Object                                                                                            
 
-    select type (Object)
+  character(*), parameter                                             ::    ProcName='GetOption' 
 
-      type is (MHProposalStationary_Type)
-        GetOption = 'stationary'
+  select type (Object)
 
-      type is (MHProposalLastReject_Type)
-        GetOption = 'last_reject'
+    type is (MHProposalStationary_Type)
+      GetOption = 'stationary'
 
-      class default
-        call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
+    type is (MHProposalLastReject_Type)
+      GetOption = 'last_reject'
 
-    end select
+    class default
+      call Error%Raise(Line="Object is either not allocated/associated or definitions are not up to date", ProcName=ProcName)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetObjectInput(This, Object, Name, Prefix, Directory, Mandatory)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    use Input_Library
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetObjectInput(This, Object, Name, Prefix, Directory, Mandatory)
 
-    type(InputSection_Type)                                           ::    GetObjectInput
+  use Input_Library
 
-    class(MHProposalMethod_Factory_Type), intent(in)                  ::    This
-    class(MHProposalMethod_Type), intent(in)                          ::    Object
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
-    logical, optional, intent(in)                                     ::    Mandatory
+  type(InputSection_Type)                                             ::    GetObjectInput
 
-    character(*), parameter                                           ::    ProcName='GetObjectInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    integer                                                           ::    StatLoc=0
-    logical                                                           ::    MandatoryLoc
+  class(MHProposalMethod_Factory_Type), intent(in)                    ::    This
+  class(MHProposalMethod_Type), intent(in)                            ::    Object
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
+  logical, optional, intent(in)                                       ::    Mandatory
 
-    DirectoryLoc = '<undefined>'
-    PrefixLoc = ''
-    DirectorySub = DirectoryLoc
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
+  character(*), parameter                                             ::    ProcName='GetObjectInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  integer                                                             ::    StatLoc=0
+  logical                                                             ::    MandatoryLoc
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  DirectoryLoc = '<undefined>'
+  PrefixLoc = ''
+  DirectorySub = DirectoryLoc
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    MandatoryLoc = .true.
-    if (present(Mandatory)) MandatoryLoc = Mandatory
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-    call GetObjectInput%SetName(SectionName=Name)
+  MandatoryLoc = .true.
+  if (present(Mandatory)) MandatoryLoc = Mandatory
 
-    call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
+  call GetObjectInput%SetName(SectionName=Name)
 
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/type'
+  call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
 
-    if (Object%IsConstructed()) then
-      call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectorySub))
-    else
-      if (MandatoryLoc) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
-    end if
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'type/'
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (Object%IsConstructed()) then
+    call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectorySub))
+  else
+    if (MandatoryLoc) call Error%Raise(Line='Object not constructed', ProcName=ProcName)
+  end if
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

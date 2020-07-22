@@ -11,17 +11,13 @@ private
 public                                                                ::    Output_Type
 
 type                                                                  ::    Output_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Label
   real(rkp), dimension(:,:), allocatable                              ::    Values
   integer                                                             ::    NbNodes
   integer                                                             ::    NbDegen
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1,         &
                                                                                                           ConstructCase2
   procedure, private                                                  ::    ConstructCase1
@@ -41,282 +37,249 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(Output_Type), intent(inout)                                 ::    This
+  class(Output_Type), intent(inout)                                   ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Initialized = .true.
-      This%Name = 'output'
-      call This%SetDefaults()
-    end if
+  This%Initialized=.false.
+  This%Constructed=.false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+  if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
 
-    class(Output_Type), intent(inout)                                 ::    This
+  if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  This%NbNodes = 0
+  This%NbDegen = 0
 
-    This%Initialized=.false.
-    This%Constructed=.false.
+  This%Label = ''
 
-    if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, Values, Label)
 
-    if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
+  class(Output_Type), intent(inout)                                   ::    This
+  real(rkp), dimension(:), intent(in)                                 ::    Values
+  character(*), optional, intent(in)                                  ::    Label
+  
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  integer                                                             ::    StatLoc=0
 
-    This%NbNodes = 0
-    This%NbDegen = 0
-
-    call This%Initialize()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
-
-    class(Output_Type),intent(inout)                                  ::    This
-
-    character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    This%Label = ''
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------ 
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, Values, Label)
-
-    class(Output_Type), intent(inout)                                 ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Values
-    character(*), optional, intent(in)                                ::    Label
-    
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    integer                                                           ::    StatLoc=0
-
-    if (This%Constructed) then
-      if (This%NbNodes /= size(Values,1) .or. This%NbDegen /= 1) then
-        call This%Reset()
-      else
-        This%Values(:,1) = Values
-      end if
-    end if
-
-    if (.not. This%Initialized) call This%Initialize()
-
-    if (.not. This%Constructed) then
-      allocate(This%Values(size(Values,1),1), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
+  if (This%Constructed) then
+    if (This%NbNodes /= size(Values,1) .or. This%NbDegen /= 1) then
+      call This%Reset()
+    else
       This%Values(:,1) = Values
-      This%NbDegen = 1
-      This%NbNodes = size(Values,1)
     end if
+  end if
 
-    if (present(Label)) This%Label = Label
+  if (.not. This%Constructed) then
+    allocate(This%Values(size(Values,1),1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
+    This%Values(:,1) = Values
+    This%NbDegen = 1
+    This%NbNodes = size(Values,1)
+  end if
 
-    This%Constructed = .true.
+  if (present(Label)) This%Label = Label
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Constructed = .true.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase2(This, Values, Label)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(Output_Type), intent(inout)                                 ::    This
-    real(rkp), dimension(:,:), intent(in)                             ::    Values
-    character(*), optional, intent(in)                                ::    Label
-    
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    integer                                                           ::    StatLoc=0
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase2(This, Values, Label)
 
-    if (This%Constructed) then
-      if (This%NbNodes /= size(Values,1) .or. This%NbDegen /= size(Values,2)) then
-        call This%Reset()
-      else
-        This%Values = Values
-      end if
+  class(Output_Type), intent(inout)                                   ::    This
+  real(rkp), dimension(:,:), intent(in)                               ::    Values
+  character(*), optional, intent(in)                                  ::    Label
+  
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  integer                                                             ::    StatLoc=0
+
+  if (This%Constructed) then
+    if (This%NbNodes /= size(Values,1) .or. This%NbDegen /= size(Values,2)) then
+      call This%Reset()
+    else
+      This%Values = Values
     end if
+  end if
 
-    if (.not. This%Initialized) call This%Initialize()
+  if (.not. This%Constructed) then
+    allocate(This%Values, source=Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
+    This%NbDegen = size(Values,2)
+    This%NbNodes = size(Values,1)
+  end if
 
-    if (.not. This%Constructed) then
-      allocate(This%Values, source=Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
-      This%NbDegen = size(Values,2)
-      This%NbNodes = size(Values,1)
+  if (present(Label)) This%Label = Label
+
+  This%Constructed = .true.
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine GetValues(This, Values)
+
+  real(rkp), allocatable, dimension(:,:), intent(inout)               ::    Values
+
+  class(Output_Type), intent(inout)                                   ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetValues'
+  integer                                                             ::    StatLoc=0
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)        
+  
+  if (allocated(Values)) then
+    if (size(Values,1) /= This%NbNodes .or. size(Values,2) /= This%NbDegen) then
+      deallocate(Values, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
     end if
+  end if
+  if (.not. allocated(Values)) then
+    allocate(Values, mold=This%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
+  end if
 
-    if (present(Label)) This%Label = Label
+  Values = This%Values
 
-    This%Constructed = .true.
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetValuesPointer(This)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine GetValues(This, Values)
+  real(rkp), dimension(:,:), pointer                                  ::    GetValuesPointer
 
-    real(rkp), allocatable, dimension(:,:), intent(inout)             ::    Values
+  class(Output_Type), target, intent(in)                              ::    This
+  
+  character(*), parameter                                             ::    ProcName='GetValuesPointer'
+  integer                                                             ::    StatLoc=0
 
-    class(Output_Type), intent(inout)                                 ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetValues'
-    integer                                                           ::    StatLoc=0
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)        
-   
-    if (allocated(Values)) then
-      if (size(Values,1) /= This%NbNodes .or. size(Values,2) /= This%NbDegen) then
-        deallocate(Values, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-      end if
-    end if
-    if (.not. allocated(Values)) then
-      allocate(Values, mold=This%Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)
-    end if
+  GetValuesPointer => This%Values
 
-    Values = This%Values
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetNbNodes(This)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetValuesPointer(This)
+  integer                                                             ::    GetNbNodes
 
-    real(rkp), dimension(:,:), pointer                                ::    GetValuesPointer
+  class(Output_Type), intent(in)                                      ::    This 
 
-    class(Output_Type), target, intent(in)                            ::    This
-    
-    character(*), parameter                                           ::    ProcName='GetValuesPointer'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='GetNbNodes'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  
+  GetNbNodes = This%NbNodes
 
-    GetValuesPointer => This%Values
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetNbDegen(This)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbNodes(This)
+  integer                                                             ::    GetNbDegen
 
-    integer                                                           ::    GetNbNodes
+  class(Output_Type), intent(in)                                      ::    This 
 
-    class(Output_Type), intent(in)                                    ::    This 
+  character(*), parameter                                             ::    ProcName='GetNbDegen'
 
-    character(*), parameter                                           ::    ProcName='GetNbNodes'
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  
+  GetNbDegen = This%NbDegen
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-    
-    GetNbNodes = This%NbNodes
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetLabel(This)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDegen(This)
+  character(:), allocatable                                           ::    GetLabel
 
-    integer                                                           ::    GetNbDegen
+  class(Output_Type), intent(in)                                      ::    This 
 
-    class(Output_Type), intent(in)                                    ::    This 
+  character(*), parameter                                             ::    ProcName='GetName'
 
-    character(*), parameter                                           ::    ProcName='GetNbDegen'
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-    
-    GetNbDegen = This%NbDegen
+  GetLabel = This%Label
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function IsConstructed(This)
 
-    character(:), allocatable                                         ::    GetLabel
+  logical, allocatable                                                ::    IsConstructed
 
-    class(Output_Type), intent(in)                                    ::    This 
+  class(Output_Type), intent(in)                                      ::    This 
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  character(*), parameter                                             ::    ProcName='IsConstructed'
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  IsConstructed = This%Constructed
 
-    GetLabel = This%Label
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsConstructed(This)
+  class(Output_Type), intent(inout)                                   ::    LHS
+  class(Output_Type), intent(in)                                      ::    RHS
 
-    logical, allocatable                                              ::    IsConstructed
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-    class(Output_Type), intent(in)                                    ::    This 
+  call LHS%Reset()
 
-    character(*), parameter                                           ::    ProcName='IsConstructed'
+  LHS%Constructed = RHS%Constructed
 
-    IsConstructed = This%Constructed
+  if (RHS%Constructed) then
+    LHS%Name = RHS%Name
+    LHS%Label = RHS%Label
+    allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='LHS%Values', ProcName=ProcName, stat=StatLoc)
+    LHS%NbNodes = RHS%NbNodes
+    LHS%NbDegen = RHS%NbDegen
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    class(Output_Type), intent(inout)                                 ::    LHS
-    class(Output_Type), intent(in)                                    ::    RHS
+  type(Output_Type),intent(inout)                                     ::    This
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-    call LHS%Reset()
+  if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
 
-    LHS%Initialized = LHS%Initialized
-    LHS%Constructed = RHS%Constructed
+  if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
 
-    if (RHS%Constructed) then
-      LHS%Name = RHS%Name
-      LHS%Label = RHS%Label
-      allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='LHS%Values', ProcName=ProcName, stat=StatLoc)
-      LHS%NbNodes = RHS%NbNodes
-      LHS%NbDegen = RHS%NbDegen
-    end if
+  if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(Output_Type),intent(inout)                                   ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-    if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Values', ProcName=ProcName, stat=StatLoc)
-
-    if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-
-    if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

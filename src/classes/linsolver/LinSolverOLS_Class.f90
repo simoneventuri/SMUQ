@@ -30,6 +30,7 @@ use LinSolverMethod_Class                                         ,only:    LinS
 use CVMethod_Factory_Class                                        ,only:    CVMethod_Factory
 use CVMethod_Class                                                ,only:    CVMethod_Type, CVFitTarget
 use CVLOO_Class                                                   ,only:    CVLOO_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -41,9 +42,7 @@ type, extends(LinSolverMethod_Type)                                   ::    LinS
   logical                                                             ::    CorrectedCV
   class(CVMethod_Type), allocatable                                   ::    CVError
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -61,22 +60,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(LinSolverOLS_Type), intent(inout)                             ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'linsolverols'
-    This%Initialized = .true.
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(LinSolverOLS_Type), intent(inout)                             ::    This
@@ -84,23 +67,10 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc = 0
 
-  This%Initialized = .false.
   This%Constructed = .false.
 
   if (allocated(This%CVError)) deallocate(This%CVError, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%CVError', ProcName=ProcName, stat=StatLoc)
-
-  call This%Initialize()
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(LinSolverOLS_Type), intent(inout)                             ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
   This%CorrectedCV = .true.
 
@@ -123,18 +93,22 @@ subroutine ConstructInput(This, Input, Prefix)
   logical                                                             ::    VarL0D
   character(:), allocatable                                           ::    VarC0D
   logical                                                             ::    Found
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'modified_cross_validation'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%CorrectedCV = VarL0D
 
   SectionName = 'cross_validation'
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call CVMethod_Factory%Construct(Object=This%CVError, Input=InputSection, Prefix=PrefixLoc)
@@ -147,6 +121,9 @@ subroutine ConstructInput(This, Input, Prefix)
         call Error%Raise(Line='Something went wrong', ProcName=ProcName)
     end select
   end if
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -163,8 +140,7 @@ subroutine ConstructCase1(This, CVMethod, CorrectedCV)
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   if (present(CorrectedCV)) This%CorrectedCV = CorrectedCV
 
@@ -220,7 +196,7 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddParameter(Name='modified_cross_validation', Value=ConvertToString(Value=This%CorrectedCV))
 
   SectionName = 'cross_validation'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/cross_validation'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'cross_validation/'
   call GetInput%AddSection(Section=CVMethod_Factory%GetObjectInput(Object=This%CVError, Name=SectionName, Prefix=PrefixLoc, &
                            Directory=DirectorySub))
 
@@ -786,7 +762,6 @@ impure elemental subroutine Copy(LHS, RHS)
   select type (RHS)
     type is (LinSolverOLS_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then

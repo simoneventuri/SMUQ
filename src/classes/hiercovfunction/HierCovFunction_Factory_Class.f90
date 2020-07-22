@@ -180,7 +180,7 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
 
   call GetObjectInput%SetName(SectionName=Name)
 
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/type'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'type/'
 
   call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
 

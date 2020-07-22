@@ -33,20 +33,15 @@ private
 public                                                                ::    LikelihoodFunction_Type
 
 type, abstract                                                        ::    LikelihoodFunction_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Label
 contains
-  procedure, public                                                   ::    GetName
   procedure, public                                                   ::    GetLabel
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    Evaluate                =>    Evaluate_0D,            &
                                                                                                           Evaluate_1D
-  procedure(Initialize_LikelihoodFunction), deferred, public          ::    Initialize
   procedure(Reset_LikelihoodFunction), deferred, public               ::    Reset
-  procedure(SetDefaults_LikelihoodFunction), deferred, public         ::    SetDefaults
   procedure(ConstructInput_LikelihoodFunction), deferred, private     ::    ConstructInput
   procedure(GetInput_LikelihoodFunction), deferred, public            ::    GetInput
   procedure(Evaluate_0D_LikelihoodFunction), deferred, private        ::    Evaluate_0D
@@ -59,21 +54,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_LikelihoodFunction(This)
-    import                                                            ::    LikelihoodFunction_Type
-    class(LikelihoodFunction_Type), intent(inout)                     ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_LikelihoodFunction(This)
-    import                                                            ::    LikelihoodFunction_Type
-    class(LikelihoodFunction_Type), intent(inout)                     ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_LikelihoodFunction(This)
     import                                                            ::    LikelihoodFunction_Type
     class(LikelihoodFunction_Type), intent(inout)                     ::    This
   end subroutine
@@ -145,31 +126,18 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetLabel(This)
 
-    character(:), allocatable                                         ::    GetName
-    class(LikelihoodFunction_Type), intent(inout)                     ::    This
+  character(:), allocatable                                           ::    GetLabel
+  class(LikelihoodFunction_Type), intent(inout)                       ::    This
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  logical                                                             ::    DebugLoc
+  character(*), parameter                                             ::    ProcName='GetLabel'
 
-    GetName = This%Name
+  GetLabel = This%Label
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel(This)
-
-    character(:), allocatable                                         ::    GetLabel
-    class(LikelihoodFunction_Type), intent(inout)                     ::    This
-
-    logical                                                           ::    DebugLoc
-    character(*), parameter                                           ::    ProcName='GetLabel'
-
-    GetLabel = This%Label
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

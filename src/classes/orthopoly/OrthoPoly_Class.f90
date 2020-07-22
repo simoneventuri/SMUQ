@@ -30,8 +30,6 @@ private
 public                                                                ::    OrthoPoly_Type
 
 type, abstract                                                        ::    OrthoPoly_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   real(rkp)                                                           ::    polyorderm1 = Zero
   real(rkp)                                                           ::    polyorder0 = One
@@ -42,9 +40,7 @@ contains
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    Eval                    =>    Eval_N,             &
                                                                                                           Eval_MN
-  procedure(Initialize_OrthoPoly), deferred, public                   ::    Initialize
   procedure(Reset_OrthoPoly), deferred, public                        ::    Reset
-  procedure(SetDefaults_OrthoPoly), deferred, public                  ::    SetDefaults
   procedure(Eval_N_OrthoPoly), deferred, public                       ::    Eval_N
   procedure(Eval_MN_OrthoPoly), deferred, public                      ::    Eval_MN
   procedure(ConstructInput_OrthoPoly), deferred, private              ::    ConstructInput
@@ -57,21 +53,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_OrthoPoly(This)
-    import                                                            ::    OrthoPoly_Type
-    class(OrthoPoly_Type), intent(inout)                              ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_OrthoPoly(This)
-    import                                                            ::    OrthoPoly_Type
-    class(OrthoPoly_Type), intent(inout)                              ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_OrthoPoly(This)
     import                                                            ::    OrthoPoly_Type
     class(OrthoPoly_Type), intent(inout)                              ::    This
   end subroutine
@@ -135,18 +117,5 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
-
-    character(:), allocatable                                         ::    GetName
-    class(OrthoPoly_Type), intent(inout)                              ::    This
-
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    GetName = This%Name
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

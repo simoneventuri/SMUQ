@@ -42,17 +42,13 @@ public                                                                ::    PCEM
 public                                                                ::    ComputeSobolIndices
 
 type, abstract                                                        ::    PCEMethod_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
   procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_PCEMethod), deferred, public                   ::    Initialize
   procedure(Reset_PCEMethod), deferred, public                        ::    Reset
-  procedure(SetDefaults_PCEMethod), deferred, public                  ::    SetDefaults
   procedure(ConstructInput_PCEMethod), deferred, private              ::    ConstructInput
   procedure(GetInput_PCEMethod), deferred, public                     ::    GetInput
   procedure(BuildModel_PCEMethod), deferred, public                   ::    BuildModel
@@ -64,21 +60,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_PCEMethod(This)
-    import                                                            ::    PCEMethod_Type
-    class(PCEMethod_Type), intent(inout)                              ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_PCEMethod(This)
-    import                                                            ::    PCEMethod_Type
-    class(PCEMethod_Type), intent(inout)                              ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_PCEMethod(This)
     import                                                            ::    PCEMethod_Type
     class(PCEMethod_Type), intent(inout)                              ::    This
   end subroutine
@@ -149,57 +131,44 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ComputeSobolIndices(Coefficients, Indices, SobolIndices)
 
-    character(:), allocatable                                         ::    GetName
-    class(PCEMethod_Type), intent(inout)                              ::    This
+  real(rkp), dimension(:), intent(in)                                 ::    Coefficients
+  integer, dimension(:,:), intent(in)                                 ::    Indices
+  real(rkp), dimension(:), intent(out)                                ::    SobolIndices
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  character(*), parameter                                             ::    ProcName='GetName'
+  integer                                                             ::    StatLoc=0
+  real(rkp)                                                           ::    Variance
+  integer                                                             ::    NbDim
+  integer                                                             ::    Cardinality
+  real(rkp)                                                           ::    VarR0D
+  integer                                                             ::    i
+  integer                                                             ::    ii
 
-    GetName = This%Name
+  NbDim = size(Indices,1)
+  Cardinality = size(Indices,2)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (size(Coefficients,1) /= Cardinality) call Error%Raise('Incorrect size', ProcName=ProcName)
+  if (size(SobolIndices,1) /= NbDim) call Error%Raise('Incorrect size', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ComputeSobolIndices(Coefficients, Indices, SobolIndices)
+  SobolIndices = Zero
 
-    real(rkp), dimension(:), intent(in)                               ::    Coefficients
-    integer, dimension(:,:), intent(in)                               ::    Indices
-    real(rkp), dimension(:), intent(out)                              ::    SobolIndices
-
-    character(*), parameter                                           ::    ProcName='GetName'
-    integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    Variance
-    integer                                                           ::    NbDim
-    integer                                                           ::    Cardinality
-    real(rkp)                                                         ::    VarR0D
-    integer                                                           ::    i
-    integer                                                           ::    ii
-
-    NbDim = size(Indices,1)
-    Cardinality = size(Indices,2)
-
-    if (size(Coefficients,1) /= Cardinality) call Error%Raise('Incorrect size', ProcName=ProcName)
-    if (size(SobolIndices,1) /= NbDim) call Error%Raise('Incorrect size', ProcName=ProcName)
-
-    SobolIndices = Zero
-
-    if (Cardinality > 1) then
-      Variance = dot_product(Coefficients(2:),Coefficients(2:))
-      i = 1
-      do i = 1, NbDim
-        VarR0D = Zero
-        ii = 1
-        do ii = 1, Cardinality
-          if (Indices(i,ii) /= 0) VarR0D = VarR0D + Coefficients(ii)**2
-        end do
-        SobolIndices(i) = VarR0D / Variance
+  if (Cardinality > 1) then
+    Variance = dot_product(Coefficients(2:),Coefficients(2:))
+    i = 1
+    do i = 1, NbDim
+      VarR0D = Zero
+      ii = 1
+      do ii = 1, Cardinality
+        if (Indices(i,ii) /= 0) VarR0D = VarR0D + Coefficients(ii)**2
       end do
-    end if
+      SobolIndices(i) = VarR0D / Variance
+    end do
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

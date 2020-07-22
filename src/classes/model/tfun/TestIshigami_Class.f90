@@ -29,6 +29,7 @@ use Input_Class                                                   ,only:    Inpu
 use IScalarValue_Class                                            ,only:    IScalarValue_Type
 use IScalarValue_Factory_Class                                    ,only:    IScalarValue_Factory
 use IScalarValueContainer_Class                                   ,only:    IScalarValueContainer_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -44,9 +45,7 @@ type, extends(TestFunction_Type)                                      ::    Test
   class(IScalarValue_Type), allocatable                               ::    X2
   class(IScalarValue_Type), allocatable                               ::    X3
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, public                                                   ::    ConstructInput
   procedure, public                                                   ::    GetInput
   procedure, public                                                   ::    Run
@@ -60,23 +59,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!--------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(TestIshigami_Type), intent(inout)                           ::    This
-
-  character(*), parameter                                           ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Name = 'ishigami'
-    This%Initialized = .true.
-  end if
-
-  call This%SetDefaults()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(TestIshigami_Type), intent(inout)                           ::    This
@@ -84,7 +66,6 @@ subroutine Reset(This)
   character(*), parameter                                           ::    ProcName='Reset'    
   integer                                                           ::    StatLoc=0
 
-  This%Initialized = .false.
   This%Constructed = .false.
 
   if (allocated(This%X1)) deallocate(This%X1, stat=StatLoc)
@@ -95,19 +76,6 @@ subroutine Reset(This)
 
   if (allocated(This%X3)) deallocate(This%X3, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%X3', ProcName=ProcName, stat=StatLoc)
-
-  call This%Initialize()
-
-end subroutine
-!!--------------------------------------------------------------------------------------------------------------------------------
-
-!!--------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(TestIshigami_Type), intent(inout)                           ::    This
-
-  character(*), parameter                                           ::    ProcName='SetDefaults'
-  integer                                                           ::    StatLoc=0
 
   This%A = One
   This%B = Seven
@@ -137,45 +105,58 @@ subroutine ConstructInput(This, Input, Prefix)
   integer                                                           ::    i
   logical                                                           ::    MandatoryLoc
   type(InputSection_Type), pointer                                  ::    InputSection=>null()
+  type(InputVerifier_Type)                                          ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'label'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   This%Label = VarC0D
 
   ParameterName = 'a'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%A = VarR0D
 
   ParameterName = 'b'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%B = VarR0D
 
   ParameterName = 'c'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%C = VarR0D
 
   SectionName = 'parameters'
+  call InputVerifier%AddSection(Section=SectionName)
 
   SubSectionName = SectionName // '>x1'
+  call InputVerifier%AddSection(Section='x1', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%X1, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>x2'
+  call InputVerifier%AddSection(Section='x2', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%X2, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
 
   SubSectionName = SectionName // '>x3'
+  call InputVerifier%AddSection(Section='x3', ToSubSection=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
   call IScalarValue_Factory%Construct(Object=This%X3, Input=InputSection, Prefix=PrefixLoc)
   nullify(InputSection)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -223,17 +204,17 @@ function GetInput(This, Name, Prefix, Directory)
   SectionName='parameters'
   call GetInput%AddSection(SectionName=SectionName)
   SubSectionName = 'x1'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%X1, Name=SubSectionName, Prefix=PrefixLoc,     &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'x2'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%X2, Name=SubSectionName, Prefix=PrefixLoc,     &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
   SubSectionName = 'x3'
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/' // SubSectionName
+  if (ExternalFlag) DirectorySub = DirectoryLoc // SubSectionName // '/'
   call GetInput%AddSection(Section=IScalarValue_Factory%GetObjectInput(Object=This%X3, Name=SubSectionName, Prefix=PrefixLoc,     &
                                                                        Directory=DirectorySub), To_SubSection=SectionName)
 
@@ -308,7 +289,6 @@ impure elemental subroutine Copy(LHS, RHS)
   select type (RHS)
     type is (TestIshigami_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
         LHS%Label = RHS%Label

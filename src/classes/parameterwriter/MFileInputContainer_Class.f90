@@ -42,94 +42,94 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Set(This, Object)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Set(This, Object)
 
-    class(MFileInputContainer_Type), intent(inout)                    ::    This
-    class(MFileInput_Type), intent(in)                                ::    Object
+  class(MFileInputContainer_Type), intent(inout)                      ::    This
+  class(MFileInput_Type), intent(in)                                  ::    Object
 
-    character(*), parameter                                           ::    ProcName='Set'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Set'
+  integer                                                             ::    StatLoc=0
 
-    allocate(This%Object, source=Object, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%Object', ProcName=ProcName, stat=StatLoc)
+  allocate(This%Object, source=Object, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%Object', ProcName=ProcName, stat=StatLoc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function Get(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function Get(This)
 
-    class(MFileInput_Type), allocatable                               ::    Get
+  class(MFileInput_Type), allocatable                                 ::    Get
 
-    class(MFileInputContainer_Type), intent(in)                       ::    This
+  class(MFileInputContainer_Type), intent(in)                         ::    This
 
-    character(*), parameter                                           ::    ProcName='Get'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Get'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. allocated(This%Object)) call Error%Raise(Line='Member object defined', ProcName=ProcName)
+  if (.not. allocated(This%Object)) call Error%Raise(Line='Member object defined', ProcName=ProcName)
 
-    allocate(Get, source=This%Object, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Get', ProcName=ProcName, stat=StatLoc)
+  allocate(Get, source=This%Object, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Get', ProcName=ProcName, stat=StatLoc)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPointer(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetPointer(This)
 
-    class(MFileInput_Type), pointer                                   ::    GetPointer
+  class(MFileInput_Type), pointer                                     ::    GetPointer
 
-    class(MFileInputContainer_Type), target, intent(in)               ::    This
+  class(MFileInputContainer_Type), target, intent(in)                 ::    This
 
-    character(*), parameter                                           ::    ProcName='GetPointer'
+  character(*), parameter                                             ::    ProcName='GetPointer'
 
-    if (.not. allocated(This%Object)) call Error%Raise(Line='Member object defined', ProcName=ProcName)
+  if (.not. allocated(This%Object)) call Error%Raise(Line='Member object defined', ProcName=ProcName)
 
-    GetPointer => This%Object
+  GetPointer => This%Object
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    class(MFileInputContainer_Type), intent(inout)                    ::    LHS
-    class(MFileInputContainer_Type), intent(in)                       ::    RHS
+  class(MFileInputContainer_Type), intent(inout)                      ::    LHS
+  class(MFileInputContainer_Type), intent(in)                         ::    RHS
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-    select type (RHS)
-  
-      type is (MFileInputContainer_Type)
-        if (allocated(RHS%Object)) then
-          if (allocated(LHS%Object)) deallocate(LHS%Object, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Deallocate(Name='LHS%Object', Procname=ProcName, stat=StatLoc)
-          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Object', ProcName=ProcName, stat=StatLoc)
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+  select type (RHS)
 
-    end select
+    type is (MFileInputContainer_Type)
+      if (allocated(RHS%Object)) then
+        if (allocated(LHS%Object)) deallocate(LHS%Object, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(Name='LHS%Object', Procname=ProcName, stat=StatLoc)
+        allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%Object', ProcName=ProcName, stat=StatLoc)
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    type(MFileInputContainer_Type), intent(inout)                     ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc
+  type(MFileInputContainer_Type), intent(inout)                       ::    This
 
-    if (allocated(This%Object)) deallocate(This%Object, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(name='This%Object', ProcName=ProcName, stat=StatLoc)
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%Object)) deallocate(This%Object, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(name='This%Object', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -33,17 +33,12 @@ private
 public                                                                ::    SAMethod_Type
 
 type, abstract                                                        ::    SAMethod_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_SAMethod), deferred, public                    ::    Initialize
   procedure(Reset_SAMethod), deferred, public                         ::    Reset
-  procedure(SetDefaults_SAMethod), deferred, public                   ::    SetDefaults
   procedure(ConstructInput_SAMethod), deferred, private               ::    ConstructInput
   procedure(GetInput_SAMethod), deferred, public                      ::    GetInput
   procedure(Run_SAMethod), deferred, public                           ::    Run
@@ -55,21 +50,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_SAMethod(This)
-    import                                                            ::    SAMethod_Type
-    class(SAMethod_Type), intent(inout)                               ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_SAMethod(This)
-    import                                                            ::    SAMethod_Type
-    class(SAMethod_Type), intent(inout)                               ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_SAMethod(This)
     import                                                            ::    SAMethod_Type
     class(SAMethod_Type), intent(inout)                               ::    This
   end subroutine
@@ -123,18 +104,5 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
-
-    character(:), allocatable                                         ::    GetName
-    class(SAMethod_Type), intent(inout)                               ::    This
-
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    GetName = This%Name
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -27,6 +27,7 @@ use Error_Class                                                   ,only:    Erro
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use ProgramDefs_Class                                             ,only:    ProgramDefs
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -36,8 +37,6 @@ public                                                                ::    Rest
 public                                                                ::    RestartTarget
 
 type                                                                  ::    Restart_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   type(SMUQFile_Type)                                                 ::    RestartFile
   type(InputSection_Type)                                             ::    Input
@@ -45,9 +44,7 @@ type                                                                  ::    Rest
   character(4)                                                        ::    InputName='work'
   character(:), allocatable                                           ::    RestartSection
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructCase1
   procedure, public                                                   ::    GetDirectory
@@ -77,229 +74,198 @@ end interface
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(Restart_Type), intent(inout)                                ::    This
+  class(Restart_Type), intent(inout)                                  ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Name = 'restart'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  This%Constructed = .false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call This%RestartFile%Reset()
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+  This%Prefix = ''
+  This%RestartSection = ''
 
-    class(Restart_Type), intent(inout)                                ::    This
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, Input, Prefix)
+  
+  class(Restart_Type), intent(inout)                                  ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), intent(in)                                            ::    Prefix 
 
-    This%Initialized = .false.
-    This%Constructed = .false.
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    UnitLoc=0
+  character(:), allocatable                                           ::    VarC0D
 
-    call This%RestartFile%Reset()
+  call This%Reset()
 
-    call This%Initialize()
+  call This%Input%SetName(SectionName=This%InputName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%RestartSection = Input%GetName()
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  This%Prefix = Prefix
 
-    class(Restart_Type), intent(inout)                                ::    This
+  call CopyDirectory(Source=ProgramDefs%GetCaseDir(), Destination=This%Prefix, ContentsOnly=.true.)
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  call This%Input%AddSection(Section=Input)
 
-    This%Prefix = ''
-    This%RestartSection = ''
+  VarC0D = ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
+  call This%RestartFile%Construct(File=VarC0D, Prefix=This%Prefix)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call This%RestartFile%Open(Unit=UnitLoc, Action='write', Status='replace')
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, Input, Prefix)
-    
-    class(Restart_Type), intent(inout)                                ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), intent(in)                                          ::    Prefix 
+  call Input%Write(FileUnit=UnitLoc)
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    UnitLoc=0
-    character(:), allocatable                                         ::    VarC0D
+  call This%RestartFile%Close()
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  This%Constructed = .true.
 
-    call This%Input%SetName(SectionName=This%InputName)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    This%RestartSection = Input%GetName()
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetPrefix(This)
+  
+  character(:), allocatable                                           ::    GetPrefix
 
-    This%Prefix = Prefix
+  class(Restart_Type), intent(inout)                                  ::    This 
 
-    call CopyDirectory(Source=ProgramDefs%GetCaseDir(), Destination=This%Prefix, ContentsOnly=.true.)
+  character(*), parameter                                             ::    ProcName='GetPrefix'
+  integer                                                             ::    StatLoc=0
 
-    call This%Input%AddSection(Section=Input)
+  GetPrefix = This%Prefix
 
-    VarC0D = ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
-    call This%RestartFile%Construct(File=VarC0D, Prefix=This%Prefix)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    call This%RestartFile%Open(Unit=UnitLoc, Action='write', Status='replace')
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetDirectory(This, SectionChain)
+  
+  character(:), allocatable                                           ::    GetDirectory
 
-    call Input%Write(FileUnit=UnitLoc)
+  class(Restart_Type), intent(inout)                                  ::    This
+  character(*), intent(in)                                            ::    SectionChain 
 
-    call This%RestartFile%Close()
+  character(*), parameter                                             ::    ProcName='GetDirectory'
+  integer                                                             ::    StatLoc=0
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    SectionNames
+  integer                                                             ::    NbSections=0
+  integer                                                             ::    i
 
-    This%Constructed = .true.
+  call ConvertToStrings(Value=SectionChain, Strings=SectionNames, Separator='>')
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  NbSections = size(SectionNames,1)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPrefix(This)
-    
-    character(:), allocatable                                         ::    GetPrefix
+  GetDirectory = ''
 
-    class(Restart_Type), intent(inout)                                ::    This 
+  do i = 1, NbSections
+    GetDirectory = GetDirectory // '/' // SectionNames(i)
+  end do
 
-    character(*), parameter                                           ::    ProcName='GetPrefix'
-    integer                                                           ::    StatLoc=0
+  deallocate(SectionNames, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='SectionNames', ProcName=ProcName, stat=StatLoc)
 
-    GetPrefix = This%Prefix
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Update_Section(This, InputSection, SectionChain)
+  
+  use String_Library
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDirectory(This, SectionChain)
-    
-    character(:), allocatable                                         ::    GetDirectory
+  class(Restart_Type), intent(inout)                                  ::    This
+  type(InputSection_Type), intent(in)                                 ::    InputSection
+  character(*), intent(in)                                            ::    SectionChain 
 
-    class(Restart_Type), intent(inout)                                ::    This
-    character(*), intent(in)                                          ::    SectionChain 
+  character(*), parameter                                             ::    ProcName='Update_Section'
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSectionPointer=>null()
+  character(:), allocatable                                           ::    SectionName
+  integer                                                             ::    UnitLoc=0
+  character(:), allocatable                                           ::    Line
 
-    character(*), parameter                                           ::    ProcName='GetDirectory'
-    integer                                                           ::    StatLoc=0
-    type(SMUQString_Type), allocatable, dimension(:)                  ::    SectionNames
-    integer                                                           ::    NbSections=0
-    integer                                                           ::    i
+  call This%Input%FindTargetSection(TargetSection=InputSectionPointer, FromSubSection=SectionChain, Mandatory=.true.)
 
-    call ConvertToStrings(Value=SectionChain, Strings=SectionNames, Separator='>')
+  SectionName = InputSectionPointer%GetName()
 
-    NbSections = size(SectionNames,1)
+  InputSectionPointer = InputSection
 
-    GetDirectory = ''
+  call InputSectionPointer%SetName(SectionName=SectionName)
 
-    do i = 1, NbSections
-      GetDirectory = GetDirectory // '/' // SectionNames(i)
-    end do
+  nullify(InputSectionPointer)
 
-    deallocate(SectionNames, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='SectionNames', ProcName=ProcName, stat=StatLoc)
+  call This%Input%FindTargetSection(TargetSection=InputSectionPointer, FromSubSection=This%RestartSection, Mandatory=.true.)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call This%RestartFile%Open(Unit=UnitLoc, Action='write', Status='replace')
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Update_Section(This, InputSection, SectionChain)
-    
-    use String_Library
+  call InputSectionPointer%Write(FileUnit=UnitLoc)
 
-    class(Restart_Type), intent(inout)                                ::    This
-    type(InputSection_Type), intent(in)                               ::    InputSection
-    character(*), intent(in)                                          ::    SectionChain 
+  call This%RestartFile%Close()
 
-    character(*), parameter                                           ::    ProcName='Update_Section'
-    integer                                                           ::    StatLoc=0
-    type(InputSection_Type), pointer                                  ::    InputSectionPointer=>null()
-    character(:), allocatable                                         ::    SectionName
-    integer                                                           ::    UnitLoc=0
-    character(:), allocatable                                         ::    Line
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    call This%Input%FindTargetSection(TargetSection=InputSectionPointer, FromSubSection=SectionChain, Mandatory=.true.)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Update_Routine(This, Input, SectionChain)
+  
+  class(Restart_Type), intent(inout)                                  ::    This
+  procedure(RestartTarget), pointer                                   ::    Input
+  character(*), intent(in)                                            ::    SectionChain 
 
-    SectionName = InputSectionPointer%GetName()
+  character(*), parameter                                             ::    ProcName='Update_Routine'
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), allocatable                                ::    InputSection
 
-    InputSectionPointer = InputSection
+  allocate(InputSection, source=Input(Name='temp', Prefix=This%GetPrefix(), &
+                                      Directory=This%GetDirectory(SectionChain=SectionChain)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
 
-    call InputSectionPointer%SetName(SectionName=SectionName)
+  call This%Update(InputSection=InputSection, SectionChain=SectionChain)
 
-    nullify(InputSectionPointer)
+  deallocate(InputSection, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
 
-    call This%Input%FindTargetSection(TargetSection=InputSectionPointer, FromSubSection=This%RestartSection, Mandatory=.true.)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    call This%RestartFile%Open(Unit=UnitLoc, Action='write', Status='replace')
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    call InputSectionPointer%Write(FileUnit=UnitLoc)
+  class(Restart_Type), intent(out)                                    ::    LHS
+  class(Restart_Type), intent(in)                                     ::    RHS
 
-    call This%RestartFile%Close()
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call LHS%Reset()
+  LHS%Constructed = RHS%Constructed
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Update_Routine(This, Input, SectionChain)
-    
-    class(Restart_Type), intent(inout)                                ::    This
-    procedure(RestartTarget), pointer                                 ::    Input
-    character(*), intent(in)                                          ::    SectionChain 
+  if (RHS%Constructed) then
+    LHS%RestartFile = RHS%RestartFile
+    LHS%Input = RHS%Input
+    LHS%Prefix = RHS%Prefix
+    LHS%RestartSection = RHS%RestartSection
+  end if
 
-    character(*), parameter                                           ::    ProcName='Update_Routine'
-    integer                                                           ::    StatLoc=0
-    type(InputSection_Type), allocatable                              ::    InputSection
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    allocate(InputSection, source=Input(Name='temp', Prefix=This%GetPrefix(), &
-                                        Directory=This%GetDirectory(SectionChain=SectionChain)), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    call This%Update(InputSection=InputSection, SectionChain=SectionChain)
+  type(Restart_Type), intent(inout)                                   ::    This
 
-    deallocate(InputSection, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='InputSection', ProcName=ProcName, stat=StatLoc)
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
-
-    class(Restart_Type), intent(out)                                  ::    LHS
-    class(Restart_Type), intent(in)                                   ::    RHS
-
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    call LHS%Reset()
-    LHS%Initialized = RHS%Initialized
-    LHS%Constructed = RHS%Constructed
-
-    if (RHS%Constructed) then
-      LHS%RestartFile = RHS%RestartFile
-      LHS%Input = RHS%Input
-      LHS%Prefix = RHS%Prefix
-      LHS%RestartSection = RHS%RestartSection
-    end if
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(Restart_Type), intent(inout)                                 ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

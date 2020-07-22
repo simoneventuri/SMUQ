@@ -44,94 +44,94 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Set(This, Object)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Set(This, Object)
 
-    class(OrthoPolyContainer_Type), intent(inout)                     ::    This
-    class(OrthoPoly_Type), intent(in)                                 ::    Object
+  class(OrthoPolyContainer_Type), intent(inout)                       ::    This
+  class(OrthoPoly_Type), intent(in)                                   ::    Object
 
-    character(*), parameter                                           ::    ProcName='Set'
-    integer                                                           ::    StatLoc
+  character(*), parameter                                             ::    ProcName='Set'
+  integer                                                             ::    StatLoc
 
-    allocate(This%Object, source=Object, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%Object', ProcName=ProcName, stat=StatLoc)
+  allocate(This%Object, source=Object, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%Object', ProcName=ProcName, stat=StatLoc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function Get(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function Get(This)
 
-    class(OrthoPoly_Type), allocatable                                ::    Get
+  class(OrthoPoly_Type), allocatable                                  ::    Get
 
-    class(OrthoPolyContainer_Type), intent(in)                        ::    This
+  class(OrthoPolyContainer_Type), intent(in)                          ::    This
 
-    character(*), parameter                                           ::    ProcName='Get'
-    integer                                                           ::    StatLoc
+  character(*), parameter                                             ::    ProcName='Get'
+  integer                                                             ::    StatLoc
 
-    if (.not. allocated(This%Object)) call Error%Raise(Line='Orthogonal polynomial never defined', ProcName=ProcName)
+  if (.not. allocated(This%Object)) call Error%Raise(Line='Orthogonal polynomial never defined', ProcName=ProcName)
 
-    allocate(Get, source=This%Object, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='Get', ProcName=ProcName, stat=StatLoc)
+  allocate(Get, source=This%Object, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='Get', ProcName=ProcName, stat=StatLoc)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetPointer(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetPointer(This)
 
-    class(OrthoPoly_Type), pointer                                    ::    GetPointer
+  class(OrthoPoly_Type), pointer                                      ::    GetPointer
 
-    class(OrthoPolyContainer_Type), target, intent(in)                ::    This
+  class(OrthoPolyContainer_Type), target, intent(in)                  ::    This
 
-    character(*), parameter                                           ::    ProcName='GetPointer'
+  character(*), parameter                                             ::    ProcName='GetPointer'
 
-    if (.not. allocated(This%Object)) call Error%Raise(Line='Probability distribution never defined', ProcName=ProcName)
+  if (.not. allocated(This%Object)) call Error%Raise(Line='Probability distribution never defined', ProcName=ProcName)
 
-    GetPointer => This%Object
+  GetPointer => This%Object
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    class(OrthoPolyContainer_Type), intent(inout)                     ::    LHS
-    class(OrthoPolyContainer_Type), intent(in)                        ::    RHS
+  class(OrthoPolyContainer_Type), intent(inout)                       ::    LHS
+  class(OrthoPolyContainer_Type), intent(in)                          ::    RHS
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-    select type (RHS)
-  
-      type is (OrthoPolyContainer_Type)
-        if (allocated(RHS%Object)) then
-          if (allocated(LHS%Object)) deallocate(LHS%Object, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Deallocate(Name='LHS%Object', Procname=ProcName, stat=StatLoc)
-          allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Object', ProcName=ProcName, stat=StatLoc)
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+  select type (RHS)
 
-    end select
+    type is (OrthoPolyContainer_Type)
+      if (allocated(RHS%Object)) then
+        if (allocated(LHS%Object)) deallocate(LHS%Object, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Deallocate(Name='LHS%Object', Procname=ProcName, stat=StatLoc)
+        allocate(LHS%Object, source=RHS%Object, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%Object', ProcName=ProcName, stat=StatLoc)
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    type(OrthoPolyContainer_Type), intent(inout)                      ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc
+  type(OrthoPolyContainer_Type), intent(inout)                        ::    This
 
-    if (allocated(This%Object)) deallocate(This%Object, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(name='This%Object', ProcName=ProcName, stat=StatLoc)
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%Object)) deallocate(This%Object, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(name='This%Object', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

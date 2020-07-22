@@ -37,17 +37,13 @@ private
 public                                                                ::    ModelInterface_Type
 
 type                                                                  ::    ModelInterface_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   class(Model_Type), allocatable                                      ::    Model
   type(SMUQString_Type), allocatable, dimension(:)                    ::    ResponseLabels
   integer, allocatable, dimension(:)                                  ::    ResponseNbNodes
   integer                                                             ::    NbResponses=0
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructCase1
   generic, public                                                     ::    Run                     =>    Run_0D,                 &
@@ -65,409 +61,376 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(ModelInterface_Type), intent(inout)                         ::    This
+  class(ModelInterface_Type), intent(inout)                           ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Initialized = .true.
-      This%Name = 'ModelInterface'
-      call This%SetDefaults()
-    end if
+  This%Constructed=.false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%Model)) deallocate(This%Model, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+  if (allocated(This%ResponseLabels)) deallocate(This%ResponseLabels, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%ResponseLabels', ProcName=ProcName, stat=StatLoc)
 
-    class(ModelInterface_Type), intent(inout)                         ::    This
+  if (allocated(This%ResponseNbNodes)) deallocate(This%ResponseNbNodes, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%ResponseNbNodes', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  This%NbResponses=0
 
-    This%Initialized=.false.
-    This%Constructed=.false.
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (allocated(This%Model)) deallocate(This%Model, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, Model, Responses)
 
-    if (allocated(This%ResponseLabels)) deallocate(This%ResponseLabels, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%ResponseLabels', ProcName=ProcName, stat=StatLoc)
+  class(ModelInterface_Type), intent(inout)                           ::    This
+  class(Model_Type), intent(in)                                       ::    Model
+  type(Response_Type), dimension(:), intent(in)                       ::    Responses
 
-    if (allocated(This%ResponseNbNodes)) deallocate(This%ResponseNbNodes, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%ResponseNbNodes', ProcName=ProcName, stat=StatLoc)
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
 
-    This%NbResponses=0
+  call This%Reset()
 
-    call This%Initialize()
+  allocate(This%Model, source=Model, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%NbResponses = size(Responses,1)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  allocate(This%ResponseNbNodes(This%NbResponses), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%ResponseNbNodes', ProcName=ProcName, stat=StatLoc)
 
-    class(ModelInterface_Type), intent(inout)                         ::    This
+  allocate(This%ResponseLabels(This%NbResponses), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%ResponseLabels', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
-    integer                                                           ::    StatLoc=0
+  i = 1
+  do i = 1, This%NbResponses
+    This%ResponseLabels(i) = Responses(i)%GetLabel()
+    This%ResponseNbNodes(i) = Responses(i)%GetNbNodes()
+  end do
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Constructed = .true.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, Model, Responses)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(ModelInterface_Type), intent(inout)                         ::    This
-    class(Model_Type), intent(in)                                     ::    Model
-    type(Response_Type), dimension(:), intent(in)                     ::    Responses
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Run_0D(This, Input, Output, Stat)
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
+  class(ModelInterface_Type), intent(inout)                           ::    This
+  type(Input_Type), intent(in)                                        ::    Input
+  type(Output_Type), dimension(:), intent(inout)                      ::    Output
+  integer, optional, intent(out)                                      ::    Stat
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  character(*), parameter                                             ::    ProcName='Run_0D'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    StatRun=0
+  type(Output_Type), dimension(:), allocatable                        ::    OutputLoc
+  character(:), allocatable                                           ::    LabelLoc
+  integer                                                             ::    NbOutputs
+  integer                                                             ::    i
+  integer                                                             ::    ii
+  logical                                                             ::    CorrectOrder
 
-    allocate(This%Model, source=Model, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
+  StatRun = 1
 
-    This%NbResponses = size(Responses,1)
+  NbOutputs = This%Model%GetNbOutputs()
 
-    allocate(This%ResponseNbNodes(This%NbResponses), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%ResponseNbNodes', ProcName=ProcName, stat=StatLoc)
+  if (size(Output,1) /= This%NbResponses) call Error%Raise('Passed an output array of incorrect length', ProcName=ProcName)
+  if (NbOutputs < This%NbResponses) call Error%Raise('Insufficient number of model outputs', ProcName=ProcName)
 
-    allocate(This%ResponseLabels(This%NbResponses), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%ResponseLabels', ProcName=ProcName, stat=StatLoc)
+  if (NbOutputs == This%NbResponses) then
+    call This%Model%Run(Input=Input, Output=Output, Stat=StatRun)
+  else
+    allocate(OutputLoc(NbOutputs), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
+
+    call This%Model%Run(Input=Input, Output=OutputLoc, Stat=StatRun)
 
     i = 1
     do i = 1, This%NbResponses
-      This%ResponseLabels(i) = Responses(i)%GetLabel()
-      This%ResponseNbNodes(i) = Responses(i)%GetNbNodes()
+      ii = 1
+      do ii = 1, NbOutputs
+        if (This%ResponseLabels(i) == OutputLoc(ii)%GetLabel()) then
+          Output(i) = OutputLoc(ii)
+          exit
+        end if
+        call Error%Raise('Did not find required output : ' // LabelLoc, ProcName=ProcName)
+      end do
     end do
 
-    This%Constructed = .true.
+    deallocate(OutputLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (present(Stat)) then
+    Stat=StatRun
+    if (StatRun /= 0) return
+  else
+    if (StatRun /= 0) call Error%Raise('Model returned a non-zero status indicator: ' // ConvertToString(Value=StatLoc),     &
+                                                                                                              ProcName=ProcName)
+  end if
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_0D(This, Input, Output, Stat)
+  CorrectOrder = .true.
+  i = 1
+  do i = 1, This%NbResponses
+    if (This%ResponseLabels(i) == Output(i)%GetLabel()) cycle
+    CorrectOrder = .false.
+    exit
+  end do
 
-    class(ModelInterface_Type), intent(inout)                         ::    This
-    type(Input_Type), intent(in)                                      ::    Input
-    type(Output_Type), dimension(:), intent(inout)                    ::    Output
-    integer, optional, intent(out)                                    ::    Stat
+  if (.not. CorrectOrder) then
 
-    character(*), parameter                                           ::    ProcName='Run_0D'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    StatRun=0
-    type(Output_Type), dimension(:), allocatable                      ::    OutputLoc
-    character(:), allocatable                                         ::    LabelLoc
-    integer                                                           ::    NbOutputs
-    integer                                                           ::    i
-    integer                                                           ::    ii
-    logical                                                           ::    CorrectOrder
+    allocate(OutputLoc, source=Output, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
 
-    StatRun = 1
+    i = 1
+    do i = 1, This%NbResponses
+      ii = 1
+      do ii = 1, NbOutputs
+        if (This%ResponseLabels(i) == OutputLoc(ii)%GetLabel()) then
+          Output(i) = OutputLoc(ii)
+          exit
+        end if
+        call Error%Raise('Did not find required output', ProcName=ProcName)
+      end do
+    end do
 
-    NbOutputs = This%Model%GetNbOutputs()
+    deallocate(OutputLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)  
+  end if
 
-    if (size(Output,1) /= This%NbResponses) call Error%Raise('Passed an output array of incorrect length', ProcName=ProcName)
-    if (NbOutputs < This%NbResponses) call Error%Raise('Insufficient number of model outputs', ProcName=ProcName)
+  i = 1
+  do i = 1, This%NbResponses
+    if (Output(i)%GetNbNodes() /= This%ResponseNbNodes(i)) call Error%Raise(Line='Mismatching number of ' //                    &
+                                                      'output nodes for response : ' // This%ResponseLabels(i), ProcName=ProcName)
+  end do
 
-    if (NbOutputs == This%NbResponses) then
-      call This%Model%Run(Input=Input, Output=Output, Stat=StatRun)
-    else
-      allocate(OutputLoc(NbOutputs), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-      call This%Model%Run(Input=Input, Output=OutputLoc, Stat=StatRun)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Run_1D(This, Input, Output, Stat)
 
+  class(ModelInterface_Type), intent(inout)                           ::    This
+  type(Input_Type), dimension(:), intent(in)                          ::    Input
+  type(Output_Type), dimension(:,:), intent(inout)                    ::    Output
+  integer, dimension(:), optional, intent(inout)                      ::    Stat
+
+  character(*), parameter                                             ::    ProcName='Run_1D'
+  integer                                                             ::    StatLoc=0
+  integer, allocatable, dimension(:)                                  ::    StatRun
+  type(Output_Type), dimension(:,:), allocatable                      ::    OutputLoc
+  integer                                                             ::    NbInputs
+  integer                                                             ::    NbOutputs
+  integer                                                             ::    i
+  integer                                                             ::    ii
+  integer                                                             ::    iii
+  logical                                                             ::    CorrectOrder
+
+  NbInputs = size(Input,1)
+  NbOutputs = This%Model%GetNbOutputs()
+  
+  allocate(StatRun(NbInputs), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='StatRun', ProcName=ProcName, stat=StatLoc)
+  StatRun = 1
+
+  if (size(Output,1) /= This%NbResponses .or. size(Output,2) /= NbInputs) call Error%Raise('Passed an output array of' //     &
+                                                                                        ' incorrect length', ProcName=ProcName)
+
+  if (NbOutputs == This%NbResponses) then
+    call This%Model%Run(Input=Input, Output=Output, Stat=StatRun)
+  else
+    allocate(OutputLoc(NbOutputs, NbInputs), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
+
+    call This%Model%Run(Input=Input, Output=OutputLoc, Stat=StatRun)
+
+    iii = 1
+    do iii = 1, NbInputs
       i = 1
       do i = 1, This%NbResponses
         ii = 1
         do ii = 1, NbOutputs
-          if (This%ResponseLabels(i) == OutputLoc(ii)%GetLabel()) then
-            Output(i) = OutputLoc(ii)
+          if (This%ResponseLabels(i) == OutputLoc(ii,iii)%GetLabel()) then
+            Output(i,iii) = OutputLoc(ii,iii)
             exit
           end if
-          call Error%Raise('Did not find required output : ' // LabelLoc, ProcName=ProcName)
+          call Error%Raise('Did not find required output : ' // This%ResponseLabels(i), ProcName=ProcName)
         end do
       end do
+      i = 1
+      do i = 1, NbOutputs
+        call OutputLoc(i,iii)%Reset()
+      end do
+    end do
 
-      deallocate(OutputLoc, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
+    deallocate(OutputLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
+  end if
+
+  if (present(Stat)) then
+    Stat=StatRun
+    if (all(StatRun /= 0)) then
+      deallocate(StatRun, stat=StatLoc)
+      if (StatLoc /= 0) call Error%Deallocate(Name='StatRun', ProcName=ProcName, stat=StatLoc)
+      return
     end if
+  else
+    if (any(StatRun /= 0)) call Error%Raise('A model returned a non-zero status indicator: ' //                              &
+                                                                            ConvertToString(Values=StatRun), ProcName=ProcName)
+  end if
 
-    if (present(Stat)) then
-      Stat=StatRun
-      if (StatRun /= 0) return
-    else
-      if (StatRun /= 0) call Error%Raise('Model returned a non-zero status indicator: ' // ConvertToString(Value=StatLoc),     &
-                                                                                                               ProcName=ProcName)
-    end if
-
-    CorrectOrder = .true.
+  CorrectOrder = .true.
+  ii = 1
+  do ii = 1, NbInputs
     i = 1
     do i = 1, This%NbResponses
-      if (This%ResponseLabels(i) == Output(i)%GetLabel()) cycle
+      if (This%ResponseLabels(i) == Output(i,ii)%GetLabel()) cycle
       CorrectOrder = .false.
       exit
     end do
+    if (.not. CorrectOrder) exit
+  end do
 
-    if (.not. CorrectOrder) then
+  if (.not. CorrectOrder) then
+    allocate(OutputLoc(NbOutputs,1), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
 
-      allocate(OutputLoc, source=Output, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
-
+    iii = 1
+    do iii = 1, NbInputs
+      OutputLoc(:,1) = Output(:,iii)
       i = 1
       do i = 1, This%NbResponses
         ii = 1
         do ii = 1, NbOutputs
-          if (This%ResponseLabels(i) == OutputLoc(ii)%GetLabel()) then
-            Output(i) = OutputLoc(ii)
+          if (This%ResponseLabels(i) == OutputLoc(ii,1)%GetLabel()) then
+            Output(i,iii) = OutputLoc(ii,1)
             exit
           end if
-          call Error%Raise('Did not find required output', ProcName=ProcName)
+          call Error%Raise('Did not find required output : ' // This%ResponseLabels(i), ProcName=ProcName)
         end do
       end do
+    end do
+    deallocate(OutputLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)  
+  end if
 
-      deallocate(OutputLoc, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)  
-    end if
-
+  ii = 1
+  do ii = 1, NbInputs
     i = 1
     do i = 1, This%NbResponses
-      if (Output(i)%GetNbNodes() /= This%ResponseNbNodes(i)) call Error%Raise(Line='Mismatching number of ' //                    &
-                                                       'output nodes for response : ' // This%ResponseLabels(i), ProcName=ProcName)
+      if (Output(i,ii)%GetNbNodes() /= This%ResponseNbNodes(i)) call Error%Raise(Line='Mismatching number of ' //               &
+                                                      'output nodes for response : ' // This%ResponseLabels(i), ProcName=ProcName)
     end do
+  end do
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run_1D(This, Input, Output, Stat)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetNbResponses(This)
 
-    class(ModelInterface_Type), intent(inout)                         ::    This
-    type(Input_Type), dimension(:), intent(in)                        ::    Input
-    type(Output_Type), dimension(:,:), intent(inout)                  ::    Output
-    integer, dimension(:), optional, intent(inout)                    ::    Stat
+  integer                                                             ::    GetNbResponses
 
-    character(*), parameter                                           ::    ProcName='Run_1D'
-    integer                                                           ::    StatLoc=0
-    integer, allocatable, dimension(:)                                ::    StatRun
-    type(Output_Type), dimension(:,:), allocatable                    ::    OutputLoc
-    integer                                                           ::    NbInputs
-    integer                                                           ::    NbOutputs
-    integer                                                           ::    i
-    integer                                                           ::    ii
-    integer                                                           ::    iii
-    logical                                                           ::    CorrectOrder
+  class(ModelInterface_Type), intent(in)                              ::    This
 
-    NbInputs = size(Input,1)
-    NbOutputs = This%Model%GetNbOutputs()
-    
-    allocate(StatRun(NbInputs), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='StatRun', ProcName=ProcName, stat=StatLoc)
-    StatRun = 1
+  character(*), parameter                                             ::    ProcName='GetNbResponses'
 
-    if (size(Output,1) /= This%NbResponses .or. size(Output,2) /= NbInputs) call Error%Raise('Passed an output array of' //     &
-                                                                                          ' incorrect length', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (NbOutputs == This%NbResponses) then
-      call This%Model%Run(Input=Input, Output=Output, Stat=StatRun)
-    else
-      allocate(OutputLoc(NbOutputs, NbInputs), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
+  GetNbResponses = This%NbResponses
 
-      call This%Model%Run(Input=Input, Output=OutputLoc, Stat=StatRun)
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-      iii = 1
-      do iii = 1, NbInputs
-        i = 1
-        do i = 1, This%NbResponses
-          ii = 1
-          do ii = 1, NbOutputs
-            if (This%ResponseLabels(i) == OutputLoc(ii,iii)%GetLabel()) then
-              Output(i,iii) = OutputLoc(ii,iii)
-              exit
-            end if
-            call Error%Raise('Did not find required output : ' // This%ResponseLabels(i), ProcName=ProcName)
-          end do
-        end do
-        i = 1
-        do i = 1, NbOutputs
-          call OutputLoc(i,iii)%Reset()
-        end do
-      end do
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetResponseNbNodes(This, Label)
 
-      deallocate(OutputLoc, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
-    end if
+  integer                                                             ::    GetResponseNbNodes
 
-    if (present(Stat)) then
-      Stat=StatRun
-      if (all(StatRun /= 0)) then
-        deallocate(StatRun, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='StatRun', ProcName=ProcName, stat=StatLoc)
-        return
+  class(ModelInterface_Type), intent(in)                              ::    This
+  character(*), intent(in)                                            ::    Label
+
+  character(*), parameter                                             ::    ProcName='GetResponseNbNodes'
+  integer                                                             ::    i
+  integer                                                             ::    ii
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  i = 1
+  ii = 0
+  do i = 1, This%NbResponses
+    if (This%ResponseLabels(i) /= Label) cycle
+    ii = i
+    exit
+  end do
+
+  if (ii == 0) call Error%Raise('Did not find required response: ' // Label, ProcName=ProcName)
+
+  GetResponseNbNodes = This%ResponseNbNodes(ii)
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
+
+  class(ModelInterface_Type), intent(out)                             ::    LHS
+  class(ModelInterface_Type), intent(in)                              ::    RHS
+
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+
+  select type (RHS)
+
+    type is (ModelInterface_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
+
+      if (RHS%Constructed) then
+        allocate(LHS%ResponseLabels, source=RHS%ResponseLabels, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%ResponseLabels', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%ResponseNbNodes, source=RHS%ResponseNbNodes, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%ResponseNbNodes', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%Model, source=RHS%Model, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%Model', ProcName=ProcName, stat=StatLoc)
+        LHS%NbResponses = RHS%NbResponses
       end if
-    else
-      if (any(StatRun /= 0)) call Error%Raise('A model returned a non-zero status indicator: ' //                              &
-                                                                              ConvertToString(Values=StatRun), ProcName=ProcName)
-    end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-    CorrectOrder = .true.
-    ii = 1
-    do ii = 1, NbInputs
-      i = 1
-      do i = 1, This%NbResponses
-        if (This%ResponseLabels(i) == Output(i,ii)%GetLabel()) cycle
-        CorrectOrder = .false.
-        exit
-      end do
-      if (.not. CorrectOrder) exit
-    end do
+  end select
 
-    if (.not. CorrectOrder) then
-      allocate(OutputLoc(NbOutputs,1), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-      iii = 1
-      do iii = 1, NbInputs
-        OutputLoc(:,1) = Output(:,iii)
-        i = 1
-        do i = 1, This%NbResponses
-          ii = 1
-          do ii = 1, NbOutputs
-            if (This%ResponseLabels(i) == OutputLoc(ii,1)%GetLabel()) then
-              Output(i,iii) = OutputLoc(ii,1)
-              exit
-            end if
-            call Error%Raise('Did not find required output : ' // This%ResponseLabels(i), ProcName=ProcName)
-          end do
-        end do
-      end do
-      deallocate(OutputLoc, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='OutputLoc', ProcName=ProcName, stat=StatLoc)  
-    end if
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    ii = 1
-    do ii = 1, NbInputs
-      i = 1
-      do i = 1, This%NbResponses
-        if (Output(i,ii)%GetNbNodes() /= This%ResponseNbNodes(i)) call Error%Raise(Line='Mismatching number of ' //               &
-                                                       'output nodes for response : ' // This%ResponseLabels(i), ProcName=ProcName)
-      end do
-    end do
+  type(ModelInterface_Type), intent(inout)                            ::    This
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbResponses(This)
+  if (allocated(This%Model)) deallocate(This%Model, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
 
-    integer                                                           ::    GetNbResponses
+  if (allocated(This%ResponseLabels)) deallocate(This%ResponseLabels, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%ResponseLabels', ProcName=ProcName, stat=StatLoc)
 
-    class(ModelInterface_Type), intent(in)                            ::    This
+  if (allocated(This%ResponseNbNodes)) deallocate(This%ResponseNbNodes, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%ResponseNbNodes', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='GetNbResponses'
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    GetNbResponses = This%NbResponses
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetResponseNbNodes(This, Label)
-
-    integer                                                           ::    GetResponseNbNodes
-
-    class(ModelInterface_Type), intent(in)                            ::    This
-    character(*), intent(in)                                          ::    Label
-
-    character(*), parameter                                           ::    ProcName='GetResponseNbNodes'
-    integer                                                           ::    i
-    integer                                                           ::    ii
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    i = 1
-    ii = 0
-    do i = 1, This%NbResponses
-      if (This%ResponseLabels(i) /= Label) cycle
-      ii = i
-      exit
-    end do
-
-    if (ii == 0) call Error%Raise('Did not find required response: ' // Label, ProcName=ProcName)
-
-    GetResponseNbNodes = This%ResponseNbNodes(ii)
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
-
-    class(ModelInterface_Type), intent(out)                           ::    LHS
-    class(ModelInterface_Type), intent(in)                            ::    RHS
-
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    select type (RHS)
-  
-      type is (ModelInterface_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-
-        if (RHS%Constructed) then
-          allocate(LHS%ResponseLabels, source=RHS%ResponseLabels, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%ResponseLabels', ProcName=ProcName, stat=StatLoc)
-          allocate(LHS%ResponseNbNodes, source=RHS%ResponseNbNodes, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%ResponseNbNodes', ProcName=ProcName, stat=StatLoc)
-          allocate(LHS%Model, source=RHS%Model, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Model', ProcName=ProcName, stat=StatLoc)
-          LHS%NbResponses = RHS%NbResponses
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
-
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(ModelInterface_Type), intent(inout)                          ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-    if (allocated(This%Model)) deallocate(This%Model, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Model', ProcName=ProcName, stat=StatLoc)
-
-    if (allocated(This%ResponseLabels)) deallocate(This%ResponseLabels, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%ResponseLabels', ProcName=ProcName, stat=StatLoc)
-
-    if (allocated(This%ResponseNbNodes)) deallocate(This%ResponseNbNodes, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%ResponseNbNodes', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 
 end module

@@ -32,18 +32,13 @@ private
 public                                                                ::    TestFunction_Type
 
 type, abstract                                                        ::    TestFunction_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    Label
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure, public                                                   ::    GetLabel
-  procedure(Initialize_TestFunction), deferred, public                ::    Initialize
   procedure(Reset_TestFunction), deferred, public                     ::    Reset
-  procedure(SetDefaults_TestFunction), deferred, public               ::    SetDefaults
   procedure(ConstructInput_TestFunction), deferred, private           ::    ConstructInput
   procedure(GetInput_TestFunction), deferred, public                  ::    GetInput
   procedure(Run_TestFunction), deferred, public                       ::    Run
@@ -55,21 +50,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine Initialize_TestFunction(This)
-    import                                                            ::    TestFunction_Type
-    class(TestFunction_Type), intent(inout)                           ::    This
-  end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
   subroutine Reset_TestFunction(This)
-    import                                                            ::    TestFunction_Type
-    class(TestFunction_Type), intent(inout)                           ::    This
-  end subroutine
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  subroutine SetDefaults_TestFunction(This)
     import                                                            ::    TestFunction_Type
     class(TestFunction_Type), intent(inout)                           ::    This
   end subroutine
@@ -121,36 +102,20 @@ end interface
 
 contains
 
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetName(This)
+!!----------------------------------------------------------------------------------------------------------------------------!!
+function GetLabel(This)
 
-    character(:), allocatable                                         ::    GetName
+  character(:), allocatable                                           ::    GetLabel
 
-    class(TestFunction_Type), intent(inout)                           ::    This
+  class(TestFunction_Type), intent(inout)                             ::    This
 
-    character(*), parameter                                           ::    ProcName='GetName'
+  character(*), parameter                                             ::    ProcName='GetLabel'
 
-    if (.not. This%Constructed) call Error%Raise('Object not yet constructed', ProcName=ProcName)
+  if (.not. This%Constructed) call Error%Raise('Object not yet constructed', ProcName=ProcName)
 
-    GetName = This%Name
+  GetLabel = This%Label
 
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-
-  !!----------------------------------------------------------------------------------------------------------------------------!!
-  function GetLabel(This)
-
-    character(:), allocatable                                         ::    GetLabel
-
-    class(TestFunction_Type), intent(inout)                           ::    This
-
-    character(*), parameter                                           ::    ProcName='GetLabel'
-
-    if (.not. This%Constructed) call Error%Raise('Object not yet constructed', ProcName=ProcName)
-
-    GetLabel = This%Label
-
-  end function
-  !!----------------------------------------------------------------------------------------------------------------------------!!
+end function
+!!----------------------------------------------------------------------------------------------------------------------------!!
 
 end module

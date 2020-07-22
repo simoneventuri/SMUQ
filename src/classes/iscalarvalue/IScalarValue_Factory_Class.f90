@@ -172,6 +172,7 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub
   integer                                                             ::    StatLoc=0
+
   DirectoryLoc = '<undefined>'
   PrefixLoc = ''
   DirectorySub = DirectoryLoc
@@ -182,6 +183,7 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
 
   call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
 
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'type/'
   call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectoryLoc))
 
 end function
