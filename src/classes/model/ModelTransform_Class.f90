@@ -29,6 +29,7 @@ use TransfSampleSpace_Factory_Class                               ,only:    Tran
 use Output_Class                                                  ,only:    Output_Type
 use Input_Class                                                   ,only:    Input_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 

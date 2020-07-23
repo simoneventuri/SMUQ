@@ -144,7 +144,7 @@ subroutine ConstructInput(This, Input, Prefix)
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     InterpNodesSource = VarC0D
     SubSectionName = SectionName // '>source'
-    call InputVerifier%AddSection(Section='source', ToSection=SectionName)
+    call InputVerifier%AddSection(Section='source', ToSubSection=SectionName)
     select case (InterpNodesSource)
       case ('values')
         call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)

@@ -147,7 +147,7 @@ subroutine ConstructInput(This, Input, Prefix)
 
   if (Input%HasSection(SubSectionName=SectionName)) then
     ParameterName = 'order'
-    call InputVerifier%AddParameter(Parameter=ParameterName, Section=SectionName)
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarI0D, Parametername=Parametername, SectionName=SectionName, Mandatory=.true.)
     This%Order = VarI0D
 

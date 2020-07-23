@@ -24,6 +24,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use PCEMethod_Class                                               ,only:    PCEMethod_Type
 use PCERegression_Class                                           ,only:    PCERegression_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 

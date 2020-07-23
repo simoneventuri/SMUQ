@@ -76,10 +76,12 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    PrefixLoc
   integer                                                             ::    StatLoc=0
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    ParameterName
   character(:), allocatable                                           ::    SectionName
   logical                                                             ::    Found 
   type(InputVerifier_Type)                                            ::    InputVerifier
-
+  character(:), allocatable                                           ::    VarC0D 
+  
   call This%Reset()
 
   PrefixLoc = ''

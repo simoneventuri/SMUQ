@@ -35,9 +35,7 @@ public                                                                ::    Inde
 
 type, extends(IndexSet_Type)                                          ::    IndexStandard_Type
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1

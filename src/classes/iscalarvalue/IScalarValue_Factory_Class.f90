@@ -172,6 +172,7 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub
   integer                                                             ::    StatLoc=0
+  logical                                                             ::    ExternalFlag=.false.
 
   DirectoryLoc = '<undefined>'
   PrefixLoc = ''
@@ -179,12 +180,14 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
   if (present(Directory)) DirectoryLoc = Directory
   if (present(Prefix)) PrefixLoc = Prefix
 
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+
   call GetObjectInput%SetName(SectionName=Name)
 
   call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
 
   if (ExternalFlag) DirectorySub = DirectoryLoc // 'type/'
-  call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectoryLoc))
+  call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectorySub))
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------

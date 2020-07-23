@@ -28,6 +28,7 @@ use SMD_Class                                                     ,only:    SMD_
 use PCESM_Class                                                   ,only:    PCESM_Type
 use NULLPI_Class                                                  ,only:    NULLPI_Type
 use ModelExternal_Class                                           ,only:    ModelExternal_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -81,8 +82,6 @@ subroutine Construct_C0D(Object, DesiredType)
       call Error%Raise(Line="Type not supported: DesiredType = " // DesiredType, ProcName=ProcName)
 
   end select
-
-  call Object%Initialize()
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------

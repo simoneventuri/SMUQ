@@ -35,7 +35,6 @@ type, abstract                                                        ::    Orth
   real(rkp)                                                           ::    polyorder0 = One
   logical                                                             ::    Normalized = .false.
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   generic, public                                                     ::    Eval                    =>    Eval_N,             &

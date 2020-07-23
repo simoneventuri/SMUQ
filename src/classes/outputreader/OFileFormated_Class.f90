@@ -34,13 +34,10 @@ type, abstract                                                        ::    OFil
   logical                                                             ::    Constructed=.false.
   type(SMUQFile_Type)                                                 ::    OutputFile
 contains
-  procedure, public                                                   ::    GetName
   procedure, public                                                   ::    Exists
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_OFileFormated), deferred, public               ::    Initialize
   procedure(Reset_OFileFormated), deferred, public                    ::    Reset
-  procedure(SetDefaults_OFileFormated), deferred, public              ::    SetDefaults
   procedure(ConstructInput_OFileFormated), deferred, private          ::    ConstructInput
   procedure(GetInput_OFileFormated), deferred, public                 ::    GetInput
   procedure(ReadOutput_OFileFormated), deferred, public               ::    ReadOutput

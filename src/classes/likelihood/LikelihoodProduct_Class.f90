@@ -301,7 +301,6 @@ impure elemental subroutine Copy(LHS, RHS)
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then
-        LHS%Name = RHS%Name
         LHS%Label = RHS%Label
         LHS%NbLikelihoods = RHS%NbLikelihoods
         allocate(LHS%Likelihoods, source=RHS%Likelihoods, stat=StatLoc)

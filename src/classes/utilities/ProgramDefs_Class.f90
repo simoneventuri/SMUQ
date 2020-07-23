@@ -43,6 +43,7 @@ type                                                                  ::    Prog
   character(:), allocatable                                           ::    LogDir
   character(:), allocatable                                           ::    LogFilePath
 contains
+  procedure, public                                                   ::    Reset
   generic, public                                                     ::    Construct                   =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetSuppliedCaseDir

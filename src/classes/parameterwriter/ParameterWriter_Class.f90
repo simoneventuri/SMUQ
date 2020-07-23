@@ -161,7 +161,6 @@ subroutine ConstructInput2(This, Input, ConstructPrefix, WritePrefix)
   character(*), intent(in)                                            ::    WritePrefix
 
   character(*), parameter                                             ::    ProcName='ConstructInput2'
-  character(:), allocatable                                           ::    PrefixLoc
   integer                                                             ::    StatLoc=0
   type(InputSection_Type), pointer                                    ::    InputSection=>null()
   class(MFileInput_Type), allocatable                                 ::    FileProcessor
@@ -174,9 +173,6 @@ subroutine ConstructInput2(This, Input, ConstructPrefix, WritePrefix)
   type(InputVerifier_Type)                                            ::    InputVerifier
 
   call This%Reset()
-
-  PrefixLoc = ''
-  if (present(Prefix)) PrefixLoc = Prefix
 
   call InputVerifier%Construct()
   
@@ -431,9 +427,6 @@ subroutine ConstructInput2_FP(This, Input, ConstructPrefix, WritePrefix)
   type(InputVerifier_Type)                                            ::    InputVerifier
 
   call This%Reset()
-
-  PrefixLoc = ''
-  if (present(Prefix)) PrefixLoc = Prefix
 
   call InputVerifier%Construct()
   

@@ -220,7 +220,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
     call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     SubSectionName = SectionName // '>format'
-    call InputVerifier%AddSection(SectionName='format', ToSubSection=SectionName)
+    call InputVerifier%AddSection(Section='format', ToSubSection=SectionName)
     select case (VarC0D)
       case ('diagonals')
         ParameterName = 'values'
@@ -332,7 +332,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
     call ConvertToIntegers(String=VarC0D, Values=This%Step_DR)
 
     SubSectionName = SectionName // '>parameter_chain'
-    call InputVerifier%AddSection(SectionName='parameter_chain', ToSubSection=SectionName)
+    call InputVerifier%AddSection(Section='parameter_chain', ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
     allocate(This%ParameterChain(size(VarR2D,1),This%ChainLength), stat=StatLoc)
@@ -345,7 +345,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
     if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)    
     
     SubSectionName = SectionName // '>target_chain'
-    call InputVerifier%AddSection(SectionName='target_chain', ToSubSection=SectionName)
+    call InputVerifier%AddSection(Section='target_chain', ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call ImportArray(Input=InputSection, Array=VarR1D, Prefix=PrefixLoc)
     allocate(This%TargetChain(This%ChainLength), stat=StatLoc)
@@ -357,7 +357,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
     if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
 
     SubSectionName = SectionName // '>misc_chain'
-    call InputVerifier%AddSection(SectionName='misc_chain', ToSubSection=SectionName)
+    call InputVerifier%AddSection(Section='misc_chain', ToSubSection=SectionName)
     if (Input%HasSection(SubSectionName=SubSectionName)) then
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
       call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
@@ -371,22 +371,22 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
     end if
 
     SubSectionName = SectionName // '>covariance'
-    call InputVerifier%AddSection(SectionName='covariance', ToSubSection=SectionName)
+    call InputVerifier%AddSection(Section='covariance', ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call ImportArray(Input=InputSection, Array=This%Cov, Prefix=PrefixLoc)
 
     SubSectionName = SectionName // '>cholesky'
-    call InputVerifier%AddSection(SectionName='cholesky', ToSubSection=SectionName)
+    call InputVerifier%AddSection(Section='cholesky', ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call ImportArray(Input=InputSection, Array=This%L, Prefix=PrefixLoc)
 
     SubSectionName = SectionName // '>start_covariance'
-    call InputVerifier%AddSection(SectionName='start_covariance', ToSubSection=SectionName)
+    call InputVerifier%AddSection(Section='start_covariance', ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call ImportArray(Input=InputSection, Array=This%StartCov, Prefix=PrefixLoc)
 
     SubSectionName = SectionName // '>start_mu'
-    call InputVerifier%AddSection(SectionName='start_mu', ToSubSection=SectionName)
+    call InputVerifier%AddSection(Section='start_mu', ToSubSection=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call ImportArray(Input=InputSection, Array=This%StartMu, Prefix=PrefixLoc)
 

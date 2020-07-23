@@ -35,7 +35,6 @@ public                                                                ::    MFil
 type, abstract                                                        ::    MFileInput_Type
   logical                                                             ::    Constructed=.false.
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(Reset_MFileInput), deferred, public                       ::    Reset

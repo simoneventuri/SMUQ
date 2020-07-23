@@ -162,12 +162,12 @@ subroutine ConstructInput(This, Input, Prefix)
     call InputVerifier%AddSection(Section='parameter' // ConvertToString(Value=i) ,ToSubSection=SectionName)
 
     ParameterName = 'name'
-    call InputVerifier%AddParameter(Parameter=ParameterName, Section=SubSectionName)
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SubSectionName)
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
     This%ParamName(i) = VarC0D
 
     ParameterName = 'label'
-    call InputVerifier%AddParameter(Parameter=ParameterName, Section=SubSectionName)
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SubSectionName)
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
     This%Label(i) = VarC0D
 
@@ -507,8 +507,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (HierParamSpace_Type)
       call LHS%Reset()
-
-      LHS%Name = RHS%Name
       LHS%Constructed = RHS%Constructed
       
       if (RHS%Constructed) then

@@ -336,8 +336,6 @@ subroutine ImportArrayInput_R41D(Input, Array, Prefix, RowMajor)
   logical                                                             ::    RowMajorLoc
   type(InputVerifier_Type)                                            ::    InputVerifier
 
-  call This%Reset()
-
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
@@ -413,8 +411,6 @@ subroutine ImportArrayInput_R81D(Input, Array, Prefix, RowMajor)
   logical                                                             ::    RowMajorLoc
   type(InputVerifier_Type)                                            ::    InputVerifier
 
-  call This%Reset()
-
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
@@ -489,8 +485,6 @@ subroutine ImportArrayInput_I41D(Input, Array, Prefix, RowMajor)
   logical                                                             ::    VarL0D
   logical                                                             ::    RowMajorLoc
   type(InputVerifier_Type)                                            ::    InputVerifier
-
-  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
@@ -568,8 +562,6 @@ subroutine ImportArrayInput_I81D(Input, Array, Prefix, RowMajor)
   logical                                                             ::    RowMajorLoc
   type(InputVerifier_Type)                                            ::    InputVerifier
 
-  call This%Reset()
-
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
@@ -644,8 +636,6 @@ subroutine ImportArrayInput_L1D(Input, Array, Prefix, RowMajor)
   logical                                                             ::    VarL0D
   logical                                                             ::    RowMajorLoc
   type(InputVerifier_Type)                                            ::    InputVerifier
-
-  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
@@ -722,8 +712,6 @@ subroutine ImportArrayInput_CX1D(Input, Array, Prefix, RowMajor)
   logical                                                             ::    RowMajorLoc
   type(InputVerifier_Type)                                            ::    InputVerifier
 
-  call This%Reset()
-
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
@@ -799,8 +787,6 @@ subroutine ImportArrayInput_String1D(Input, Array, Prefix, RowMajor)
   logical                                                             ::    VarL0D
   logical                                                             ::    RowMajorLoc
   type(InputVerifier_Type)                                            ::    InputVerifier
-
-  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
@@ -881,8 +867,6 @@ subroutine ImportArrayInput_R42D(Input, Array, Prefix, RowMajor)
   character(:), allocatable                                           ::    ParamPrefix
   real(4), allocatable, dimension(:)                                  ::    Row
   type(InputVerifier_Type)                                            ::    InputVerifier
-
-  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
@@ -1001,8 +985,6 @@ subroutine ImportArrayInput_R82D(Input, Array, Prefix, RowMajor)
   real(8), allocatable, dimension(:)                                  ::    Row
   type(InputVerifier_Type)                                            ::    InputVerifier
 
-  call This%Reset()
-
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
@@ -1118,8 +1100,6 @@ subroutine ImportArrayInput_I42D(Input, Array, Prefix, RowMajor)
   integer(4), allocatable, dimension(:)                               ::    Row
   type(InputVerifier_Type)                                            ::    InputVerifier
 
-  call This%Reset()
-
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
@@ -1233,8 +1213,6 @@ subroutine ImportArrayInput_I82D(Input, Array, Prefix, RowMajor)
   character(:), allocatable                                           ::    ParamPrefix
   integer(8), allocatable, dimension(:)                               ::    Row
   type(InputVerifier_Type)                                            ::    InputVerifier
-
-  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
@@ -1351,8 +1329,6 @@ subroutine ImportArrayInput_L2D(Input, Array, Prefix, RowMajor)
   logical, allocatable, dimension(:)                                  ::    Row
   type(InputVerifier_Type)                                            ::    InputVerifier
 
-  call This%Reset()
-
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
@@ -1468,8 +1444,6 @@ subroutine ImportArrayInput_CX2D(Input, Array, Prefix, RowMajor)
   complex, allocatable, dimension(:)                                  ::    Row
   type(InputVerifier_Type)                                            ::    InputVerifier
 
-  call This%Reset()
-
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
@@ -1579,13 +1553,10 @@ subroutine ImportArrayInput_String2D(Input, Array, Prefix, RowMajor)
   integer                                                             ::    VarI0D
   integer                                                             ::    i, ii
   logical                                                             ::    VarL0D
-  logical                                                             :: 
-  call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SubSectionName)   RowMajorLoc
+  logical                                                             ::    RowMajorLoc
   character(:), allocatable                                           ::    ParamPrefix
   type(SMUQString_Type), allocatable, dimension(:)                    ::    Row
   type(InputVerifier_Type)                                            ::    InputVerifier
-
-  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
@@ -4774,8 +4745,6 @@ subroutine ImportFile(Input, Strings, Prefix, Comment, Separator)
   type(SMUQString_Type), allocatable, dimension(:)                    ::    VarString1D
   integer                                                             ::    i
   type(InputVerifier_Type)                                            ::    InputVerifier
-
-  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix

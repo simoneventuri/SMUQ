@@ -53,9 +53,6 @@ subroutine Reset(This)
   if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
 
-  if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
-
   This%NbNodes = 0
   This%NbDegen = 0
 
@@ -250,7 +247,6 @@ impure elemental subroutine Copy(LHS, RHS)
   LHS%Constructed = RHS%Constructed
 
   if (RHS%Constructed) then
-    LHS%Name = RHS%Name
     LHS%Label = RHS%Label
     allocate(LHS%Values, source=RHS%Values, stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='LHS%Values', ProcName=ProcName, stat=StatLoc)
@@ -274,9 +270,6 @@ impure elemental subroutine Finalizer(This)
 
   if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-
-  if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
-  if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------

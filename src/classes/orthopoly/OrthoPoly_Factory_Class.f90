@@ -80,7 +80,6 @@ subroutine Construct_C0D(Object, DesiredType)
 
   end select
 
-  call Object%Initialize()
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------

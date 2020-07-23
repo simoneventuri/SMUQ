@@ -38,9 +38,7 @@ type                                                                  ::    Onli
   integer                                                             ::    NbSamples
   real(rkp)                                                           ::    Mean
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructInput,         &
                                                                                                           ConstructCase1
   procedure, private                                                  ::    ConstructInput

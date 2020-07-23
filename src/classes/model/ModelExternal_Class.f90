@@ -34,6 +34,7 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use ProgramDefs_Class                                             ,only:    ProgramDefs
 use InputProcessor_Class                                          ,only:    InputProcessor_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type 
 
 implicit none
 

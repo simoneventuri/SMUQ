@@ -45,7 +45,6 @@ type, abstract                                                        ::    PCEM
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(Reset_PCEMethod), deferred, public                        ::    Reset

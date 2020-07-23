@@ -79,8 +79,6 @@ subroutine Construct_C0D(Object, DesiredType)
 
   end select
 
-  call Object%Initialize()
-
 end subroutine
 !!--------------------------------------------------------------------------------------------------------------------------------
 
@@ -173,19 +171,22 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub
   integer                                                             ::    StatLoc=0
+  logical                                                             ::    ExternalFlag 
+  
   DirectoryLoc = '<undefined>'
   PrefixLoc = ''
   DirectorySub = DirectoryLoc
   if (present(Directory)) DirectoryLoc = Directory
   if (present(Prefix)) PrefixLoc = Prefix
 
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+
   call GetObjectInput%SetName(SectionName=Name)
 
   call GetObjectInput%AddParameter(Name='type', Value=This%GetOption(Object=Object))
 
-
   if (ExternalFlag) DirectorySub = DirectoryLoc // 'type/'
-  call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectoryLoc))
+  call GetObjectInput%AddSection(Section=Object%GetInput(Name='type', Prefix=PrefixLoc, Directory=DirectorySub))
 
 end function
 !!--------------------------------------------------------------------------------------------------------------------------------

@@ -170,6 +170,7 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub
   integer                                                             ::    StatLoc=0
+  logical                                                             ::    ExternalFlag=.false.
 
   DirectoryLoc = '<undefined>'
   PrefixLoc = ''

@@ -20,7 +20,6 @@ module BayesInvMCMC_Class
 
 use Input_Library
 use Parameters_Library
-use InputRoutines_Module
 use ArrayRoutines_Module
 use ArrayIORoutines_Module
 use StringConversion_Module

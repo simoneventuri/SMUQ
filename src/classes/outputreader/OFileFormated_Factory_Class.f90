@@ -150,11 +150,15 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
   character(:), allocatable                                           ::    DirectoryLoc
   character(:), allocatable                                           ::    DirectorySub
   integer                                                             ::    StatLoc=0
+  logical                                                             ::    ExternalFlag
+
   DirectoryLoc = '<undefined>'
   PrefixLoc = ''
   DirectorySub = DirectoryLoc
   if (present(Directory)) DirectoryLoc = Directory
   if (present(Prefix)) PrefixLoc = Prefix
+
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
   call GetObjectInput%SetName(SectionName=Name)
 
