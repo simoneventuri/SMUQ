@@ -33,17 +33,12 @@ private
 public                                                                ::    UQMethod_Type
 
 type, abstract                                                        ::    UQMethod_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_UQMethod), deferred, public                    ::    Initialize
   procedure(Reset_UQMethod), deferred, public                         ::    Reset
-  procedure(SetDefaults_UQMethod), deferred, public                   ::    SetDefaults
   procedure(ConstructInput_UQMethod), deferred, private               ::    ConstructInput
   procedure(GetInput_UQMethod), deferred, public                      ::    GetInput
   procedure(Run_UQMethod), deferred, public                           ::    Run
@@ -55,21 +50,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_UQMethod(This)
-    import                                                            ::    UQMethod_Type
-    class(UQMethod_Type), intent(inout)                               ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_UQMethod(This)
-    import                                                            ::    UQMethod_Type
-    class(UQMethod_Type), intent(inout)                               ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_UQMethod(This)
     import                                                            ::    UQMethod_Type
     class(UQMethod_Type), intent(inout)                               ::    This
   end subroutine
@@ -123,18 +104,5 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
-
-    character(:), allocatable                                         ::    GetName
-    class(UQMethod_Type), intent(inout)                               ::    This
-
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    GetName = This%Name
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

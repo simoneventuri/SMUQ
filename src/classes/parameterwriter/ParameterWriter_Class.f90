@@ -37,56 +37,56 @@ implicit none
 
 private
 
-public                                                              ::    ParameterWriter_Type
+public                                                                ::    ParameterWriter_Type
 
-type                                                                ::    FileProcessor_Type
-  logical                                                           ::    Constructed=.false.
-  type(SMUQString_Type), allocatable, dimension(:)                  ::    TemplateTranscript
-  type(MFileInputContainer_Type), allocatable, dimension(:)         ::    MFileInputs
-  integer                                                           ::    NbMFileInputs
-  type(SMUQFile_Type)                                               ::    ModelFile
-  character(:), allocatable                                         ::    TemplateComment
+type                                                                  ::    FileProcessor_Type
+  logical                                                             ::    Constructed=.false.
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    TemplateTranscript
+  type(MFileInputContainer_Type), allocatable, dimension(:)           ::    MFileInputs
+  integer                                                             ::    NbMFileInputs
+  type(SMUQFile_Type)                                                 ::    ModelFile
+  character(:), allocatable                                           ::    TemplateComment
 contains
-  procedure, public                                                 ::    Reset                   =>    Reset_FP
-  generic, public                                                   ::    Construct               =>    ConstructInput1_FP,     &
+  procedure, public                                                   ::    Reset                   =>    Reset_FP
+  generic, public                                                     ::    Construct               =>    ConstructInput1_FP,     &
                                                                                                         ConstructInput2_FP
-  procedure, private                                                ::    ConstructInput1_FP
-  procedure, private                                                ::    ConstructInput2_FP
-  procedure, public                                                 ::    GetInput                =>    GetInput_FP
-  procedure, public                                                 ::    WriteInput              =>    WriteInput_FP
-  generic, public                                                   ::    assignment(=)           =>    Copy
-  procedure, public                                                 ::    Copy                    =>    Copy_FP
-  final                                                             ::    Finalizer_FP
+  procedure, private                                                  ::    ConstructInput1_FP
+  procedure, private                                                  ::    ConstructInput2_FP
+  procedure, public                                                   ::    GetInput                =>    GetInput_FP
+  procedure, public                                                   ::    WriteInput              =>    WriteInput_FP
+  generic, public                                                     ::    assignment(=)           =>    Copy
+  procedure, public                                                   ::    Copy                    =>    Copy_FP
+  final                                                               ::    Finalizer_FP
 end type
 
-type                                                                ::    ParameterWriter_Type
-  logical                                                           ::    Constructed=.false.
-  integer                                                           ::    NbFiles
-  type(FileProcessor_Type), allocatable, dimension(:)               ::    FileProcessors
+type                                                                  ::    ParameterWriter_Type
+  logical                                                             ::    Constructed=.false.
+  integer                                                             ::    NbFiles
+  type(FileProcessor_Type), allocatable, dimension(:)                 ::    FileProcessors
 contains
-  procedure, public                                                 ::    Reset
-  generic, public                                                   ::    Construct               =>    ConstructInput1,        &
+  procedure, public                                                   ::    Reset
+  generic, public                                                     ::    Construct               =>    ConstructInput1,        &
                                                                                                           ConstructInput2
-  procedure, private                                                ::    ConstructInput1
-  procedure, private                                                ::    ConstructInput2
-  procedure, public                                                 ::    GetInput
-  procedure, public                                                 ::    WriteInput
-  generic, public                                                   ::    assignment(=)           =>    Copy
-  procedure, public                                                 ::    Copy
-  final                                                             ::    Finalizer
+  procedure, private                                                  ::    ConstructInput1
+  procedure, private                                                  ::    ConstructInput2
+  procedure, public                                                   ::    GetInput
+  procedure, public                                                   ::    WriteInput
+  generic, public                                                     ::    assignment(=)           =>    Copy
+  procedure, public                                                   ::    Copy
+  final                                                               ::    Finalizer
 end type
 
-logical   ,parameter                                                ::    DebugGlobal = .false.
+logical   ,parameter                                                  ::    DebugGlobal = .false.
 
 contains
 
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
-  class(ParameterWriter_Type), intent(inout)                        ::    This
+  class(ParameterWriter_Type), intent(inout)                          ::    This
 
-  character(*), parameter                                           ::    ProcName='Reset'
-  integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
   if (allocated(This%FileProcessors)) deallocate(This%FileProcessors, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%FileProcessors', ProcName=ProcName, stat=StatLoc)
@@ -102,21 +102,21 @@ end subroutine
 subroutine ConstructInput1(This, Input, Prefix)
 
   use StringConversion_Module
-  class(ParameterWriter_Type), intent(inout)                        ::    This
-  type(InputSection_Type), intent(in)                               ::    Input
-  character(*), optional, intent(in)                                ::    Prefix
+  class(ParameterWriter_Type), intent(inout)                          ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-  character(*), parameter                                           ::    ProcName='ConstructInput1'
-  character(:), allocatable                                         ::    PrefixLoc
-  integer                                                           ::    StatLoc=0
-  type(InputSection_Type), pointer                                  ::    InputSection=>null()
-  class(MFileInput_Type), allocatable                               ::    FileProcessor
-  character(:), allocatable                                         ::    ParameterName
-  character(:), allocatable                                         ::    SectionName
-  character(:), allocatable                                         ::    SubSectionName
-  character(:), allocatable                                         ::    VarC0D
-  integer                                                           ::    VarI0D
-  integer                                                           ::    i
+  character(*), parameter                                             ::    ProcName='ConstructInput1'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  class(MFileInput_Type), allocatable                                 ::    FileProcessor
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  character(:), allocatable                                           ::    VarC0D
+  integer                                                             ::    VarI0D
+  integer                                                             ::    i
   type(InputVerifier_Type)                                            ::    InputVerifier
 
   call This%Reset()
@@ -155,25 +155,30 @@ end subroutine
 subroutine ConstructInput2(This, Input, ConstructPrefix, WritePrefix)
 
   use StringConversion_Module
-  class(ParameterWriter_Type), intent(inout)                        ::    This
-  type(InputSection_Type), intent(in)                               ::    Input
-  character(*), intent(in)                                          ::    ConstructPrefix
-  character(*), intent(in)                                          ::    WritePrefix
+  class(ParameterWriter_Type), intent(inout)                          ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), intent(in)                                            ::    ConstructPrefix
+  character(*), intent(in)                                            ::    WritePrefix
 
-  character(*), parameter                                           ::    ProcName='ConstructInput2'
-  character(:), allocatable                                         ::    PrefixLoc
-  integer                                                           ::    StatLoc=0
-  type(InputSection_Type), pointer                                  ::    InputSection=>null()
-  class(MFileInput_Type), allocatable                               ::    FileProcessor
-  character(:), allocatable                                         ::    ParameterName
-  character(:), allocatable                                         ::    SectionName
-  character(:), allocatable                                         ::    SubSectionName
-  character(:), allocatable                                         ::    VarC0D
-  integer                                                           ::    VarI0D
-  integer                                                           ::    i
+  character(*), parameter                                             ::    ProcName='ConstructInput2'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  class(MFileInput_Type), allocatable                                 ::    FileProcessor
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  character(:), allocatable                                           ::    VarC0D
+  integer                                                             ::    VarI0D
+  integer                                                             ::    i
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
+
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
+
+  call InputVerifier%Construct()
   
   SectionName = 'files'
   call InputVerifier%AddSection(Section=SectionName)
@@ -192,6 +197,9 @@ subroutine ConstructInput2(This, Input, ConstructPrefix, WritePrefix)
     nullify(InputSection)
   end do
 
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
+
   This%Constructed = .true.
 
 end subroutine
@@ -202,21 +210,21 @@ function GetInput(This, Name, Prefix, Directory)
 
   use StringConversion_Module
 
-  type(InputSection_Type)                                           ::    GetInput
+  type(InputSection_Type)                                             ::    GetInput
 
-  class(ParameterWriter_Type), intent(in)                           ::    This
-  character(*), intent(in)                                          ::    Name
-  character(*), optional, intent(in)                                ::    Prefix
-  character(*), optional, intent(in)                                ::    Directory
+  class(ParameterWriter_Type), intent(in)                             ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-  character(*), parameter                                           ::    ProcName='GetInput'
-  character(:), allocatable                                         ::    PrefixLoc
-  character(:), allocatable                                         ::    DirectoryLoc
-  character(:), allocatable                                         ::    DirectorySub
-  logical                                                           ::    ExternalFlag=.false.
-  character(:), allocatable                                         ::    SectionName
-  character(:), allocatable                                         ::    SubSectionName
-  integer                                                           ::    i                        
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  integer                                                             ::    i                        
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -247,12 +255,12 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine WriteInput(This, Input)
 
-  class(ParameterWriter_Type), intent(inout)                        ::    This
-  type(Input_Type), intent(in)                                      ::    Input
+  class(ParameterWriter_Type), intent(inout)                          ::    This
+  type(Input_Type), intent(in)                                        ::    Input
 
-  character(*), parameter                                           ::    ProcName='WriteInput'
-  integer                                                           ::    StatLoc=0
-  integer                                                           ::    i
+  character(*), parameter                                             ::    ProcName='WriteInput'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -267,12 +275,12 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Copy(LHS, RHS)
 
-  class(ParameterWriter_Type), intent(out)                          ::    LHS
-  class(ParameterWriter_Type), intent(in)                           ::    RHS
+  class(ParameterWriter_Type), intent(out)                            ::    LHS
+  class(ParameterWriter_Type), intent(in)                             ::    RHS
 
-  character(*), parameter                                           ::    ProcName='Copy'
-  integer                                                           ::    StatLoc=0
-  integer                                                           ::    i
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
 
   select type (RHS)
 
@@ -297,10 +305,10 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Finalizer(This)
 
-  type(ParameterWriter_Type),intent(inout)                          ::    This
+  type(ParameterWriter_Type),intent(inout)                            ::    This
 
-  character(*), parameter                                           ::    ProcName='Finalizer'
-  integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
   if (allocated(This%FileProcessors)) deallocate(This%FileProcessors, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%FileProcessors', ProcName=ProcName, stat=StatLoc)
@@ -315,10 +323,10 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset_FP(This)
 
-  class(FileProcessor_Type), intent(inout)                          ::    This
+  class(FileProcessor_Type), intent(inout)                            ::    This
 
-  character(*), parameter                                           ::    ProcName='Reset_FP'
-  integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Reset_FP'
+  integer                                                             ::    StatLoc=0
 
   if (allocated(This%MFileInputs)) deallocate(This%MFileInputs, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%MFileInputs', ProcName=ProcName, stat=StatLoc)
@@ -337,23 +345,23 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput1_FP(This, Input, Prefix)
 
-  class(FileProcessor_Type), intent(inout)                          ::    This
-  type(InputSection_Type), intent(in)                               ::    Input
-  character(*), optional, intent(in)                                ::    Prefix
+  class(FileProcessor_Type), intent(inout)                            ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-  character(*), parameter                                           ::    ProcName='ConstructInput1_FP'
-  character(:), allocatable                                         ::    PrefixLoc
-  integer                                                           ::    StatLoc=0
-  type(InputSection_Type), pointer                                  ::    InputSection=>null()
-  character(:), allocatable                                         ::    ParameterName
-  character(:), allocatable                                         ::    SectionName
-  character(:), allocatable                                         ::    SubSectionName
-  character(:), allocatable                                         ::    VarC0D
-  integer                                                           ::    VarI0D
-  logical                                                           ::    Found
-  integer                                                           ::    i
-  class(MFileInput_Type), allocatable                               ::    MFileInput
-  type(InputVerifier_Type)                                            ::    InputVerifier
+  character(*), parameter                                             ::    ProcName='ConstructInput1_FP'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  character(:), allocatable                                           ::    VarC0D
+  integer                                                             ::    VarI0D
+  logical                                                             ::    Found
+  integer                                                             ::    i
+  class(MFileInput_Type), allocatable                                 ::    MFileInput
+  type(InputVerifier_Type)                                              ::    InputVerifier
 
   call This%Reset()
 
@@ -393,6 +401,9 @@ subroutine ConstructInput1_FP(This, Input, Prefix)
     if (StatLoc /= 0) call Error%Deallocate(Name='FileProcessor', ProcName=ProcName, stat=StatLoc)
   end do
 
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
+
   This%Constructed = .true.
 
 end subroutine
@@ -401,25 +412,30 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine ConstructInput2_FP(This, Input, ConstructPrefix, WritePrefix)
 
-  class(FileProcessor_Type), intent(inout)                          ::    This
-  type(InputSection_Type), intent(in)                               ::    Input
-  character(*), intent(in)                                          ::    ConstructPrefix
-  character(*), intent(in)                                          ::    WritePrefix
+  class(FileProcessor_Type), intent(inout)                            ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), intent(in)                                            ::    ConstructPrefix
+  character(*), intent(in)                                            ::    WritePrefix
 
-  character(*), parameter                                           ::    ProcName='ConstructInput2_FP'
-  integer                                                           ::    StatLoc=0
-  type(InputSection_Type), pointer                                  ::    InputSection=>null()
-  character(:), allocatable                                         ::    ParameterName
-  character(:), allocatable                                         ::    SectionName
-  character(:), allocatable                                         ::    SubSectionName
-  character(:), allocatable                                         ::    VarC0D
-  integer                                                           ::    VarI0D
-  logical                                                           ::    Found
-  integer                                                           ::    i
-  class(MFileInput_Type), allocatable                               ::    MFileInput
+  character(*), parameter                                             ::    ProcName='ConstructInput2_FP'
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  character(:), allocatable                                           ::    VarC0D
+  integer                                                             ::    VarI0D
+  logical                                                             ::    Found
+  integer                                                             ::    i
+  class(MFileInput_Type), allocatable                                 ::    MFileInput
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
+
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
+
+  call InputVerifier%Construct()
   
   SectionName = 'template'
   call InputVerifier%AddSection(Section=SectionName)
@@ -452,6 +468,9 @@ subroutine ConstructInput2_FP(This, Input, ConstructPrefix, WritePrefix)
     if (StatLoc /= 0) call Error%Deallocate(Name='FileProcessor', ProcName=ProcName, stat=StatLoc)
   end do
 
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
+
   This%Constructed = .true.
 
 end subroutine
@@ -460,25 +479,25 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 function GetInput_FP(This, Name, Prefix, Directory)
 
-  type(InputSection_Type)                                           ::    GetInput_FP
+  type(InputSection_Type)                                             ::    GetInput_FP
 
-  class(FileProcessor_Type), intent(in)                             ::    This
-  character(*), intent(in)                                          ::    Name
-  character(*), optional, intent(in)                                ::    Prefix
-  character(*), optional, intent(in)                                ::    Directory
+  class(FileProcessor_Type), intent(in)                               ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-  character(*), parameter                                           ::    ProcName='GetInput_FP'
-  character(:), allocatable                                         ::    PrefixLoc
-  character(:), allocatable                                         ::    DirectoryLoc
-  character(:), allocatable                                         ::    DirectorySub
-  logical                                                           ::    ExternalFlag=.false.
-  character(:), allocatable                                         ::    SectionName
-  character(:), allocatable                                         ::    SubSectionName
-  integer                                                           ::    i
-  class(MFileInput_Type), pointer                                   ::    MFileInputPtr=>null()
-  type(InputSection_Type), pointer                                  ::    InputSection=>null()
-  type(SMUQFile_Type)                                               ::    File
-  character(:), allocatable                                         ::    FileName
+  character(*), parameter                                             ::    ProcName='GetInput_FP'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  integer                                                             ::    i
+  class(MFileInput_Type), pointer                                     ::    MFileInputPtr=>null()
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  type(SMUQFile_Type)                                                 ::    File
+  character(:), allocatable                                           ::    FileName
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -523,16 +542,16 @@ end function
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine WriteInput_FP(This, Input)
 
-  class(FileProcessor_Type), intent(inout)                          ::    This
-  type(Input_Type), intent(in)                                      ::    Input
+  class(FileProcessor_Type), intent(inout)                            ::    This
+  type(Input_Type), intent(in)                                        ::    Input
 
-  character(*), parameter                                           ::    ProcName='WriteInput'
-  integer                                                           ::    StatLoc=0
-  integer                                                           ::    i
-  integer                                                           ::    ii
-  class(MFileInput_Type), pointer                                   ::    MFileInputPtr=>null()
-  type(SMUQString_Type), allocatable, dimension(:)                  ::    WorkStrings1
-  type(SMUQString_Type), allocatable, dimension(:)                  ::    WorkStrings2
+  character(*), parameter                                             ::    ProcName='WriteInput'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  integer                                                             ::    ii
+  class(MFileInput_Type), pointer                                     ::    MFileInputPtr=>null()
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    WorkStrings1
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    WorkStrings2
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -564,12 +583,12 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Copy_FP(LHS, RHS)
 
-  class(FileProcessor_Type), intent(out)                            ::    LHS
-  class(FileProcessor_Type), intent(in)                             ::    RHS
+  class(FileProcessor_Type), intent(out)                              ::    LHS
+  class(FileProcessor_Type), intent(in)                               ::    RHS
 
-  character(*), parameter                                           ::    ProcName='Copy_FP'
-  integer                                                           ::    StatLoc=0
-  integer                                                           ::    i
+  character(*), parameter                                             ::    ProcName='Copy_FP'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
 
   select type (RHS)
 
@@ -597,10 +616,10 @@ end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 impure elemental subroutine Finalizer_FP(This)
 
-  type(FileProcessor_Type),intent(inout)                            ::    This
+  type(FileProcessor_Type),intent(inout)                              ::    This
 
-  character(*), parameter                                           ::    ProcName='Finalizer_FP'
-  integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Finalizer_FP'
+  integer                                                             ::    StatLoc=0
 
   if (allocated(This%MFileInputs)) deallocate(This%MFileInputs, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%MFileInputs', ProcName=ProcName, stat=StatLoc)

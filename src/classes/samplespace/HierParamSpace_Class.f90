@@ -35,6 +35,7 @@ use SMUQFile_Class                                                ,only:    SMUQ
 use DistProb_Class                                                ,only:    DistProb_Type
 use DistProbContainer_Class                                       ,only:    DistProbContainer_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -43,19 +44,15 @@ private
 public                                                                ::    HierParamSpace_Type
 
 type                                                                  ::    HierParamSpace_Type
-  character(:), allocatable                                           ::    Name
   integer                                                             ::    NbDim
   logical                                                             ::    Correlated=.false.
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   type(HierDistProbContainer_Type), allocatable, dimension(:)         ::    HierDistProb
   type(SMUQString_Type), allocatable, dimension(:)                    ::    ParamName
   type(SMUQString_Type), allocatable, dimension(:)                    ::    Label
   real(rkp), dimension(:,:), allocatable                              ::    CorrMat
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct                =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetInput             
@@ -84,498 +81,478 @@ logical, parameter                                                    ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(HierParamSpace_Type), intent(inout)                         ::    This
+  class(HierParamSpace_Type), intent(inout)                           ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    if (.not. This%Initialized) then
-      This%Initialized = .true.
-      This%Name = 'HierParamSpace'
-      call This%SetDefaults()
-    end if
+  if (allocated(This%HierDistProb)) deallocate(This%HierDistProb, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc)
+  This%NbDim = 0
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%ParamName)) deallocate(This%ParamName, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamName', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+  if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
 
-    class(HierParamSpace_Type), intent(inout)                         ::    This
+  if (allocated(This%CorrMat)) deallocate(This%CorrMat, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
+  This%Correlated = .false.
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+  This%Constructed=.false.
 
-    if (allocated(This%HierDistProb)) deallocate(This%HierDistProb, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc)
-    This%NbDim = 0
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------ 
 
-    if (allocated(This%ParamName)) deallocate(This%ParamName, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamName', ProcName=ProcName, stat=StatLoc)
+!!------------------------------------------------------------------------------------------------------------------------------         
+subroutine ConstructInput(This, Input, Prefix)
 
-    if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-
-    if (allocated(This%CorrMat)) deallocate(This%CorrMat, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
-    This%Correlated = .false.
-
-    This%Initialized=.false.
-    This%Constructed=.false.
-
-    call This%Initialize()
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
-
-    class(HierParamSpace_Type),intent(inout)                          ::    This
-
-    character(*), parameter                                           ::    ProcName='SetDefaults'
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------     
-
-  !!------------------------------------------------------------------------------------------------------------------------------         
-  subroutine ConstructInput(This, Input, Prefix)
-
-    class(HierParamSpace_Type), intent(inout)                         ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
-    
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    class(HierDistProb_Type), allocatable                             ::    HierDistProb
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    character(:), allocatable                                         ::    ParameterName
-    real(rkp)                                                         ::    VarR0D
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D_1
-    real(rkp), allocatable, dimension(:)                              ::    VarR1D_2
-    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
-    integer                                                           ::    VarI0D
-    character(:),  allocatable                                        ::    VarC0D
-    logical                                                           ::    VarL0D
-    integer                                                           ::    i, ii
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    SpaceType
-
-    if (This%Constructed) call This%Reset
-    if (.not. This%Initialized) call This%Initialize  
-
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
-
-    SectionName = 'parameters'
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    This%NbDim = InputSection%GetNumberOfSubSections()
-
-    allocate(This%ParamName(This%NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%ParamName', ProcName=ProcName, stat=StatLoc)
-
-    allocate(This%HierDistProb(This%NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc)
-
-    allocate(This%Label(This%NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
-
-    i = 1
-    do i = 1, This%NbDim
-      SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
-
-      ParameterName = 'name'
-      call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-      This%ParamName(i) = VarC0D
-
-      ParameterName = 'label'
-      call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-      This%Label(i) = VarC0D
-
-      SubSectionName = SubSectionName // '>distribution'
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-      call HierDistProb_Factory%Construct(Object=HierDistProb, Input=InputSection, Prefix=PrefixLoc)
-      nullify(InputSection)
-      call This%HierDistProb(i)%Set(Object=HierDistProb)
-      deallocate(HierDistProb, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='HierDistProb', ProcName=ProcName, stat=StatLoc)
-    end do 
-
-    i = 1
-    do i = 1, This%NbDim-1
-      ii = 1
-      do ii = i+1 ,This%NbDim
-        if (This%Label(i) == This%Label(ii)) call Error%Raise(Line='Duplicate labels : ' // This%Label(i), ProcName=ProcName)
-      end do
-    end do
-
-    SectionName = 'correlation_matrix'
-    if (Input%HasSection(SubSectionName=SectionName)) then
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      call ImportArray(Input=InputSection, Array=This%CorrMat, Prefix=PrefixLoc)
-      nullify(InputSection)
-      This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
-    else
-      call Eye(Array=This%CorrMat, N=This%NbDim)
-      This%Correlated = .false.
-    end if
-
-    if (size(This%Corrmat,1) /= This%NbDim .or. size(This%CorrMat,2) /= This%NbDim) call Error%Raise(                        &
-                                                       Line='Improper sizes for the input correlation matrix', ProcName=ProcName) 
-
-    This%Constructed=.true.
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
-
-    type(InputSection_Type)                                           ::    GetInput
-
-    class(HierParamSpace_Type), intent(in)                            ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
-
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    class(HierDistProb_Type), pointer                                 ::    HierDistProb=>null()
-    character(:), allocatable                                         ::    FileName
-    integer                                                           ::    i
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    type(SMUQFile_Type)                                               ::    File
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
-
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
-
-    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
-
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
-
-    SectionName = 'parameters'
-    call GetInput%AddSection(SectionName=SectionName)
-    i = 1
-    do i = 1, This%NbDim
-      SubSectionName = 'parameter' // ConvertToString(Value=i)
-      call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
-      SubSectionName= SectionName // '>' // SubSectionName
-      call GetInput%AddParameter(Name='name', Value=This%ParamName(i)%Get(), SectionName=SubSectionName)
-      call GetInput%AddParameter(Name='label', Value=This%Label(i)%Get(), SectionName=SubSectionName)
-      HierDistProb => This%HierDistProb(i)%GetPointer()
-      if (ExternalFlag) DirectorySub = DirectoryLoc // '/distribution' // ConvertToString(i)
-      call GetInput%AddSection(Section=HierDistProb_Factory%GetObjectInput(Object=HierDistProb, Name='distribution', &
-                                                        Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SubSectionName)
-      nullify(HierDistProb)
-    end do
-
-    SectionName='correlation_matrix'
-    call GetInput%AddSection(SectionName=SectionName)
-    call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    if (ExternalFlag) then
-      FileName = DirectoryLoc // '/correlation_matrix.dat'
-      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-      call ExportArray(Input=InputSection, Array=This%CorrMat, File=File)
-    else
-      call ExportArray(Input=InputSection, Array=This%CorrMat)
-    end if
-    nullify(InputSection)
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Generate(This, Input, ParamSpace)
+  class(HierParamSpace_Type), intent(inout)                           ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
   
-    class(HierParamSpace_Type), intent(in)                            ::    This
-    type(ParamSpace_Type), intent(out)                                ::    ParamSpace
-    type(Input_Type), intent(in)                                      ::    Input
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  class(HierDistProb_Type), allocatable                               ::    HierDistProb
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  character(:), allocatable                                           ::    ParameterName
+  real(rkp)                                                           ::    VarR0D
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D_1
+  real(rkp), allocatable, dimension(:)                                ::    VarR1D_2
+  real(rkp), allocatable, dimension(:,:)                              ::    VarR2D
+  integer                                                             ::    VarI0D
+  character(:),  allocatable                                          ::    VarC0D
+  logical                                                             ::    VarL0D
+  integer                                                             ::    i, ii
+  logical                                                             ::    Found
+  character(:), allocatable                                           ::    SpaceType
+  type(InputVerifier_Type)                                              ::    InputVerifier
 
-    character(*), parameter                                           ::    ProcName='Generate'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    class(DistProb_Type), allocatable                                 ::    DistProb
-    class(HierDistProb_Type), pointer                                 ::    HierDistProbPtr=>null()
-    type(DistProbContainer_Type), allocatable, dimension(:)           ::    DistProbVec
+  call This%Reset()
 
-    allocate(DistProbVec(This%NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    i = 1
-    do i = 1, This%NbDim
-      HierDistProbPtr => This%HierDistProb(i)%GetPointer()
-      call HierDistProbPtr%Generate(Input=Input, Distribution=DistProb)
-      call DistProbVec(i)%Set(Object=DistProb)
-      deallocate(DistProb, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
-      nullify(HierDistProbPtr)
+  call InputVerifier%Construct()
+
+  SectionName = 'parameters'
+  call InputVerifier%AddSection(Section=SectionName)
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  This%NbDim = InputSection%GetNumberOfSubSections()
+
+  allocate(This%ParamName(This%NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%ParamName', ProcName=ProcName, stat=StatLoc)
+
+  allocate(This%HierDistProb(This%NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc)
+
+  allocate(This%Label(This%NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, This%NbDim
+    SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
+    call InputVerifier%AddSection(Section='parameter' // ConvertToString(Value=i) ,ToSubSection=SectionName)
+
+    ParameterName = 'name'
+    call InputVerifier%AddParameter(Parameter=ParameterName, Section=SubSectionName)
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+    This%ParamName(i) = VarC0D
+
+    ParameterName = 'label'
+    call InputVerifier%AddParameter(Parameter=ParameterName, Section=SubSectionName)
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+    This%Label(i) = VarC0D
+
+    call InputVerifier%AddSection(Section='distribution', ToSubSection=SubSectionName)
+    SubSectionName = SubSectionName // '>distribution'
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+    call HierDistProb_Factory%Construct(Object=HierDistProb, Input=InputSection, Prefix=PrefixLoc)
+    nullify(InputSection)
+    call This%HierDistProb(i)%Set(Object=HierDistProb)
+    deallocate(HierDistProb, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='HierDistProb', ProcName=ProcName, stat=StatLoc)
+  end do 
+
+  i = 1
+  do i = 1, This%NbDim-1
+    ii = 1
+    do ii = i+1 ,This%NbDim
+      if (This%Label(i) == This%Label(ii)) call Error%Raise(Line='Duplicate labels : ' // This%Label(i), ProcName=ProcName)
     end do
+  end do
+
+  SectionName = 'correlation_matrix'
+  call InputVerifier%AddSection(Section=SectionName)
+  if (Input%HasSection(SubSectionName=SectionName)) then
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+    call ImportArray(Input=InputSection, Array=This%CorrMat, Prefix=PrefixLoc)
+    nullify(InputSection)
+    This%Correlated = .not. IsDiagonal(Array=This%CorrMat)
+  else
+    call Eye(Array=This%CorrMat, N=This%NbDim)
+    This%Correlated = .false.
+  end if
+
+  if (size(This%Corrmat,1) /= This%NbDim .or. size(This%CorrMat,2) /= This%NbDim) call Error%Raise(                        &
+                                                      Line='Improper sizes for the input correlation matrix', ProcName=ProcName) 
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
+  
+  This%Constructed=.true.
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
+
+  type(InputSection_Type)                                             ::    GetInput
+
+  class(HierParamSpace_Type), intent(in)                              ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
+
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  class(HierDistProb_Type), pointer                                   ::    HierDistProb=>null()
+  character(:), allocatable                                           ::    FileName
+  integer                                                             ::    i
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  type(SMUQFile_Type)                                                 ::    File
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
+
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+
+  if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
+
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
+
+  SectionName = 'parameters'
+  call GetInput%AddSection(SectionName=SectionName)
+  i = 1
+  do i = 1, This%NbDim
+    SubSectionName = 'parameter' // ConvertToString(Value=i)
+    call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+    SubSectionName= SectionName // '>' // SubSectionName
+    call GetInput%AddParameter(Name='name', Value=This%ParamName(i)%Get(), SectionName=SubSectionName)
+    call GetInput%AddParameter(Name='label', Value=This%Label(i)%Get(), SectionName=SubSectionName)
+    HierDistProb => This%HierDistProb(i)%GetPointer()
+    if (ExternalFlag) DirectorySub = DirectoryLoc // 'distribution' // ConvertToString(i) // '/'
+    call GetInput%AddSection(Section=HierDistProb_Factory%GetObjectInput(Object=HierDistProb, Name='distribution', &
+                                                      Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SubSectionName)
+    nullify(HierDistProb)
+  end do
+
+  SectionName='correlation_matrix'
+  call GetInput%AddSection(SectionName=SectionName)
+  call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  if (ExternalFlag) then
+    FileName = DirectoryLoc // 'correlation_matrix.dat'
+    call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+    call ExportArray(Input=InputSection, Array=This%CorrMat, File=File)
+  else
+    call ExportArray(Input=InputSection, Array=This%CorrMat)
+  end if
+  nullify(InputSection)
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Generate(This, Input, ParamSpace)
+
+  class(HierParamSpace_Type), intent(in)                              ::    This
+  type(ParamSpace_Type), intent(out)                                  ::    ParamSpace
+  type(Input_Type), intent(in)                                        ::    Input
 
-    call ParamSpace%Construct(Distributions=DistProbVec, CorrMat=This%CorrMat, Labels=This%Label, Names=This%ParamName)
+  character(*), parameter                                             ::    ProcName='Generate'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  class(DistProb_Type), allocatable                                   ::    DistProb
+  class(HierDistProb_Type), pointer                                   ::    HierDistProbPtr=>null()
+  type(DistProbContainer_Type), allocatable, dimension(:)             ::    DistProbVec
 
-    deallocate(DistProbVec, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
+  allocate(DistProbVec(This%NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  i = 1
+  do i = 1, This%NbDim
+    HierDistProbPtr => This%HierDistProb(i)%GetPointer()
+    call HierDistProbPtr%Generate(Input=Input, Distribution=DistProb)
+    call DistProbVec(i)%Set(Object=DistProb)
+    deallocate(DistProb, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
+    nullify(HierDistProbPtr)
+  end do
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName0D(This, Num)
+  call ParamSpace%Construct(Distributions=DistProbVec, CorrMat=This%CorrMat, Labels=This%Label, Names=This%ParamName)
 
-    character(:), allocatable                                         ::    GetName0D
-    class(HierParamSpace_Type), intent(in)                            ::    This
-    integer, intent(in)                                               ::    Num
+  deallocate(DistProbVec, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='GetName0D'
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetName0D(This, Num)
 
-    GetName0D = This%ParamName(Num)%Get()      
+  character(:), allocatable                                           ::    GetName0D
+  class(HierParamSpace_Type), intent(in)                              ::    This
+  integer, intent(in)                                                 ::    Num
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetName0D'
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName1D(This)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    type(SMUQString_Type), allocatable, dimension(:)                  ::    GetName1D
-    class(HierParamSpace_Type), intent(in)                            ::    This
+  GetName0D = This%ParamName(Num)%Get()      
 
-    character(*), parameter                                           ::    ProcName='GetName1D'
-    integer                                                           ::    i
-    integer                                                           ::    StatLoc=0
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetName1D(This)
 
-    allocate(GetName1D, source=This%ParamName, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetName1D', ProcName=ProcName, stat=StatLoc)
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetName1D
+  class(HierParamSpace_Type), intent(in)                              ::    This
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetName1D'
+  integer                                                             ::    i
+  integer                                                             ::    StatLoc=0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel0D(This, Num)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    character(:), allocatable                                         ::    GetLabel0D
-    class(HierParamSpace_Type), intent(in)                            ::    This
-    integer, intent(in)                                               ::    Num
+  allocate(GetName1D, source=This%ParamName, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='GetName1D', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='GetLabel0D'
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetLabel0D(This, Num)
 
-    GetLabel0D = This%Label(Num)%Get()      
+  character(:), allocatable                                           ::    GetLabel0D
+  class(HierParamSpace_Type), intent(in)                              ::    This
+  integer, intent(in)                                                 ::    Num
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetLabel0D'
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetLabel1D(This)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    type(SMUQString_Type), allocatable, dimension(:)                  ::    GetLabel1D
-    class(HierParamSpace_Type), intent(in)                            ::    This
+  GetLabel0D = This%Label(Num)%Get()      
 
-    character(*), parameter                                           ::    ProcName='GetLabel1D'
-    integer                                                           ::    i
-    integer                                                           ::    StatLoc=0
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetLabel1D(This)
 
-    allocate(GetLabel1D, source=This%Label, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='GetLabel1D', ProcName=ProcName, stat=StatLoc)
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    GetLabel1D
+  class(HierParamSpace_Type), intent(in)                              ::    This
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetLabel1D'
+  integer                                                             ::    i
+  integer                                                             ::    StatLoc=0
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetNbDim(This)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    integer                                                           ::    GetNbDim
-    class(HierParamSpace_Type), intent(in)                            ::    This
+  allocate(GetLabel1D, source=This%Label, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='GetLabel1D', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='GetNbDim'
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetNbDim(This)
 
-    GetNbDim = This%NbDim
+  integer                                                             ::    GetNbDim
+  class(HierParamSpace_Type), intent(in)                              ::    This
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  character(*), parameter                                             ::    ProcName='GetNbDim'
 
- !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistPtr_LabChar(This, Label)
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    class(HierDistProb_Type), pointer                                 ::    GetDistPtr_LabChar
+  GetNbDim = This%NbDim
 
-    class(HierParamSpace_Type), intent(in)                            ::    This
-    character(*), intent(in)                                          ::    Label
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetDistPtr_LabChar'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    ii
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetDistPtr_LabChar(This, Label)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(HierDistProb_Type), pointer                                   ::    GetDistPtr_LabChar
 
-    i = 1
-    ii = 0
-    do i = 1, This%NbDim
-      if (This%Label(i) /= Label) cycle
-      ii = i
-      exit
-    end do
+  class(HierParamSpace_Type), intent(in)                              ::    This
+  character(*), intent(in)                                            ::    Label
 
-    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetDistPtr_LabChar'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  integer                                                             ::    ii
 
-    GetDistPtr_LabChar => This%HierDistProb(ii)%GetPointer()
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  i = 1
+  ii = 0
+  do i = 1, This%NbDim
+    if (This%Label(i) /= Label) cycle
+    ii = i
+    exit
+  end do
 
- !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistPtr_LabString(This, Label)
+  if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-    class(HierDistProb_Type), pointer                                 ::    GetDistPtr_LabString
+  GetDistPtr_LabChar => This%HierDistProb(ii)%GetPointer()
 
-    class(HierParamSpace_Type), intent(in)                            ::    This
-    type(SMUQString_Type), intent(in)                                 ::    Label
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetDistPtr_LabString'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
-    integer                                                           ::    ii
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetDistPtr_LabString(This, Label)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(HierDistProb_Type), pointer                                   ::    GetDistPtr_LabString
 
-    i = 1
-    ii = 0
-    do i = 1, This%NbDim
-      if (This%Label(i) /= Label) cycle
-      ii = i
-      exit
-    end do
+  class(HierParamSpace_Type), intent(in)                              ::    This
+  type(SMUQString_Type), intent(in)                                   ::    Label
 
-    if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
+  character(*), parameter                                             ::    ProcName='GetDistPtr_LabString'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
+  integer                                                             ::    ii
 
-    GetDistPtr_LabString => This%HierDistProb(ii)%GetPointer()
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  i = 1
+  ii = 0
+  do i = 1, This%NbDim
+    if (This%Label(i) /= Label) cycle
+    ii = i
+    exit
+  end do
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetDistPtr_Num(This, Num)
+  if (ii == 0) call Error%Raise('Did not find required parameter with label : ' // Label, ProcName=ProcName)
 
-    class(HierDistProb_Type), pointer                                 ::    GetDistPtr_Num
+  GetDistPtr_LabString => This%HierDistProb(ii)%GetPointer()
 
-    class(HierParamSpace_Type), intent(in)                            ::    This
-    integer, intent(in)                                               ::    Num
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetDistPtr_Num'
-    integer                                                           ::    StatLoc=0
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetDistPtr_Num(This, Num)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(HierDistProb_Type), pointer                                   ::    GetDistPtr_Num
 
-    if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
-    if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
+  class(HierParamSpace_Type), intent(in)                              ::    This
+  integer, intent(in)                                                 ::    Num
 
-    GetDistPtr_Num => This%HierDistProb(Num)%GetPointer()
+  character(*), parameter                                             ::    ProcName='GetDistPtr_Num'
+  integer                                                             ::    StatLoc=0
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function IsCorrelated(This)
+  if (Num > This%NbDim) call Error%Raise(Line='Num specifier above maximum number of distributions', ProcName=ProcName)
+  if (Num < 1) call Error%Raise(Line='Num specifier below minimum of 1', ProcName=ProcName)
 
-    logical                                                           ::    IsCorrelated
-    class(HierParamSpace_Type), intent(in)                            ::    This
+  GetDistPtr_Num => This%HierDistProb(Num)%GetPointer()
 
-    character(*), parameter                                           ::    ProcName='IsCorrelated'
-    integer                                                           ::    StatLoc=0
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    IsCorrelated = This%Correlated
+!!------------------------------------------------------------------------------------------------------------------------------
+function IsCorrelated(This)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  logical                                                             ::    IsCorrelated
+  class(HierParamSpace_Type), intent(in)                              ::    This
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+  character(*), parameter                                             ::    ProcName='IsCorrelated'
+  integer                                                             ::    StatLoc=0
 
-    class(HierParamSpace_Type), intent(out)                           ::    LHS
-    class(HierParamSpace_Type), intent(in)                            ::    RHS
+  IsCorrelated = This%Correlated
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    select type (RHS)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-      type is (HierParamSpace_Type)
-        call LHS%Reset()
+  class(HierParamSpace_Type), intent(out)                             ::    LHS
+  class(HierParamSpace_Type), intent(in)                              ::    RHS
 
-        LHS%Name = RHS%Name
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-        
-        if (RHS%Constructed) then
-          LHS%NbDim = RHS%NbDim
-          LHS%Correlated = RHS%Correlated
-          allocate(LHS%HierDistProb, source=RHS%HierDistProb, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%HierDistProb', ProcName=ProcName, stat=StatLoc)
-          allocate(LHS%ParamName, source=RHS%ParamName, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Paramname', ProcName=ProcName, stat=StatLoc)
-          allocate(LHS%CorrMat, source=RHS%CorrMat, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
-          allocate(LHS%Label, source=RHS%Label, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%Label', ProcName=ProcName, stat=StatLoc)
-        end if
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
 
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+  select type (RHS)
 
-    end select
+    type is (HierParamSpace_Type)
+      call LHS%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+      LHS%Name = RHS%Name
+      LHS%Constructed = RHS%Constructed
+      
+      if (RHS%Constructed) then
+        LHS%NbDim = RHS%NbDim
+        LHS%Correlated = RHS%Correlated
+        allocate(LHS%HierDistProb, source=RHS%HierDistProb, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%HierDistProb', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%ParamName, source=RHS%ParamName, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%Paramname', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%CorrMat, source=RHS%CorrMat, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
+        allocate(LHS%Label, source=RHS%Label, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%Label', ProcName=ProcName, stat=StatLoc)
+      end if
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-    type(HierParamSpace_Type),intent(inout)                               ::    This
+  end select
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (allocated(This%CorrMat)) deallocate(This%CorrMat, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    if (allocated(This%ParamName)) deallocate(This%ParamName, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamName', ProcName=ProcName, stat=StatLoc)
+  type(HierParamSpace_Type),intent(inout)                             ::    This
 
-    if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-    if (allocated(This%HierDistProb)) deallocate(This%HierDistProb, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc)
+  if (allocated(This%CorrMat)) deallocate(This%CorrMat, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%ParamName)) deallocate(This%ParamName, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%ParamName', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%Label)) deallocate(This%Label, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Label', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%HierDistProb)) deallocate(This%HierDistProb, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%HierDistProb', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

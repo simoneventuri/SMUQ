@@ -30,8 +30,6 @@ private
 public                                                                ::    SampleMethod_Type
 
 type, abstract                                                        ::    SampleMethod_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
 contains
   generic, public                                                     ::    Construct               =>    ConstructInput
@@ -40,9 +38,7 @@ contains
                                                                                                           Draw1D
   generic, public                                                     ::    Enrich                  =>    Enrich0D,              &
                                                                                                           Enrich1D
-  procedure(Initialize_SampleMethod), deferred, public                ::    Initialize
   procedure(Reset_SampleMethod), deferred, public                     ::    Reset
-  procedure(SetDefaults_SampleMethod), deferred, public               ::    SetDefaults
   procedure(ConstructInput_SampleMethod), deferred, private           ::    ConstructInput
   procedure(GetInput_SampleMethod), deferred, public                  ::    GetInput
   procedure(Draw0D_SampleMethod), deferred, private                   ::    Draw0D
@@ -57,21 +53,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_SampleMethod(This)
-    import                                                            ::    SampleMethod_Type
-    class(SampleMethod_Type), intent(inout)                           ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_SampleMethod(This)
-    import                                                            ::    SampleMethod_Type
-    class(SampleMethod_Type), intent(inout)                           ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_SampleMethod(This)
     import                                                            ::    SampleMethod_Type
     class(SampleMethod_Type), intent(inout)                           ::    This
   end subroutine
@@ -153,21 +135,5 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
-
-    character(:), allocatable                                         ::    GetName
-
-    class(SampleMethod_Type), intent(inout)                           ::    This
-
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    if (.not. This%Constructed) call Error%Raise(Line='The object was never constructed', ProcName=ProcName)
-
-    GetName = This%Name
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -1596,7 +1596,6 @@ impure elemental subroutine Copy_Cell(LHS, RHS)
   integer                                                             ::    StatLoc=0
 
   call LHS%Reset()
-  LHS%Initialized = RHS%Initialized
   LHS%Constructed = RHS%Constructed
 
   if (RHS%Constructed) then

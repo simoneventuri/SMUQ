@@ -28,6 +28,7 @@ use Error_Class                                                   ,only:    Erro
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use RandPseudo_Class                                              ,only:    RandPseudo_Type
 use LinkedList0D_Class                                            ,only:    LinkedList0D_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -39,9 +40,7 @@ type, extends(SampleMethod_Type)                                      ::    Samp
   type(RandPseudo_Type)                                               ::    RNG
   logical                                                             ::    MedianPoints=.false.
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, public                                                   ::    ConstructInput
   procedure, public                                                   ::    ConstructCase1
@@ -60,23 +59,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(SampleLHS_Type), intent(inout)                                ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  integer(8)                                                          ::    SysTimeCount
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = 'lhs'
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(SampleLHS_Type), intent(inout)                                ::    This
@@ -84,22 +66,9 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   call This%RNG%Reset()
-
-  call This%Initialize()
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(SampleLHS_Type), intent(inout)                                ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
   This%MedianPoints = .false.
 
@@ -126,24 +95,31 @@ subroutine ConstructInput (This, Input, Prefix)
   integer                                                             ::    VarI0D
   character(:), allocatable                                           ::    PrefixLoc
   integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   ParameterName = 'median_points'
-  call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.false., Found=Found)
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%MedianPoints = VarL0D
 
   SectionName = 'rng'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found)
   if (Found) then
     call This%RNG%Construct(Input=InputSection, Prefix=PrefixLoc)
   else
     call This%RNG%Construct()
   end if
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -160,8 +136,7 @@ subroutine ConstructCase1 (This, RNG, MedianPoints)
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   if (present(RNG)) then
     This%RNG = RNG
@@ -212,7 +187,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   call GetInput%AddParameter(Name='median_points', Value=ConvertToString(Value=This%MedianPoints))
 
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/rng'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'rng/'
   call GetInput%AddSection(Section=This%RNG%GetInput(Name='rng', Prefix=PrefixLoc, Directory=DirectorySub))
 
 end function
@@ -511,7 +486,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (SampleLHS_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then

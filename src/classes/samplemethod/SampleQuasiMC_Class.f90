@@ -27,6 +27,7 @@ use SampleMethod_Class                                            ,only:    Samp
 use LowDiscSequence_Class                                         ,only:    LowDiscSequence_Type
 use LowDiscSequence_Factory_Class                                 ,only:    LowDiscSequence_Factory
 use LowDiscSobol_Class                                            ,only:    LowDiscSobol_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -37,9 +38,7 @@ public                                                                ::    Samp
 type, extends(SampleMethod_Type)                                      ::    SampleQuasiMC_Type
   class(LowDiscSequence_Type), allocatable                            ::    LowDiscSequence
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1      
   procedure, private                                                  ::    ConstructInput
   procedure, private                                                  ::    ConstructCase1
@@ -57,22 +56,6 @@ logical, parameter                                                    ::    Debu
 contains
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(SampleQuasiMC_Type), intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = 'quasi'
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(SampleQuasiMC_Type), intent(inout)                            ::    This
@@ -80,23 +63,10 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%LowDiscSequence)) deallocate(This%LowDiscSequence, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%LowDiscSequence', ProcName=ProcName, stat=StatLoc)
-
-  call This%Initialize()
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(SampleQuasiMC_Type), intent(inout)                            ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -119,14 +89,17 @@ subroutine ConstructInput(This, Input, Prefix)
   integer                                                             ::    VarI0D
   character(:), allocatable                                           ::    PrefixLoc
   integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   SectionName = 'sequence'
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call LowDiscSequence_Factory%Construct(Object=This%LowDiscSequence, Input=InputSection)
@@ -140,6 +113,9 @@ subroutine ConstructInput(This, Input, Prefix)
         call Error%Raise('Something went wrong', ProcName=ProcName)
     end select
   end if
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed=.true.
 
@@ -155,8 +131,7 @@ subroutine ConstructCase1 (This, LowDiscSequence)
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   if (present(LowDiscSequence)) then
     allocate(This%LowDiscSequence, source=LowDiscSequence, stat=StatLoc)
@@ -206,7 +181,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/sequence'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'sequence/'
   call GetInput%AddSection(Section=LowDiscSequence_Factory%GetObjectInput(Object=This%LowDiscSequence,                        &
                                                           Name='sequence', Prefix=PrefixLoc, Directory=DirectorySub))
 
@@ -313,7 +288,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (SampleQuasiMC_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then

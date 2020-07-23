@@ -25,6 +25,7 @@ use StringConversion_Module
 use CommandROutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -33,17 +34,13 @@ private
 public                                                                ::    OnlineVarEstimator_Type
 
 type                                                                  ::    OnlineVarEstimator_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   integer                                                             ::    NbSamples
   real(rkp)                                                           ::    M2
   real(rkp)                                                           ::    Mean
   logical                                                             ::    SampleVariance
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructInput,         &
                                                                                                           ConstructCase1
   procedure, private                                                  ::    ConstructInput
@@ -63,291 +60,269 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(OnlineVarEstimator_Type), intent(inout)                     ::    This
+  class(OnlineVarEstimator_Type), intent(inout)                       ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc = 0
 
-    if (.not. This%Initialized) then
-      This%Name = 'OnlineVarEstimator'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  This%Constructed=.false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%SampleVariance = .true.
+  This%NbSamples = 0
+  This%Mean = Zero
+  This%M2 = Zero
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(OnlineVarEstimator_Type), intent(inout)                     ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc = 0
+  class(OnlineVarEstimator_Type), intent(inout)                       ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    This%Initialized=.false.
-    This%Constructed=.false.
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  real(rkp)                                                           ::    VarR0D
+  integer                                                             ::    VarI0D
+  logical                                                             ::    VarL0D
+  character(:), allocatable                                           ::    ParameterName
+  logical                                                             ::    Found
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                              ::    InputVerifier
 
-    call This%SetDefaults()
+  call This%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  call InputVerifier%Construct()
 
-    class(OnlineVarEstimator_Type), intent(inout)                     ::    This
+  ParameterName = 'nb_samples'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%NbSamples = VarI0D
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  ParameterName = 'mean'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%Mean = VarR0D
 
-    This%SampleVariance = .true.
-    This%NbSamples = 0
-    This%Mean = Zero
-    This%M2 = Zero
+  ParameterName = 'm2'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%M2 = VarR0D
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  ParameterName = 'sample_variance'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%SampleVariance = VarL0D
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
-    class(OnlineVarEstimator_Type), intent(inout)                     ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+  This%Constructed = .true.
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    real(rkp)                                                         ::    VarR0D
-    integer                                                           ::    VarI0D
-    logical                                                           ::    VarL0D
-    character(:), allocatable                                         ::    ParameterName
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This, SampleVariance)
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  class(OnlineVarEstimator_Type), intent(inout)                       ::    This
+  logical, optional, intent(in)                                       ::    SampleVariance
 
-    ParameterName = 'nb_samples'
-    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%NbSamples = VarI0D
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  logical                                                             ::    Found
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
 
-    ParameterName = 'mean'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%Mean = VarR0D
+  call This%Reset()
 
-    ParameterName = 'm2'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%M2 = VarR0D
+  if (present(SampleVariance)) This%SampleVariance = SampleVariance
 
-    ParameterName = 'sample_variance'
-    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%SampleVariance = VarL0D
+  This%Constructed = .true.
 
-    This%Constructed = .true.
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This, SampleVariance)
+  type(InputSection_Type)                                             ::    GetInput
 
-    class(OnlineVarEstimator_Type), intent(inout)                     ::    This
-    logical, optional, intent(in)                                     ::    SampleVariance
+  class(OnlineVarEstimator_Type), intent(inout)                       ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (present(SampleVariance)) This%SampleVariance = SampleVariance
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    This%Constructed = .true.
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    type(InputSection_Type)                                           ::    GetInput
+  call GetInput%AddParameter(Name='nb_samples', Value=ConvertToString(Value=This%NbSamples))
+  call GetInput%AddParameter(Name='mean', Value=ConvertToString(Value=This%Mean))
+  call GetInput%AddParameter(Name='m2', Value=ConvertToString(Value=This%M2))
+  call GetInput%AddParameter(Name='sample_variance', Value=ConvertToString(Value=This%SampleVariance))
 
-    class(OnlineVarEstimator_Type), intent(inout)                     ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Update_0D(This, Value)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(OnlineVarEstimator_Type), intent(inout)                       ::    This
+  real(rkp), intent(in)                                               ::    Value
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  character(*), parameter                                             ::    ProcName='Update_0D'
+  integer                                                             ::    StatLoc=0
+  real(rkp)                                                           ::    del1
+  real(rkp)                                                           ::    del2
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
+  This%NbSamples = This%NbSamples + 1
+  del1 = Value - This%Mean
+  This%Mean = This%Mean + del1/This%NbSamples
+  del2 = Value - This%Mean
+  This%M2 = This%M2 + del1 * del2
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+end Subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    call GetInput%AddParameter(Name='nb_samples', Value=ConvertToString(Value=This%NbSamples))
-    call GetInput%AddParameter(Name='mean', Value=ConvertToString(Value=This%Mean))
-    call GetInput%AddParameter(Name='m2', Value=ConvertToString(Value=This%M2))
-    call GetInput%AddParameter(Name='sample_variance', Value=ConvertToString(Value=This%SampleVariance))
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Update_1D(This, Values)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  class(OnlineVarEstimator_Type), intent(inout)                       ::    This
+  real(rkp), dimension(:), intent(in)                                 ::    Values
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Update_0D(This, Value)
+  character(*), parameter                                             ::    ProcName='Update_1D'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
 
-    class(OnlineVarEstimator_Type), intent(inout)                     ::    This
-    real(rkp), intent(in)                                             ::    Value
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    character(*), parameter                                           ::    ProcName='Update_0D'
-    integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    del1
-    real(rkp)                                                         ::    del2
+  i = 1
+  do i = 1, size(Values,1)
+    call This%Update(Value=Values(i))
+  end do
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+end Subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    This%NbSamples = This%NbSamples + 1
-    del1 = Value - This%Mean
-    This%Mean = This%Mean + del1/This%NbSamples
-    del2 = Value - This%Mean
-    This%M2 = This%M2 + del1 * del2
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMean(This)
 
-  end Subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  real(rkp)                                                           ::    GetMean
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Update_1D(This, Values)
+  class(OnlineVarEstimator_Type), intent(in)                          ::    This
 
-    class(OnlineVarEstimator_Type), intent(inout)                     ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Values
+  character(*), parameter                                             ::    ProcName='GetMean'
+  integer                                                             ::    StatLoc=0
 
-    character(*), parameter                                           ::    ProcName='Update_1D'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  GetMean = This%Mean
 
-    i = 1
-    do i = 1, size(Values,1)
-      call This%Update(Value=Values(i))
-    end do
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end Subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetVariance(This, SampleVariance)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMean(This)
+  real(rkp)                                                           ::    GetVariance
 
-    real(rkp)                                                         ::    GetMean
+  class(OnlineVarEstimator_Type), intent(in)                          ::    This
+  logical, optional, intent(in)                                       ::    SampleVariance
 
-    class(OnlineVarEstimator_Type), intent(in)                        ::    This
+  character(*), parameter                                             ::    ProcName='GetVariance'
+  integer                                                             ::    StatLoc=0
+  logical                                                             ::    SampleVarianceLoc
 
-    character(*), parameter                                           ::    ProcName='GetMean'
-    integer                                                           ::    StatLoc=0
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  SampleVarianceLoc = This%SampleVariance
+  if (present(SampleVariance)) SampleVarianceLoc = SampleVariance
 
-    GetMean = This%Mean
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetVariance(This, SampleVariance)
-
-    real(rkp)                                                         ::    GetVariance
-
-    class(OnlineVarEstimator_Type), intent(in)                        ::    This
-    logical, optional, intent(in)                                     ::    SampleVariance
-
-    character(*), parameter                                           ::    ProcName='GetVariance'
-    integer                                                           ::    StatLoc=0
-    logical                                                           ::    SampleVarianceLoc
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    SampleVarianceLoc = This%SampleVariance
-    if (present(SampleVariance)) SampleVarianceLoc = SampleVariance
-
-    if (This%NbSamples >= 2) then
-      if (SampleVarianceLoc) then
-        GetVariance = This%M2 / real(This%NbSamples-1,rkp)
-      else
-        GetVariance = This%M2 / real(This%NbSamples,rkp)
-      end if
+  if (This%NbSamples >= 2) then
+    if (SampleVarianceLoc) then
+      GetVariance = This%M2 / real(This%NbSamples-1,rkp)
     else
-      GetVariance = Zero
+      GetVariance = This%M2 / real(This%NbSamples,rkp)
     end if
+  else
+    GetVariance = Zero
+  end if
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-    class(OnlineVarEstimator_Type), intent(out)                       ::    LHS
-    class(OnlineVarEstimator_Type), intent(in)                        ::    RHS
+  class(OnlineVarEstimator_Type), intent(out)                         ::    LHS
+  class(OnlineVarEstimator_Type), intent(in)                          ::    RHS
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    i
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    i
+  integer                                                             ::    StatLoc=0
 
-    select type (RHS)
-  
-      type is (OnlineVarEstimator_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
+  select type (RHS)
 
-        if (RHS%Constructed) then
-          LHS%NbSamples = RHS%NbSamples
-          LHS%M2 = RHS%M2
-          LHS%Mean = RHS%Mean
-          LHS%SampleVariance = RHS%SampleVariance
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+    type is (OnlineVarEstimator_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
 
-    end select
+      if (RHS%Constructed) then
+        LHS%NbSamples = RHS%NbSamples
+        LHS%M2 = RHS%M2
+        LHS%Mean = RHS%Mean
+        LHS%SampleVariance = RHS%SampleVariance
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  end select
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    type(OnlineVarEstimator_Type), intent(inout)                      ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+  type(OnlineVarEstimator_Type), intent(inout)                        ::    This
 
-    if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%Name)) deallocate(This%Name, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Name', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

@@ -68,9 +68,7 @@ contains
 end type
 
 type                                                                  ::    InputProcessor_Type
-  character(:), allocatable                                           ::    Name
   logical                                                             ::    Constructed=.false.
-  logical                                                             ::    Initialized=.false.
   integer                                                             ::    NbFixs
   integer                                                             ::    NbTransforms
   type(InputFixed_Type), allocatable, dimension(:)                    ::    Fix
@@ -425,7 +423,6 @@ subroutine Reset_IF(This)
   character(*), parameter                                             ::    ProcName='Reset_IF'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%Target)) deallocate(This%Target, stat=StatLoc)

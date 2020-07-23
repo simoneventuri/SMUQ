@@ -30,6 +30,7 @@ use SampleMethod_Class                                            ,only:    Samp
 use DistNorm_Class                                                ,only:    DistNorm_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -38,8 +39,6 @@ private
 public                                                                ::    SampleSpace_Type
 
 type, abstract                                                        ::    SampleSpace_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   integer                                                             ::    NbDim=0
   logical                                                             ::    Correlated=.false.
@@ -48,9 +47,7 @@ type, abstract                                                        ::    Samp
   type(SMUQString_Type), allocatable, dimension(:)                    ::    Label
   real(rkp), dimension(:,:), allocatable                              ::    CorrMat
 contains
-  procedure(Initialize_SampleSpace), deferred, public                 ::    Initialize
   procedure(Reset_SampleSpace), deferred, public                      ::    Reset
-  procedure(SetDefaults_SampleSpace), deferred, public                ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructInput
   procedure(ConstructInput_SampleSpace), deferred, private            ::    ConstructInput
   procedure(GetInput_SampleSpace), deferred, public                   ::    GetInput
@@ -94,25 +91,11 @@ logical, parameter                                                    ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_SampleSpace(This)
-    import                                                            ::    SampleSpace_Type
-    class(SampleSpace_Type), intent(inout)                            ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_SampleSpace(This)
     import                                                            ::    SampleSpace_Type
     class(SampleSpace_Type), intent(inout)                            ::    This
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_SampleSpace(This)
-    import                                                            ::    SampleSpace_Type
-    class(SampleSpace_Type),intent(inout)                             ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------  
 
   !!------------------------------------------------------------------------------------------------------------------------------
   subroutine ConstructInput_SampleSpace(This, Input, Prefix)

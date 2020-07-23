@@ -26,6 +26,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use RandPseudo_Class                                              ,only:    RandPseudo_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -433,6 +434,14 @@ subroutine InterSpaceInput(Input, Values)
   character(:), allocatable                                         ::    SubSectionName
   character(:), allocatable                                         ::    ParameterName
   integer                                                           ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
+
+  call This%Reset()
+
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
+
+  call InputVerifier%Construct()
 
   NbInter = Input%GetNumberOfSubSections()
 
@@ -446,24 +455,32 @@ subroutine InterSpaceInput(Input, Values)
   i = 1
   do i = 1, NbInter
     SubSectionName = 'interval' // ConvertToString(Value=i)
+    call InputVerifier%AddSection(Section=SubSectionName) 
 
     ParameterName = 'min'
+    call InputVerifier%AddParameter(Parameter=ParameterName, SectionName=SubSectionName)
     call Input%GetValue(ParameterName=ParameterName, Value=VarR0D, SectionName=SubSectionName, Mandatory=.true.)
     Extremes(i,1) = VarR0D
 
     ParameterName = 'max'
+    call InputVerifier%AddParameter(Parameter=ParameterName, SectionName=SubSectionName)
     call Input%GetValue(ParameterName=ParameterName, Value=VarR0D, SectionName=SubSectionName, Mandatory=.true.)
     Extremes(i,2) = VarR0D
 
     ParameterName = 'nb_nodes'
+    call InputVerifier%AddParameter(Parameter=ParameterName, SectionName=SubSectionName)
     call Input%GetValue(ParameterName=ParameterName, Value=VarI0D, SectionName=SubSectionName, Mandatory=.true.)
     NbNodes(i) = VarI0D
 
     ParameterName = 'spacing'
+    call InputVerifier%AddParameter(Parameter=ParameterName, SectionName=SubSectionName)
     GenFun(i) = 'linear'
     call Input%GetValue(ParameterName=ParameterName, Value=VarC0D, SectionName=SubSectionName, Mandatory=.false., Found=Found)      
     if (Found) GenFun(i) = VarC0D
   end do
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   allocate(Values(sum(NbNodes)), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Values', ProcName=ProcName, stat=StatLoc)

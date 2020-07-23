@@ -34,8 +34,6 @@ private
 public                                                                ::    OrthoMultiVar_Type
 
 type                                                                  ::    OrthoMultiVar_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   type(OrthoPolyContainer_Type), allocatable, dimension(:)            ::    OrthoPoly
   integer                                                             ::    NbDim=0

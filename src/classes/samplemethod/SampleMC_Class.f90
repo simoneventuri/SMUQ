@@ -27,6 +27,7 @@ use Logger_Class                                                  ,only:    Logg
 use Error_Class                                                   ,only:    Error
 use SampleMethod_Class                                            ,only:    SampleMethod_Type
 use RandPseudo_Class                                              ,only:    RandPseudo_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -37,9 +38,7 @@ public                                                                ::    Samp
 type, extends(SampleMethod_Type)                                      ::    SampleMC_Type
   type(RandPseudo_Type)                                               ::    RNG
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1
   procedure, public                                                   ::    ConstructInput
   procedure, public                                                   ::    ConstructCase1
@@ -57,23 +56,6 @@ logical   ,parameter                                                  ::    Debu
 contains
 
 !!------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(SampleMC_Type), intent(inout)                                 ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  integer(8)                                                          ::    SysTimeCount
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = 'monte_carlo'
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
 
   class(SampleMC_Type), intent(inout)                                 ::    This
@@ -81,22 +63,9 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   call This%RNG%Reset()
-
-  call This%Initialize()
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(SampleMC_Type), intent(inout)                                 ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
 
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
@@ -118,20 +87,26 @@ subroutine ConstructInput (This, Input, Prefix)
   integer                                                             ::    VarI0D
   character(:), allocatable                                           ::    PrefixLoc
   integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   SectionName = 'rng'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.false., FoundSection=Found)
   if (Found) then
     call This%RNG%Construct(Input=InputSection, Prefix=PrefixLoc)
   else
     call This%RNG%Construct(DrawType=1)
   end if
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
 
@@ -147,8 +122,7 @@ subroutine ConstructCase1 (This, RNG)
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   if (present(RNG)) then
     This%RNG = RNG
@@ -192,7 +166,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-  if (ExternalFlag) DirectorySub = DirectoryLoc // '/rng'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'rng/'
   call GetInput%AddSection(Section=This%RNG%GetInput(Name='rng', Prefix=PrefixLoc, Directory=DirectorySub))
 
 end function
@@ -297,7 +271,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (SampleMC_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
 
       if (RHS%Constructed) then

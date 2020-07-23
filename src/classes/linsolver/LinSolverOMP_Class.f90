@@ -190,8 +190,7 @@ subroutine ConstructCase1(This, CVMethod, MinAbsCorr, GetBest, StopEarly, Correc
   character(*), parameter                                             ::    ProcName='ConstructCase1'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset()
-  if (.not. This%Initialized) call This%Initialize()
+  call This%Reset()
 
   if (present(MinAbsCorr)) This%MinAbsCorr = MinAbsCorr
 

@@ -62,8 +62,8 @@ contains
     ContentsOnlyLoc = .false.
     if (present(ContentsOnly)) ContentsOnlyLoc = ContentsOnly
 
-    CommandLine = 'cp -rf ' // trim(adjustl(Source)) // '/'
-    if (ContentsOnlyLoc) CommandLine = CommandLine // '/*'
+    CommandLine = 'cp -rf ' // trim(adjustl(Source))
+    if (ContentsOnlyLoc) CommandLine = CommandLine // '*'
     CommandLine = CommandLine // ' ' // trim(adjustl(Destination))
 
     call ExecuteSysCommand(CommandLine, Wait=.true., ExitStatus=StatLoc)
@@ -94,7 +94,7 @@ contains
     if (present(ContentsOnly)) ContentsOnlyLoc = ContentsOnly
 
     CommandLine = 'rm -rf ' // trim(adjustl(Path))
-    if (ContentsOnlyLoc) CommandLine = CommandLine // '/*'
+    if (ContentsOnlyLoc) CommandLine = CommandLine // '*'
 
     call ExecuteSysCommand(CommandLine, Wait=.true., ExitStatus=StatLoc)
     if (StatLoc /= 0) call Error%Raise(Line='Something went wrong removing directory: ' // trim(adjustl(Path)),                &

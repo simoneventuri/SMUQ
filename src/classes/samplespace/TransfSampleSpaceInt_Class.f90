@@ -34,6 +34,7 @@ use SampleSpace_Class                                             ,only:    Samp
 use ParamSpace_Class                                              ,only:    ParamSpace_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -44,9 +45,7 @@ public                                                                ::    Tran
 type, extends(TransfSampleSpace_Type)                                 ::    TransfSampleSpaceInt_Type
   type(ParamSpace_Type)                                               ::    OrigSampleSpace
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct               =>    ConstructCase1,         &
                                                                                                           ConstructCase2,         &
                                                                                                           ConstructCase3
@@ -64,23 +63,6 @@ end type
 logical, parameter                                                    ::    DebugGlobal=.false.
 
 contains
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine Initialize(This)
-
-  class(TransfSampleSpaceInt_Type), intent(inout)                     ::    This
-
-  character(*), parameter                                             ::    ProcName='Initialize'
-  integer                                                             ::    StatLoc=0
-
-  if (.not. This%Initialized) then
-    This%Initialized = .true.
-    This%Name = 'parameter_space'
-    call This%SetDefaults()
-  end if
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
 
 !!------------------------------------------------------------------------------------------------------------------------------
 subroutine Reset(This)
@@ -104,23 +86,10 @@ subroutine Reset(This)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%CorrMat', ProcName=ProcName, stat=StatLoc)
   This%Correlated=.false.
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
-  call This%Initialize()
-
 end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(TransfSampleSpaceInt_Type),intent(inout)                      ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------     
+!!------------------------------------------------------------------------------------------------------------------------------   
 
 !!------------------------------------------------------------------------------------------------------------------------------         
 subroutine ConstructInput(This, Input, Prefix)
@@ -147,14 +116,17 @@ subroutine ConstructInput(This, Input, Prefix)
   integer                                                             ::    i, ii
   logical                                                             ::    Found
   character(:), allocatable                                           ::    SpaceType
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  if (This%Constructed) call This%Reset
-  if (.not. This%Initialized) call This%Initialize  
+  call This%Reset()
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
 
+  call InputVerifier%Construct()
+
   SectionName = 'parameters'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   This%NbDim = InputSection%GetNumberOfSubSections()
 
@@ -170,15 +142,19 @@ subroutine ConstructInput(This, Input, Prefix)
   i = 1
   do i = 1, This%NbDim
     SubSectionName = SectionName // '>parameter' // ConvertToString(Value=i)
+    call InputVerifier%AddSection(Section='parameter' // ConvertToString(Value=i) ,ToSubSection=SectionName)
 
     ParameterName = 'name'
+    call InputVerifier%AddParameter(Parameter=ParameterName, Section=SubSectionName)
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
     This%ParamName(i) = VarC0D
 
     ParameterName = 'label'
+    call InputVerifier%AddParameter(Parameter=ParameterName, Section=SubSectionName)
     call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
     This%Label(i) = VarC0D
 
+    call InputVerifier%AddSection(Section='distribution', ToSubSection=SubSectionName)
     SubSectionName = SubSectionName // '>distribution'
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
     call DistProb_Factory%Construct(Object=DistProb, Input=InputSection, Prefix=PrefixLoc)
@@ -197,6 +173,7 @@ subroutine ConstructInput(This, Input, Prefix)
   end do
 
   SectionName = 'correlation_matrix'
+  call InputVerifier%AddSection(Section=SectionName)
   if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call ImportArray(Input=InputSection, Array=This%CorrMat, Prefix=PrefixLoc)
@@ -211,11 +188,15 @@ subroutine ConstructInput(This, Input, Prefix)
                                                         Line='Improper sizes for the input correlation matrix', ProcName=ProcName)
 
   SectionName = 'original_sample_space'
+  call InputVerifier%AddSection(Section=SectionName)
   call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   call This%OrigSampleSpace%Construct(Input=InputSection, Prefix=PrefixLoc)
 
   if (This%Correlated .or. This%OrigSampleSpace%IsCorrelated()) call Error%Raise('Integral sample space ' // &
                                                 'transformation is not yet implemented for correlated spaces', ProcName=ProcName)
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed=.true.
 
@@ -233,8 +214,7 @@ subroutine ConstructCase1(This, SampleSpace, OriginalSampleSpace)
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i
 
-  if (This%Constructed) call This%Reset
-  if (.not. This%Initialized) call This%Initialize  
+  call This%Reset()  
 
   This%NbDim = SampleSpace%GetNbDim()
 
@@ -283,8 +263,7 @@ subroutine ConstructCase2(This, Distributions, CorrMat, OriginalSampleSpace)
   character(*), parameter                                             ::    ProcName='ConstructCase2'
   integer                                                             ::    StatLoc=0
 
-  if (This%Constructed) call This%Reset
-  if (.not. This%Initialized) call This%Initialize  
+  call This%Reset()  
 
   This%NbDim = OriginalSampleSpace%GetNbDim()
 
@@ -336,8 +315,7 @@ subroutine ConstructCase3(This, Distributions, CorrMat, OriginalSampleSpace)
   integer                                                             ::    StatLoc=0
   integer                                                             ::    i
 
-  if (This%Constructed) call This%Reset
-  if (.not. This%Initialized) call This%Initialize  
+  call This%Reset() 
 
   This%NbDim = OriginalSampleSpace%GetNbDim()
 
@@ -428,7 +406,7 @@ function GetInput(This, Name, Prefix, Directory)
     call GetInput%AddParameter(Name='name', Value=This%ParamName(i)%Get(), SectionName=SubSectionName)
     call GetInput%AddParameter(Name='label', Value=This%Label(i)%Get(), SectionName=SubSectionName)
     DistProb => This%DistProb(i)%GetPointer()
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/distribution' // ConvertToString(i)
+    if (ExternalFlag) DirectorySub = DirectoryLoc // 'distribution' // ConvertToString(i) // '/'
     call GetInput%AddSection(Section=DistProb_Factory%GetObjectInput(Object=DistProb, Name='distribution',         &
                                                       Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SubSectionName)
     nullify(DistProb)
@@ -438,7 +416,7 @@ function GetInput(This, Name, Prefix, Directory)
   call GetInput%AddSection(SectionName=SectionName)
   call GetInput%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
   if (ExternalFlag) then
-    FileName = DirectoryLoc // '/correlation_matrix.dat'
+    FileName = DirectoryLoc // 'correlation_matrix.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Input=InputSection, Array=This%CorrMat, File=File)
   else
@@ -517,7 +495,6 @@ impure elemental subroutine Copy(LHS, RHS)
     type is (TransfSampleSpaceInt_Type)
       call LHS%Reset()
 
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       
       if (RHS%Constructed) then

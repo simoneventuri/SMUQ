@@ -45,7 +45,6 @@ subroutine Reset(This)
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%Values)) deallocate(This%Values, stat=StatLoc)

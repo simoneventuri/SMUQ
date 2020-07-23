@@ -284,7 +284,6 @@ impure elemental subroutine Copy(LHS, RHS)
 
     type is (ITableCrossOver_Type)
       call LHS%Reset()
-      LHS%Initialized = RHS%Initialized
       LHS%Constructed = RHS%Constructed
       if (RHS%Constructed) then
         LHS%OriginalTable = RHS%OriginalTable

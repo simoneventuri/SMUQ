@@ -25,6 +25,7 @@ use StringConversion_Module
 use CommandROutines_Module
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -33,8 +34,6 @@ private
 public                                                                ::    OnlineMeanEstimator_Type
 
 type                                                                  ::    OnlineMeanEstimator_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   integer                                                             ::    NbSamples
   real(rkp)                                                           ::    Mean
@@ -60,237 +59,213 @@ logical   ,parameter                                                  ::    Debu
 
 contains
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-    class(OnlineMeanEstimator_Type), intent(inout)                    ::    This
+  class(OnlineMeanEstimator_Type), intent(inout)                      ::    This
 
-    character(*), parameter                                           ::    ProcName='Initialize'
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc = 0
 
-    if (.not. This%Initialized) then
-      This%Name = 'OnlineMeanEstimator'
-      This%Initialized = .true.
-      call This%SetDefaults()
-    end if
+  This%Constructed=.false.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%NbSamples = 0
+  This%Mean = Zero
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(OnlineMeanEstimator_Type), intent(inout)                    ::    This
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput(This, Input, Prefix)
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc = 0
+  class(OnlineMeanEstimator_Type), intent(inout)                      ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    This%Initialized=.false.
-    This%Constructed=.false.
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  real(rkp)                                                           ::    VarR0D
+  integer                                                             ::    VarI0D
+  logical                                                             ::    VarL0D
+  character(:), allocatable                                           ::    ParameterName
+  logical                                                             ::    Found
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  type(InputVerifier_Type)                                              ::    InputVerifier
 
-    call This%SetDefaults()
+  call This%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  call InputVerifier%Construct()
 
-    class(OnlineMeanEstimator_Type), intent(inout)                    ::    This
+  ParameterName = 'nb_samples'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%NbSamples = VarI0D
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
+  ParameterName = 'mean'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
+  This%Mean = VarR0D
 
-    This%NbSamples = 0
-    This%Mean = Zero
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%Constructed = .true.
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput(This, Input, Prefix)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(OnlineMeanEstimator_Type), intent(inout)                    ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), optional, intent(in)                                ::    Prefix
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructCase1(This)
 
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    real(rkp)                                                         ::    VarR0D
-    integer                                                           ::    VarI0D
-    logical                                                           ::    VarL0D
-    character(:), allocatable                                         ::    ParameterName
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
+  class(OnlineMeanEstimator_Type), intent(inout)                      ::    This
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  character(*), parameter                                             ::    ProcName='ConstructCase1'
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  logical                                                             ::    Found
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
 
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
+  call This%Reset()
 
-    ParameterName = 'nb_samples'
-    call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%NbSamples = VarI0D
+  This%Constructed = .true.
 
-    ParameterName = 'mean'
-    call Input%GetValue(Value=VarR0D, ParameterName=ParameterName, Mandatory=.true.)
-    This%Mean = VarR0D
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    This%Constructed = .true.
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  type(InputSection_Type)                                             ::    GetInput
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructCase1(This)
+  class(OnlineMeanEstimator_Type), intent(inout)                       ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
 
-    class(OnlineMeanEstimator_Type), intent(inout)                    ::    This
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
 
-    character(*), parameter                                           ::    ProcName='ConstructCase1'
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
 
-    This%Constructed = .true.
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-    type(InputSection_Type)                                           ::    GetInput
+  call GetInput%AddParameter(Name='nb_samples', Value=ConvertToString(Value=This%NbSamples))
+  call GetInput%AddParameter(Name='mean', Value=ConvertToString(Value=This%Mean))
 
-    class(OnlineMeanEstimator_Type), intent(inout)                     ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Update_0D(This, Value)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  class(OnlineMeanEstimator_Type), intent(inout)                      ::    This
+  real(rkp), intent(in)                                               ::    Value
 
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
+  character(*), parameter                                             ::    ProcName='Update_0D'
+  integer                                                             ::    StatLoc=0
+  real(rkp)                                                           ::    del1
 
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
+  This%NbSamples = This%NbSamples + 1
+  del1 = Value - This%Mean
+  This%Mean = This%Mean + del1/This%NbSamples
 
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
+end Subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    call GetInput%AddParameter(Name='nb_samples', Value=ConvertToString(Value=This%NbSamples))
-    call GetInput%AddParameter(Name='mean', Value=ConvertToString(Value=This%Mean))
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Update_1D(This, Values)
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+  class(OnlineMeanEstimator_Type), intent(inout)                      ::    This
+  real(rkp), dimension(:), intent(in)                                 ::    Values
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Update_0D(This, Value)
+  character(*), parameter                                             ::    ProcName='Update_1D'
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    i
 
-    class(OnlineMeanEstimator_Type), intent(inout)                    ::    This
-    real(rkp), intent(in)                                             ::    Value
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    character(*), parameter                                           ::    ProcName='Update_0D'
-    integer                                                           ::    StatLoc=0
-    real(rkp)                                                         ::    del1
+  i = 1
+  do i = 1, size(Values,1)
+    call This%Update(Value=Values(i))
+  end do
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+end Subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    This%NbSamples = This%NbSamples + 1
-    del1 = Value - This%Mean
-    This%Mean = This%Mean + del1/This%NbSamples
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetMean(This)
 
-  end Subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  real(rkp)                                                           ::    GetMean
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Update_1D(This, Values)
+  class(OnlineMeanEstimator_Type), intent(in)                          ::    This
 
-    class(OnlineMeanEstimator_Type), intent(inout)                    ::    This
-    real(rkp), dimension(:), intent(in)                               ::    Values
+  character(*), parameter                                             ::    ProcName='GetMean'
+  integer                                                             ::    StatLoc=0
 
-    character(*), parameter                                           ::    ProcName='Update_1D'
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    i
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+  GetMean = This%Mean
 
-    i = 1
-    do i = 1, size(Values,1)
-      call This%Update(Value=Values(i))
-    end do
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  end Subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetMean(This)
+  class(OnlineMeanEstimator_Type), intent(out)                        ::    LHS
+  class(OnlineMeanEstimator_Type), intent(in)                         ::    RHS
 
-    real(rkp)                                                         ::    GetMean
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
 
-    class(OnlineMeanEstimator_Type), intent(in)                        ::    This
+  select type (RHS)
 
-    character(*), parameter                                           ::    ProcName='GetMean'
-    integer                                                           ::    StatLoc=0
+    type is (OnlineMeanEstimator_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
 
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+      if (RHS%Constructed) then
+        LHS%NbSamples = RHS%NbSamples
+        LHS%Mean = RHS%Mean
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
 
-    GetMean = This%Mean
+  end select
 
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
 
-    class(OnlineMeanEstimator_Type), intent(out)                      ::    LHS
-    class(OnlineMeanEstimator_Type), intent(in)                       ::    RHS
+  type(OnlineMeanEstimator_Type), intent(inout)                       ::    This
 
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
 
-    select type (RHS)
-  
-      type is (OnlineMeanEstimator_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-
-        if (RHS%Constructed) then
-          LHS%NbSamples = RHS%NbSamples
-          LHS%Mean = RHS%Mean
-        end if
-      
-      class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
-
-    end select
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
-
-    type(OnlineMeanEstimator_Type), intent(inout)                     ::    This
-
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

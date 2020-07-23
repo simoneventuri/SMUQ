@@ -61,6 +61,7 @@ use DistLog10Norm_Class                                           ,only:    Dist
 use DistGamma_Class                                               ,only:    DistGamma_Type
 use List2D_Class                                                  ,only:    List2D_Type
 use SMUQString_Class                                              ,only:    SMUQString_Type
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -79,9 +80,7 @@ type, extends(SurrogateMethod_Type)                                   ::    Surr
   type(List2D_Type), allocatable, dimension(:)                        ::    OutputSamples
   type(SMUQString_Type), allocatable, dimension(:)                    ::    OutputSamplesLabels
 contains
-  procedure, public                                                   ::    Initialize
   procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   procedure, public                                                   ::    ConstructInput
   procedure, nopass, private                                          ::    ConstructAskeyScheme
   procedure, nopass, private                                          ::    ConstructWeinerScheme
@@ -98,1007 +97,994 @@ end type
 logical   ,parameter                                                  ::    DebugGlobal = .false.
 
 contains
+  
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Reset(This)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize(This)
+  class(SurrogatePCE_Type), intent(inout)                             ::    This
 
-    class(SurrogatePCE_Type), intent(inout)                           ::    This
+  character(*), parameter                                             ::    ProcName='Reset'
+  integer                                                             ::    StatLoc=0
 
-    character(*), parameter                                           ::    ProcName='Initialize'
-    integer(8)                                                        ::    SysTimeCount
+  This%Constructed=.false.
 
-    if (.not. This%Initialized) then
-      This%Initialized = .true.
-      This%Name = 'PCE'
+  if (allocated(This%PCEMethod)) deallocate(This%PCEMethod, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%PCEMethod', ProcName=ProcName, stat=StatLoc)
 
-      call This%SetDefaults()
-    end if
+  call This%IndexSetScheme%Reset()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  if (allocated(This%InputSamples)) deallocate(This%InputSamples, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%InputSamples', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Reset(This)
+  if (allocated(This%OutputSamples)) deallocate(This%OutputSamples, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%OutputSamples', ProcName=ProcName, stat=StatLoc)
 
-    class(SurrogatePCE_Type), intent(inout)                           ::    This
+  This%BasisScheme = 'askey_numerical'
+  This%SectionChain = ''
+  This%InputSamplesTransform = .true.
 
-    character(*), parameter                                           ::    ProcName='Reset'
-    integer                                                           ::    StatLoc=0
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    This%Initialized=.false.
-    This%Constructed=.false.
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructInput (This, Input, SectionChain, Prefix)
 
-    if (allocated(This%PCEMethod)) deallocate(This%PCEMethod, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%PCEMethod', ProcName=ProcName, stat=StatLoc)
+  class(SurrogatePCE_Type), intent(inout)                             ::    This
+  type(InputSection_Type), intent(in)                                 ::    Input
+  character(*), intent(in)                                            ::    SectionChain
+  character(*), optional, intent(in)                                  ::    Prefix
 
-    call This%IndexSetScheme%Reset()
+  character(*), parameter                                             ::    ProcName='ConstructInput'
+  character(:), allocatable                                           ::    ParameterName
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  type(InputSection_Type), pointer                                    ::    InputSection=>null()
+  logical                                                             ::    VarL0D
+  integer                                                             ::    VarI0D
+  character(:), allocatable                                           ::    VarC0D
+  real(rkp), allocatable, dimension(:,:)                              ::    VarR2D
+  real(rkp), pointer, dimension(:,:)                                  ::    VarR2DPointer=>null()
+  integer                                                             ::    i
+  logical                                                             ::    Found
+  character(:), allocatable                                           ::    PrefixLoc
+  integer                                                             ::    StatLoc=0
+  integer                                                             ::    NbSamples
+  integer                                                             ::    NbOutputs
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-    if (allocated(This%InputSamples)) deallocate(This%InputSamples, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%InputSamples', ProcName=ProcName, stat=StatLoc)
+  call This%Reset()
 
-    if (allocated(This%OutputSamples)) deallocate(This%OutputSamples, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%OutputSamples', ProcName=ProcName, stat=StatLoc)
+  PrefixLoc = ''
+  if (present(Prefix)) PrefixLoc = Prefix
 
-    call This%Initialize()
+  call InputVerifier%Construct()
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  This%SectionChain = SectionChain
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults(This)
+  ParameterName= 'silent'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%Silent=VarL0D
 
-    class(SurrogatePCE_Type), intent(inout)                           ::    This
+  ParameterName = 'basis_scheme'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
+  call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
+  if (Found) This%BasisScheme = VarC0D
 
-    character(*), parameter                                           ::    ProcName='SetDefaults'
-
-    This%BasisScheme = 'askey_numerical'
-    This%SectionChain = ''
-    This%InputSamplesTransform = .true.
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructInput (This, Input, SectionChain, Prefix)
-
-    class(SurrogatePCE_Type), intent(inout)                           ::    This
-    type(InputSection_Type), intent(in)                               ::    Input
-    character(*), intent(in)                                          ::    SectionChain
-    character(*), optional, intent(in)                                ::    Prefix
-
-    character(*), parameter                                           ::    ProcName='ConstructInput'
-    character(:), allocatable                                         ::    ParameterName
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    type(InputSection_Type), pointer                                  ::    InputSection=>null()
-    logical                                                           ::    VarL0D
-    integer                                                           ::    VarI0D
-    character(:), allocatable                                         ::    VarC0D
-    real(rkp), allocatable, dimension(:,:)                            ::    VarR2D
-    real(rkp), pointer, dimension(:,:)                                ::    VarR2DPointer=>null()
-    integer                                                           ::    i
-    logical                                                           ::    Found
-    character(:), allocatable                                         ::    PrefixLoc
-    integer                                                           ::    StatLoc=0
-    integer                                                           ::    NbSamples
-    integer                                                           ::    NbOutputs
-
-    if (This%Constructed) call This%Reset()
-    if (.not. This%Initialized) call This%Initialize()
-
-    PrefixLoc = ''
-    if (present(Prefix)) PrefixLoc = Prefix
-
-    This%SectionChain = SectionChain
-
-    ParameterName= 'silent'
-    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%Silent=VarL0D
-
-    ParameterName = 'basis_scheme'
-    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found)
-    if (Found) This%BasisScheme = VarC0D
-
-    SectionName = 'index_set_scheme'
-    if (Input%HasSection(SubSectionName=SectionName)) then
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-      call This%IndexSetScheme%Construct(Input=InputSection, Prefix=PrefixLoc)
-      nullify(InputSection)
-    else
-      call This%IndexSetScheme%Construct()
-    end if
-
-    SectionName = 'method'
+  SectionName = 'index_set_scheme'
+  call InputVerifier%AddSection(Section=SectionName)
+  if (Input%HasSection(SubSectionName=SectionName)) then
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
-    call PCEMethod_Factory%Construct(Object=This%PCEMethod, Input=InputSection,                                      &
-                                                                   SectionChain=This%SectionChain // '>method', Prefix=PrefixLoc)
+    call This%IndexSetScheme%Construct(Input=InputSection, Prefix=PrefixLoc)
+    nullify(InputSection)
+  else
+    call This%IndexSetScheme%Construct()
+  end if
+
+  SectionName = 'method'
+  call InputVerifier%AddSection(Section=SectionName)
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
+  call PCEMethod_Factory%Construct(Object=This%PCEMethod, Input=InputSection,                                      &
+                                                                  SectionChain=This%SectionChain // '>method', Prefix=PrefixLoc)
+  nullify(InputSection)
+
+  SectionName = 'initial_samples'
+  call InputVerifier%AddSection(Section=SectionName)
+  if (Input%HasSection(SubSectionName=SectionName)) then
+
+    SubSectionName = SectionName // '>input'
+    call InputVerifier%AddSection(Section='input', ToSubSection=SectionName)
+
+    ParameterName = 'transform'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
+    call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.false., Found=Found)
+    if (Found) This%InputSamplesTransform=VarL0D
+
+    ParameterName = 'labels'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+    call ConvertToStrings(Value=VarC0D, Strings=This%InputSamplesLabels)
+
+    call InputVerifier%AddSection(Section='values', ToSubSection=SubSectionName)
+    SubSectionName = SubSectionName // '>values'
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+    call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
+    nullify(InputSection)
+    This%InputSamples = VarR2D
+    deallocate(VarR2D, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
+    if (size(This%InputSamples,1) /= size(This%InputSamplesLabels)) call Error%Raise(                                       &
+                                                        'Mismatch in the number of inputs and input labels', ProcName=ProcName)
+
+    SubSectionName = SectionName // '>output'
+    call InputVerifier%AddSection(Section='output', ToSubSection=SectionName)
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+    NbOutputs = InputSection%GetNumberOfSubSections()
     nullify(InputSection)
 
-    SectionName = 'initial_samples'
-    if (Input%HasSection(SubSectionName=SectionName)) then
+    allocate(This%OutputSamplesLabels(NbOutputs), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='This%OutputSamplesLabels', ProcName=ProcName, stat=StatLoc)
 
-      SubSectionName = SectionName // '>input'
+    allocate(This%OutputSamples(NbOutputs), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='This%OutputSamples', ProcName=ProcName, stat=StatLoc)
 
-      ParameterName = 'transform'
-      call Input%GetValue(Value=VarL0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.false., Found=Found)
-      if (Found) This%InputSamplesTransform=VarL0D
+    i = 1
+    do i = 1, NbOutputs
+      call InputVerifier%AddSection(Section='response' // ConvertToString(Value=i), ToSubSection=SectionName // '>output')
+      SubSectionName = SectionName // '>output>response' // ConvertToString(Value=i)
 
-      ParameterName = 'labels'
+      ParameterName = 'label'
+      call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SubSectionName)
       call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-      call ConvertToStrings(Value=VarC0D, Strings=This%InputSamplesLabels)
+      This%OutputSamplesLabels(i) = VarC0D
 
+
+      call InputVerifier%AddSection(Section='values', ToSubSection=SubSectionName)
       SubSectionName = SubSectionName // '>values'
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-      call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc)
+      call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc, RowMajor=.true.)
       nullify(InputSection)
-      This%InputSamples = VarR2D
+      call This%OutputSamples(i)%Set(Values=VarR2D)
+      if (size(VarR2D,1) /= size(This%InputSamples,2)) call Error%Raise('Number of output samples does not match number' //  &
+                                                                                        ' of input samples', ProcName=ProcName)
       deallocate(VarR2D, stat=StatLoc)
       if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
-      if (size(This%InputSamples,1) /= size(This%InputSamplesLabels)) call Error%Raise(                                       &
-                                                          'Mismatch in the number of inputs and input labels', ProcName=ProcName)
+    end do
 
-      SubSectionName = SectionName // '>output'
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-      NbOutputs = InputSection%GetNumberOfSubSections()
-      nullify(InputSection)
+  end if
 
-      allocate(This%OutputSamplesLabels(NbOutputs), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='This%OutputSamplesLabels', ProcName=ProcName, stat=StatLoc)
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
-      allocate(This%OutputSamples(NbOutputs), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='This%OutputSamples', ProcName=ProcName, stat=StatLoc)
+  This%Constructed = .true.
 
-      i = 1
-      do i = 1, NbOutputs
-        SubSectionName = SectionName // '>output>response' // ConvertToString(Value=i)
+end subroutine 
+!!------------------------------------------------------------------------------------------------------------------------------
 
-        ParameterName = 'label'
-        call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
-        This%OutputSamplesLabels(i) = VarC0D
+!!------------------------------------------------------------------------------------------------------------------------------
+function GetInput(This, Name, Prefix, Directory)
+  
+  use StringConversion_Module
 
-        SubSectionName = SubSectionName // '>values'
-        call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-        call ImportArray(Input=InputSection, Array=VarR2D, Prefix=PrefixLoc, RowMajor=.true.)
-        nullify(InputSection)
-        call This%OutputSamples(i)%Set(Values=VarR2D)
-        if (size(VarR2D,1) /= size(This%InputSamples,2)) call Error%Raise('Number of output samples does not match number' //  &
-                                                                                          ' of input samples', ProcName=ProcName)
-        deallocate(VarR2D, stat=StatLoc)
-        if (StatLoc /= 0) call Error%Deallocate(Name='VarR2D', ProcName=ProcName, stat=StatLoc)
+  type(InputSection_Type)                                             ::    GetInput
+
+  class(SurrogatePCE_Type), intent(inout)                             ::    This
+  character(*), intent(in)                                            ::    Name
+  character(*), optional, intent(in)                                  ::    Prefix
+  character(*), optional, intent(in)                                  ::    Directory
+
+  character(*), parameter                                             ::    ProcName='GetInput'
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  character(:), allocatable                                           ::    DirectorySub
+  logical                                                             ::    ExternalFlag=.false.
+  character(:), allocatable                                           ::    SectionName
+  character(:), allocatable                                           ::    SubSectionName
+  integer                                                             ::    i
+
+  if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
+
+  DirectoryLoc = ''
+  PrefixLoc = ''
+  if (present(Directory)) DirectoryLoc = Directory
+  if (present(Prefix)) PrefixLoc = Prefix
+  DirectorySub = DirectoryLoc
+
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
+
+  call GetInput%SetName(SectionName = trim(adjustl(Name)))
+
+  call GetInput%AddParameter(Name='silent', Value=ConvertToString(Value=This%Silent))
+
+  call GetInput%AddParameter(Name='basis_scheme', Value=This%BasisScheme)
+
+  SectionName = 'index_set_scheme'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'index_set_scheme/'
+  call GetInput%AddSection(This%IndexSetScheme%GetInput(Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
+
+  SectionName = 'method'
+  if (ExternalFlag) DirectorySub = DirectoryLoc // 'method/'
+  call GetInput%AddSection(Section=PCEMethod_Factory%GetObjectInput(Object=This%PCEMethod,                          &
+                                                                      Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
+
+end function
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine Run(This, SampleSpace, Responses, Model, SurrogateModel, OutputDirectory)
+
+  class(SurrogatePCE_Type), intent(inout)                             ::    This
+  class(SampleSpace_Type), intent(in)                                 ::    SampleSpace
+  type(Response_Type), dimension(:), intent(in)                       ::    Responses
+  class(Model_Type), intent(inout)                                    ::    Model
+  class(Model_Type), allocatable, dimension(:),optional,intent(out)   ::    SurrogateModel
+  character(*), optional, intent(in)                                  ::    OutputDirectory
+
+  character(*), parameter                                             ::    ProcName='Run'
+  integer                                                             ::    StatLoc=0
+  class(TransfSampleSpace_Type), allocatable                          ::    SpaceTransform
+  type(ModelTransform_Type)                                           ::    ModelTransform
+  type(OrthoMultiVar_Type)                                            ::    Basis
+  type(LinkedList0D_Type), allocatable, dimension(:)                  ::    CVErrors
+  type(LinkedList1D_Type), allocatable, dimension(:)                  ::    Coefficients
+  type(LinkedList2D_Type), allocatable, dimension(:)                  ::    Indices
+  type(PCEModel_Type), dimension(:), allocatable                      ::    PCEModelLoc
+  character(:), allocatable                                           ::    OutputDirectoryLoc
+  real(rkp), allocatable, dimension(:,:)                              ::    InputSamplesLoc
+  type(List2D_Type), allocatable, dimension(:)                        ::    OutputSamplesLoc
+  integer                                                             ::    i
+  integer                                                             ::    ii
+  integer                                                             ::    iii
+  character(:), allocatable                                           ::    Line
+
+  OutputDirectoryLoc = ''
+
+  select case (This%BasisScheme)
+    case('weiner')
+      call This%ConstructWeinerScheme(SampleSpace, Basis, SpaceTransform)
+    case('askey')
+      call This%ConstructAskeyScheme(SampleSpace, Basis, SpaceTransform)
+    case('askey_numerical')
+      call This%ConstructAskeyNumericalScheme(SampleSpace, Basis, SpaceTransform)
+    case('askey_numerical_extended')
+      call This%ConstructAskeyNumericalExtendedScheme(SampleSpace, Basis, SpaceTransform)
+    case('numerical')
+      call This%ConstructNumericalScheme(SampleSpace, Basis, SpaceTransform)
+    case default
+      call Error%Raise(Line='Unrecognized orthogonal polynomial basis scheme: ' // This%BasisScheme, ProcName=ProcName)
+  end select
+
+  call ModelTransform%Construct(SpaceTransform=SpaceTransform, Model=Model)
+
+  if (present(OutputDirectory)) OutputDirectoryLoc = OutputDirectory // '/solver'
+
+  if (allocated(This%InputSamples)) then
+    allocate(InputSamplesLoc(SpaceTransform%GetNbDim(),size(This%InputSamples,2)), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='InputSamplesLoc', ProcName=ProcName, stat=StatLoc)
+    i = 1
+    do i = 1, SpaceTransform%GetNbDim()
+      ii = 1
+      iii = 0
+      do ii = 1, size(This%InputSamplesLabels,1)
+        if (SpaceTransform%GetLabel(Num=i) == This%InputSamplesLabels(ii)) then
+          iii = ii
+          exit
+        end if
       end do
+      if (iii == 0) call Error%Raise('Did not find a corresponding label in the samples :' // SpaceTransform%GetLabel(Num=i),&
+                                                                                                              ProcName=ProcName)
+      InputSamplesLoc(i,:) = This%InputSamples(iii,:)
+    end do
 
+    if (This%InputSamplesTransform) then
+      i = 1
+      do i = 1, size(InputSamplesLoc,2)
+        call SpaceTransform%Transform(X=InputSamplesLoc(:,i))
+      end do
     end if
 
-    This%Constructed = .true.
-
-  end subroutine 
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetInput(This, Name, Prefix, Directory)
-    
-    use StringConversion_Module
-
-    type(InputSection_Type)                                           ::    GetInput
-
-    class(SurrogatePCE_Type), intent(inout)                           ::    This
-    character(*), intent(in)                                          ::    Name
-    character(*), optional, intent(in)                                ::    Prefix
-    character(*), optional, intent(in)                                ::    Directory
-
-    character(*), parameter                                           ::    ProcName='GetInput'
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    character(:), allocatable                                         ::    DirectorySub
-    logical                                                           ::    ExternalFlag=.false.
-    character(:), allocatable                                         ::    SectionName
-    character(:), allocatable                                         ::    SubSectionName
-    integer                                                           ::    i
-
-    if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
-
-    DirectoryLoc = ''
-    PrefixLoc = ''
-    if (present(Directory)) DirectoryLoc = Directory
-    if (present(Prefix)) PrefixLoc = Prefix
-    DirectorySub = DirectoryLoc
-
-    if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
-
-    call GetInput%SetName(SectionName = trim(adjustl(Name)))
-
-    call GetInput%AddParameter(Name='silent', Value=ConvertToString(Value=This%Silent))
-
-    call GetInput%AddParameter(Name='basis_scheme', Value=This%BasisScheme)
-
-    SectionName = 'index_set_scheme'
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/index_set_scheme'
-    call GetInput%AddSection(This%IndexSetScheme%GetInput(Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
-
-    SectionName = 'method'
-    if (ExternalFlag) DirectorySub = DirectoryLoc // '/method'
-    call GetInput%AddSection(Section=PCEMethod_Factory%GetObjectInput(Object=This%PCEMethod,                          &
-                                                                       Name=SectionName, Prefix=PrefixLoc, Directory=DirectorySub))
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Run(This, SampleSpace, Responses, Model, SurrogateModel, OutputDirectory)
-
-    class(SurrogatePCE_Type), intent(inout)                           ::    This
-    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
-    type(Response_Type), dimension(:), intent(in)                     ::    Responses
-    class(Model_Type), intent(inout)                                  ::    Model
-    class(Model_Type), allocatable, dimension(:),optional,intent(out) ::    SurrogateModel
-    character(*), optional, intent(in)                                ::    OutputDirectory
-
-    character(*), parameter                                           ::    ProcName='Run'
-    integer                                                           ::    StatLoc=0
-    class(TransfSampleSpace_Type), allocatable                        ::    SpaceTransform
-    type(ModelTransform_Type)                                         ::    ModelTransform
-    type(OrthoMultiVar_Type)                                          ::    Basis
-    type(LinkedList0D_Type), allocatable, dimension(:)                ::    CVErrors
-    type(LinkedList1D_Type), allocatable, dimension(:)                ::    Coefficients
-    type(LinkedList2D_Type), allocatable, dimension(:)                ::    Indices
-    type(PCEModel_Type), dimension(:), allocatable                    ::    PCEModelLoc
-    character(:), allocatable                                         ::    OutputDirectoryLoc
-    real(rkp), allocatable, dimension(:,:)                            ::    InputSamplesLoc
-    type(List2D_Type), allocatable, dimension(:)                      ::    OutputSamplesLoc
-    integer                                                           ::    i
-    integer                                                           ::    ii
-    integer                                                           ::    iii
-    character(:), allocatable                                         ::    Line
-
-    OutputDirectoryLoc = ''
-
-    select case (This%BasisScheme)
-      case('weiner')
-        call This%ConstructWeinerScheme(SampleSpace, Basis, SpaceTransform)
-      case('askey')
-        call This%ConstructAskeyScheme(SampleSpace, Basis, SpaceTransform)
-      case('askey_numerical')
-        call This%ConstructAskeyNumericalScheme(SampleSpace, Basis, SpaceTransform)
-      case('askey_numerical_extended')
-        call This%ConstructAskeyNumericalExtendedScheme(SampleSpace, Basis, SpaceTransform)
-      case('numerical')
-        call This%ConstructNumericalScheme(SampleSpace, Basis, SpaceTransform)
-      case default
-        call Error%Raise(Line='Unrecognized orthogonal polynomial basis scheme: ' // This%BasisScheme, ProcName=ProcName)
-    end select
-
-    call ModelTransform%Construct(SpaceTransform=SpaceTransform, Model=Model)
-
-    if (present(OutputDirectory)) OutputDirectoryLoc = OutputDirectory // '/solver'
-
-    if (allocated(This%InputSamples)) then
-      allocate(InputSamplesLoc(SpaceTransform%GetNbDim(),size(This%InputSamples,2)), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='InputSamplesLoc', ProcName=ProcName, stat=StatLoc)
-      i = 1
-      do i = 1, SpaceTransform%GetNbDim()
-        ii = 1
-        iii = 0
-        do ii = 1, size(This%InputSamplesLabels,1)
-          if (SpaceTransform%GetLabel(Num=i) == This%InputSamplesLabels(ii)) then
-            iii = ii
-            exit
-          end if
-        end do
-        if (iii == 0) call Error%Raise('Did not find a corresponding label in the samples :' // SpaceTransform%GetLabel(Num=i),&
-                                                                                                               ProcName=ProcName)
-        InputSamplesLoc(i,:) = This%InputSamples(iii,:)
-      end do
-
-      if (This%InputSamplesTransform) then
-        i = 1
-        do i = 1, size(InputSamplesLoc,2)
-          call SpaceTransform%Transform(X=InputSamplesLoc(:,i))
-        end do
-      end if
-
-      allocate(OutputSamplesLoc(size(This%OutputSamples,1)), stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc)
-
-      i = 1
-      do i = 1, size(Responses,1)
-        ii = 1
-        iii = 0
-        do ii = 1, size(This%OutputSamples)
-          if (Responses(i)%GetLabel() == This%OutputSamplesLabels(ii)) then
-            iii = ii
-            exit
-          end if
-        end do
-        if (iii == 0) call Error%Raise('Did not find matching label for initial output samples :' // Responses(i)%GetLabel(),  &
-                                                                                                               ProcName=ProcName)
-        OutputSamplesLoc(i) = This%OutputSamples(iii)
-      end do
-      if (present(OutputDirectory)) then
-        call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
-             IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
-             OutputDirectory=OutputDirectoryLoc, InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc)
-      else
-        call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
-             IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
-             InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc)
-      end if
-      deallocate(InputSamplesLoc, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='InputSamplesLoc', ProcName=ProcName, stat=StatLoc)
-      deallocate(OutputSamplesLoc, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc)
-    else
-      if (present(OutputDirectory)) then
-        call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
-             IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
-             OutputDirectory=OutputDirectoryLoc)
-      else
-        call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
-             IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors)
-      end if
-    end if
-
-    allocate(PCEModelLoc(size(Responses,1)), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='PCEModelLoc', ProcName=ProcName, stat=StatLoc)
-
-    if (.not. This%Silent) then
-      Line = 'Building polynomial chaos model input packages'
-      write(*,'(A)') ''
-      write(*,'(A)') Line
-    end if
+    allocate(OutputSamplesLoc(size(This%OutputSamples,1)), stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc)
 
     i = 1
     do i = 1, size(Responses,1)
-      call PCEModelLoc(i)%Construct(Response=Responses(i), TransformedSpace=SpaceTransform, Basis=Basis,                   &
-                                                          Coefficients=Coefficients(i), Indices=Indices(i), CVErrors=CVErrors(i))
-      if (present(OutputDirectory)) then
-        if (.not. This%Silent) then
-          Line = 'Writing contents of polynomial chaos model and other files for postprocessing for response : ' //               &
-                                                                                                           Responses(i)%GetLabel()
-          write(*,'(A)') ''
-          write(*,'(A)') Line
+      ii = 1
+      iii = 0
+      do ii = 1, size(This%OutputSamples)
+        if (Responses(i)%GetLabel() == This%OutputSamplesLabels(ii)) then
+          iii = ii
+          exit
         end if
-        OutputDirectoryLoc = OutputDirectory // '/pce_models/' // Responses(i)%GetLabel()
-        call This%WriteOutput(PCEModel=PCEModelLoc(i), Directory=OutputDirectoryLoc)
+      end do
+      if (iii == 0) call Error%Raise('Did not find matching label for initial output samples :' // Responses(i)%GetLabel(),  &
+                                                                                                              ProcName=ProcName)
+      OutputSamplesLoc(i) = This%OutputSamples(iii)
+    end do
+    if (present(OutputDirectory)) then
+      call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
+            IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
+            OutputDirectory=OutputDirectoryLoc, InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc)
+    else
+      call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
+            IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
+            InputSamples=InputSamplesLoc, OutputSamples=OutputSamplesLoc)
+    end if
+    deallocate(InputSamplesLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='InputSamplesLoc', ProcName=ProcName, stat=StatLoc)
+    deallocate(OutputSamplesLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='OutputSamplesLoc', ProcName=ProcName, stat=StatLoc)
+  else
+    if (present(OutputDirectory)) then
+      call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
+            IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors,                   &
+            OutputDirectory=OutputDirectoryLoc)
+    else
+      call This%PCEMethod%BuildModel(Basis=Basis, SampleSpace=SpaceTransform, Responses=Responses, Model=ModelTransform, &
+            IndexSetScheme=This%IndexSetScheme, Coefficients=Coefficients, Indices=Indices, CVErrors=CVErrors)
+    end if
+  end if
+
+  allocate(PCEModelLoc(size(Responses,1)), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='PCEModelLoc', ProcName=ProcName, stat=StatLoc)
+
+  if (.not. This%Silent) then
+    Line = 'Building polynomial chaos model input packages'
+    write(*,'(A)') ''
+    write(*,'(A)') Line
+  end if
+
+  i = 1
+  do i = 1, size(Responses,1)
+    call PCEModelLoc(i)%Construct(Response=Responses(i), TransformedSpace=SpaceTransform, Basis=Basis,                   &
+                                                        Coefficients=Coefficients(i), Indices=Indices(i), CVErrors=CVErrors(i))
+    if (present(OutputDirectory)) then
+      if (.not. This%Silent) then
+        Line = 'Writing contents of polynomial chaos model and other files for postprocessing for response : ' //               &
+                                                                                                          Responses(i)%GetLabel()
+        write(*,'(A)') ''
+        write(*,'(A)') Line
       end if
-      call Coefficients(i)%Purge()
-      call Indices(i)%Purge()
-      call CVErrors(i)%Purge()
-    end do
-
-    deallocate(Coefficients, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='Coefficients', ProcName=ProcName, stat=StatLoc)
-    deallocate(Indices, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='Indices', ProcName=ProcName, stat=StatLoc)
-    deallocate(CVErrors, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='CVErrors', ProcName=ProcName, stat=StatLoc)
-
-    if (present(SurrogateModel)) then
-      allocate(SurrogateModel, source=PCEModelLoc, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='SurrogateModel', ProcName=ProcName, stat=StatLoc)
+      OutputDirectoryLoc = OutputDirectory // '/pce_models/' // Responses(i)%GetLabel()
+      call This%WriteOutput(PCEModel=PCEModelLoc(i), Directory=OutputDirectoryLoc)
     end if
+    call Coefficients(i)%Purge()
+    call Indices(i)%Purge()
+    call CVErrors(i)%Purge()
+  end do
 
-    deallocate(PCEModelLoc, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='PCEModelLoc', ProcName=ProcName, stat=StatLoc)
+  deallocate(Coefficients, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Coefficients', ProcName=ProcName, stat=StatLoc)
+  deallocate(Indices, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='Indices', ProcName=ProcName, stat=StatLoc)
+  deallocate(CVErrors, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='CVErrors', ProcName=ProcName, stat=StatLoc)
 
-    deallocate(SpaceTransform, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
+  if (present(SurrogateModel)) then
+    allocate(SurrogateModel, source=PCEModelLoc, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='SurrogateModel', ProcName=ProcName, stat=StatLoc)
+  end if
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  deallocate(PCEModelLoc, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='PCEModelLoc', ProcName=ProcName, stat=StatLoc)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine WriteOutput(This, PCEModel, Directory)
+  deallocate(SpaceTransform, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
 
-    use CommandRoutines_Module
-    use StringConversion_Module
-    use ArrayRoutines_Module
-    use SMUQFile_Class                                            ,only:    SMUQFile_Type
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    class(SurrogatePCE_Type), intent(inout)                           ::    This
-    type(PCEModel_Type), intent(inout)                                ::    PCEModel
-    character(*), intent(in)                                          ::    Directory
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine WriteOutput(This, PCEModel, Directory)
 
-    character(*), parameter                                           ::    ProcName='WriteOutput'
-    type(InputSection_Type)                                           ::    Input
-    character(:), allocatable                                         ::    FileName
-    character(:), allocatable                                         ::    PrefixLoc
-    character(:), allocatable                                         ::    DirectoryLoc
-    logical                                                           ::    SilentLoc
-    character(:), allocatable                                         ::    Line
-    integer                                                           ::    IOLoc
-    integer                                                           ::    UnitLoc
-    integer                                                           ::    NbManagers
-    integer                                                           ::    NbCells
-    type(SMUQFile_Type)                                               ::    File
-    integer                                                           ::    i, ii
+  use CommandRoutines_Module
+  use StringConversion_Module
+  use ArrayRoutines_Module
+  use SMUQFile_Class                                            ,only:    SMUQFile_Type
 
-    if (len_trim(Directory) /= 0) then
+  class(SurrogatePCE_Type), intent(inout)                             ::    This
+  type(PCEModel_Type), intent(inout)                                  ::    PCEModel
+  character(*), intent(in)                                            ::    Directory
 
-      call MakeDirectory(Path=Directory, Options='-p')
+  character(*), parameter                                             ::    ProcName='WriteOutput'
+  type(InputSection_Type)                                             ::    Input
+  character(:), allocatable                                           ::    FileName
+  character(:), allocatable                                           ::    PrefixLoc
+  character(:), allocatable                                           ::    DirectoryLoc
+  logical                                                             ::    SilentLoc
+  character(:), allocatable                                           ::    Line
+  integer                                                             ::    IOLoc
+  integer                                                             ::    UnitLoc
+  integer                                                             ::    NbManagers
+  integer                                                             ::    NbCells
+  type(SMUQFile_Type)                                                 ::    File
+  integer                                                             ::    i, ii
 
-      SilentLoc = This%Silent
+  if (len_trim(Directory) /= 0) then
 
-      PrefixLoc = Directory // '/PCModelPackage'
-      DirectoryLoc = '/PCModelInput'
+    call MakeDirectory(Path=Directory, Options='-p')
 
-      Input = PCEModel%GetInput(Name='PCE_model', Prefix=PrefixLoc, Directory=DirectoryLoc)
-      
-      FileName = '/PCModelInput.dat'
-      call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-      call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
-      call Input%Write(FileUnit=UnitLoc)
-      call File%Close()
+    SilentLoc = This%Silent
 
-    end if
+    PrefixLoc = Directory // '/PCModelPackage'
+    DirectoryLoc = '/PCModelInput'
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructAskeyScheme(SampleSpace, Basis, SpaceTransform)
-
-    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
-    type(OrthoMultiVar_Type), intent(out)                             ::    Basis
-    class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
-
-    character(*), parameter                                           ::    ProcName='ConstructAskeyScheme'
-    integer                                                           ::    StatLoc=0
-    class(DistProb_Type), allocatable                                 ::    DistProb
-    type(DistProbContainer_Type), allocatable, dimension(:)           ::    DistProbVec
-    class(DistProb_Type), pointer                                     ::    DistProbPointer
-    class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPolyContainer_Type), allocatable, dimension(:)          ::    OrthoPolyVec
-    integer                                                           ::    NbDim=0
-    integer                                                           ::    i
-
-    NbDim = SampleSpace%GetNbDim()
-
-    allocate(TransfSampleSpaceInt_Type :: SpaceTransform, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
+    Input = PCEModel%GetInput(Name='PCE_model', Prefix=PrefixLoc, Directory=DirectoryLoc)
     
-    allocate(OrthoPolyVec(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+    FileName = '/PCModelInput.dat'
+    call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
+    call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
+    call Input%Write(FileUnit=UnitLoc)
+    call File%Close()
 
-    allocate(DistProbVec(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
+  end if
 
-    i = 1
-    do i = 1, NbDim
-      DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-      select type (Object => DistProbPointer)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructAskeyScheme(SampleSpace, Basis, SpaceTransform)
 
-        class is (DistUnif_Type)
-          allocate(DistUnif_Type :: DistProb, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
-          allocate(OrthoLegendre_Type :: OrthoPoly, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+  class(SampleSpace_Type), intent(in)                                 ::    SampleSpace
+  type(OrthoMultiVar_Type), intent(out)                               ::    Basis
+  class(TransfSampleSpace_Type), allocatable, intent(out)             ::    SpaceTransform
 
-          select type(Object2 => DistProb)
-            type is (DistUnif_Type)
-              call Object2%Construct(A=-One, B=One)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
+  character(*), parameter                                             ::    ProcName='ConstructAskeyScheme'
+  integer                                                             ::    StatLoc=0
+  class(DistProb_Type), allocatable                                   ::    DistProb
+  type(DistProbContainer_Type), allocatable, dimension(:)             ::    DistProbVec
+  class(DistProb_Type), pointer                                       ::    DistProbPointer
+  class(OrthoPoly_Type), allocatable                                  ::    OrthoPoly
+  type(OrthoPolyContainer_Type), allocatable, dimension(:)            ::    OrthoPolyVec
+  integer                                                             ::    NbDim=0
+  integer                                                             ::    i
 
-          select type (Object2 => OrthoPoly)
-            type is (OrthoLegendre_Type)
-              call Object2%Construct(Normalized=.true.)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
+  NbDim = SampleSpace%GetNbDim()
 
-        class is (DistGamma_Type)
-          allocate(DistGamma_Type :: DistProb, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
-          allocate(OrthoLaguerre_Type :: OrthoPoly, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
-          select type(Object2 => DistProb)
-            type is (DistGamma_Type)
-              call Object2%Construct(Alpha=Zero, Beta=One)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
-
-          select type (Object2 => OrthoPoly)
-            type is (OrthoLaguerre_Type)
-              call Object2%Construct(Normalized=.true.)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
-
-        class default
-          allocate(DistNorm_Type :: DistProb, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
-          allocate(OrthoHermite_Type :: OrthoPoly, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
-          select type(Object2 => DistProb)
-            type is (DistNorm_Type)
-              call Object2%Construct(Mu=Zero, Sigma=One)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
-
-          select type (Object2 => OrthoPoly)
-            type is (OrthoHermite_Type)
-              call Object2%Construct(Normalized=.true.)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
-
-      end select
-
-      call DistProbVec(i)%Set(Object=DistProb)
-      call OrthoPolyVec(i)%Set(Object=OrthoPoly)
-
-      nullify(DistProbPointer)
-      deallocate(OrthoPoly, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-      deallocate(DistProb, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
-
-    end do
-
-    call Basis%Construct(Polynomials=OrthoPolyVec)
-
-    select type (Object => SpaceTransform)
-      type is (TransfSampleSpaceInt_Type)
-        call Object%Construct(Distributions=DistProbVec, OriginalSampleSpace=SampleSpace)
-      class default
-        call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-    end select
-
-    deallocate(DistProbVec, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
-
-    deallocate(OrthoPolyVec, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructWeinerScheme(SampleSpace, Basis, SpaceTransform)
-
-    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
-    type(OrthoMultiVar_Type), intent(out)                             ::    Basis
-    class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
-
-    character(*), parameter                                           ::    ProcName='ConstructWeinerScheme'
-    integer                                                           ::    StatLoc=0
-    class(DistProb_Type), allocatable                                 ::    DistProbPointer
-    class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPolyContainer_Type), allocatable, dimension(:)          ::    OrthoPolyVec
-    type(DistNorm_Type), allocatable, dimension(:)                    ::    DistNormal
-    integer                                                           ::    NbDim=0
-    integer                                                           ::    i
-
-    NbDim = SampleSpace%GetNbDim()
-
-    allocate(TransfSampleSpaceInt_Type :: SpaceTransform, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
-
-    allocate(OrthoPolyVec(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
-
-    allocate(OrthoHermite_Type :: OrthoPoly, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
-    select type (Object => OrthoPoly)
-      type is (OrthoHermite_Type)
-        call Object%Construct(Normalized=.true.)
-      class default
-        call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-    end select
-
-    allocate(DistNormal(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='DistNormal', ProcName=ProcName, stat=StatLoc)
-
-    i = 1
-    do i = 1, NbDim
-      call OrthoPolyVec(i)%Set(Object=OrthoPoly)
-      call DistNormal(i)%Construct(Mu=Zero, Sigma=One)
-    end do
-
-    call Basis%Construct(Polynomials=OrthoPolyVec)
+  allocate(TransfSampleSpaceInt_Type   :: SpaceTransform, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
   
-    select type (Object => SpaceTransform)
-      type is (TransfSampleSpaceInt_Type)
-        call Object%Construct(Distributions=DistNormal, OriginalSampleSpace=SampleSpace)
+  allocate(OrthoPolyVec(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+
+  allocate(DistProbVec(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, NbDim
+    DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
+
+    select type (Object => DistProbPointer)
+
+      class is (DistUnif_Type)
+        allocate(DistUnif_Type   :: DistProb, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
+        allocate(OrthoLegendre_Type   :: OrthoPoly, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+        select type(Object2 => DistProb)
+          type is (DistUnif_Type)
+            call Object2%Construct(A=-One, B=One)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+        select type (Object2 => OrthoPoly)
+          type is (OrthoLegendre_Type)
+            call Object2%Construct(Normalized=.true.)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+      class is (DistGamma_Type)
+        allocate(DistGamma_Type   :: DistProb, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
+        allocate(OrthoLaguerre_Type   :: OrthoPoly, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+        select type(Object2 => DistProb)
+          type is (DistGamma_Type)
+            call Object2%Construct(Alpha=Zero, Beta=One)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+        select type (Object2 => OrthoPoly)
+          type is (OrthoLaguerre_Type)
+            call Object2%Construct(Normalized=.true.)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
       class default
-        call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        allocate(DistNorm_Type   :: DistProb, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
+        allocate(OrthoHermite_Type   :: OrthoPoly, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+        select type(Object2 => DistProb)
+          type is (DistNorm_Type)
+            call Object2%Construct(Mu=Zero, Sigma=One)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+        select type (Object2 => OrthoPoly)
+          type is (OrthoHermite_Type)
+            call Object2%Construct(Normalized=.true.)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
     end select
 
-    deallocate(OrthoPolyVec, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+    call DistProbVec(i)%Set(Object=DistProb)
+    call OrthoPolyVec(i)%Set(Object=OrthoPoly)
 
+    nullify(DistProbPointer)
     deallocate(OrthoPoly, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+    deallocate(DistProb, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
 
-    deallocate(DistNormal, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='DistNormal', ProcName=ProcName, stat=StatLoc)
+  end do
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  call Basis%Construct(Polynomials=OrthoPolyVec)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructAskeyNumericalScheme(SampleSpace, Basis, SpaceTransform)
+  select type (Object => SpaceTransform)
+    type is (TransfSampleSpaceInt_Type)
+      call Object%Construct(Distributions=DistProbVec, OriginalSampleSpace=SampleSpace)
+    class default
+      call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+  end select
 
-    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
-    type(OrthoMultiVar_Type), intent(out)                             ::    Basis
-    class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
+  deallocate(DistProbVec, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='ConstructAskeyNumericalScheme'
-    integer                                                           ::    StatLoc=0
-    class(DistProb_Type), allocatable                                 ::    DistProb
-    type(DistProbContainer_Type), allocatable, dimension(:)           ::    DistProbVec
-    class(DistProb_Type), pointer                                     ::    DistProbPointer
-    class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPolyContainer_Type), allocatable, dimension(:)          ::    OrthoPolyVec
-    integer                                                           ::    NbDim=0
-    integer                                                           ::    i
+  deallocate(OrthoPolyVec, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
 
-    NbDim = SampleSpace%GetNbDim()
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
-    allocate(TransfSampleSpaceInt_Type :: SpaceTransform, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
-    
-    allocate(OrthoPolyVec(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructWeinerScheme(SampleSpace, Basis, SpaceTransform)
 
-    allocate(DistProbVec(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
+  class(SampleSpace_Type), intent(in)                                 ::    SampleSpace
+  type(OrthoMultiVar_Type), intent(out)                               ::    Basis
+  class(TransfSampleSpace_Type), allocatable, intent(out)             ::    SpaceTransform
 
-    i = 1
-    do i = 1, NbDim
-      DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
+  character(*), parameter                                             ::    ProcName='ConstructWeinerScheme'
+  integer                                                             ::    StatLoc=0
+  class(DistProb_Type), allocatable                                   ::    DistProbPointer
+  class(OrthoPoly_Type), allocatable                                  ::    OrthoPoly
+  type(OrthoPolyContainer_Type), allocatable, dimension(:)            ::    OrthoPolyVec
+  type(DistNorm_Type), allocatable, dimension(:)                      ::    DistNormal
+  integer                                                             ::    NbDim=0
+  integer                                                             ::    i
 
-      select type (Object => DistProbPointer)
+  NbDim = SampleSpace%GetNbDim()
 
-        type is (DistNorm_Type)
-          allocate(DistNorm_Type :: DistProb, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
-          allocate(OrthoHermite_Type :: OrthoPoly, stat=StatLoc)
+  allocate(TransfSampleSpaceInt_Type   :: SpaceTransform, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
+
+  allocate(OrthoPolyVec(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+
+  allocate(OrthoHermite_Type   :: OrthoPoly, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+  select type (Object => OrthoPoly)
+    type is (OrthoHermite_Type)
+      call Object%Construct(Normalized=.true.)
+    class default
+      call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+  end select
+
+  allocate(DistNormal(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='DistNormal', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, NbDim
+    call OrthoPolyVec(i)%Set(Object=OrthoPoly)
+    call DistNormal(i)%Construct(Mu=Zero, Sigma=One)
+  end do
+
+  call Basis%Construct(Polynomials=OrthoPolyVec)
+
+  select type (Object => SpaceTransform)
+    type is (TransfSampleSpaceInt_Type)
+      call Object%Construct(Distributions=DistNormal, OriginalSampleSpace=SampleSpace)
+    class default
+      call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+  end select
+
+  deallocate(OrthoPolyVec, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(OrthoPoly, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(DistNormal, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='DistNormal', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructAskeyNumericalScheme(SampleSpace, Basis, SpaceTransform)
+
+  class(SampleSpace_Type), intent(in)                                 ::    SampleSpace
+  type(OrthoMultiVar_Type), intent(out)                               ::    Basis
+  class(TransfSampleSpace_Type), allocatable, intent(out)             ::    SpaceTransform
+
+  character(*), parameter                                             ::    ProcName='ConstructAskeyNumericalScheme'
+  integer                                                             ::    StatLoc=0
+  class(DistProb_Type), allocatable                                   ::    DistProb
+  type(DistProbContainer_Type), allocatable, dimension(:)             ::    DistProbVec
+  class(DistProb_Type), pointer                                       ::    DistProbPointer
+  class(OrthoPoly_Type), allocatable                                  ::    OrthoPoly
+  type(OrthoPolyContainer_Type), allocatable, dimension(:)            ::    OrthoPolyVec
+  integer                                                             ::    NbDim=0
+  integer                                                             ::    i
+
+  NbDim = SampleSpace%GetNbDim()
+
+  allocate(TransfSampleSpaceInt_Type   :: SpaceTransform, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
+  
+  allocate(OrthoPolyVec(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+
+  allocate(DistProbVec(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, NbDim
+    DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
+
+    select type (Object => DistProbPointer)
+
+      type is (DistNorm_Type)
+        allocate(DistNorm_Type   :: DistProb, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
+        allocate(OrthoHermite_Type   :: OrthoPoly, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+        select type(Object2 => DistProb)
+          type is (DistNorm_Type)
+            call Object2%Construct(Mu=Zero, Sigma=One)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+        select type (Object2 => OrthoPoly)
+          type is (OrthoHermite_Type)
+            call Object2%Construct(Normalized=.true.)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+      type is (DistUnif_Type)
+        allocate(DistUnif_Type   :: DistProb, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
+        allocate(OrthoLegendre_Type   :: OrthoPoly, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+        select type(Object2 => DistProb)
+          type is (DistUnif_Type)
+            call Object2%Construct(A=-One, B=One)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+        select type (Object2 => OrthoPoly)
+          type is (OrthoLegendre_Type)
+            call Object2%Construct(Normalized=.true.)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+      type is (DistGamma_Type)
+        allocate(DistGamma_Type   :: DistProb, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
+        allocate(OrthoLaguerre_Type   :: OrthoPoly, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+        select type(Object2 => DistProb)
+          type is (DistGamma_Type)
+            call Object2%Construct(Alpha=Zero, Beta=One)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+        select type (Object2 => OrthoPoly)
+          type is (OrthoLaguerre_Type)
+            call Object2%Construct(Normalized=.true.)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+      class default
+        allocate(DistProb, source=DistProbPointer, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
+        allocate(OrthoNumerical_Type   :: OrthoPoly, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+        select type (Object2 => OrthoPoly)
+          type is (OrthoNumerical_Type)
+            call Object2%Construct(Weights=DistProb, Normalized=.true.)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
+
+    end select
+
+    call DistProbVec(i)%Set(Object=DistProb)
+    call OrthoPolyVec(i)%Set(Object=OrthoPoly)
+
+    nullify(DistProbPointer)
+    deallocate(OrthoPoly, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+    deallocate(DistProb, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
+
+  end do
+
+  call Basis%Construct(Polynomials=OrthoPolyVec)
+
+  select type (Object => SpaceTransform)
+    type is (TransfSampleSpaceInt_Type)
+      call Object%Construct(Distributions=DistProbVec, OriginalSampleSpace=SampleSpace)
+    class default
+      call Error%Raise(Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName)
+  end select
+
+  deallocate(DistProbVec, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
+
+  deallocate(OrthoPolyVec, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructAskeyNumericalExtendedScheme(SampleSpace, Basis, SpaceTransform)
+
+  class(SampleSpace_Type), intent(in)                                 ::    SampleSpace
+  type(OrthoMultiVar_Type), intent(out)                               ::    Basis
+  class(TransfSampleSpace_Type), allocatable, intent(out)             ::    SpaceTransform
+
+  character(*), parameter                                             ::    ProcName='ConstructAskeyNumericalExtendedScheme'
+  integer                                                             ::    StatLoc=0
+  class(DistProb_Type), pointer                                       ::    DistProbPointer
+  class(OrthoPoly_Type), allocatable                                  ::    OrthoPoly
+  type(OrthoPolyContainer_Type), allocatable, dimension(:)            ::    OrthoPolyVec
+  integer                                                             ::    NbDim=0
+  integer                                                             ::    i
+
+  NbDim = SampleSpace%GetNbDim()
+
+  allocate(TransfSampleSpaceNone_Type   :: SpaceTransform, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
+  
+  allocate(OrthoPolyVec(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, NbDim
+
+    DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
+
+    select type (Object => DistProbPointer)
+
+      type is (DistNorm_Type)
+        if ((Object%GetMu() == Zero .and. Object%GetSigma() == One) .and.                                                      &
+                                              ((.not. Object%IsTruncatedLeft()) .and. (.not. Object%IsTruncatedRight()))) then
+          allocate(OrthoHermite_Type   :: OrthoPoly, stat=StatLoc)
           if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
-          select type(Object2 => DistProb)
-            type is (DistNorm_Type)
-              call Object2%Construct(Mu=Zero, Sigma=One)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
-
           select type (Object2 => OrthoPoly)
             type is (OrthoHermite_Type)
               call Object2%Construct(Normalized=.true.)
             class default
               call Error%Raise(Line='Something went wrong', ProcName=ProcName)
           end select
-
-        type is (DistUnif_Type)
-          allocate(DistUnif_Type :: DistProb, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
-          allocate(OrthoLegendre_Type :: OrthoPoly, stat=StatLoc)
+        else
+          allocate(OrthoNumerical_Type   :: OrthoPoly, stat=StatLoc)
           if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
-          select type(Object2 => DistProb)
-            type is (DistUnif_Type)
-              call Object2%Construct(A=-One, B=One)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
-
-          select type (Object2 => OrthoPoly)
-            type is (OrthoLegendre_Type)
-              call Object2%Construct(Normalized=.true.)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
-
-        type is (DistGamma_Type)
-          allocate(DistGamma_Type :: DistProb, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
-          allocate(OrthoLaguerre_Type :: OrthoPoly, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
-          select type(Object2 => DistProb)
-            type is (DistGamma_Type)
-              call Object2%Construct(Alpha=Zero, Beta=One)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
-
-          select type (Object2 => OrthoPoly)
-            type is (OrthoLaguerre_Type)
-              call Object2%Construct(Normalized=.true.)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
-
-        class default
-          allocate(DistProb, source=DistProbPointer, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
-          allocate(OrthoNumerical_Type :: OrthoPoly, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
-          select type (Object2 => OrthoPoly)
-            type is (OrthoNumerical_Type)
-              call Object2%Construct(Weights=DistProb, Normalized=.true.)
-            class default
-              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-          end select
-
-      end select
-
-      call DistProbVec(i)%Set(Object=DistProb)
-      call OrthoPolyVec(i)%Set(Object=OrthoPoly)
-
-      nullify(DistProbPointer)
-      deallocate(OrthoPoly, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-      deallocate(DistProb, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='DistProb', ProcName=ProcName, stat=StatLoc)
-
-    end do
-
-    call Basis%Construct(Polynomials=OrthoPolyVec)
-
-    select type (Object => SpaceTransform)
-      type is (TransfSampleSpaceInt_Type)
-        call Object%Construct(Distributions=DistProbVec, OriginalSampleSpace=SampleSpace)
-      class default
-        call Error%Raise(Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName)
-    end select
-
-    deallocate(DistProbVec, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='DistProbVec', ProcName=ProcName, stat=StatLoc)
-
-    deallocate(OrthoPolyVec, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructAskeyNumericalExtendedScheme(SampleSpace, Basis, SpaceTransform)
-
-    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
-    type(OrthoMultiVar_Type), intent(out)                             ::    Basis
-    class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
-
-    character(*), parameter                                           ::    ProcName='ConstructAskeyNumericalExtendedScheme'
-    integer                                                           ::    StatLoc=0
-    class(DistProb_Type), pointer                                     ::    DistProbPointer
-    class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPolyContainer_Type), allocatable, dimension(:)          ::    OrthoPolyVec
-    integer                                                           ::    NbDim=0
-    integer                                                           ::    i
-
-    NbDim = SampleSpace%GetNbDim()
-
-    allocate(TransfSampleSpaceNone_Type :: SpaceTransform, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
-    
-    allocate(OrthoPolyVec(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
-
-    i = 1
-    do i = 1, NbDim
-
-      DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
-
-      select type (Object => DistProbPointer)
-
-        type is (DistNorm_Type)
-          if ((Object%GetMu() == Zero .and. Object%GetSigma() == One) .and.                                                      &
-                                               ((.not. Object%IsTruncatedLeft()) .and. (.not. Object%IsTruncatedRight()))) then
-            allocate(OrthoHermite_Type :: OrthoPoly, stat=StatLoc)
-            if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-            select type (Object2 => OrthoPoly)
-              type is (OrthoHermite_Type)
-                call Object2%Construct(Normalized=.true.)
-              class default
-                call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-            end select
-          else
-            allocate(OrthoNumerical_Type :: OrthoPoly, stat=StatLoc)
-            if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-            select type (Object2 => OrthoPoly)
-              type is (OrthoNumerical_Type)
-                call Object2%Construct(Weights=DistProbPointer, Normalized=.true.)
-              class default
-                call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-            end select
-          end if
-
-        type is (DistUnif_Type)
-
-          if (Object%GetA() == -One .and. Object%GetB() == One) then
-            allocate(OrthoLegendre_Type :: OrthoPoly, stat=StatLoc)
-            if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-            select type (Object2 => OrthoPoly)
-              type is (OrthoLegendre_Type)
-                call Object2%Construct(Normalized=.true.)
-              class default
-                call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-            end select
-          else
-            allocate(OrthoNumerical_Type :: OrthoPoly, stat=StatLoc)
-            if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-            select type (Object2 => OrthoPoly)
-              type is (OrthoNumerical_Type)
-                call Object2%Construct(Weights=DistProbPointer, Normalized=.true.)
-              class default
-                call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-            end select
-          end if
-
-        type is (DistGamma_Type)
-          if ((Object%GetA() == tiny(One) .and. (.not. Object%IsTruncatedRight())) .and. Object%GetBeta()==One) then
-            allocate(OrthoLaguerre_Type :: OrthoPoly, stat=StatLoc)
-            if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-            select type (Object2 => OrthoPoly)
-              type is (OrthoLaguerre_Type)
-                call Object2%Construct(Normalized=.true., Alpha=Object%GetAlpha())
-              class default
-                call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-            end select
-          else
-            allocate(OrthoNumerical_Type :: OrthoPoly, stat=StatLoc)
-            if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-            select type (Object2 => OrthoPoly)
-              type is (OrthoNumerical_Type)
-                call Object2%Construct(Weights=DistProbPointer, Normalized=.true.)
-              class default
-                call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-            end select
-          end if
-
-        class default
-          allocate(OrthoNumerical_Type :: OrthoPoly, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
           select type (Object2 => OrthoPoly)
             type is (OrthoNumerical_Type)
               call Object2%Construct(Weights=DistProbPointer, Normalized=.true.)
             class default
               call Error%Raise(Line='Something went wrong', ProcName=ProcName)
           end select
-
-      end select
-
-      call OrthoPolyVec(i)%Set(Object=OrthoPoly)
-
-      nullify(DistProbPointer)
-
-      deallocate(OrthoPoly, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
-    end do
-
-    call Basis%Construct(Polynomials=OrthoPolyVec)
-
-    select type (Object => SpaceTransform)
-      type is (TransfSampleSpaceNone_Type)
-        call Object%Construct(OriginalSampleSpace=SampleSpace)
-      class default
-        call Error%Raise(Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName)
-    end select
-
-    deallocate(OrthoPolyVec, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine ConstructNumericalScheme(SampleSpace, Basis, SpaceTransform)
-
-    class(SampleSpace_Type), intent(in)                               ::    SampleSpace
-    type(OrthoMultiVar_Type), intent(out)                             ::    Basis
-    class(TransfSampleSpace_Type), allocatable, intent(out)           ::    SpaceTransform
-
-    character(*), parameter                                           ::    ProcName='ConstructNumericalScheme'
-    integer                                                           ::    StatLoc=0
-    class(DistProb_Type), allocatable                                 ::    DistProb
-    class(DistProb_Type), pointer                                     ::    DistProbPointer
-    class(OrthoPoly_Type), allocatable                                ::    OrthoPoly
-    type(OrthoPolyContainer_Type), allocatable, dimension(:)          ::    OrthoPolyVec
-    integer                                                           ::    NbDim=0
-    integer                                                           ::    i
-
-    NbDim = SampleSpace%GetNbDim()
-    
-    allocate(TransfSampleSpaceNone_Type :: SpaceTransform, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
-
-    allocate(OrthoPolyVec(NbDim), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
-
-    i = 1
-    do i = 1, NbDim
-      DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
-
-      allocate(OrthoNumerical_Type :: OrthoPoly, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
-      select type (Object2 => OrthoPoly)
-        type is (OrthoNumerical_Type)
-          call Object2%Construct(Weights=DistProbPointer, Normalized=.true.)
-        class default
-          call Error%Raise(Line='Something went wrong', ProcName=ProcName)
-      end select
-
-      call OrthoPolyVec(i)%Set(Object=OrthoPoly)
-
-      deallocate(OrthoPoly, stat=StatLoc)
-      if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
-
-    end do
-
-    call Basis%Construct(Polynomials=OrthoPolyVec)
-
-    select type (Object => SpaceTransform)
-      type is (TransfSampleSpaceNone_Type)
-        call Object%Construct(OriginalSampleSpace=SampleSpace)
-      class default
-        call Error%Raise(Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName)
-    end select
-
-    deallocate(OrthoPolyVec, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
-
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Copy(LHS, RHS)
-
-    class(SurrogatePCE_Type), intent(out)                             ::    LHS
-    class(SurrogateMethod_Type), intent(in)                           ::    RHS
-
-    character(*), parameter                                           ::    ProcName='Copy'
-    integer                                                           ::    StatLoc=0
-
-    select type (RHS)
-
-      type is (SurrogatePCE_Type)
-        call LHS%Reset()
-        LHS%Initialized = RHS%Initialized
-        LHS%Constructed = RHS%Constructed
-
-        if (RHS%Constructed) then
-          LHS%BasisScheme = RHS%BasisScheme
-          LHS%Silent = RHS%Silent
-          LHS%IndexSetScheme = RHS%IndexSetScheme
-          allocate(LHS%PCEMethod, source=RHS%PCEMethod, stat=StatLoc)
-          if (StatLoc /= 0) call Error%Allocate(Name='LHS%PCEMethod', ProcName=ProcName, stat=StatLoc)
         end if
-      
+
+      type is (DistUnif_Type)
+
+        if (Object%GetA() == -One .and. Object%GetB() == One) then
+          allocate(OrthoLegendre_Type   :: OrthoPoly, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+          select type (Object2 => OrthoPoly)
+            type is (OrthoLegendre_Type)
+              call Object2%Construct(Normalized=.true.)
+            class default
+              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+          end select
+        else
+          allocate(OrthoNumerical_Type   :: OrthoPoly, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+          select type (Object2 => OrthoPoly)
+            type is (OrthoNumerical_Type)
+              call Object2%Construct(Weights=DistProbPointer, Normalized=.true.)
+            class default
+              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+          end select
+        end if
+
+      type is (DistGamma_Type)
+        if ((Object%GetA() == tiny(One) .and. (.not. Object%IsTruncatedRight())) .and. Object%GetBeta()==One) then
+          allocate(OrthoLaguerre_Type   :: OrthoPoly, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+          select type (Object2 => OrthoPoly)
+            type is (OrthoLaguerre_Type)
+              call Object2%Construct(Normalized=.true., Alpha=Object%GetAlpha())
+            class default
+              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+          end select
+        else
+          allocate(OrthoNumerical_Type   :: OrthoPoly, stat=StatLoc)
+          if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+          select type (Object2 => OrthoPoly)
+            type is (OrthoNumerical_Type)
+              call Object2%Construct(Weights=DistProbPointer, Normalized=.true.)
+            class default
+              call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+          end select
+        end if
+
       class default
-        call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+        allocate(OrthoNumerical_Type   :: OrthoPoly, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+        select type (Object2 => OrthoPoly)
+          type is (OrthoNumerical_Type)
+            call Object2%Construct(Weights=DistProbPointer, Normalized=.true.)
+          class default
+            call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+        end select
 
     end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+    call OrthoPolyVec(i)%Set(Object=OrthoPoly)
 
-  !!------------------------------------------------------------------------------------------------------------------------------
-  impure elemental subroutine Finalizer(This)
+    nullify(DistProbPointer)
 
-    type(SurrogatePCE_Type), intent(inout)                            ::    This
+    deallocate(OrthoPoly, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
 
-    character(*), parameter                                           ::    ProcName='Finalizer'
-    integer                                                           ::    StatLoc=0
+  end do
 
-    if (allocated(This%PCEMethod)) deallocate(This%PCEMethod, stat=StatLoc)
-    if (StatLoc /= 0) call Error%Deallocate(Name='This%PCEMethod', ProcName=ProcName, stat=StatLoc)
+  call Basis%Construct(Polynomials=OrthoPolyVec)
 
-    call This%IndexSetScheme%Reset()
+  select type (Object => SpaceTransform)
+    type is (TransfSampleSpaceNone_Type)
+      call Object%Construct(OriginalSampleSpace=SampleSpace)
+    class default
+      call Error%Raise(Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName)
+  end select
 
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
+  deallocate(OrthoPolyVec, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+subroutine ConstructNumericalScheme(SampleSpace, Basis, SpaceTransform)
+
+  class(SampleSpace_Type), intent(in)                                 ::    SampleSpace
+  type(OrthoMultiVar_Type), intent(out)                               ::    Basis
+  class(TransfSampleSpace_Type), allocatable, intent(out)             ::    SpaceTransform
+
+  character(*), parameter                                             ::    ProcName='ConstructNumericalScheme'
+  integer                                                             ::    StatLoc=0
+  class(DistProb_Type), allocatable                                   ::    DistProb
+  class(DistProb_Type), pointer                                       ::    DistProbPointer
+  class(OrthoPoly_Type), allocatable                                  ::    OrthoPoly
+  type(OrthoPolyContainer_Type), allocatable, dimension(:)            ::    OrthoPolyVec
+  integer                                                             ::    NbDim=0
+  integer                                                             ::    i
+
+  NbDim = SampleSpace%GetNbDim()
+  
+  allocate(TransfSampleSpaceNone_Type   :: SpaceTransform, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='SpaceTransform', ProcName=ProcName, stat=StatLoc)
+
+  allocate(OrthoPolyVec(NbDim), stat=StatLoc)
+  if (StatLoc /= 0) call Error%Allocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+
+  i = 1
+  do i = 1, NbDim
+    DistProbPointer => SampleSpace%GetDistributionPointer(Num=i)
+
+    allocate(OrthoNumerical_Type   :: OrthoPoly, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Allocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+    select type (Object2 => OrthoPoly)
+      type is (OrthoNumerical_Type)
+        call Object2%Construct(Weights=DistProbPointer, Normalized=.true.)
+      class default
+        call Error%Raise(Line='Something went wrong', ProcName=ProcName)
+    end select
+
+    call OrthoPolyVec(i)%Set(Object=OrthoPoly)
+
+    deallocate(OrthoPoly, stat=StatLoc)
+    if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPoly', ProcName=ProcName, stat=StatLoc)
+
+  end do
+
+  call Basis%Construct(Polynomials=OrthoPolyVec)
+
+  select type (Object => SpaceTransform)
+    type is (TransfSampleSpaceNone_Type)
+      call Object%Construct(OriginalSampleSpace=SampleSpace)
+    class default
+      call Error%Raise(Line='Something went wrong when constructing askey scheme space transform', ProcName=ProcName)
+  end select
+
+  deallocate(OrthoPolyVec, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='OrthoPolyVec', ProcName=ProcName, stat=StatLoc)
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Copy(LHS, RHS)
+
+  class(SurrogatePCE_Type), intent(out)                               ::    LHS
+  class(SurrogateMethod_Type), intent(in)                             ::    RHS
+
+  character(*), parameter                                             ::    ProcName='Copy'
+  integer                                                             ::    StatLoc=0
+
+  select type (RHS)
+
+    type is (SurrogatePCE_Type)
+      call LHS%Reset()
+      LHS%Constructed = RHS%Constructed
+
+      if (RHS%Constructed) then
+        LHS%BasisScheme = RHS%BasisScheme
+        LHS%Silent = RHS%Silent
+        LHS%IndexSetScheme = RHS%IndexSetScheme
+        allocate(LHS%PCEMethod, source=RHS%PCEMethod, stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='LHS%PCEMethod', ProcName=ProcName, stat=StatLoc)
+      end if
+    
+    class default
+      call Error%Raise(Line='Incompatible types', ProcName=ProcName)
+
+  end select
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
+
+!!------------------------------------------------------------------------------------------------------------------------------
+impure elemental subroutine Finalizer(This)
+
+  type(SurrogatePCE_Type), intent(inout)                              ::    This
+
+  character(*), parameter                                             ::    ProcName='Finalizer'
+  integer                                                             ::    StatLoc=0
+
+  if (allocated(This%PCEMethod)) deallocate(This%PCEMethod, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%PCEMethod', ProcName=ProcName, stat=StatLoc)
+
+  call This%IndexSetScheme%Reset()
+
+end subroutine
+!!------------------------------------------------------------------------------------------------------------------------------
 
 end module

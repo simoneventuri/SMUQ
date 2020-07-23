@@ -33,17 +33,12 @@ private
 public                                                                ::    SurrogateMethod_Type
 
 type, abstract                                                        ::    SurrogateMethod_Type
-  character(:), allocatable                                           ::    Name
-  logical                                                             ::    Initialized=.false.
   logical                                                             ::    Constructed=.false.
   character(:), allocatable                                           ::    SectionChain
 contains
-  procedure, public                                                   ::    GetName
   generic, public                                                     ::    assignment(=)           =>    Copy
   generic, public                                                     ::    Construct               =>    ConstructInput
-  procedure(Initialize_SurrogateMethod), deferred, public             ::    Initialize
   procedure(Reset_SurrogateMethod), deferred, public                  ::    Reset
-  procedure(SetDefaults_SurrogateMethod), deferred, public            ::    SetDefaults
   procedure(ConstructInput_SurrogateMethod), deferred, private        ::    ConstructInput
   procedure(GetInput_SurrogateMethod), deferred, public               ::    GetInput
   procedure(Run_SurrogateMethod), deferred, public                    ::    Run
@@ -55,21 +50,7 @@ logical   ,parameter                                                  ::    Debu
 abstract interface
 
   !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine Initialize_SurrogateMethod(This)
-    import                                                            ::    SurrogateMethod_Type
-    class(SurrogateMethod_Type), intent(inout)                        ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
   subroutine Reset_SurrogateMethod(This)
-    import                                                            ::    SurrogateMethod_Type
-    class(SurrogateMethod_Type), intent(inout)                        ::    This
-  end subroutine
-  !!------------------------------------------------------------------------------------------------------------------------------
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  subroutine SetDefaults_SurrogateMethod(This)
     import                                                            ::    SurrogateMethod_Type
     class(SurrogateMethod_Type), intent(inout)                        ::    This
   end subroutine
@@ -124,18 +105,5 @@ abstract interface
 end interface
 
 contains
-
-  !!------------------------------------------------------------------------------------------------------------------------------
-  function GetName(This)
-
-    character(:), allocatable                                         ::    GetName
-    class(SurrogateMethod_Type), intent(inout)                        ::    This
-
-    character(*), parameter                                           ::    ProcName='GetName'
-
-    GetName = This%Name
-
-  end function
-  !!------------------------------------------------------------------------------------------------------------------------------
 
 end module

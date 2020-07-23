@@ -22,6 +22,7 @@ use Parameters_Library
 use Logger_Class                                                  ,only:    Logger
 use Error_Class                                                   ,only:    Error
 use Input_Library
+use InputVerifier_Class                                           ,only:    InputVerifier_Type
 
 implicit none
 
@@ -42,8 +43,6 @@ type                                                                  ::    Prog
   character(:), allocatable                                           ::    LogDir
   character(:), allocatable                                           ::    LogFilePath
 contains
-  procedure, public                                                   ::    Reset
-  procedure, public                                                   ::    SetDefaults
   generic, public                                                     ::    Construct                   =>    ConstructInput
   procedure, private                                                  ::    ConstructInput
   procedure, public                                                   ::    GetSuppliedCaseDir
@@ -74,18 +73,6 @@ subroutine Reset(This)
 
   This%Constructed=.false.
 
-  call This%SetDefaults()
-
-end subroutine
-!!------------------------------------------------------------------------------------------------------------------------------
-
-!!------------------------------------------------------------------------------------------------------------------------------
-subroutine SetDefaults(This)
-
-  class(ProgramDefs_Type),intent(inout)                               ::    This
-
-  character(*), parameter                                             ::    ProcName='SetDefaults'
-
   This%RunDir = ''
   This%LogDir = ''
   This%CaseDir = ''
@@ -111,37 +98,46 @@ subroutine ConstructInput(This, Input, Prefix)
   character(:), allocatable                                           ::    VarC0D
   character(:), allocatable                                           ::    PrefixLoc
   logical                                                             ::    Found
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
-  call This%Reset
+  call This%Reset()
+
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix
+
+  call InputVerifier%Construct()
 
   This%RunDir = PrefixLoc
 
   ParameterName = 'log_directory'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
   This%LogDir = PrefixLoc // 'log/'
   if (Found) This%LogDir = PrefixLoc // VarC0D
   if (This%LogDir(len(This%LogDir):len(This%LogDir)) /= '/') This%LogDir = This%LogDir // '/'
 
   ParameterName = 'log_file_name'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
   This%LogFilePath = This%LogDir // 'log.dat'
   if (Found) This%LogFilePath = This%LogDir // VarC0D
 
   ParameterName = 'output_directory'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
   This%OutputDir = PrefixLoc // 'output/'
   if (Found) This%OutputDir = PrefixLoc // VarC0D
   if (This%OutputDir(len(This%OutputDir):len(This%OutputDir)) /= '/') This%OutputDir = This%OutputDir // '/'
 
   ParameterName = 'restart_directory'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
   This%RestartDir = PrefixLoc // 'restart/'
   if (Found) This%RestartDir = PrefixLoc // VarC0D
   if (This%RestartDir(len(This%RestartDir):len(This%RestartDir)) /= '/') This%RestartDir = This%RestartDir // '/'
 
   ParameterName = 'case_directory'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
   This%CaseDir = PrefixLoc // 'case/'
   if (Found) This%CaseDir = PrefixLoc // VarC0D
@@ -150,8 +146,12 @@ subroutine ConstructInput(This, Input, Prefix)
   This%InputFilePath = This%CaseDir // This%InputFilePrefix // This%InputFileSuffix
 
   ParameterName = 'case'
+  call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(VarC0D, ParameterName, Mandatory=.false., Found=Found)
   if (Found) This%SuppliedCaseDir = VarC0D
+
+  call InputVerifier%Process(Input=Input)
+  call InputVerifier%Reset()
 
   This%Constructed = .true.
   

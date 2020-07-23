@@ -838,7 +838,6 @@ subroutine Reset_Cell(This)
   character(*), parameter                                             ::    ProcName='Reset_Cell'
   integer                                                             ::    StatLoc=0
 
-  This%Initialized=.false.
   This%Constructed=.false.
 
   if (allocated(This%Coefficients)) deallocate(This%Coefficients, stat=StatLoc)
