@@ -72,7 +72,8 @@ subroutine Reset(This)
 
   This%Constructed=.false.
 
-  call This%IndexSet%Reset()
+  if (allocated(This%IndexSet)) deallocate(This%IndexSet, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%IndexSet', ProcName=ProcName, stat=StatLoc)
 
   This%Order = 1
   This%MinOrder = 1

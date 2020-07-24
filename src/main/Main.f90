@@ -70,12 +70,15 @@ program SMUQ
   !!--------------------------------------------------------------------------------------------------------------------------------
   write(*,*)
   write(*,'(A)') 'Setting up the run environment'
+  write(*,'(A)') '  Using the following input file : '
   if (len_trim(ProgramDefs%GetSuppliedCaseDir()) /= 0) then
     FileName = ProgramDefs%GetSuppliedCaseDir() // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
+    write(*,'(A)') '    ' // FileName
     inquire(File=FileName, Exist=VarL0D)
     if (.not. VarL0D) call Error%Raise('Supplied an incompatible external case or it may not exist', ProcName=ProcName)
   else
     FileName = ProgramDefs%GetCaseDir() // ProgramDefs%GetInputFilePrefix() // ProgramDefs%GetInputFileSuffix()
+    write(*,'(A)') '    ' // FileName
     inquire(File=FileName, Exist=VarL0D)
     if (.not. VarL0D) call Error%Raise('Did not find the case directory in the run directory and no external alternative was ' //&
                                           'supplied', ProcName=ProcName)

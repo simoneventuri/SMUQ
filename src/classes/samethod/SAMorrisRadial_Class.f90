@@ -176,6 +176,9 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   integer, allocatable, dimension(:,:)                                ::    VarI2D
   real(rkp), allocatable, dimension(:)                                ::    VarR1D
   real(rkp), allocatable, dimension(:,:)                              ::    VarR2D
+  character(:), allocatable                                           ::    CellSource
+  character(:), allocatable                                           ::    CellFile
+  type(InputReader_Type)                                              ::    CellSection
   type(InputVerifier_Type)                                            ::    InputVerifier
 
   call This%Reset()
@@ -263,23 +266,6 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
     call ImportArray(Input=InputSection, Array=This%ParamSample, Prefix=PrefixLoc)
     nullify(InputSection)
 
-    This%NbCells = 0
-    SubSectionName = SectionName // '>cells'
-    call InputVerifier%AddSection(Section='cells', ToSubSection=SectionName)
-    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
-    This%NbCells = InputSection%GetNumberofSubSections()
-    nullify(InputSection)
-    allocate(This%Cells(This%NbCells), stat=StatLoc)
-    if (StatLoc /= 0) call Error%Allocate(Name='This%Cells', ProcName=ProcName, stat=StatLoc)
-
-    i = 1
-    do i = 1, This%NbCells
-      SubSectionName = SectionName // '>cells>cell' // ConvertToString(Value=i)
-    call InputVerifier%AddSection(Section='cell' // ConvertToString(Value=i), ToSubSection=SectionName // '>cells')
-      call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName // '>mean', Mandatory=.true.)
-      call This%Cells(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
-    end do
-
     SubSectionName = SectionName // '>history_step'
     call InputVerifier%AddSection(Section='history_step', ToSubSection=SectionName)
     if (Input%HasSection(SubSectionName=SubSectionName))then
@@ -290,6 +276,51 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
       deallocate(VarR1D, stat=StatLoc)
       if (StatLoc /= 0) call Error%Deallocate(Name='VarR1D', ProcName=ProcName, stat=StatLoc)
     end if
+
+    ParameterName = 'cell_source'
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
+    call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
+    CellSource = VarC0D 
+
+    SubSectionName = SectionName // '>cells'
+    call InputVerifier%AddSection(Section='cells', ToSubSection=SectionName)
+    call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName, Mandatory=.true.)
+
+    select case (CellSource)
+      case ('external')
+        This%NbCells = InputSection%GetNumberofParameters()
+        nullify(InputSection)
+        allocate(This%Cells(This%NbCells), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='This%Cells', ProcName=ProcName, stat=StatLoc)
+
+        i = 1
+        do i = 1, This%NbCells
+          ParameterName = 'cell' // ConvertToString(Value=i) // '_file'
+          call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SubSectionName)
+          call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
+          CellFile = PrefixLoc // VarC0D
+          call CellSection%Read(FileName=CellFile)
+          call This%Cells(i)%Construct(Input=CellSection, Prefix=PrefixLoc)
+          call CellSection%Free()
+        end do
+      case ('internal')
+        This%NbCells = InputSection%GetNumberofSubSections()
+        nullify(InputSection)
+        allocate(This%Cells(This%NbCells), stat=StatLoc)
+        if (StatLoc /= 0) call Error%Allocate(Name='This%Cells', ProcName=ProcName, stat=StatLoc)
+    
+        i = 1
+        do i = 1, This%NbCells
+          call InputVerifier%AddSection(Section='cell' // ConvertToString(Value=i), ToSubSection=SubSectionName)
+          call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName // '>cell' // &
+                                       ConvertToString(Value=i), Mandatory=.true.)
+          call This%Cells(i)%Construct(Input=InputSection, Prefix=PrefixLoc)
+          nullify(InputSection)
+        end do
+      case default
+        call Error%Raise('Unrecognized cell source option', ProcName=ProcName)
+    end select
+
   end if
 
   call InputVerifier%Process(Input=Input)
@@ -324,6 +355,10 @@ function GetInput(This, Name, Prefix, Directory)
   type(SMUQFile_Type)                                                 ::    File
   character(:), allocatable                                           ::    FileName
   integer, allocatable, dimension(:)                                  ::    VarI1D
+  character(:), allocatable                                           ::    VarC0D
+  type(InputSection_Type)                                             ::    CellInput 
+  character(:), allocatable                                           ::    CellInputDir
+  integer                                                             ::    UnitLoc 
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
@@ -357,6 +392,30 @@ function GetInput(This, Name, Prefix, Directory)
 
     if (ExternalFlag) then
       
+      DirectorySub = DirectoryLoc // 'cells/'
+      CellInputDir = DirectorySub // 'cell_inputs/'
+
+      call MakeDirectory(Path=PrefixLoc // DirectorySub, Options='-p')
+      call MakeDirectory(Path=PrefixLoc // CellInputDir, Options='-p')
+      call GetInput%AddParameter(Name='cell_source', Value='external', SectionName=SectionName)
+      SubSectionName = 'cells'
+      call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+      i = 1
+      do i = 1, This%NbCells
+        VarC0D = 'cell' // ConvertToString(Value=i) // '_file'
+        FileName = 'cell' // ConvertToString(Value=i) // '_input.dat'
+        call GetInput%AddParameter(Name=VarC0D, Value=CellInputDir // FileName, SectionName=SectionName // '>' // SubSectionName)
+
+        DirectorySub = DirectoryLoc // 'cells/cell' // ConvertToString(Value=i) // '/'
+        CellInput = This%Cells(i)%GetInput(Name='cell' // ConvertToString(Value=i), Prefix=PrefixLoc, Directory=DirectorySub)
+
+        call File%Construct(File=FileName, Prefix=PrefixLoc // CellInputDir)
+        call File%Open(Unit=UnitLoc, Action='write', Status='replace')
+        call CellInput%Write(FileUnit=UnitLoc)
+        call File%Close()
+        call CellInput%Free()
+      end do
+
       if (allocated(This%ParamSample)) then
         SubSectionName = 'param_sample'
         call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
@@ -393,6 +452,16 @@ function GetInput(This, Name, Prefix, Directory)
       end if
 
     else
+
+      call GetInput%AddParameter(Name='cell_source', Value='internal', SectionName=SectionName)
+      SubSectionName = 'cells'
+      call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
+      i = 1
+      do i = 1, This%NbCells
+        call GetInput%AddSection(Section=This%Cells(i)%GetInput(Name='cell' // ConvertToString(Value=i)), &
+                                 To_SubSection=SectionName // '>' // SubSectionName)
+      end do
+
       if (allocated(This%ParamSample)) then
         SubSectionName = 'param_sample'
         call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
@@ -429,15 +498,6 @@ function GetInput(This, Name, Prefix, Directory)
     call GetInput%AddParameter(Name='samples_ran', Value=ConvertToString(Value=This%SamplesRan), SectionName=SectionName)
     call GetInput%AddParameter(Name='param_sample_step', Value=ConvertToString(Value=This%ParamSampleStep),                    &
                                                                                                         SectionName=SectionName)
-
-    SubSectionName = 'cells'
-    call GetInput%AddSection(SectionName=SubSectionName, To_SubSection=SectionName)
-    i = 1
-    do i = 1, This%NbCells
-      if (ExternalFlag) DirectorySub = DirectoryLoc // 'cell' // ConvertToString(Value=i) // '/'
-      call GetInput%AddSection(Section=This%Cells(i)%GetInput(Name='cell' // ConvertToString(Value=i),             &
-                                Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SectionName // '>' // SubSectionName)
-    end do
 
   end if
 
@@ -846,17 +906,17 @@ subroutine WriteOutput(This, Directory, SampleSpace, Responses)
 
         call MakeDirectory(Path=Directory // ResponseLabel // '/cell' // ConvertToString(Value=v) // '/', Options='-p')
 
-        FileName = ResponseLabel // 'cell' // ConvertToString(Value=v) // '/mu.dat'
+        FileName = ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mu.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call This%Cells(iv)%GetMu(Values=VarR1D)
         call ExportArray(Array=VarR1D, File=File)
 
-        FileName = ResponseLabel // 'cell' // ConvertToString(Value=v) // '/mu_star.dat'
+        FileName = ResponseLabel // '/cell' // ConvertToString(Value=v) // '/mu_star.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call This%Cells(iv)%GetMuStar(Values=VarR1D)
         call ExportArray(Array=VarR1D, File=File)
 
-        FileName = ResponseLabel // 'cell' // ConvertToString(Value=v) // '/sigma.dat'
+        FileName = ResponseLabel // '/cell' // ConvertToString(Value=v) // '/sigma.dat'
         call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
         call This%Cells(iv)%GetSigma(Values=VarR1D)
         call ExportArray(Array=VarR1D, File=File)
@@ -997,7 +1057,7 @@ end subroutine
 subroutine ConstructInput_Cell(This, Input, Prefix)
 
   class(Cell_Type), intent(inout)                                     ::    This
-  type(InputSection_Type), intent(in)                                 ::    Input
+  class(InputSection_Type), intent(in)                                ::    Input
   character(*), optional, intent(in)                                  ::    Prefix
 
   character(*), parameter                                             ::    ProcName='ConstructInput_Cell'

@@ -166,7 +166,7 @@ function GetDirectory(This, SectionChain)
   GetDirectory = ''
 
   do i = 1, NbSections
-    GetDirectory = GetDirectory // '/' // SectionNames(i)
+    GetDirectory = GetDirectory // SectionNames(i) // '/'
   end do
 
   deallocate(SectionNames, stat=StatLoc)

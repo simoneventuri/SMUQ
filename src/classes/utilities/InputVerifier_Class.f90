@@ -201,7 +201,7 @@ recursive subroutine VerifyInput(Input, Outline)
     end if
   end if
 
-  NbInputMembers = Outline%GetNumberOfSubSections()
+  NbInputMembers = Input%GetNumberOfSubSections()
   BadSubSections = .false.
 
   i = 1

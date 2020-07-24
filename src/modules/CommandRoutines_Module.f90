@@ -36,7 +36,7 @@ contains
     if (StatLoc /= 0) call Error%Raise('Something went wrong in GetCWD with error code: ' // ConvertToString(Value=StatLoc),   &
                                                                                                                ProcName=ProcName)
 
-    Path = trim(adjustl(PathLoc))
+    Path = trim(adjustl(PathLoc)) // '/'
 
   end subroutine
   !!------------------------------------------------------------------------------------------------------------------------------

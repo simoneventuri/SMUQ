@@ -163,7 +163,7 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   if (Input%HasSection(SubSectionName=SectionName)) then
 
     ParameterName = 'nb_samples'
-    call InputVerifier%AddParameter(Parameter=ParameterName)
+    call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SectionName)
     call Input%GetValue(Value=VarI0D, ParameterName=ParameterName, SectionName=SectionName, Mandatory=.true.)
     This%HierarchicalNbSamples = VarI0D
 
@@ -362,7 +362,7 @@ subroutine Calibrate(This, Model, SampleSpace, Responses, LikelihoodFunction, Ou
   allocate(Output(ModelInterface%GetNbResponses()), stat=StatLoc)
   if (StatLoc /= 0) call Error%Allocate(Name='Output', ProcName=ProcName, stat=StatLoc)
 
-  if (present(OutputDirectory)) OutputDirectoryLoc = OutputDirectory // '/posterior_sampler'
+  if (present(OutputDirectory)) OutputDirectoryLoc = OutputDirectory // 'posterior_sampler/'
 
   call This%MCMC%GenerateChain(SamplingTarget=Posterior, SampleSpace=TargetSpace, ParameterChain=ParamChain,                   &
                                             TargetChain=PosteriorChain, MiscChain=MiscChain, OutputDirectory=OutputDirectoryLoc)
@@ -605,25 +605,25 @@ subroutine WriteOutput(This, SampleSpace, PosteriorChain, ParamChain, MiscChain,
     allocate(Names(SampleSpace%GetNbDim()), stat=StatLoc)
     if (StatLoc /= 0) call Error%Allocate(Name='Names', ProcName=ProcName, stat=StatLoc)
     call SampleSpace%GetNames(Names=Names)
-    FileName = '/parameter_names.dat'
+    FileName = 'parameter_names.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Array=Names, File=File)
     deallocate(Names, stat=StatLoc)
     if (StatLoc /= 0) call Error%Deallocate(Name='Names', ProcName=ProcName, stat=StatLoc)
 
-    FileName = '/prior_chain.dat'
+    FileName = 'prior_chain.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Array=MiscChain(1,:), File=File)
 
-    FileName = '/likelihood_chain.dat'
+    FileName = 'likelihood_chain.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Array=MiscChain(2,:), File=File)
 
-    FileName = '/parameter_chain.dat'
+    FileName = 'parameter_chain.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Array=ParamChain, File=File)
 
-    FileName = '/posterior_chain.dat'
+    FileName = 'posterior_chain.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call ExportArray(Array=PosteriorChain, File=File)
 

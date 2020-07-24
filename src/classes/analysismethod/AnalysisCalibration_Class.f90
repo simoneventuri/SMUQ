@@ -59,7 +59,8 @@ subroutine Reset(This)
 
   This%Constructed=.false.
 
-  call This%CalibrationMethod%Reset()
+  if (allocated(This%CalibrationMethod)) deallocate(This%Calibrationmethod, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%Calibrationmethod', ProcName=ProcName, stat=StatLoc)
 
   This%SectionChain = ''
 

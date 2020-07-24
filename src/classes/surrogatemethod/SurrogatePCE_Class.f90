@@ -116,8 +116,14 @@ subroutine Reset(This)
   if (allocated(This%InputSamples)) deallocate(This%InputSamples, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%InputSamples', ProcName=ProcName, stat=StatLoc)
 
+  if (allocated(This%InputSamplesLabels)) deallocate(This%InputSamplesLabels, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%InputSamplesLabels', ProcName=ProcName, stat=StatLoc)
+
   if (allocated(This%OutputSamples)) deallocate(This%OutputSamples, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%OutputSamples', ProcName=ProcName, stat=StatLoc)
+
+  if (allocated(This%OutputSamplesLabels)) deallocate(This%OutputSamplesLabels, stat=StatLoc)
+  if (StatLoc /= 0) call Error%Deallocate(Name='This%OutputSamplesLabels', ProcName=ProcName, stat=StatLoc)
 
   This%BasisScheme = 'askey_numerical'
   This%SectionChain = ''
@@ -356,7 +362,7 @@ subroutine Run(This, SampleSpace, Responses, Model, SurrogateModel, OutputDirect
 
   call ModelTransform%Construct(SpaceTransform=SpaceTransform, Model=Model)
 
-  if (present(OutputDirectory)) OutputDirectoryLoc = OutputDirectory // '/solver'
+  if (present(OutputDirectory)) OutputDirectoryLoc = OutputDirectory // 'solver/'
 
   if (allocated(This%InputSamples)) then
     allocate(InputSamplesLoc(SpaceTransform%GetNbDim(),size(This%InputSamples,2)), stat=StatLoc)
@@ -444,7 +450,7 @@ subroutine Run(This, SampleSpace, Responses, Model, SurrogateModel, OutputDirect
         write(*,'(A)') ''
         write(*,'(A)') Line
       end if
-      OutputDirectoryLoc = OutputDirectory // '/pce_models/' // Responses(i)%GetLabel()
+      OutputDirectoryLoc = OutputDirectory // 'pce_models/' // Responses(i)%GetLabel() // '/'
       call This%WriteOutput(PCEModel=PCEModelLoc(i), Directory=OutputDirectoryLoc)
     end if
     call Coefficients(i)%Purge()
@@ -505,12 +511,12 @@ subroutine WriteOutput(This, PCEModel, Directory)
 
     SilentLoc = This%Silent
 
-    PrefixLoc = Directory // '/PCModelPackage'
-    DirectoryLoc = '/PCModelInput'
+    PrefixLoc = Directory // 'PCModelPackage/'
+    DirectoryLoc = 'PCModelInput/'
 
     Input = PCEModel%GetInput(Name='PCE_model', Prefix=PrefixLoc, Directory=DirectoryLoc)
     
-    FileName = '/PCModelInput.dat'
+    FileName = 'PCModelInput.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
     call File%Open(Unit=UnitLoc, Action='write', Status='replace', Position='rewind')
     call Input%Write(FileUnit=UnitLoc)

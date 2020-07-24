@@ -59,7 +59,7 @@ subroutine Reset(This)
 
   This%Constructed=.false.
 
-  deallocate(This%SAMethod, stat=StatLoc)
+  if (allocated(This%SAMethod)) deallocate(This%SAMethod, stat=StatLoc)
   if (StatLoc /= 0) call Error%Deallocate(Name='This%SAMethod', ProcName=ProcName, stat=StatLoc)
 
   This%SectionChain = ''

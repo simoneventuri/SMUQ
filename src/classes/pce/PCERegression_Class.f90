@@ -203,8 +203,6 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
   character(:), allocatable                                           ::    PrefixLoc
   real(rkp), allocatable, dimension(:,:)                              ::    VarR2D
   integer, allocatable, dimension(:)                                  ::    VarI1D
-  integer                                                             ::    NbOutputs
-  integer                                                             ::    NbCells
   character(:), allocatable                                           ::    CellSource
   character(:), allocatable                                           ::    CellFile
   type(InputReader_Type)                                              ::    CellSection
@@ -363,13 +361,13 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
 
     select case (CellSource)
       case ('external')
-        NbCells = InputSection%GetNumberofParameters()
+        This%NbCells = InputSection%GetNumberofParameters()
         nullify(InputSection)
-        allocate(This%Cells(NbCells), stat=StatLoc)
+        allocate(This%Cells(This%NbCells), stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='This%Cells', ProcName=ProcName, stat=StatLoc)
 
         i = 1
-        do i = 1, NbCells
+        do i = 1, This%NbCells
           ParameterName = 'cell' // ConvertToString(Value=i) // '_file'
           call InputVerifier%AddParameter(Parameter=ParameterName, ToSubSection=SubSectionName)
           call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, SectionName=SubSectionName, Mandatory=.true.)
@@ -379,13 +377,13 @@ subroutine ConstructInput(This, Input, SectionChain, Prefix)
           call CellSection%Free()
         end do
       case ('internal')
-        NbCells = InputSection%GetNumberofSubSections()
+        This%NbCells = InputSection%GetNumberofSubSections()
         nullify(InputSection)
-        allocate(This%Cells(NbCells), stat=StatLoc)
+        allocate(This%Cells(This%NbCells), stat=StatLoc)
         if (StatLoc /= 0) call Error%Allocate(Name='This%Cells', ProcName=ProcName, stat=StatLoc)
     
         i = 1
-        do i = 1, NbCells
+        do i = 1, This%NbCells
           call InputVerifier%AddSection(Section='cell' // ConvertToString(Value=i), ToSubSection=SubSectionName)
           call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SubSectionName // '>cell' // &
                                        ConvertToString(Value=i), Mandatory=.true.)
@@ -491,7 +489,7 @@ function GetInput(This, Name, Prefix, Directory)
         FileName = 'cell' // ConvertToString(Value=i) // '_input.dat'
         call GetInput%AddParameter(Name=VarC0D, Value=CellInputDir // FileName, SectionName=SectionName // '>' // SubSectionName)
 
-        DirectorySub = DirectoryLoc // 'cells/cell' // ConvertToString(Value=i)
+        DirectorySub = DirectoryLoc // 'cells/cell' // ConvertToString(Value=i) // '/'
         CellInput = This%Cells(i)%GetInput(Name='cell' // ConvertToString(Value=i), Prefix=PrefixLoc, Directory=DirectorySub)
 
         call File%Construct(File=FileName, Prefix=PrefixLoc // CellInputDir)
@@ -1167,7 +1165,7 @@ subroutine WriteOutput(This, Directory, Responses)
       ii = iStart+1
       do ii = iStart+1, iEnd
         iii = iii + 1
-        DirectoryLoc = '/' // Responses(i)%GetLabel() // '/cell' // ConvertToString(Value=iii)
+        DirectoryLoc = '/' // Responses(i)%GetLabel() // '/cell' // ConvertToString(Value=iii) // '/'
         call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
         FileName = DirectoryLoc // 'cverror.dat'

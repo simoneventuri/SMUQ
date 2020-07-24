@@ -127,7 +127,7 @@ subroutine ConstructInput(This, Input, Prefix)
 
   call InputVerifier%Construct()
 
-  ParameterName = 'label'
+  ParameterName = 'response_label'
   call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.true.)
   This%Label = VarC0D
@@ -224,7 +224,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   call GetInput%SetName(SectionName = trim(adjustl(Name)))
   
-  call GetInput%AddParameter(Name='label', Value=This%Label)
+  call GetInput%AddParameter(Name='response_label', Value=This%Label)
 
   SectionName='parameters'
   call GetInput%AddSection(SectionName=SectionName)

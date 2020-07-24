@@ -61,11 +61,11 @@ subroutine Reset(This)
 
   character(*), parameter                                             ::    ProcName='Reset'
   integer                                                             ::    StatLoc=0
-
+  
   This%Constructed = .false.
 
   This%NormQ = 0.4_rkp
-
+  
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 

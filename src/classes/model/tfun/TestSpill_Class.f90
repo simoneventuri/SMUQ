@@ -131,7 +131,7 @@ subroutine ConstructInput(This, Input, Prefix)
 
   Found = .false.
 
-  ParameterName = 'label'
+  ParameterName = 'response_label'
   call InputVerifier%AddParameter(Parameter=ParameterName)
   call Input%GetValue(Value=VarC0D, ParameterName=ParameterName, Mandatory=.false., Found=Found, SectionName=SectionName)
   if (Found) This%Label = VarC0D
@@ -232,7 +232,7 @@ function GetInput(This, Name, Prefix, Directory)
 
   call GetInput%SetName(SectionName = trim(adjustl(Name)))
 
-  call GetInput%AddParameter(Name='label', Value=This%Label)
+  call GetInput%AddParameter(Name='response_label', Value=This%Label)
   VarC0D = ConvertToString(This%Time(1)) // ' ' // ConvertToString(This%Time(2))
   call GetInput%AddParameter(Name='time_range', Value=VarC0D)
   call GetInput%AddParameter(Name='nb_times', Value=ConvertToString(Value=This%NbTimes))
