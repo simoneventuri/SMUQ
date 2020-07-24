@@ -11,10 +11,7 @@ class Response:
         filename = top_directory + '/responses/' + response \
                    + '/coordinates.dat'
         self.coords = np.genfromtxt(filename, dtype=float)
-        if len(self.coords.shape) > 1:
-            self.nb_coords = self.coords.shape[0]
-        else:
-            self.nb_coords = 1
+        self.nb_coords = self.coords.shape[0]
         
         self.nb_coords_dim = 1
         if len(self.coords.shape) > 1:

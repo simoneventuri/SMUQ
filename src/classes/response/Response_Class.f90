@@ -705,7 +705,7 @@ subroutine WriteInfo(This, Directory)
 
     FileName = 'coordinates.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')
-    call ExportArray(Array=This%Coordinates, File=File)
+    call ExportArray(Array=This%Coordinates, File=File, RowMajor=.true.)
 
     FileName = 'coordinate_labels.dat'
     call File%Construct(File=FileName, Prefix=PrefixLoc, Comment='#', Separator=' ')

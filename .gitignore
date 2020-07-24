@@ -1,6 +1,6 @@
 # MY Additions
 .vscode/
-**/__pycache__
+**/__pycache__/*
 
 # Created by https://www.gitignore.io/api/linux,cmake,python,fortran,visualstudio
 # Edit at https://www.gitignore.io/?templates=linux,cmake,python,fortran,visualstudio
