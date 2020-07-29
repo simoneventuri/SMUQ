@@ -31,6 +31,16 @@ def get_coefficients(response, i_cell):
     coefficients = np.genfromtxt(filename, dtype=float)
     return coefficients
 
+def get_cverror(response, i_cell):
+    top_directory = gu.get_top_directory()
+    response_label = response.get_label()
+    filename = top_directory + '/analysis/solver/' + response_label \
+               + '/cell' + str(i_cell) + '/cverror.dat'
+    with open(filename, "r") as file_object:
+        line = file_object.readline()
+        get_cverror = float(line)
+    return get_cverror
+
 def compute_first_sobol(coefficients, indices):
     if (indices.ndim > 1):
         nb_vars = indices.shape[1]
@@ -97,7 +107,7 @@ def compute_mean(coefficients, indices):
             mean += coeff 
     return mean
 
-def plot_sobol_indices_single(response, i_cell, variables):
+def plot_sobol_total_indices_single(response, i_cell, variables):
     variable_names = []
     for variable in variables:
         variable_names.append(variable.get_name())
@@ -109,45 +119,50 @@ def plot_sobol_indices_single(response, i_cell, variables):
     response_sobol_total = compute_total_sobol(response_coeffs, \
                                                response_indices)
 
-    response_sobol_first = compute_first_sobol(response_coeffs, \
-                                               response_indices)
-
-    response_var = compute_variance(response_coeffs, response_indices)
-
     fig1, ax1 = plt.subplots()
 
-#    mng = plt.get_current_fig_manager()
-#    mng.window.showMaximized()
     y_pos = np.arange(len(variables))
     ax1.barh(y=y_pos , width=response_sobol_total, \
              tick_label=variable_names, align='center')
     ax1.invert_yaxis()
     ax1.set_xlim(left=0.0, right=1.0)
     ax1.set_xlabel(r'$S_T$')
-    ratio = 1.0
-    ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
+    
+    ax1.set_box_aspect(1)
+
+def plot_sobol_first_indices_single(response, i_cell, variables):
+    variable_names = []
+    for variable in variables:
+        variable_names.append(variable.get_name())
+
+    response_name = response.get_name()
+    response_indices = get_indices(response, i_cell)    
+    response_coeffs = get_coefficients(response, i_cell)
+
+    response_sobol_first = compute_first_sobol(response_coeffs, \
+                                               response_indices)
+
+    response_var = compute_variance(response_coeffs, response_indices)
 
     fig2, ax2 = plt.subplots()
 
-#    mng = plt.get_current_fig_manager()
-#    mng.resize(*mng.window.maxsize())
-
+    y_pos = np.arange(len(variables))
     ax2.barh(y=y_pos, width=response_sobol_first, \
              tick_label=variable_names, align='center')
     ax2.invert_yaxis()
     ax2.set_xlim(left=0.0, right=1.0)
     ax2.set_xlabel(r'$S_i$')
-    ratio = 1.0
-    ax2.set_aspect(1.0/ax2.get_data_ratio()*ratio)
 
-def plot_sobol_indices(response, variables):
+    ax2.set_box_aspect(1)
+
+def plot_sobol_total_indices(response, variables):
     response_name = response.get_name()
     xstop = response.get_nb_coords()
 
     if (response.get_nb_coords_dim() > 1):
         print('Response "' + response_name + '" specifies non-1D coordinates' \
               + 'which current scripts do not natively support for ' \
-              + 'Morris method post-processing')
+              + 'PCE post-processing')
         x = np.arange(start=1, stop=xstop, step=1)
         xlabel = 'Cell'
     else:
@@ -158,21 +173,16 @@ def plot_sobol_indices(response, variables):
     nb_coords = response.get_nb_coords()
 
     total_sobol = np.zeros((nb_coords,nb_vars))
-    first_sobol = np.zeros((nb_coords,nb_vars))
     variance = np.zeros((nb_coords,))
 
     for i_cell in range(0,nb_coords):
         indices = get_indices(response, i_cell+1)
         coefficients = get_coefficients(response, i_cell+1)
         total_sobol[i_cell,:] = compute_total_sobol(coefficients, indices)
-        first_sobol[i_cell,:] = compute_first_sobol(coefficients, indices)
         variance[i_cell] = compute_variance(coefficients, indices)
 
     fig1, ax1 = plt.subplots()
     ax2 = ax1.twinx()
-
-#    mng = plt.get_current_fig_manager()
-#    mng.resize(*mng.window.maxsize())
 
     for i, variable in enumerate(variables):
         ax1.plot(x, total_sobol[:,i],\
@@ -184,12 +194,6 @@ def plot_sobol_indices(response, variables):
     ax1.set_xlim(left=x[0], right=x[xstop-1])
     ax1.set_ylim(bottom=0.0, top=1.0)
     ax1.legend(ncol=ncolumns)
-
-    ax1.yaxis.set_major_formatter(ScalarFormatter())
-    ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
-    ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
-    ratio = 1.0
-    ax1.set(adjustable='box-forced', aspect=1.0/ax1.get_data_ratio()*ratio)
 
     ax2.plot(x, variance, color='pink', linestyle=':', marker='')
 
@@ -207,12 +211,34 @@ def plot_sobol_indices(response, variables):
     ax2.yaxis.set_ticks_position('left')
     ax2.spines['left'].set_color('pink')
     ax2.tick_params(colors='pink')
-    ax2.set(adjustable='box-forced', aspect=1.0/ax2.get_data_ratio()*ratio)
+
+    ax1.set_box_aspect(1)
+
+def plot_sobol_first_indices(response, variables):
+    response_name = response.get_name()
+    xstop = response.get_nb_coords()
+
+    if (response.get_nb_coords_dim() > 1):
+        print('Response "' + response_name + '" specifies non-1D coordinates' \
+              + 'which current scripts do not natively support for ' \
+              + 'PCE post-processing')
+        x = np.arange(start=1, stop=xstop, step=1)
+        xlabel = 'Cell'
+    else:
+        x = response.get_coords()
+        xlabel = response.get_coords_label(0)
+
+    nb_vars = len(variables)
+    nb_coords = response.get_nb_coords()
+
+    first_sobol = np.zeros((nb_coords,nb_vars))
+
+    for i_cell in range(0,nb_coords):
+        indices = get_indices(response, i_cell+1)
+        coefficients = get_coefficients(response, i_cell+1)
+        first_sobol[i_cell,:] = compute_first_sobol(coefficients, indices)
 
     fig2, ax3 = plt.subplots()
-    
-#    mng = plt.get_current_fig_manager()
-#    mng.resize(*mng.window.maxsize())
 
     for i, variable in enumerate(variables):
         ax3.plot(x, first_sobol[:,i],\
@@ -225,8 +251,57 @@ def plot_sobol_indices(response, variables):
     ax3.set_ylim(bottom=0.0, top=1.0)
     ax3.legend(ncol=ncolumns)
 
-    ax3.yaxis.set_major_formatter(ScalarFormatter())
-    ax3.yaxis.set_minor_locator(AutoMinorLocator(5))
-    ax3.xaxis.set_minor_locator(AutoMinorLocator(5))
-    ratio = 1.0
-    ax3.set(adjustable='box-forced', aspect=1.0/ax3.get_data_ratio()*ratio)
+    ax3.set_box_aspect(1)
+
+def plot_cv_variance(response):
+    response_name = response.get_name()
+    xstop = response.get_nb_coords()
+
+    if (response.get_nb_coords_dim() > 1):
+        print('Response "' + response_name + '" specifies non-1D coordinates' \
+              + 'which current scripts do not natively support for ' \
+              + 'PCE post-processing')
+        x = np.arange(start=1, stop=xstop, step=1)
+        xlabel = 'Cell'
+    else:
+        x = response.get_coords()
+        xlabel = response.get_coords_label(0)
+
+    nb_coords = response.get_nb_coords()
+
+    cv = np.zeros((nb_coords,))
+    variance = np.zeros((nb_coords,))
+
+    for i_cell in range(0,nb_coords):
+        indices = get_indices(response, i_cell+1)
+        coefficients = get_coefficients(response, i_cell+1)
+        variance[i_cell] = compute_variance(coefficients, indices)
+        cv[i_cell] = get_cverror(response, i_cell+1)
+
+    fig1, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+
+    ax1.semilogy(x, cv, color='black', marker='', linestyle='-', markevery=0.1)
+
+    ax1.set_xlabel(xlabel)
+    ax1.set_ylabel('CV Error')
+    ax1.set_xlim(left=x[0], right=x[xstop-1])
+
+    ax2.plot(x, variance, color='pink', linestyle=':', marker='')
+
+    ax2.set_ylabel('Variance', color='pink')
+    ax2.set_xlim(left=x[0], right=x[xstop-1])
+    ax2.set_ylim(bottom=0.0)
+
+    ax2.spines["left"].set_position(("axes", -0.15))
+    ax2.set_frame_on(True)
+    ax2.patch.set_visible(False)
+    for sp in ax2.spines.values():
+        sp.set_visible(False)
+    ax2.spines["left"].set_visible(True)
+    ax2.yaxis.set_label_position('left')
+    ax2.yaxis.set_ticks_position('left')
+    ax2.spines['left'].set_color('pink')
+    ax2.tick_params(colors='pink')
+
+    ax1.set_box_aspect(1)

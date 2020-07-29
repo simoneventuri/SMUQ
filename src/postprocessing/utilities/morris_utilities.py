@@ -96,11 +96,8 @@ def plot_mu_sigma_single(response, i_cell, variables):
     ax1.set_xlabel(r'$\mu$')
     ax1.set_ylabel(r'$\sigma$')
     #ax1.set_title(response_name)
-    ax1.yaxis.set_major_formatter(ScalarFormatter())
-    ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
-    ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
-    ratio = 1.0
-    ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
+    
+    ax1.set_box_aspect(1)
 
 def plot_mustar_sigma_single(response, i_cell, variables):
     response_name = response.get_name()
@@ -108,9 +105,6 @@ def plot_mustar_sigma_single(response, i_cell, variables):
     response_sigma = get_sigma_single(response, i_cell)
 
     fig1, ax1 = plt.subplots()
-
-#    mng = plt.get_current_fig_manager()
-#    mng.resize(*mng.window.maxsize())
 
     ax1.scatter(response_mustar,response_sigma)
     for i, variable in enumerate(variables):
@@ -123,11 +117,8 @@ def plot_mustar_sigma_single(response, i_cell, variables):
     ax1.set_xlim(left=0.0)
     ax1.set_ylim(bottom=0.0)
     #ax1.set_title(response_name)
-    ax1.yaxis.set_major_formatter(ScalarFormatter())
-    ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
-    ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
-    ratio = 1.0
-    ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
+
+    ax1.set_box_aspect(1)
 
 def plot_mu(response, variables):
     response_name = response.get_name()
@@ -146,9 +137,6 @@ def plot_mu(response, variables):
         
     fig1, ax1 = plt.subplots()
 
-#    mng = plt.get_current_fig_manager()
-#    mng.resize(*mng.window.maxsize())
-
     for i, variable in enumerate(variables):
         ax1.plot(x, response_mu[:,i],\
                  label=r'$'+variable.get_name()+r'$',\
@@ -159,13 +147,10 @@ def plot_mu(response, variables):
     ax1.set_xlim(left=x[0], right=x[xstop-1])
     ax1.set_ylim(bottom=response_mu.min())
     #ax1.set_title(response_name)
-    ax1.yaxis.set_major_formatter(ScalarFormatter())
-    ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
-    ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
-    ratio = 1.0
-    ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
     ax1.legend(ncol=ncolumns)
-    return
+
+    ax1.set_box_aspect(1)
+    return 
 
 def plot_mustar(response, variables):
 
@@ -185,9 +170,6 @@ def plot_mustar(response, variables):
         
     fig1, ax1 = plt.subplots()
 
-#    mng = plt.get_current_fig_manager()
-#    mng.resize(*mng.window.maxsize())
-
     for i, variable in enumerate(variables):
         ax1.plot(x, response_mustar[:,i],\
                  label=r'$'+variable.get_name()+r'$',\
@@ -198,12 +180,9 @@ def plot_mustar(response, variables):
     ax1.set_xlim(left=x[0], right=x[xstop-1])
     ax1.set_ylim(bottom=0.0)
     #ax1.set_title(response_name)
-    ax1.yaxis.set_major_formatter(ScalarFormatter())
-    ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
-    ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
-    ratio = 1.0
-    ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
     ax1.legend(ncol=ncolumns)
+
+    ax1.set_box_aspect(1)
     return
 
 def plot_sigma(response, variables):
@@ -224,9 +203,6 @@ def plot_sigma(response, variables):
         
     fig1, ax1 = plt.subplots()
 
-#    mng = plt.get_current_fig_manager()
-#    mng.resize(*mng.window.maxsize())
-
     for i, variable in enumerate(variables):
         ax1.plot(x, response_sigma[:,i],
                  label=r'$'+variable.get_name()+r'$',\
@@ -237,10 +213,7 @@ def plot_sigma(response, variables):
     ax1.set_xlim(left=x[0], right=x[xstop-1])
     ax1.set_ylim(bottom=0.0)
     #ax1.set_title(response_name)
-    ax1.yaxis.set_major_formatter(ScalarFormatter())
-    ax1.yaxis.set_minor_locator(AutoMinorLocator(5))
-    ax1.xaxis.set_minor_locator(AutoMinorLocator(5))
-    ratio = 1.0
-    ax1.set_aspect(1.0/ax1.get_data_ratio()*ratio)
     ax1.legend(ncol=ncolumns)
+
+    ax1.set_box_aspect(1)
     return

@@ -2,6 +2,8 @@ import os
 import sys
 from cycler import cycler
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import time
 
 def file_len(filename):
     with open(filename) as file_object:
@@ -43,3 +45,24 @@ def set_plot_options():
           }
 
     mpl.rcParams.update(params)
+
+def maximize_figure():
+    # source: https://stackoverflow.com/questions/12439588/how-to-maximize-a-plt-show-window-using-python
+    backend = plt.get_backend()
+    mng = plt.get_current_fig_manager()
+    if backend == "wxAgg":
+        mng.frame.Maximize(True)
+    elif backend == "TkAgg":
+        if system() == "win32":
+            mng.window.state('zoomed')  # This is windows only
+        else:
+            mng.resize(*cfm.window.maxsize())
+    elif backend == 'QT4Agg':
+        mng.window.showMaximized()
+    elif callable(getattr(mng, "full_screen_toggle", None)):
+        if not getattr(mng, "flag_is_max", None):
+            mng.full_screen_toggle()
+            mng.flag_is_max = True
+    else:
+        raise RuntimeError("maximize_figure() is not implemented for current backend:", backend)
+    plt.pause(0.05)
