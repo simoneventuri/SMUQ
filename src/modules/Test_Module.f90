@@ -16,6 +16,9 @@ use LinSolverOLS_Class                                            ,only:    LinS
 use CVKFold_Class                                                 ,only:    CVKFold_Type
 use SMUQFile_Class                                                ,only:    SMUQFile_Type
 use StopWatch_Class                                               ,only:    StopWatch, StopWatch_Type
+use ParameterWriter_Class                                         ,only:    ParameterWriter_Type 
+use Input_Class                                                   ,only:    Input_Type 
+use SMUQString_Class                                              ,only:    SMUQString_Type 
 
 implicit none
 
@@ -40,14 +43,34 @@ subroutine Test(Input, Prefix)
   type(SMUQFile_Type)                                                 ::    File
   character(:), allocatable                                           ::    FileName
   real(rkp), allocatable, dimension(:)                                ::    VarR1D
+  real(rkp), allocatable, dimension(:,:)                              ::    SampledParameters
+  type(ParameterWriter_Type)                                          ::    ParameterWriter1
+  type(ParameterWriter_Type)                                          ::    ParameterWriter2
+  type(SMUQString_Type), allocatable, dimension(:)                    ::    ParameterLabels
+  type(Input_Type)                                                    ::    ParameterInput
+  integer                                                             ::    i 
 
-
-  FileName = '/home/rstkwsk2/workspace/runs/tests/variance_test/case/output.dat'
+  FileName = Prefix // 'sampled_parameters.dat'
   call File%Construct(File=FileName)
-  call ImportArray(File=File, Array=VarR1D)
+  call ImportArray(File=File, Array=SampledParameters)
 
-  write(*,*) ComputeVariance(Values=VarR1D)
-  write(*,*) IsArrayConstant(Array=VarR1D)
+  FileName = Prefix // 'parameter_labels.dat'
+  call File%Construct(File=FileName)
+  call ImportArray(File=File, Array=ParameterLabels)
+
+  call Input%FindTargetSection(TargetSection=InputSection, FromSubSection='parameter_writer', Mandatory=.true.)
+
+  call ParameterWriter1%Construct(Input=InputSection, ConstructPrefix=Prefix, WritePrefix=Prefix // 'case1/')
+
+  call ParameterWriter2%Construct(Input=InputSection, ConstructPrefix=Prefix, WritePrefix=Prefix // 'case2/' )
+
+  call ParameterInput%Construct(Input=SampledParameters(:,50), Labels=ParameterLabels)
+
+  call ParameterWriter1%WriteInput(Input=ParameterInput)
+
+  call ParameterInput%Construct(Input=SampledParameters(:,51), Labels=ParameterLabels)
+
+  call ParameterWriter2%WriteInput(Input=ParameterInput)
 end subroutine
 !!------------------------------------------------------------------------------------------------------------------------------
 

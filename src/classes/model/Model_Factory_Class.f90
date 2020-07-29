@@ -103,7 +103,7 @@ subroutine Construct_Input(This, Object, Input, Prefix)
   character(:), allocatable                                           ::    PrefixLoc
   character(:), allocatable                                           ::    VarC0D
   integer                                                             ::    StatLoc=0 
-  type(InputVerifier_Type)                                              ::    InputVerifier
+  type(InputVerifier_Type)                                            ::    InputVerifier
 
   PrefixLoc = ''
   if (present(Prefix)) PrefixLoc = Prefix

@@ -216,13 +216,18 @@ subroutine ConstructInput(This, Input, Prefix)
     if (StatLoc /= 0) call Error%Allocate(Name='This%PathWriter', ProcName=ProcName, stat=StatLoc)
   end if
 
+  SectionName = 'parameter_writer'
+  call InputVerifier%AddSection(Section=SectionName)
+
+  SectionName = 'output_reader'
+  call InputVerifier%AddSection(Section=SectionName)
+
   i = 1
   do i = 1, This%NbConcurrentEvaluations
     WorkDirectoryLoc = This%FullWorkDirectory // ConvertToString(Value=i) // '/'
 
     if (allocated(This%PathWriter)) then
       SectionName = 'path_writer'
-      call InputVerifier%AddSection(Section=SectionName)
       call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
       call This%PathWriter(i)%Construct(Input=InputSection, Prefix=WorkDirectoryLoc)
       nullify(InputSection)
@@ -230,13 +235,11 @@ subroutine ConstructInput(This, Input, Prefix)
     end if
 
     SectionName = 'parameter_writer'
-    call InputVerifier%AddSection(Section=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call This%ParameterWriter(i)%Construct(Input=InputSection, ConstructPrefix=PrefixLoc, WritePrefix=WorkDirectoryLoc)
     nullify(InputSection)
 
     SectionName = 'output_reader'
-    call InputVerifier%AddSection(Section=SectionName)
     call Input%FindTargetSection(TargetSection=InputSection, FromSubSection=SectionName, Mandatory=.true.)
     call This%OutputReader(i)%Construct(Input=InputSection, Prefix=WorkDirectoryLoc)
     nullify(InputSection)
