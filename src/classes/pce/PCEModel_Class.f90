@@ -983,7 +983,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
 
   if (.not. This%Constructed) call Error%Raise(Line='Object was never constructed', ProcName=ProcName)
 
-  DirectoryLoc = '<undefined>'
+  DirectoryLoc = ''
   PrefixLoc = ''
   if (present(Directory)) DirectoryLoc = Directory
   if (present(Prefix)) PrefixLoc = Prefix

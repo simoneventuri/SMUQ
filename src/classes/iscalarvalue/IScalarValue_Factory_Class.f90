@@ -174,7 +174,7 @@ function GetObjectInput(This, Object, Name, Prefix, Directory)
   integer                                                             ::    StatLoc=0
   logical                                                             ::    ExternalFlag=.false.
 
-  DirectoryLoc = '<undefined>'
+  DirectoryLoc = ''
   PrefixLoc = ''
   DirectorySub = DirectoryLoc
   if (present(Directory)) DirectoryLoc = Directory

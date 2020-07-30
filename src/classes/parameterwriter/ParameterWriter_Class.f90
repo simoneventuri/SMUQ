@@ -524,6 +524,7 @@ function GetInput_FP(This, Name, Prefix, Directory)
   do i = 1, This%NbMFileInputs
     SubSectionName = 'format' // ConvertToString(Value=i)
     MFileInputPtr => This%MFileInputs(i)%GetPointer()
+    if (ExternalFlag) DirectorySub = DirectoryLoc // 'format' // ConvertToString(Value=i) // '/'
     call GetInput_FP%AddSection(Section=MFileInput_Factory%GetObjectInput(Object=MFileInputPtr,Name=SubSectionName,&
                                                           Prefix=PrefixLoc, Directory=DirectorySub), To_SubSection=SectionName)
     

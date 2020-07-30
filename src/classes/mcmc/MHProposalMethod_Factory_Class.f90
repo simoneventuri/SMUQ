@@ -167,7 +167,7 @@ function GetObjectInput(This, Object, Name, Prefix, Directory, Mandatory)
   integer                                                             ::    StatLoc=0
   logical                                                             ::    MandatoryLoc
 
-  DirectoryLoc = '<undefined>'
+  DirectoryLoc = ''
   PrefixLoc = ''
   DirectorySub = DirectoryLoc
   if (present(Directory)) DirectoryLoc = Directory
