@@ -989,7 +989,7 @@ function GetInput_Cell(This, Name, Prefix, Directory)
   if (present(Prefix)) PrefixLoc = Prefix
   DirectorySub = DirectoryLoc
 
-  if (DirectoryLoc /= '<undefined>') ExternalFlag = .true.
+  if (len_trim(DirectoryLoc) /= 0) ExternalFlag = .true.
 
   if (ExternalFlag) call MakeDirectory(Path=PrefixLoc // DirectoryLoc, Options='-p')
 
