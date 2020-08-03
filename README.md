@@ -10,7 +10,7 @@
 
 3. T. A. Oliver, G. Terejanu, C. Simmons, S. Christopher, and R. D. Moser, "Validating predictions of unobserved quantities", Computer Methods in Applied Mechanics and Engineering, Vol. 283 (2015) http://dx.doi.org/10.1016/j.cma.2014.08.023
 
-4. P. Rostkowski, S. Venturi†, M. Panesi, A. Omidy, H. Weng, and A. Martin, "Calibration and Uncertainty Quantification of VISTA Ablator Material Database Using Bayesian Inference", Journal of Thermophysics and Heat Transfer, Vol. 33, No. 2 (2019) https://doi.org/10.2514/1.T5396
+4. P. Rostkowski, S. Venturi, M. Panesi, A. Omidy, H. Weng, and A. Martin, "Calibration and Uncertainty Quantification of VISTA Ablator Material Database Using Bayesian Inference", Journal of Thermophysics and Heat Transfer, Vol. 33, No. 2 (2019) https://doi.org/10.2514/1.T5396
 
 
 ## COMPILATION AND EXECUTION
